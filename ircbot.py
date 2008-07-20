@@ -1,17 +1,39 @@
 #!/usr/bin/python
 
+from twisted.internet import glib2reactor
+glib2reactor.install()
 from twisted.internet import reactor
+
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol
+from twisted.internet import protocol
+
+import dbus
+import dbus.service
+import dbus.mainloop.glib
+
 import re, time
+
+class IrcbotDBus(dbus.service.Object):
+    def __init__(self, conn, object_path='/com/example/TestService/object'):
+        dbus.service.Object.__init__(self, conn, object_path)
+
+    @dbus.service.signal(dbus_interface='com.example.Sample', signature='ssas')
+    def IRCEvent(self, type, target, params):
+        print "XXX %s, %s, %s" % (type, target, params)
 
 class Ircbot(irc.IRCClient):
 	def __init__(self):
-		self.responses = [
-				(r"\s*(say|do)\s+(\S+)\s+(.*)", self.h_saydo),
-				(r"\s*(?:time|date)", self.h_datetime),
-				(r"\s*(join|leave)\s+(#\S*)", self.h_joinleave),
-				]
+	    self.responses = [
+			(r"\s*(say|do)\s+(\S+)\s+(.*)", self.h_saydo),
+			(r"\s*(?:time|date)", self.h_datetime),
+			(r"\s*(join|leave)\s+(#\S*)", self.h_joinleave),
+		]
+            self.dbus = IrcbotDBus(dbus.SessionBus())    
+        
+        def handleCommand(self, command, prefix, params):
+            #print "%s, %s, %s" % (command, prefix, params)
+            self.dbus.IRCEvent(command, prefix, params)
+            return irc.IRCClient.handleCommand(self, command, prefix, params)
 
 	def connectionMade(self):
 		self.nickname = self.factory.nick
@@ -89,6 +111,7 @@ class IrcbotFactory(protocol.ClientFactory):
 		print "connection failed:", reason
 		reactor.stop()
 
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 f = IrcbotFactory("Lettuce", ["#", "#family"])
 reactor.connectTCP("irc.atrum.org", 6667, f)
 reactor.run()
