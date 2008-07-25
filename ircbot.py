@@ -14,10 +14,10 @@ import dbus.mainloop.glib
 import re, time
 
 class IrcbotDBus(dbus.service.Object):
-    def __init__(self, conn, object_path='/com/example/TestService/object'):
+    def __init__(self, conn, object_path='/org/ibid/IbidObject'):
         dbus.service.Object.__init__(self, conn, object_path)
 
-    @dbus.service.signal(dbus_interface='com.example.Sample', signature='ssas')
+    @dbus.service.signal(dbus_interface='org.ibid.IbidInterface', signature='ssas')
     def IRCEvent(self, type, target, params):
         print "XXX %s, %s, %s" % (type, target, params)
 
@@ -112,6 +112,6 @@ class IrcbotFactory(protocol.ClientFactory):
 		reactor.stop()
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-f = IrcbotFactory("Lettuce", ["#", "#family"])
+f = IrcbotFactory("Lettuce", ["#"])
 reactor.connectTCP("irc.atrum.org", 6667, f)
 reactor.run()
