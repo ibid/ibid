@@ -43,6 +43,13 @@ class Ircbot(irc.IRCClient):
 		else:
 			self.msg(response['target'], response['reply'].encode(encoding))
 
+		if 'ircaction' in response:
+			(action, channel) = response['ircaction']
+			if action == 'join':
+				self.join(channel)
+			elif action == 'part':
+				self.part(channel)
+
 class SourceFactory(protocol.ReconnectingClientFactory):
 	protocol = Ircbot
 
