@@ -1,7 +1,7 @@
 from twisted.internet import reactor
 
 import ibid.source.irc
-from ibid.module import greet, modules, datetime, saydo, complain
+from ibid.module import modules
 from ibid.processor import Processor
 
 class Ibid(object):
@@ -9,6 +9,7 @@ class Ibid(object):
 	def __init__(self, config):
 		self.sources = {}
 		self.processor = Processor()
+		self.config = config
 
 		for source in config['sources']:
 			if source['type'] == 'irc':
@@ -16,7 +17,12 @@ class Ibid(object):
 				reactor.connectTCP(source['server'], source['port'], self.sources[source['name']])
 
 		self.processor.sources = self.sources
-		self.processor.handlers = [greet.Module(), modules.Module(self.processor), datetime.Module(), saydo.Module(), complain.Module()]
+		mod = modules.Module(self.processor)
+		self.processor.handlers = [mod]
+		print config['modules']
+		for name, config in config['modules'].items():
+			print 'Loading %s config %s' % (name, config)
+			mod.load(name, config)
 
 	def run(self):
 		reactor.run()

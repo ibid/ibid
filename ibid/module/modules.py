@@ -3,14 +3,15 @@ import os
 
 import ibid.module
 
-pattern = re.compile(r'^\s*(load|unload|reload)\s+(\S+)\s*$')
+pattern1 = re.compile(r'^\s*(load|unload|reload)\s+(\S+)\s*$')
+pattern2 = re.compile(r'^\s*lsmod\s*$')
 
 class Module(ibid.module.Module):
 
 	def __init__(self, processor):
 		self.processor = processor
 
-	def _load(self, module):
+	def load(self, module, config):
 		try:
 			__import__('ibid.module.%s' % module)
 		except ImportError:
@@ -21,7 +22,7 @@ class Module(ibid.module.Module):
 
 		try:
 			moduleclass = eval('ibid.module.%s.Module' % module)
-			self.processor.handlers.append(moduleclass())
+			self.processor.handlers.append(moduleclass(config))
 		except AttributeError:
 			return u'No Module class'
 		except TypeError:
@@ -29,7 +30,7 @@ class Module(ibid.module.Module):
 
 		return u'Loaded %s' % module
 
-	def _unload(self, module):
+	def unload(self, module):
 		try:
 			moduleclass = eval('ibid.module.%s.Module' % module)
 		except AttributeError:
@@ -41,24 +42,38 @@ class Module(ibid.module.Module):
 
 		return u'Unloaded %s' % module
 
+	def list(self):
+		reply = ''
+		for handler in self.processor.handlers:
+			name = handler.__module__.split('.', 2)[2]
+			reply = u'%s%s, ' % (reply, name)
+		return reply
+
 	def process(self, query):
 		if not query['addressed'] or query['processed']:
 			return
 
-		match = pattern.search(query['msg'])
-		if not match:
-			return
+		reply = None
 
-		(action, module) = match.groups()
+		match = pattern1.search(query['msg'])
+		if match:
+			(action, module) = match.groups()
 
-		if action == u'load':
-			reply = self._load(module)
-		elif action == u'unload':
-			reply = self._unload(module)
-		elif action == u'reload':
-			self._unload(module)
-			reply = self._load(module)
+			if action == u'load':
+				reply = self.load(module)
+			elif action == u'unload':
+				reply = self.unload(module)
+			elif action == u'reload':
+				self.unload(module)
+				reply = self.load(module)
+			elif action == u'lsmod':
+				reply = self.list()
 
-		query['responses'].append(reply)
-		query['processed'] = True
-		return query
+		match = pattern2.search(query['msg'])
+		if match:
+			reply = self.list()
+
+		if reply:
+			query['responses'].append(reply)
+			query['processed'] = True
+			return query
