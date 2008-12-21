@@ -1,9 +1,9 @@
 
 class Module(object):
 
-	def __init__(self, config):
+	def __init__(self, config, processor):
 		self.config = config
-		print config
+		self.processor = processor
 
 	def process(self, query):
 		raise NotImplementedError

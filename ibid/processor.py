@@ -1,16 +1,58 @@
 from twisted.internet import reactor
+import ibid.module
 
 class Processor(object):
 
-	def __init__(self):
-		self.handlers = None
+	def __init__(self, config):
+		self.handlers = []
 		self.sources = None
+		self.config = config
 
-	def set_handlers(self, handlers):
-		self.handlers = handlers
+		for module in config['modules']:
+			self.load(module)
 
-	def set_sources(self, sources):
-		self.sources = sources
+	def load(self, module):
+		if isinstance(module, dict):
+			name = module['name']
+		else:
+			name = module
+			module = None
+			for mod in self.config['modules']:
+				if mod['name'] == name:
+					module = mod
+
+			if not module:
+				return False
+
+		try:
+			__import__('ibid.module.%s' % name)
+		except ImportError:
+			return False
+
+		m = eval('ibid.module.%s' % name)
+		reload(m)
+
+		try:
+			moduleclass = eval('ibid.module.%s.Module' % name)
+			self.handlers.append(moduleclass(module, self))
+		except AttributeError:
+			return False
+		except TypeError:
+			return False
+
+		return True
+
+	def unload(self, module):
+		try:
+			moduleclass = eval('ibid.module.%s.Module' % module)
+		except AttributeError:
+			return False
+
+		for handler in self.handlers:
+			if isinstance(handler, moduleclass):
+				self.handlers.remove(handler)
+
+		return True
 
 	def _process(self, query, dispatch):
 		for handler in self.handlers:
