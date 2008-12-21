@@ -11,6 +11,7 @@ class Ircbot(irc.IRCClient):
 	def connectionMade(self):
 		self.nickname = self.factory.nick
 		irc.IRCClient.connectionMade(self)
+		self.factory.resetDelay()
 
 	def connectionLost(self, reason):
 		irc.IRCClient.connectionLost(self, reason)
@@ -52,18 +53,10 @@ class Ircbot(irc.IRCClient):
 			else:
 				self.msg(target, response['reply'].encode(encoding))
 
-class SourceFactory(protocol.ClientFactory):
+class SourceFactory(protocol.ReconnectingClientFactory):
 	protocol = Ircbot
 
 	def __init__(self, processor, nick, channels):
 		self.processor = processor
 		self.nick = nick
 		self.channels = channels
-
-	def clientConnectionLost(self, connector, reason):
-		"""If we get disconnected, reconnect to server."""
-		connector.connect()
-
-	def clientConnectionFailed(self, connector, reason):
-		print "connection failed:", reason
-		reactor.stop()
