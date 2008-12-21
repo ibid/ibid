@@ -3,7 +3,7 @@ import re
 
 import ibid.module
 
-pattern = re.compile('\s*(date|time)\s*', re.I)
+pattern = re.compile(r'^\s*(date|time)\s*$', re.I)
 
 class Module(ibid.module.Module):
 
@@ -14,9 +14,9 @@ class Module(ibid.module.Module):
 		if not pattern.search(query['msg']):
 			return
 
-		reply = time.strftime("It is %H:%M.%S on %a, %e %b %Y",time.localtime())
+		reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
 		if query['public']:
-			reply = '%s: %s' % (query['user'], reply)
+			reply = u'%s: %s' % (query['user'], reply)
 
 		query['responses'].append(reply)
 		query['processed'] = True

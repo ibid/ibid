@@ -2,7 +2,7 @@ import random
 
 import ibid.module
 
-complaints = ('Huh?', 'Sorry', '?', 'Excuse me?')
+complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
 class Module(ibid.module.Module):
 
@@ -12,7 +12,7 @@ class Module(ibid.module.Module):
 
 		reply = complaints[random.randrange(len(complaints))]
 		if query['public']:
-			reply = '%s: %s' % (query['user'], reply)
+			reply = u'%s: %s' % (query['user'], reply)
 
 		query['responses'].append(reply)
 		query['processed'] = True
