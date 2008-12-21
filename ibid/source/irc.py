@@ -1,11 +1,10 @@
-#!/usr/bin/python
+import re
 
-from twisted.internet import reactor, threads
-
+from twisted.internet import reactor
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 
-import re, time
+encoding = 'latin-1'
 
 class Ircbot(irc.IRCClient):
         
@@ -37,11 +36,21 @@ class Ircbot(irc.IRCClient):
 		else:
 			message["public"] = True
 
+		message['responses'] = []
+		message['processed'] = False
 		self.factory.processor.process(message, self.dispatch)
 
 	def dispatch(self, query):
+		print query
 		for response in query['responses']:
-			self.msg(response['target'], response['reply'])
+			if isinstance(response, basestring):
+				response = {'reply': response}
+
+			target = 'target' in response and response['target'] or query['channel']
+			if 'action' in response and response['action']:
+				self.me(target, response['reply'].encode(encoding))
+			else:
+				self.msg(target, response['reply'].encode(encoding))
 
 class SourceFactory(protocol.ClientFactory):
 	protocol = Ircbot

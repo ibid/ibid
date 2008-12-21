@@ -1,3 +1,4 @@
+from twisted.internet import reactor
 
 class Processor(object):
 
@@ -11,11 +12,17 @@ class Processor(object):
 	def set_sources(self, sources):
 		self.sources = sources
 
-	def process(self, query, dispatch):
+	def _process(self, query, dispatch):
 		for handler in self.handlers:
-			query = handler.process(query)
+			print "Trying %s" % handler
+			result = handler.process(query)
+			if result:
+				query = result
 
-		dispatch(query)
+		reactor.callFromThread(dispatch, query)
+
+	def process(self, query, dispatch):
+		reactor.callInThread(self._process, query, dispatch)
 
 	def dispatch(self, query):
 		for response in query['responses']:
