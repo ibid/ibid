@@ -9,16 +9,17 @@ encoding = 'latin-1'
 class Ircbot(irc.IRCClient):
         
 	def connectionMade(self):
-		self.nickname = self.factory.nick
+		self.nickname = self.factory.config['nick']
 		irc.IRCClient.connectionMade(self)
 		self.factory.resetDelay()
+		self.factory.respond = self.respond
 
 	def connectionLost(self, reason):
 		irc.IRCClient.connectionLost(self, reason)
 
 	def signedOn(self):
-		for z in self.factory.channels:
-			self.join(z)
+		for channel in self.factory.config['channels']:
+			self.join(channel)
 
 	def privmsg(self, user, channel, msg):
 		user = user.split('!', 1)[0]
@@ -31,24 +32,21 @@ class Ircbot(irc.IRCClient):
 		else:
 			message["public"] = True
 
-		message['source'] = self.factory.name
+		message['source'] = self.factory.config['name']
 		message['responses'] = []
 		message['processed'] = False
-		self.factory.processor.process(message, self.dispatch)
+		self.factory.processor.process(message)
 
-	def dispatch(self, query):
-		print query
-		for response in query['responses']:
-			if 'action' in response and response['action']:
-				self.me(response['target'], response['reply'].encode(encoding))
-			else:
-				self.msg(response['target'], response['reply'].encode(encoding))
+	def respond(self, response):
+		if 'action' in response and response['action']:
+			self.me(response['target'], response['reply'].encode(encoding))
+		else:
+			self.msg(response['target'], response['reply'].encode(encoding))
 
 class SourceFactory(protocol.ReconnectingClientFactory):
 	protocol = Ircbot
 
-	def __init__(self, processor, name, nick, channels):
+	def __init__(self, processor, config):
 		self.processor = processor
-		self.name = name
-		self.nick = nick
-		self.channels = channels
+		self.config = config
+		self.respond = None

@@ -55,7 +55,7 @@ class Processor(object):
 
 		return True
 
-	def _process(self, query, dispatch):
+	def _process(self, query):
 		for handler in self.handlers:
 			try:
 				result = handler.process(query)
@@ -64,10 +64,14 @@ class Processor(object):
 			except Exception, e:
 				print_exc()
 
-		reactor.callFromThread(dispatch, query)
+		for response in query['responses']:
+			if response['source'] in self.sources:
+				reactor.callFromThread(self.sources[response['source']].respond, response)
+			else:
+				print u'Invalid source %s' % response['source']
 
-	def process(self, query, dispatch):
-		reactor.callInThread(self._process, query, dispatch)
+	def process(self, query):
+		reactor.callInThread(self._process, query)
 
 	def dispatch(self, query):
 		for response in query['responses']:
