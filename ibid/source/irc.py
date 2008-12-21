@@ -24,12 +24,6 @@ class Ircbot(irc.IRCClient):
 		user = user.split('!', 1)[0]
 		message = {"msg":msg, "user":user, "channel":channel}
 
-		newmsg = re.sub(r"^\s*%s([:;.?>!,-]+)*\s+" % self.nickname,"",msg)
-		if newmsg != msg:
-			message["addressed"] = True
-			message["msg"] = newmsg
-		else:
-			message["addressed"] = False
 		if channel.lower() == self.nickname.lower():
 			message["addressed"] = True
 			message["public"] = False
