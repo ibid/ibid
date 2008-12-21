@@ -37,6 +37,7 @@ class Ircbot(irc.IRCClient):
 		else:
 			message["public"] = True
 
+		message['source'] = self.factory.name
 		message['responses'] = []
 		message['processed'] = False
 		self.factory.processor.process(message, self.dispatch)
@@ -44,19 +45,16 @@ class Ircbot(irc.IRCClient):
 	def dispatch(self, query):
 		print query
 		for response in query['responses']:
-			if isinstance(response, basestring):
-				response = {'reply': response}
-
-			target = 'target' in response and response['target'] or query['channel']
 			if 'action' in response and response['action']:
-				self.me(target, response['reply'].encode(encoding))
+				self.me(response['target'], response['reply'].encode(encoding))
 			else:
-				self.msg(target, response['reply'].encode(encoding))
+				self.msg(response['target'], response['reply'].encode(encoding))
 
 class SourceFactory(protocol.ReconnectingClientFactory):
 	protocol = Ircbot
 
-	def __init__(self, processor, nick, channels):
+	def __init__(self, processor, name, nick, channels):
 		self.processor = processor
+		self.name = name
 		self.nick = nick
 		self.channels = channels

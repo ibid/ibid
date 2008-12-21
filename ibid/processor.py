@@ -1,5 +1,6 @@
 from twisted.internet import reactor
 import ibid.module
+from traceback import print_exc
 
 class Processor(object):
 
@@ -56,9 +57,12 @@ class Processor(object):
 
 	def _process(self, query, dispatch):
 		for handler in self.handlers:
-			result = handler.process(query)
-			if result:
-				query = result
+			try:
+				result = handler.process(query)
+				if result:
+					query = result
+			except Exception, e:
+				print_exc()
 
 		reactor.callFromThread(dispatch, query)
 
