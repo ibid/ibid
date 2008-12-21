@@ -56,7 +56,6 @@ class Processor(object):
 
 	def _process(self, query, dispatch):
 		for handler in self.handlers:
-			print "Trying %s" % handler
 			result = handler.process(query)
 			if result:
 				query = result
