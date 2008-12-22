@@ -9,6 +9,9 @@ class Module(ibid.module.Module):
 		#super.__init__(config)
 
 	def process(self, query):
+		if 'msg' not in query:
+			return
+
 		now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
 		self.log.write(u'%s %s: %s > %s: %s\n' % (now, query['source'], query['user'], query['channel'], query['msg']))
 		for response in query['responses']:

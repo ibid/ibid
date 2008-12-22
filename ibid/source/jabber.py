@@ -20,18 +20,28 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 		xmppim.MessageProtocol.__init__(self)
 
 	def connectionInitialized(self):
-		print "Connected"
 		xmppim.MessageProtocol.connectionInitialized(self)
 		xmppim.PresenceClientProtocol.connectionInitialized(self)
 		self.xmlstream.send(xmppim.AvailablePresence())
+		self.name = self.parent.config['name']
 		self.parent.respond = self.respond
 
 	def availableReceived(self, entity, show=None, statuses=None, priority=0):
-		print entity.full()
+		event =	{	'source': self.name,
+					'user': entity.full(),
+					'state': show or 'available',
+					'channel': entity.full(),
+					'responses': [],
+					'public': False,
+					'addressed': False,
+				}
+		ibid.core.dispatcher.dispatch(event)
 
 	def subscribeReceived(self, entity):
 		print "Accepting subscription request from " + entity.full()
 		response = xmppim.Presence(to=entity, type='subscribed')
+		self.xmlstream.send(response)
+		response = xmppim.Presence(to=entity, type='subscribe')
 		self.xmlstream.send(response)
 
 	def onMessage(self, message):

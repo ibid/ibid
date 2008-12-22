@@ -16,7 +16,7 @@ class Module(ibid.module.Module):
 		return reply
 
 	def process(self, query):
-		if not query['addressed'] or query['processed']:
+		if not query['addressed'] or query['processed'] or 'msg' not in query:
 			return
 
 		reply = None

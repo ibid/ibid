@@ -8,7 +8,7 @@ pattern = re.compile(r'^\s*(date|time)\s*$', re.I)
 class Module(ibid.module.Module):
 
 	def process(self, query):
-		if not query['addressed'] or query['processed']:
+		if not query['addressed'] or query['processed'] or 'msg' not in query:
 			return
 
 		if not pattern.search(query['msg']):

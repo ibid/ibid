@@ -40,6 +40,10 @@ class Ircbot(irc.IRCClient):
 		message['processed'] = False
 		ibid.core.dispatcher.dispatch(message)
 
+	def userJoined(self, user, channel):
+		event = {'user': user, 'state': 'joined', 'channel': channel, 'source': self.factory.config['name'], 'responses': [], 'processed': False, 'addressed': False}
+		ibid.core.dispatcher.dispatch(event)
+
 	def respond(self, response):
 		if 'action' in response and response['action']:
 			self.me(response['target'], response['reply'].encode(encoding))

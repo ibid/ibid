@@ -7,7 +7,7 @@ complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 class Module(ibid.module.Module):
 
 	def process(self, query):
-		if not query['addressed'] or query['processed']:
+		if not query['addressed'] or query['processed'] or 'msg' not in query:
 			return
 
 		reply = complaints[random.randrange(len(complaints))]
