@@ -1,8 +1,9 @@
-from twisted.internet import reactor
+from twisted.internet import reactor, ssl
 
 import ibid
 import ibid.dispatcher
 import ibid.source.irc
+import ibid.source.jabber
 
 class Reloader(object):
 
@@ -10,7 +11,6 @@ class Reloader(object):
 		self.reload_dispatcher()
 		self.load_sources()
 		self.load_processors()
-		print ibid.core.processors
 		reactor.run()
 
 	def reload_dispatcher(self):
@@ -21,6 +21,9 @@ class Reloader(object):
 		if source['type'] == 'irc':
 			ibid.core.sources[source['name']] = ibid.source.irc.SourceFactory(source)
 			reactor.connectTCP(source['server'], source['port'], ibid.core.sources[source['name']])
+		if source['type'] == 'jabber':
+			ibid.core.sources[source['name']] = ibid.source.jabber.SourceFactory(source)
+			reactor.connectSSL(source['server'], source['port'], ibid.core.sources[source['name']], ssl.ClientContextFactory())
 
 	def load_sources(self):
 		for source in ibid.core.config['sources']:

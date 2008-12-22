@@ -8,6 +8,7 @@ import ibid.module
 class Dispatcher(object):
 
 	def _process(self, query):
+		print query
 		for handler in ibid.core.processors:
 			try:
 				result = handler.process(query)
