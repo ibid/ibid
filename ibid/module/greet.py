@@ -1,18 +1,13 @@
-import re
+from ibid.module import Module
+from ibid.decorators import *
 
-import ibid.module
+class Greet(Module):
 
-pattern = re.compile(r'^\s*(hi|hello|hey)\s*$', re.I)
-
-class Module(ibid.module.Module):
-
+	@addressed
+	@notprocessed
+	@message
+	@match('^\s*(?:hi|hello|hey)\s*$')
 	def process(self, query):
-		if not query['addressed'] or query['processed'] or 'msg' not in query:
-			return
-
-		if not pattern.search(query['msg']):
-			return
-
 		response = u'Hi %s' % query['user']
 		query['responses'].append(response)
 		query['processed'] = True
