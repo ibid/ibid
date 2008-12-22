@@ -5,7 +5,6 @@ import ibid
 from ibid.module import Module
 from ibid.decorators import *
 
-
 pattern1 = re.compile(r'^\s*(load|unload|reload)\s+(\S+)\s*$')
 pattern2 = re.compile(r'^\s*lsmod\s*$')
 

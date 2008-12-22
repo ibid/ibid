@@ -1,13 +1,14 @@
 import time
 
+import ibid
 from ibid.module import Module
 from ibid.decorators import *
 
 class Log(Module):
 
-	def __init__(self, config, processor):
-		self.log = open(config['logfile'], 'a')
-		#super.__init__(config)
+	def __init__(self, name):
+		Module.__init__(self, name)
+		self.log = open(ibid.core.config['modules'][self.name]['logfile'], 'a')
 
 	@message
 	def process(self, query):

@@ -1,11 +1,7 @@
-import ibid
-
 class Module(object):
 
-	def __init__(self, config, processor):
-		self.config = config
-		self.processor = processor
+	def __init__(self, name):
+		self.name = name
 
 	def process(self, query):
 		raise NotImplementedError
-

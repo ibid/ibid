@@ -1,12 +1,14 @@
 import re
 
+import ibid
 from ibid.module import Module
 from ibid.decorators import *
 
 class Addressed(Module):
 
-	def __init__(self, config, processor):
-		self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(config['names']), re.I)
+	def __init__(self, name):
+		Module.__init__(self, name)
+		self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.core.config['modules'][name]['names']), re.I)
 
 	@message
 	def process(self, query):
@@ -25,7 +27,7 @@ class Ignore(Module):
 	@notprocessed
 	@message
 	def process(self, query):
-		for who in self.config['ignore']:
+		for who in ibid.core.config['modules'][self.name]['ignore']:
 			if query['user'] == who:
 				query['processed'] = True
 

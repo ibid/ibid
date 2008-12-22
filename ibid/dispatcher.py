@@ -8,7 +8,6 @@ import ibid.module
 class Dispatcher(object):
 
 	def _process(self, query):
-		print query
 		for handler in ibid.core.processors:
 			try:
 				result = handler.process(query)
@@ -16,6 +15,8 @@ class Dispatcher(object):
 					query = result
 			except Exception, e:
 				print_exc()
+
+		print query
 
 		for response in query['responses']:
 			if response['source'] in ibid.core.sources:
