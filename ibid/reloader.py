@@ -10,6 +10,7 @@ class Reloader(object):
 		self.reload_dispatcher()
 		self.load_sources()
 		self.load_processors()
+		print ibid.core.processors
 		reactor.run()
 
 	def reload_dispatcher(self):
@@ -29,30 +30,32 @@ class Reloader(object):
 		for module in ibid.core.config['modules']:
 			self.load_processor(module)
 
-	def load_processor(self, module):
-		if isinstance(module, dict):
-			name = module['name']
+	def load_processor(self, processor):
+		if isinstance(processor, dict):
+			name = processor['name']
 		else:
-			name = module
-			module = None
+			name = processor
+			processor = None
 			for mod in ibid.core.config['modules']:
 				if mod['name'] == name:
-					module = mod
+					processor = mod
 
 			if not module:
 				return False
 
+		module = 'ibid.module.' + name.split('.')[0]
+		classname = 'ibid.module.' + name
 		try:
-			__import__('ibid.module.%s' % name)
+			__import__(module)
 		except ImportError:
 			return False
 
-		m = eval('ibid.module.%s' % name)
+		m = eval(module)
 		reload(m)
 
 		try:
-			moduleclass = eval('ibid.module.%s.Module' % name)
-			ibid.core.processors.append(moduleclass(module, self))
+			moduleclass = eval(classname)
+			ibid.core.processors.append(moduleclass(processor, self))
 		except AttributeError:
 			return False
 		except TypeError:
@@ -62,12 +65,12 @@ class Reloader(object):
 
 	def unload_processor(self, module):
 		try:
-			moduleclass = eval('ibid.module.%s.Module' % module)
+			moduleclass = eval('ibid.module.%s' % module)
 		except AttributeError:
 			return False
 
-		for handler in ibid.core.processors:
-			if isinstance(handler, moduleclass):
-				ibid.core.processors.remove(handler)
+		for processor in ibid.core.processors:
+			if isinstance(processor, moduleclass):
+				ibid.core.processors.remove(processor)
 
 		return True
