@@ -14,7 +14,7 @@ class Message(domish.Element):
 		self['type'] = 'chat'
 		self.addElement('body', content=body)
 
-class JabberBot(xmppim.MessageProtocol):
+class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 
 	def __init__(self):
 		xmppim.MessageProtocol.__init__(self)
@@ -22,14 +22,17 @@ class JabberBot(xmppim.MessageProtocol):
 	def connectionInitialized(self):
 		print "Connected"
 		xmppim.MessageProtocol.connectionInitialized(self)
-		#xmppim.PresenceClientProtocol.connectionInitialized(self)
+		xmppim.PresenceClientProtocol.connectionInitialized(self)
 		self.xmlstream.send(xmppim.AvailablePresence())
 		self.parent.respond = self.respond
 
 	def availableReceived(self, entity, show=None, statuses=None, priority=0):
-		print entity
-		print show
-		print statuses
+		print entity.full()
+
+	def subscribeReceived(self, entity):
+		print "Accepting subscription request from " + entity.full()
+		response = xmppim.Presence(to=entity, type='subscribed')
+		self.xmlstream.send(response)
 
 	def onMessage(self, message):
 		print message.body
