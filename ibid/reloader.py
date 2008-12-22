@@ -43,7 +43,7 @@ class Reloader(object):
 				if mod['name'] == name:
 					processor = mod
 
-			if not module:
+			if not processor:
 				return False
 
 		module = 'ibid.module.' + name.split('.')[0]

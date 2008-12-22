@@ -1,12 +1,15 @@
 import re
 import os
 
-import ibid.module
+import ibid
+from ibid.module import Module
+from ibid.decorators import *
+
 
 pattern1 = re.compile(r'^\s*(load|unload|reload)\s+(\S+)\s*$')
 pattern2 = re.compile(r'^\s*lsmod\s*$')
 
-class Module(ibid.module.Module):
+class Modules(Module):
 
 	def list(self):
 		reply = ''
@@ -15,10 +18,10 @@ class Module(ibid.module.Module):
 			reply = u'%s%s, ' % (reply, name)
 		return reply
 
+	@addressed
+	@notprocessed
+	@message
 	def process(self, query):
-		if not query['addressed'] or query['processed'] or 'msg' not in query:
-			return
-
 		reply = None
 
 		match = pattern1.search(query['msg'])

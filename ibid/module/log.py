@@ -1,17 +1,16 @@
 import time
 
-import ibid.module
+from ibid.module import Module
+from ibid.decorators import *
 
-class Module(ibid.module.Module):
+class Log(Module):
 
 	def __init__(self, config, processor):
 		self.log = open(config['logfile'], 'a')
 		#super.__init__(config)
 
+	@message
 	def process(self, query):
-		if 'msg' not in query:
-			return
-
 		now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
 		self.log.write(u'%s %s: %s > %s: %s\n' % (now, query['source'], query['user'], query['channel'], query['msg']))
 		for response in query['responses']:

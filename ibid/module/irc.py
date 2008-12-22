@@ -1,20 +1,13 @@
-import re
+from ibid.module import Module
+from ibid.decorators import *
 
-import ibid.module
+class Actions(Module):
 
-pattern = re.compile(r'^\s*(join|part|leave)\s+(#\S*)\s*$')
-
-class Module(ibid.module.Module):
-
-	def process(self, query):
-		if not query['addressed'] or query['processed'] or 'msg' not in query:
-			return
-
-		match = pattern.search(query['msg'])
-		if not match:
-			return
-
-		(action, channel) = match.groups()
+	@addressed
+	@notprocessed
+	@message
+	@match('^\s*(join|part|leave)\s+(#\S*)\s*$')
+	def process(self, query, action, channel):
 		if action == u'leave':
 			action = 'part'
 
