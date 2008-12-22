@@ -1,25 +1,41 @@
 import sys
+from traceback import print_exc
 
 import ibid
 from ibid.module import Module
 from ibid.decorators import *
 
-
 class Proxy(Module):
 
 	def __init__(self, name):
 		Module.__init__(self, name)
-		bus_name = ibid.core.config['modules'][name]['bus_name']
-		object_path = ibid.core.config['modules'][name]['object_path']
+		if 'dbus' not in sys.modules:
+			raise Exception('dbus library not loaded')
+
+		self.iface = None
+		self.addressed = None
+		self.notprocessed = None
+		self.pattern = None
+
+		self.init()
+
+	def init(self):
+		bus_name = ibid.core.config['modules'][self.name]['bus_name']
+		object_path = ibid.core.config['modules'][self.name]['object_path']
 		bus = sys.modules['dbus'].SessionBus()
 		object = bus.get_object(bus_name, object_path)
 		self.iface = sys.modules['dbus'].Interface(object, 'org.ibid.ModuleInterface')
-		regex = self.iface.init(name)
-		self.pattern = re.compile(regex, re.I)
+		(self.addressed, self.notprocessed, regex) = self.iface.init(self.name)
+		if regex:
+			self.pattern = re.compile(regex, re.I)
 
-	@addressed
-	@notprocessed
 	def process(self, event):
+		if self.addressed and ('addressed' not in event or not event['addressed']):
+			return
+
+		if self.notprocessed and ('processed' in event and event['processed']):
+			return
+
 		if not self.pattern.search(event['msg']):
 			return
 
@@ -30,8 +46,12 @@ class Proxy(Module):
 			converted[key] = str(value)
 		print converted
 
-		response = self.iface.process(converted)
-		dir(response)
+		try:
+			response = self.iface.process(converted)
+		except sys.modules['dbus'].DBusException:
+			print_exc()
+			self.init()
+			response = self.iface.process(converted)
 
 		if response:
 			event['responses'].append(response)

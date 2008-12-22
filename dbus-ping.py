@@ -9,10 +9,13 @@ import dbus.mainloop.glib
 class Ping(dbus.service.Object):
 
 	@dbus.service.method('org.ibid.ModuleInterface',
-						in_signature='s', out_signature='s')
+						in_signature='s', out_signature='(bbs)')
 	def init(self, name):
 		self.name = name
-		return '^ping$'
+		addressed = True
+		notprocessed = True
+		pattern = '^ping$'
+		return (addressed, notprocessed, pattern)
 
 	@dbus.service.method("org.ibid.ModuleInterface",
 						 in_signature='a{ss}', out_signature='a{ss}')
