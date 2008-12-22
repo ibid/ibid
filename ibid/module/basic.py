@@ -5,10 +5,7 @@ from ibid.decorators import *
 
 class Greet(Module):
 
-	@addressed
-	@notprocessed
-	@message
-	@match('^\s*(?:hi|hello|hey)\s*$')
+	@addressedmessage('^\s*(?:hi|hello|hey)\s*$')
 	def process(self, query):
 		response = u'Hi %s' % query['user']
 		query['responses'].append(response)
@@ -19,7 +16,6 @@ class SayDo(Module):
 
 	@addressed
 	@notprocessed
-	@message
 	@match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
 	def process(self, query, action, where, what):
 		if (query["user"] != u"Vhata"):
@@ -42,9 +38,7 @@ complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
 class Complain(Module):
 
-	@addressed
-	@notprocessed
-	@message
+	@addressedmessage()
 	def process(self, query):
 		reply = complaints[random.randrange(len(complaints))]
 		if query['public']:

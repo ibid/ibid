@@ -1,4 +1,5 @@
 from twisted.internet import reactor, ssl
+from traceback import print_exc
 
 import ibid
 import ibid.dispatcher
@@ -29,6 +30,27 @@ class Reloader(object):
 		for source in ibid.core.config['sources']:
 			self.load_source(source)
 
+	def unload_source(self, name):
+		if name not in ibid.core.sources:
+			return False
+
+		ibid.core.sources[name].protocol.loseConnection()
+		del ibid.core.sources[name]
+
+	def reload_source(self, name):
+		if name not in ibid.core.config['sources']:
+			return False
+
+		self.unload_source(name)
+
+		source = ibid.core.config['sources'][name]
+		if source['type'] == 'irc':
+			reload(ibid.source.irc)
+		elif source['type'] == 'jabber':
+			reload(ibid.source.jabber)
+
+		self.load_source(source)
+
 	def load_processors(self):
 		for processor in ibid.core.config['processors']:
 			self.load_processor(processor)
@@ -42,7 +64,8 @@ class Reloader(object):
 		classname = 'ibid.module.' + type
 		try:
 			__import__(module)
-		except ImportError:
+		except Exception:
+			print_exc()
 			return False
 
 		m = eval(module)
@@ -51,9 +74,8 @@ class Reloader(object):
 		try:
 			moduleclass = eval(classname)
 			ibid.core.processors.append(moduleclass(name))
-		except AttributeError:
-			return False
-		except TypeError:
+		except Exception:
+			print_exc()
 			return False
 
 		ibid.core.processors.sort(key=lambda x: ibid.core.config['processors'].index(x.name))
