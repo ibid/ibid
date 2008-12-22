@@ -26,15 +26,22 @@ class Module(ibid.module.Module):
 			(action, module) = match.groups()
 
 			if action == u'load':
-				reply = self.processor.load(module)
+				reply = ibid.core.reloader.load_processor(module)
 				reply = reply and u'Loaded %s' % module or u"Couldn't load %s" % module
 			elif action == u'unload':
-				reply = self.processor.unload(module)
+				reply = ibid.core.reloader.unload_processor(module)
 				reply = reply and u'Unloaded %s' % module or u"Couldn't unload %s" % module
 			elif action == u'reload':
-				self.processor.unload(module)
-				reply = self.processor.load(module)
-				reply = reply and u'Reloaded %s' % module or u"Couldn't reload %s" % module
+				if module == u'reloader':
+					ibid.core.reload_reloader()
+					reply = "Done"
+				elif module == u'dispatcher':
+					ibid.core.reloader.reload_dispatcher()
+					reply = "done"
+				else:
+					ibid.core.reloader.unload_processor(module)
+					reply = ibid.core.reloader.load_processor(module)
+					reply = reply and u'Reloaded %s' % module or u"Couldn't reload %s" % module
 
 		match = pattern2.search(query['msg'])
 		if match:

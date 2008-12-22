@@ -1,21 +1,24 @@
-from twisted.internet import reactor
+import sys
 
-import ibid.source.irc
-from ibid.module import modules
-from ibid.processor import Processor
+import ibid.reloader
 
 class Ibid(object):
 
-	def __init__(self, config):
+	def __init__(self):
 		self.sources = {}
-		self.processor = Processor(config)
+		self.config = {}
+		self.dispatcher = None
+		self.processors = []
 
-		for source in config['sources']:
-			if source['type'] == 'irc':
-				self.sources[source['name']] = ibid.source.irc.SourceFactory(self.processor, source)
-				reactor.connectTCP(source['server'], source['port'], self.sources[source['name']])
+	def run(self, config):
+		self.config = config
+		self.reload_reloader()
+		self.reloader.run()
 
-		self.processor.sources = self.sources
+	def reload_reloader(self):
+		reload(ibid.reloader)
+		reloader = ibid.reloader.Reloader()
+		self.reloader = reloader
 
-	def run(self):
-		reactor.run()
+core = Ibid()
+sys.modules['ibid.core'] = core

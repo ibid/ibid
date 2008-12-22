@@ -4,6 +4,8 @@ from twisted.internet import reactor
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 
+import ibid
+
 encoding = 'latin-1'
 
 class Ircbot(irc.IRCClient):
@@ -18,6 +20,7 @@ class Ircbot(irc.IRCClient):
 		irc.IRCClient.connectionLost(self, reason)
 
 	def signedOn(self):
+		self.mode(self.nickname, True, 'B')
 		for channel in self.factory.config['channels']:
 			self.join(channel)
 
@@ -35,7 +38,7 @@ class Ircbot(irc.IRCClient):
 		message['source'] = self.factory.config['name']
 		message['responses'] = []
 		message['processed'] = False
-		self.factory.processor.process(message)
+		ibid.core.dispatcher.dispatch(message)
 
 	def respond(self, response):
 		if 'action' in response and response['action']:
@@ -53,7 +56,6 @@ class Ircbot(irc.IRCClient):
 class SourceFactory(protocol.ReconnectingClientFactory):
 	protocol = Ircbot
 
-	def __init__(self, processor, config):
-		self.processor = processor
+	def __init__(self, config):
 		self.config = config
 		self.respond = None
