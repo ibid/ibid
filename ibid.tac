@@ -2,6 +2,7 @@
 
 from twisted.application import service, internet
 from twisted.internet import ssl
+from twisted.manhole.telnet import ShellFactory
 import dbus
 import ibid.core
 
@@ -31,5 +32,6 @@ for source in ibid.core.config['sources']:
 	ibid.core.sources[source['name']] = ibid.source.jabber.SourceFactory(source)
         internet.SSLClient(source['server'], source['port'], ibid.core.sources[source['name']], ssl.ClientContextFactory()).setServiceParent(ibidService)
 
+internet.TCPServer(9876, ShellFactory()).setServiceParent(ibidService)
 ibidService.setServiceParent(application)
 
