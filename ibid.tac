@@ -14,7 +14,8 @@ from ibid.config import StaticConfig
 application = service.Application("Ibid")
 ibidService = service.MultiService()
 
-ibid.config = StaticConfig()
+ibid.config = FileConfig("ibid.ini")
+ibid.config.merge("local.ini")
 ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()
