@@ -1,9 +1,10 @@
 from wokkel import client, xmppim, subprotocols, compat
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
 
 import ibid
+from ibid.source import IbidSourceFactory
 
 class Message(domish.Element):
 	
@@ -23,7 +24,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 		xmppim.MessageProtocol.connectionInitialized(self)
 		xmppim.PresenceClientProtocol.connectionInitialized(self)
 		self.xmlstream.send(xmppim.AvailablePresence())
-		self.name = self.parent.config['name']
+		self.name = self.parent.name
 		self.parent.respond = self.respond
 
 	def availableReceived(self, entity, show=None, statuses=None, priority=0):
@@ -46,7 +47,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 
 	def onMessage(self, message):
 		print message.body
-		event = {	'source': self.parent.config['name'],
+		event = {	'source': self.parent.name,
 					'msg': str(message.body),
 					'user': message['from'],
 					'channel': message['from'],
@@ -66,12 +67,26 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 		message.addElement('body', content=response['reply'])
 		self.xmlstream.send(message)
 
-class SourceFactory(client.DeferredClientFactory):
+class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
-	def __init__(self, config):
-		client.DeferredClientFactory.__init__(self, JID(config['jid']), config['password'])
+	def __init__(self, name):
+		client.DeferredClientFactory.__init__(self, JID(ibid.core.config['sources'][name]['jid']), ibid.core.config['sources'][name]['password'])
 		bot = JabberBot()
 		self.addHandler(bot)
 		bot.setHandlerParent(self)
-		self.config = config
+
+		self.name = name
 		self.respond = None
+
+	def paramaters(self):
+		port = 5222
+		sslctx = None
+
+		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
+			sslctx = ssl.ClientContextFactory()
+			port = 5223
+
+		if 'port' in ibid.core.config['sources'][self.name]:
+			port = ibid.core.config['sources'][self.name]['port']
+
+		return (ibid.core.config['sources'][self.name]['server'], port, sslctx)

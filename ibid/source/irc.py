@@ -2,16 +2,17 @@ import re
 
 from twisted.internet import reactor
 from twisted.words.protocols import irc
-from twisted.internet import protocol
+from twisted.internet import protocol, ssl
 
 import ibid
+from ibid.source import IbidSourceFactory
 
 encoding = 'latin-1'
 
 class Ircbot(irc.IRCClient):
         
 	def connectionMade(self):
-		self.nickname = self.factory.config['nick']
+		self.nickname = ibid.core.config['sources'][self.factory.name]['nick']
 		irc.IRCClient.connectionMade(self)
 		self.factory.resetDelay()
 		self.factory.respond = self.respond
@@ -21,7 +22,7 @@ class Ircbot(irc.IRCClient):
 
 	def signedOn(self):
 		self.mode(self.nickname, True, 'B')
-		for channel in self.factory.config['channels']:
+		for channel in ibid.core.config['sources'][self.factory.name]['channels']:
 			self.join(channel)
 
 	def privmsg(self, user, channel, msg):
@@ -35,13 +36,13 @@ class Ircbot(irc.IRCClient):
 		else:
 			message["public"] = True
 
-		message['source'] = self.factory.config['name']
+		message['source'] = self.factory.name
 		message['responses'] = []
 		message['processed'] = False
 		ibid.core.dispatcher.dispatch(message)
 
 	def userJoined(self, user, channel):
-		event = {'user': user, 'state': 'joined', 'channel': channel, 'source': self.factory.config['name'], 'responses': [], 'processed': False, 'addressed': False}
+		event = {'user': user, 'state': 'joined', 'channel': channel, 'source': self.factory.name, 'responses': [], 'processed': False, 'addressed': False}
 		ibid.core.dispatcher.dispatch(event)
 
 	def respond(self, response):
@@ -57,9 +58,20 @@ class Ircbot(irc.IRCClient):
 			elif action == 'part':
 				self.part(channel)
 
-class SourceFactory(protocol.ReconnectingClientFactory):
+class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 	protocol = Ircbot
 
-	def __init__(self, config):
-		self.config = config
+	def __init__(self, name):
+		self.name = name
 		self.respond = None
+
+	def paramaters(self):
+		sslctx = None
+		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
+			sslctx = ssl.ClientContextFactory()
+
+		port = 6667
+		if 'port' in ibid.core.config['sources'][self.name]:
+			port = ibid.core.config['sources'][self.name]['port']
+
+		return (ibid.core.config['sources'][self.name]['server'], port, sslctx)
