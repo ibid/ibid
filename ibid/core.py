@@ -122,13 +122,22 @@ class Reloader(object):
 
         return False
 
-def load_database(name):
-    uri = ibid.config.databases[name]['uri']
-    engine = create_engine(uri)
-    ibid.databases[name] = sessionmaker(bind=engine)
+    def reload_databases(self):
+        reload(ibid.core)
+        ibid.databases = DatabaseManager()
 
-def load_databases():
-    for database in ibid.config.databases.keys():
-        load_database(database)
+class DatabaseManager(dict):
+
+    def __init__(self):
+        for database in ibid.config.databases.keys():
+            self.load(database)
+
+    def load(self, name):
+        uri = ibid.config.databases[name]['uri']
+        engine = create_engine(uri)
+        self[name] = sessionmaker(bind=engine)
+
+    def __getattr__(self, name):
+        return self[name]
 
 # vi: set et sta sw=4 ts=4:

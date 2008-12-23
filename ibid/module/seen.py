@@ -31,7 +31,7 @@ class Watch(Module):
     @message
     def process(self, event):
         saw = Saw(event.source, event.user, event.channel, event.message)
-        session = ibid.databases['ibid']()
+        session = ibid.databases.ibid()
         session.add(saw)
         session.commit()
 
@@ -41,7 +41,7 @@ class Seen(Module):
     @notprocessed
     @match('^\s*seen\s+(\S+)\s*$')
     def process(self, event, who):
-        session = ibid.databases['ibid']()
+        session = ibid.databases.ibid()
         saw = session.query(Saw).filter_by(user=who).first()
         if not saw:
             reply = "I haven't seen %s" % who

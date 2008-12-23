@@ -20,7 +20,7 @@ ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()
 ibid.reloader.load_sources(ibidService)
-ibid.core.load_databases()
+ibid.reloader.reload_databases()
 
 internet.TCPServer(9876, ShellFactory()).setServiceParent(ibidService)
 ibidService.setServiceParent(application)

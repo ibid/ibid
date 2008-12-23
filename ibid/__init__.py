@@ -5,7 +5,7 @@ config = {}
 dispatcher = None
 processors = []
 reloader = None
-databases = {}
+databases = None
 
 def reload_reloader():
     reload(ibid.core)

@@ -14,6 +14,7 @@ ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()
 ibid.reloader.load_sources()
+ibid.reloader.reload_databases()
 reactor.run()
 
 # vi: set et sta sw=4 ts=4:
