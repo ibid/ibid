@@ -1,3 +1,6 @@
+from ConfigParser import SafeConfigParser
+import simplejson
+
 class Config(dict):
 
 	def __getattr__(self, name):
@@ -24,3 +27,24 @@ class StaticConfig(Config):
 				'core.Ignore': {'ignore': ['NickServ']}, 
 				'ping': {'type': 'dbus.Proxy', 'bus_name': 'org.ibid.module.Ping', 'object_path': '/org/ibid/module/Ping', 'pattern': '^ping$'},
 				'log.Log': {'logfile' : '/tmp/ibid.log'}}
+
+class FileConfig(Config):
+
+	def __init__(self, filename):
+		self.parser = SafeConfigParser()
+		self.parser.read(filename)
+
+		for section in self.parser.sections():
+			splitted = section.split('.', 1)
+			dict = self
+			for thing in splitted:
+				if thing != 'main':
+					if thing not in dict:
+						dict[thing] = {}
+					dict = dict[thing]
+			for option in self.parser.options(section):
+				value = self.parser.get(section, option)
+				if value.find(',') != -1:
+					value = value.split(',')
+					value = [entry.strip() for entry in value]
+				dict[option] = value

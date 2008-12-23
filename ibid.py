@@ -8,7 +8,7 @@ from twisted.internet import reactor
 import ibid
 from ibid.config import StaticConfig
 
-ibid.config = StaticConfig()
+ibid.config = FileConfig(argv[1])
 ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()
