@@ -36,6 +36,9 @@ class Ignore(Module):
 class Responses(Module):
 
 	def process(self, query):
+		if 'responses' not in query:
+			return
+
 		converted = []
 		for response in query['responses']:
 			if isinstance(response, basestring):

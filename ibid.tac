@@ -21,7 +21,8 @@ atrum = {'type': 'irc', 'server': 'za.atrum.org', 'nick': 'Ibid', 'channels': ['
 jabber = {'type': 'jabber', 'server': 'jabber.org', 'ssl': True, 'jid': 'ibidbot@jabber.org/source', 'password': 'ibiddev'}
 myjabber = {'name': 'jabber', 'type': 'jabber', 'server': 'gorven.za.net', 'ssl': True, 'jid': 'ibid@gorven.za.net/source', 'password': 'z1VdLdxgunupGSju'}
 telnet = {'type': 'telnet', 'port': 3000}
-config = {'name': 'Ibid', 'sources': {'atrum': atrum, 'jabber': jabber, 'telnet': telnet}, 'processors': processors, 'modules': modules}
+timer = {'type': 'timer', 'step': 5}
+config = {'name': 'Ibid', 'sources': {'atrum': local, 'jabber': myjabber, 'telnet': telnet, 'timer': timer}, 'processors': processors, 'modules': modules}
 
 ibid.core.config = config
 ibid.core.reload_reloader()
