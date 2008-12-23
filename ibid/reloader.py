@@ -25,10 +25,10 @@ class Reloader(object):
 		factory = 'ibid.source.%s.SourceFactory' % type
 		try:
 			__import__(module)
+			moduleclass = eval(factory)
 		except:
 			print_exc()
-
-		moduleclass = eval(factory)
+			return
 
 		ibid.core.sources[name] = moduleclass(name)
 		ibid.core.sources[name].setServiceParent(service)

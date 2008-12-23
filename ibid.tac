@@ -20,7 +20,8 @@ local = {'name': 'local', 'type': 'irc', 'server': 'localhost', 'nick': 'Ibid', 
 atrum = {'type': 'irc', 'server': 'za.atrum.org', 'nick': 'Ibid', 'channels': ['#ibid']}
 jabber = {'type': 'jabber', 'server': 'jabber.org', 'ssl': True, 'jid': 'ibidbot@jabber.org/source', 'password': 'ibiddev'}
 myjabber = {'name': 'jabber', 'type': 'jabber', 'server': 'gorven.za.net', 'ssl': True, 'jid': 'ibid@gorven.za.net/source', 'password': 'z1VdLdxgunupGSju'}
-config = {'name': 'Ibid', 'sources': {'atrum': atrum, 'jabber': jabber}, 'processors': processors, 'modules': modules}
+telnet = {'type': 'telnet', 'port': 3000}
+config = {'name': 'Ibid', 'sources': {'atrum': atrum, 'jabber': jabber, 'telnet': telnet}, 'processors': processors, 'modules': modules}
 
 ibid.core.config = config
 ibid.core.reload_reloader()
@@ -30,4 +31,3 @@ ibid.core.reloader.load_sources(ibidService)
 
 internet.TCPServer(9876, ShellFactory()).setServiceParent(ibidService)
 ibidService.setServiceParent(application)
-
