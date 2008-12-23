@@ -78,10 +78,8 @@ class Reloader(object):
 		self.unload_source(name)
 
 		source = ibid.config['sources'][name]
-		if source['type'] == 'irc':
-			reload(ibid.source.irc)
-		elif source['type'] == 'jabber':
-			reload(ibid.source.jabber)
+                m=eval('ibid.source.%s' % source['type'])
+                reload(m)
 
 		self.load_source(source)
 
