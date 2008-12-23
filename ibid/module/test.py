@@ -6,10 +6,12 @@ from ibid.decorators import *
 
 class Delay(Module):
 
-	@addressed
-	@notprocessed
-	@match('^\s*delay\s+(\d+\.?\d*)\s*$')
-	def process(self, event, delay):
-		sleep(float(delay))
-		event.addresponse('Done')
-		return event
+    @addressed
+    @notprocessed
+    @match('^\s*delay\s+(\d+\.?\d*)\s*$')
+    def process(self, event, delay):
+        sleep(float(delay))
+        event.addresponse('Done')
+        return event
+
+# vi: set et sta sw=4 ts=4:

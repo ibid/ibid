@@ -46,3 +46,5 @@ class NewModuleTest1(NewModule):
         elif f_or_b == "bar":
             event.addresponse(u'Bar! <%s>' % rest)
         return event
+
+# vi: set et sta sw=4 ts=4:

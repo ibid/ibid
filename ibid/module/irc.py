@@ -3,15 +3,17 @@ from ibid.decorators import *
 
 class Actions(Module):
 
-	@addressed
-	@notprocessed
-	@message
-	@match('^\s*(join|part|leave)\s+(#\S*)\s*$')
-	def process(self, event, action, channel):
-		if action == u'leave':
-			action = 'part'
+    @addressed
+    @notprocessed
+    @message
+    @match('^\s*(join|part|leave)\s+(#\S*)\s*$')
+    def process(self, event, action, channel):
+        if action == u'leave':
+            action = 'part'
 
-		ircaction = (action.lower(), channel)
+        ircaction = (action.lower(), channel)
 
-		event.addresponse({'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
-		return event
+        event.addresponse({'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
+        return event
+
+# vi: set et sta sw=4 ts=4:

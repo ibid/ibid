@@ -38,3 +38,5 @@ def StaticConfig():
 
 def FileConfig(filename):
     return ConfigObj(filename)
+
+# vi: set et sta sw=4 ts=4:
