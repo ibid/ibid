@@ -7,6 +7,7 @@ from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.event import Event
 
 encoding = 'latin-1'
 
@@ -28,23 +29,26 @@ class Ircbot(irc.IRCClient):
 
 	def privmsg(self, user, channel, msg):
 		user = user.split('!', 1)[0]
-		message =	{	'msg': msg,
-						'user': user,
-						'channel': channel,
-						'source': self.factory.name,
-					}
+		event = Event(self.factory.name, 'message')
+		event.message = msg
+		event.user = user
+		event.channel = channel
+		event.source = self.factory.name
 
 		if channel.lower() == self.nickname.lower():
-			message["addressed"] = True
-			message["public"] = False
-			message["channel"] = user
+			event.addressed = True
+			event.public = False
+			event.channel = user
 		else:
-			message["public"] = True
+			event.public = True
 
-		ibid.core.dispatcher.dispatch(message)
+		ibid.core.dispatcher.dispatch(event)
 
 	def userJoined(self, user, channel):
-		event = {'user': user, 'state': 'joined', 'channel': channel, 'source': self.factory.name, 'responses': [], 'processed': False, 'addressed': False}
+		event = Event(self.factory.name, 'state')
+		event.user = user,
+		event.state = 'joined'
+		event.channel = channel
 		ibid.core.dispatcher.dispatch(event)
 
 	def respond(self, response):

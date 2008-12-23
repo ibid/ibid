@@ -3,21 +3,21 @@ import re
 def addressed(function):
 	@message
 	def new(self, event):
-		if 'addressed' not in event or not event['addressed']:
+		if not event.addressed:
 			return
 		return function(self, event)
 	return new
 
 def notprocessed(function):
 	def new(self, event):
-		if 'processed' in event and event['processed']:
+		if event.processed:
 			return
 		return function(self, event)
 	return new
 
 def message(function):
 	def new(self, event):
-		if 'msg' not in event:
+		if event.type != 'message':
 			return
 		return function(self, event)
 	return new
@@ -27,7 +27,7 @@ def match(regex):
 	def wrap(function):
 		@message
 		def new(self, event):
-			matches = pattern.search(event['msg'])
+			matches = pattern.search(event.message)
 			if not matches:
 				return
 			return function(self, event, *matches.groups())

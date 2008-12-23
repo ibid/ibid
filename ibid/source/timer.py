@@ -6,8 +6,7 @@ from ibid.source import IbidSourceFactory
 class SourceFactory(IbidSourceFactory):
 
 	def tick(self):
-		event =	{	'source': self.name,
-				}
+		event = Event(self.name, 'clock')
 		ibid.core.dispatcher.dispatch(event)
 
 	def setServiceParent(self, service):

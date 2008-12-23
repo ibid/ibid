@@ -11,11 +11,10 @@ class Log(Module):
 		self.log = open(ibid.core.config['modules'][self.name]['logfile'], 'a')
 
 	@message
-	def process(self, query):
-		then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(query['time']))
+	def process(self, event):
+		then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(event.time))
 		now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
-		self.log.write(u'%s %s: %s > %s: %s\n' % (then, query['source'], query['user'], query['channel'], query['msg']))
-		if 'responses' in query:
-			for response in query['responses']:
-				self.log.write(u'%s %s: %s > %s: %s\n' % (now, query['source'], ibid.core.config['name'], response['target'], response['reply']))
+		self.log.write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.user, event.channel, event.message))
+		for response in event.responses:
+			self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.core.config['name'], response['target'], response['reply']))
 		self.log.flush()

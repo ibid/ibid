@@ -29,13 +29,10 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 		self.parent.respond = self.respond
 
 	def availableReceived(self, entity, show=None, statuses=None, priority=0):
-		event =	{	'source': self.name,
-					'user': entity.full(),
-					'state': show or 'available',
-					'channel': entity.full(),
-					'public': False,
-					'addressed': False,
-				}
+		event = Event(self.name, 'state')
+		event.user = entity.full()
+		event.state = show or 'available'
+		event.channel = entity.full()
 		ibid.core.dispatcher.dispatch(event)
 
 	def subscribeReceived(self, entity):
@@ -46,14 +43,12 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 		self.xmlstream.send(response)
 
 	def onMessage(self, message):
-		print message.body
-		event = {	'source': self.parent.name,
-					'msg': str(message.body),
-					'user': message['from'],
-					'channel': message['from'],
-					'public': False,
-					'addressed': True,
-				}
+		event = Event(self.parent.name, 'message')
+		event.messag = str(message.body)
+		event.user = message['from']
+		event.channel = message['from']
+		event.public = False
+		event.addressed = True
 		ibid.core.dispatcher.dispatch(event)
 
 	def respond(self, response):

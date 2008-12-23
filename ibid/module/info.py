@@ -1,6 +1,6 @@
 import time
 
-from ibid.module import Module, addresponse
+from ibid.module import Module
 from ibid.decorators import *
 
 class DateTime(Module):
@@ -9,10 +9,10 @@ class DateTime(Module):
 	@notprocessed
 	@message
 	@match('^\s*(?:date|time)\s*$')
-	def process(self, query):
+	def process(self, event):
 		reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
-		if query['public']:
-			reply = u'%s: %s' % (query['user'], reply)
+		if event.public:
+			reply = u'%s: %s' % (event.user, reply)
 
-		addresponse(query, reply)
+		event.addresponse(reply)
 		return query

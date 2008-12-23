@@ -4,6 +4,7 @@ from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.event import Event
 
 encoding = 'latin-1'
 
@@ -14,13 +15,12 @@ class TelnetProtocol(basic.LineReceiver):
 
 	def lineReceived(self, line):
 
-		event =	{	'source': self.factory.name,
-					'msg': line,
-					'user': 'telnet',
-					'channel': 'telnet',
-					'addressed': True,
-					'public': False,
-				}
+		event = Event(self.factory.name, 'message')
+		event.message = line
+		event.user = 'telnet'
+		event.channel = 'telnet'
+		event.addressed = True
+		event.public = False
 		ibid.core.dispatcher.dispatch(event)
 
 	def respond(self, response):

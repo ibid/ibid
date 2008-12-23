@@ -1,4 +1,4 @@
-from ibid.module import Module, addresponse
+from ibid.module import Module
 from ibid.decorators import *
 
 class Actions(Module):
@@ -7,11 +7,11 @@ class Actions(Module):
 	@notprocessed
 	@message
 	@match('^\s*(join|part|leave)\s+(#\S*)\s*$')
-	def process(self, query, action, channel):
+	def process(self, event, action, channel):
 		if action == u'leave':
 			action = 'part'
 
 		ircaction = (action.lower(), channel)
 
-		addresponse(query, {'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
-		return query
+		event.addresponse({'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
+		return event

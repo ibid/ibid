@@ -9,14 +9,13 @@ class ListModules(Module):
 	@addressed
 	@notprocessed
 	@match('^\s*lsmod\s*$')
-	def process(self, query):
+	def process(self, event):
 		reply = ''
 		for processor in ibid.core.processors:
 			reply = u'%s%s, ' % (reply, processor.name)
 
-		query['responses'].append(reply)
-		query['processed'] = True
-		return query
+		event.addresponse(reply)
+		return event
 
 class LoadModules(Module):
 
@@ -24,7 +23,7 @@ class LoadModules(Module):
 	@notprocessed
 	@message
 	@match('^\s*(load|unload|reload)\s+(\S+)\s*$')
-	def process(self, query, action, module):
+	def process(self, event, action, module):
 		reply = ''
 
 		if action == u'load':
@@ -46,6 +45,5 @@ class LoadModules(Module):
 				reply = reply and u'Reloaded %s' % module or u"Couldn't reload %s" % module
 
 		if reply:
-			query['responses'].append(reply)
-			query['processed'] = True
-			return query
+			event.addresponse(reply)
+			return event
