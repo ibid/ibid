@@ -14,7 +14,7 @@ encoding = 'latin-1'
 class Ircbot(irc.IRCClient):
         
 	def connectionMade(self):
-		self.nickname = ibid.config['sources'][self.factory.name]['nick']
+		self.nickname = ibid.config.sources[self.factory.name]['nick']
 		irc.IRCClient.connectionMade(self)
 		self.factory.resetDelay()
 		self.factory.respond = self.respond
@@ -24,7 +24,7 @@ class Ircbot(irc.IRCClient):
 
 	def signedOn(self):
 		self.mode(self.nickname, True, 'B')
-		for channel in ibid.config['sources'][self.factory.name]['channels']:
+		for channel in ibid.config.sources[self.factory.name]['channels']:
 			self.join(channel)
 
 	def privmsg(self, user, channel, msg):
@@ -73,12 +73,12 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
 	def setServiceParent(self, service):
 		port = 6667
-		server = ibid.config['sources'][self.name]['server']
+		server = ibid.config.sources[self.name]['server']
 
-		if 'port' in ibid.config['sources'][self.name]:
-			port = ibid.config['sources'][self.name]['port']
+		if 'port' in ibid.config.sources[self.name]:
+			port = ibid.config.sources[self.name]['port']
 
-		if 'ssl' in ibid.config['sources'][self.name] and ibid.config['sources'][self.name]['ssl']:
+		if 'ssl' in ibid.config.sources[self.name] and ibid.config.sources[self.name]['ssl']:
 			sslctx = ssl.ClientContextFactory()
 			if service:
 				internet.SSLClient(server, port, self, sslctx).setServiceParent(service)

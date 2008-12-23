@@ -8,7 +8,7 @@ class Log(Module):
 
 	def __init__(self, name):
 		Module.__init__(self, name)
-		self.log = open(ibid.config['modules'][self.name]['logfile'], 'a')
+		self.log = open(ibid.config.modules[self.name]['logfile'], 'a')
 
 	@message
 	def process(self, event):

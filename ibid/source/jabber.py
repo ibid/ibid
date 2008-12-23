@@ -63,7 +63,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
 	def __init__(self, name):
-		client.DeferredClientFactory.__init__(self, JID(ibid.config['sources'][name]['jid']), ibid.config['sources'][name]['password'])
+		client.DeferredClientFactory.__init__(self, JID(ibid.config.sources[name]['jid']), ibid.config.sources[name]['password'])
 		bot = JabberBot()
 		self.addHandler(bot)
 		bot.setHandlerParent(self)
@@ -73,12 +73,12 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
 	def setServiceParent(self, service):
 		port = None
-		server = ibid.config['sources'][self.name]['server']
+		server = ibid.config.sources[self.name]['server']
 
-		if 'port' in ibid.config['sources'][self.name]:
-			port = ibid.config['sources'][self.name]['port']
+		if 'port' in ibid.config.sources[self.name]:
+			port = ibid.config.sources[self.name]['port']
 
-		if 'ssl' in ibid.config['sources'][self.name] and ibid.config['sources'][self.name]['ssl']:
+		if 'ssl' in ibid.config.sources[self.name] and ibid.config.sources[self.name]['ssl']:
 			sslctx = ssl.ClientContextFactory()
 			port = port or 5223
 			if service:
