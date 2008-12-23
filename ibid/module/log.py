@@ -16,7 +16,7 @@ class Log(Module):
         now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
         self.log.write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.user, event.channel, event.message))
         for response in event.responses:
-            self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.config['name'], response['target'], response['reply']))
+            self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.config['botname'], response['target'], response['reply']))
         self.log.flush()
 
 # vi: set et sta sw=4 ts=4:
