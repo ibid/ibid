@@ -8,7 +8,7 @@ class Addressed(Module):
 
 	def __init__(self, name):
 		Module.__init__(self, name)
-		self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.core.config['modules'][name]['names']), re.I)
+		self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config['modules'][name]['names']), re.I)
 
 	@message
 	def process(self, event):
@@ -27,7 +27,7 @@ class Ignore(Module):
 	@notprocessed
 	@message
 	def process(self, event):
-		for who in ibid.core.config['modules'][self.name]['ignore']:
+		for who in ibid.config['modules'][self.name]['ignore']:
 			if event.user == who:
 				event.processed = True
 

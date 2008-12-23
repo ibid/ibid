@@ -20,8 +20,8 @@ class Proxy(Module):
 		self.init()
 
 	def init(self):
-		bus_name = ibid.core.config['modules'][self.name]['bus_name']
-		object_path = ibid.core.config['modules'][self.name]['object_path']
+		bus_name = ibid.config['modules'][self.name]['bus_name']
+		object_path = ibid.config['modules'][self.name]['object_path']
 		bus = sys.modules['dbus'].SessionBus()
 		object = bus.get_object(bus_name, object_path)
 		self.iface = sys.modules['dbus'].Interface(object, 'org.ibid.ModuleInterface')

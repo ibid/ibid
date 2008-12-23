@@ -1,24 +1,12 @@
-import sys
+import ibid.core
 
-import ibid.reloader
+sources = {}
+config = {}
+dispatcher = None
+processors = []
+reloader = None
 
-class Ibid(object):
-
-	def __init__(self):
-		self.sources = {}
-		self.config = {}
-		self.dispatcher = None
-		self.processors = []
-
-	def run(self, config):
-		self.config = config
-		self.reload_reloader()
-		self.reloader.run()
-
-	def reload_reloader(self):
-		reload(ibid.reloader)
-		reloader = ibid.reloader.Reloader()
-		self.reloader = reloader
-
-core = Ibid()
-sys.modules['ibid.core'] = core
+def reload_reloader():
+	reload(ibid.core)
+	new_reloader = ibid.core.Reloader()
+	ibid.reloader = new_reloader

@@ -11,7 +11,7 @@ class ListModules(Module):
 	@match('^\s*lsmod\s*$')
 	def process(self, event):
 		reply = ''
-		for processor in ibid.core.processors:
+		for processor in ibid.processors:
 			reply = u'%s%s, ' % (reply, processor.name)
 
 		event.addresponse(reply)
@@ -27,21 +27,21 @@ class LoadModules(Module):
 		reply = ''
 
 		if action == u'load':
-			reply = ibid.core.reloader.load_processor(module)
+			reply = ibid.reloader.load_processor(module)
 			reply = reply and u'Loaded %s' % module or u"Couldn't load %s" % module
 		elif action == u'unload':
-			reply = ibid.core.reloader.unload_processor(module)
+			reply = ibid.reloader.unload_processor(module)
 			reply = reply and u'Unloaded %s' % module or u"Couldn't unload %s" % module
 		elif action == u'reload':
 			if module == u'reloader':
-				ibid.core.reload_reloader()
+				ibid.reload_reloader()
 				reply = "Done"
 			elif module == u'dispatcher':
-				ibid.core.reloader.reload_dispatcher()
+				ibid.reloader.reload_dispatcher()
 				reply = "done"
 			else:
-				ibid.core.reloader.unload_processor(module)
-				reply = ibid.core.reloader.load_processor(module)
+				ibid.reloader.unload_processor(module)
+				reply = ibid.reloader.load_processor(module)
 				reply = reply and u'Reloaded %s' % module or u"Couldn't reload %s" % module
 
 		if reply:

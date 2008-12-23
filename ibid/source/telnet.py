@@ -21,7 +21,7 @@ class TelnetProtocol(basic.LineReceiver):
 		event.channel = 'telnet'
 		event.addressed = True
 		event.public = False
-		ibid.core.dispatcher.dispatch(event)
+		ibid.dispatcher.dispatch(event)
 
 	def respond(self, response):
 		self.sendLine(response['reply'].encode(encoding))
@@ -31,8 +31,8 @@ class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
 
 	def setServiceParent(self, service=None):
 		port = 3000
-		if 'port' in ibid.core.config['sources'][self.name]:
-			port = ibid.core.config['sources'][self.name]['port']
+		if 'port' in ibid.config['sources'][self.name]:
+			port = ibid.config['sources'][self.name]['port']
 
 		if service:
 			return internet.TCPServer(port, self).setServiceParent(service)

@@ -7,11 +7,11 @@ class SourceFactory(IbidSourceFactory):
 
 	def tick(self):
 		event = Event(self.name, 'clock')
-		ibid.core.dispatcher.dispatch(event)
+		ibid.dispatcher.dispatch(event)
 
 	def setServiceParent(self, service):
 		step = 1
-		if 'step' in ibid.core.config['sources'][self.name]:
-			step = ibid.core.config['sources'][self.name]['step']
+		if 'step' in ibid.config['sources'][self.name]:
+			step = ibid.config['sources'][self.name]['step']
 
 		internet.TimerService(step, self.tick).setServiceParent(service)

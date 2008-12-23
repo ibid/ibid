@@ -8,7 +8,7 @@ class Log(Module):
 
 	def __init__(self, name):
 		Module.__init__(self, name)
-		self.log = open(ibid.core.config['modules'][self.name]['logfile'], 'a')
+		self.log = open(ibid.config['modules'][self.name]['logfile'], 'a')
 
 	@message
 	def process(self, event):
@@ -16,5 +16,5 @@ class Log(Module):
 		now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
 		self.log.write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.user, event.channel, event.message))
 		for response in event.responses:
-			self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.core.config['name'], response['target'], response['reply']))
+			self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.config['name'], response['target'], response['reply']))
 		self.log.flush()

@@ -6,8 +6,9 @@ from twisted.application import service, internet
 from twisted.internet import ssl
 from twisted.manhole.telnet import ShellFactory
 import dbus
-import ibid.core
 from traceback import print_exc
+
+import ibid
 
 application = service.Application("Ibid")
 ibidService = service.MultiService()
@@ -24,13 +25,13 @@ jabber = {'type': 'jabber', 'server': 'jabber.org', 'ssl': True, 'jid': 'ibidbot
 myjabber = {'name': 'jabber', 'type': 'jabber', 'server': 'gorven.za.net', 'ssl': True, 'jid': 'ibid@gorven.za.net/source', 'password': 'z1VdLdxgunupGSju'}
 telnet = {'type': 'telnet', 'port': 3000}
 timer = {'type': 'timer', 'step': 5}
-config = {'name': 'Ibid', 'sources': {'atrum': atrum, 'local': local, 'jabber': jabber, 'myjabber': myjabber, 'telnet': telnet, 'timer': timer}, 'processors': processors, 'modules': modules}
+config = {'name': 'Ibid', 'sources': {'local': local, 'telnet': telnet}, 'processors': processors, 'modules': modules}
 
-ibid.core.config = config
-ibid.core.reload_reloader()
-ibid.core.reloader.reload_dispatcher()
-ibid.core.reloader.load_processors()
-ibid.core.reloader.load_sources(ibidService)
+ibid.config = config
+ibid.reload_reloader()
+ibid.reloader.reload_dispatcher()
+ibid.reloader.load_processors()
+ibid.reloader.load_sources(ibidService)
 
 internet.TCPServer(9876, ShellFactory()).setServiceParent(ibidService)
 ibidService.setServiceParent(application)
