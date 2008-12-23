@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+sys.append("./lib/wokkel.egg")
 import dbus
 import ibid.core
 
