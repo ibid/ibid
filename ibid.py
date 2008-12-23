@@ -8,5 +8,5 @@ processors = ['core.Addressed', 'irc.Actions', 'core.Ignore', 'admin.ListModules
 local = {'name': 'local', 'type': 'irc', 'server': 'localhost', 'port': 6667, 'nick': 'Ibid', 'channels': ['#cocoontest']}
 atrum = {'name': 'atrum', 'type': 'irc', 'server': 'za.atrum.org', 'port': 6667, 'nick': 'Ibid', 'channels': ['#ibid']}
 jabber = {'name': 'jabber', 'type': 'jabber', 'server': 'gorven.za.net', 'port': 5223, 'jid': 'ibid@gorven.za.net/source', 'password': 'z1VdLdxgunupGSju'}
-config = {'name': 'Ibid', 'sources': [local], 'processors': processors, 'modules': modules}
+config = {'name': 'Ibid', 'sources': {'local': local, 'jabber': jabber}, 'processors': processors, 'modules': modules}
 ibid.core.run(config)

@@ -18,17 +18,24 @@ class Reloader(object):
 		reload(ibid.dispatcher)
 		ibid.core.dispatcher = ibid.dispatcher.Dispatcher()
 		
-	def load_source(self, source):
-		if source['type'] == 'irc':
-			ibid.core.sources[source['name']] = ibid.source.irc.SourceFactory(source)
-			reactor.connectTCP(source['server'], source['port'], ibid.core.sources[source['name']])
-		if source['type'] == 'jabber':
-			ibid.core.sources[source['name']] = ibid.source.jabber.SourceFactory(source)
-			reactor.connectSSL(source['server'], source['port'], ibid.core.sources[source['name']], ssl.ClientContextFactory())
+	def load_source(self, name, service=None):
+		type = ibid.core.config['sources'][name]['type']
 
-	def load_sources(self):
-		for source in ibid.core.config['sources']:
-			self.load_source(source)
+		module = 'ibid.source.%s' % type
+		factory = 'ibid.source.%s.SourceFactory' % type
+		try:
+			__import__(module)
+		except:
+			print_exc()
+
+		moduleclass = eval(factory)
+
+		ibid.core.sources[name] = moduleclass(name)
+		ibid.core.sources[name].setServiceParent(service)
+
+	def load_sources(self, service=None):
+		for source in ibid.core.config['sources'].keys():
+			self.load_source(source, service)
 
 	def unload_source(self, name):
 		if name not in ibid.core.sources:

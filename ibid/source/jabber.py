@@ -2,6 +2,7 @@ from wokkel import client, xmppim, subprotocols, compat
 from twisted.internet import reactor, protocol, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
+from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
@@ -78,15 +79,26 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 		self.name = name
 		self.respond = None
 
-	def paramaters(self):
-		port = 5222
-		sslctx = None
-
-		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
-			sslctx = ssl.ClientContextFactory()
-			port = 5223
+	def setServiceParent(self, service):
+		port = None
+		server = ibid.core.config['sources'][self.name]['server']
 
 		if 'port' in ibid.core.config['sources'][self.name]:
 			port = ibid.core.config['sources'][self.name]['port']
 
-		return (ibid.core.config['sources'][self.name]['server'], port, sslctx)
+		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
+			sslctx = ssl.ClientContextFactory()
+			port = port or 5223
+			if service:
+				internet.SSLClient(server, port, self, sslctx).setServiceParent(service)
+			else:
+				reactor.connectSSL(server, port, self, sslctx)
+		else:
+			port = port or 5222
+			if service:
+				internet.TCPClient(server, port, self).setServiceParent(service)
+			else:
+				reactor.connectTCP(server, port, self)
+
+	def connect(self):
+		return self.setServiceParent(None)

@@ -3,6 +3,7 @@ import re
 from twisted.internet import reactor
 from twisted.words.protocols import irc
 from twisted.internet import protocol, ssl
+from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
@@ -65,13 +66,24 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 		self.name = name
 		self.respond = None
 
-	def paramaters(self):
-		sslctx = None
-		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
-			sslctx = ssl.ClientContextFactory()
-
+	def setServiceParent(self, service):
 		port = 6667
+		server = ibid.core.config['sources'][self.name]['server']
+
 		if 'port' in ibid.core.config['sources'][self.name]:
 			port = ibid.core.config['sources'][self.name]['port']
 
-		return (ibid.core.config['sources'][self.name]['server'], port, sslctx)
+		if 'ssl' in ibid.core.config['sources'][self.name] and ibid.core.config['sources'][self.name]['ssl']:
+			sslctx = ssl.ClientContextFactory()
+			if service:
+				internet.SSLClient(server, port, self, sslctx).setServiceParent(service)
+			else:
+				reactor.connectSSL(server, port, self, sslctx)
+		else:
+			if service:
+				internet.TCPClient(server, port, self).setServiceParent(service)
+			else:
+				reactor.connectTCP(server, port, self)
+
+	def connect(self):
+		return self.setServiceParent(None)

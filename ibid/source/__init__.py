@@ -5,5 +5,8 @@ class IbidSourceFactory(object):
 	def __init__(self, name):
 		self.name = name
 
-	def paramaters(self):
-		return (hostname, port, sslcontent)
+	def setServiceParent(self, service):
+		raise NotImplementedError
+
+	def connect(self):
+		raise NotImplementedError
