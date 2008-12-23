@@ -12,8 +12,9 @@ class Log(Module):
 
 	@message
 	def process(self, query):
+		then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(query['time']))
 		now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
-		self.log.write(u'%s %s: %s > %s: %s\n' % (now, query['source'], query['user'], query['channel'], query['msg']))
+		self.log.write(u'%s %s: %s > %s: %s\n' % (then, query['source'], query['user'], query['channel'], query['msg']))
 		for response in query['responses']:
-			self.log.write(u'%s %s: me > %s: %s\n' % (now, query['source'], response['target'], response['reply']))
+			self.log.write(u'%s %s: %s > %s: %s\n' % (now, query['source'], ibid.core.config['name'], response['target'], response['reply']))
 		self.log.flush()
