@@ -8,29 +8,27 @@ import ibid.module
 
 class Dispatcher(object):
 
-	def _process(self, query):
-		query['time'] = time()
+	def _process(self, event):
+		event.time = time()
 
-		for handler in ibid.processors:
+		for processor in ibid.processors:
 			try:
-				result = handler.process(query)
+				result = processor.process(event)
 				if result:
-					query = result
+					event = result
 			except Exception, e:
 				print_exc()
 
-		print query
+		print event
 
-		if 'responses' in query:
-			for response in query['responses']:
-				if response['source'] in ibid.sources:
-					reactor.callFromThread(ibid.sources[response['source']].respond, response)
-				else:
-					print u'Invalid source %s' % response['source']
+		for response in event['responses']:
+			if response['source'] in ibid.sources:
+				reactor.callFromThread(ibid.sources[response['source']].respond, response)
+			else:
+				print u'Invalid source %s' % response['source']
 
-	def dispatch(self, query):
-		reactor.callInThread(self._process, query)
-
+	def dispatch(self, event):
+		reactor.callInThread(self._process, event)
 
 class Reloader(object):
 
@@ -86,7 +84,8 @@ class Reloader(object):
 
 	def load_processors(self):
 		for processor in ibid.config['processors']:
-			self.load_processor(processor)
+			if not self.load_processor(processor):
+				print "Couldn't load processor %s" % processor
 
 	def load_processor(self, name):
 		type = name
@@ -97,12 +96,11 @@ class Reloader(object):
 		classname = 'ibid.module.' + type
 		try:
 			__import__(module)
+			m = eval(module)
+			reload(m)
 		except Exception:
 			print_exc()
 			return False
-
-		m = eval(module)
-		reload(m)
 
 		try:
 			moduleclass = eval(classname)
