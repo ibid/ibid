@@ -9,7 +9,7 @@ import ibid
 from ibid.config import FileConfig
 
 ibid.config = FileConfig("ibid.ini")
-ibid.config.merge("local.ini")
+ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()

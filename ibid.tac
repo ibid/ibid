@@ -9,13 +9,13 @@ import dbus
 from traceback import print_exc
 
 import ibid
-from ibid.config import StaticConfig
+from ibid.config import FileConfig
 
 application = service.Application("Ibid")
 ibidService = service.MultiService()
 
 ibid.config = FileConfig("ibid.ini")
-ibid.config.merge("local.ini")
+ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processors()
