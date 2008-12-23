@@ -15,4 +15,4 @@ class DateTime(Module):
 			reply = u'%s: %s' % (event.user, reply)
 
 		event.addresponse(reply)
-		return query
+		return event
