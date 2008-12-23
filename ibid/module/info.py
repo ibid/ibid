@@ -1,6 +1,6 @@
 import time
 
-from ibid.module import Module
+from ibid.module import Module, addresponse
 from ibid.decorators import *
 
 class DateTime(Module):
@@ -14,6 +14,5 @@ class DateTime(Module):
 		if query['public']:
 			reply = u'%s: %s' % (query['user'], reply)
 
-		query['responses'].append(reply)
-		query['processed'] = True
+		addresponse(query, reply)
 		return query

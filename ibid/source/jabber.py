@@ -33,7 +33,6 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 					'user': entity.full(),
 					'state': show or 'available',
 					'channel': entity.full(),
-					'responses': [],
 					'public': False,
 					'addressed': False,
 				}
@@ -54,8 +53,6 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 					'channel': message['from'],
 					'public': False,
 					'addressed': True,
-					'processed': False,
-					'responses': [],
 				}
 		ibid.core.dispatcher.dispatch(event)
 

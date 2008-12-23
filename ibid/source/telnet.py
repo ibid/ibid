@@ -20,7 +20,6 @@ class TelnetProtocol(basic.LineReceiver):
 					'channel': 'telnet',
 					'addressed': True,
 					'public': False,
-					'responses': [],
 				}
 		ibid.core.dispatcher.dispatch(event)
 

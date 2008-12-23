@@ -1,4 +1,4 @@
-from ibid.module import Module
+from ibid.module import Module, addresponse
 from ibid.decorators import *
 
 class Actions(Module):
@@ -13,6 +13,5 @@ class Actions(Module):
 
 		ircaction = (action.lower(), channel)
 
-		query['responses'].append({'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
-		query['processed'] = True
+		addresponse(query, {'reply': '%sing %s' % ircaction, 'ircaction': ircaction})
 		return query

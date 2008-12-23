@@ -1,7 +1,7 @@
 from time import sleep
 
 import ibid
-from ibid.module import Module
+from ibid.module import Module, addresponse
 from ibid.decorators import *
 
 class Delay(Module):
@@ -11,6 +11,5 @@ class Delay(Module):
 	@match('^\s*delay\s+(\d+\.?\d*)\s*$')
 	def process(self, event, delay):
 		sleep(float(delay))
-		event['responses'].append('Done')
-		event['processed'] = True
+		addresponse(event, 'Done')
 		return event

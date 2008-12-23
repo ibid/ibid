@@ -28,7 +28,11 @@ class Ircbot(irc.IRCClient):
 
 	def privmsg(self, user, channel, msg):
 		user = user.split('!', 1)[0]
-		message = {"msg":msg, "user":user, "channel":channel}
+		message =	{	'msg': msg,
+						'user': user,
+						'channel': channel,
+						'source': self.factory.name,
+					}
 
 		if channel.lower() == self.nickname.lower():
 			message["addressed"] = True
@@ -37,9 +41,6 @@ class Ircbot(irc.IRCClient):
 		else:
 			message["public"] = True
 
-		message['source'] = self.factory.name
-		message['responses'] = []
-		message['processed'] = False
 		ibid.core.dispatcher.dispatch(message)
 
 	def userJoined(self, user, channel):
