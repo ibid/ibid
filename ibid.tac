@@ -24,7 +24,7 @@ jabber = {'type': 'jabber', 'server': 'jabber.org', 'ssl': True, 'jid': 'ibidbot
 myjabber = {'name': 'jabber', 'type': 'jabber', 'server': 'gorven.za.net', 'ssl': True, 'jid': 'ibid@gorven.za.net/source', 'password': 'z1VdLdxgunupGSju'}
 telnet = {'type': 'telnet', 'port': 3000}
 timer = {'type': 'timer', 'step': 5}
-config = {'name': 'Ibid', 'sources': {'atrum': local, 'jabber': myjabber, 'telnet': telnet, 'timer': timer}, 'processors': processors, 'modules': modules}
+config = {'name': 'Ibid', 'sources': {'atrum': atrum, 'local': local, 'jabber': jabber, 'myjabber': myjabber, 'telnet': telnet, 'timer': timer}, 'processors': processors, 'modules': modules}
 
 ibid.core.config = config
 ibid.core.reload_reloader()
