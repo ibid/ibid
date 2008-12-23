@@ -1,6 +1,6 @@
 import random
 
-from ibid.module import Module
+from ibid.module import Module, addresponse
 from ibid.decorators import *
 
 class Greet(Module):
@@ -8,8 +8,7 @@ class Greet(Module):
 	@addressedmessage('^\s*(?:hi|hello|hey)\s*$')
 	def process(self, query):
 		response = u'Hi %s' % query['user']
-		query['responses'].append(response)
-		query['processed'] = True
+		addresponse(query, response)
 		return query
 
 class SayDo(Module):
@@ -30,8 +29,7 @@ class SayDo(Module):
 			else:
 				reply = {'target': where, 'reply': what, 'action': True}
 
-		query['responses'].append(reply)
-		query['processed'] = True
+		addresponse(query, reply)
 		return query
 
 complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
@@ -44,6 +42,5 @@ class Complain(Module):
 		if query['public']:
 			reply = u'%s: %s' % (query['user'], reply)
 
-		query['responses'].append(reply)
-		query['processed'] = True
+		addresponse(query, reply)
 		return query

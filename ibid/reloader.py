@@ -3,8 +3,6 @@ from traceback import print_exc
 
 import ibid
 import ibid.dispatcher
-import ibid.source.irc
-import ibid.source.jabber
 
 class Reloader(object):
 
