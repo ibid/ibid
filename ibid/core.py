@@ -61,7 +61,7 @@ class Reloader(object):
 
     def load_sources(self, service=None):
         for source in ibid.config['sources'].keys():
-            if 'disabled' not in ibid.config.sources[source] or not ibid.config["sources"][source]["disabled"]:
+            if 'disabled' not in ibid.config.sources[source]:
                 self.load_source(source, service)
 
     def unload_source(self, name):

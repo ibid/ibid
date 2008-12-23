@@ -32,7 +32,7 @@ class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     def setServiceParent(self, service=None):
         port = 3000
         if 'port' in ibid.config.sources[self.name]:
-            port = ibid.config.sources[self.name]['port']
+            port = int(ibid.config.sources[self.name]['port'])
 
         if service:
             return internet.TCPServer(port, self).setServiceParent(service)

@@ -13,7 +13,7 @@ class SourceFactory(IbidSourceFactory):
     def setServiceParent(self, service):
         step = 1
         if 'step' in ibid.config.sources[self.name]:
-            step = ibid.config.sources[self.name]['step']
+            step = int(ibid.config.sources[self.name]['step'])
 
         internet.TimerService(step, self.tick).setServiceParent(service)
 
