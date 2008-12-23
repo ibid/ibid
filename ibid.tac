@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import sys
+sys.path.append("./lib/wokkel.egg")
 from twisted.application import service, internet
 from twisted.internet import ssl
 from twisted.manhole.telnet import ShellFactory
