@@ -2,6 +2,8 @@ from traceback import print_exc
 from time import time
 
 from twisted.internet import reactor
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 import ibid
 import ibid.module
@@ -59,7 +61,7 @@ class Reloader(object):
 
 	def load_sources(self, service=None):
 		for source in ibid.config['sources'].keys():
-                    if 'disabled' not in ibid.config.sources[source]:
+                    if 'disabled' not in ibid.config.sources[source] or not ibid.config["sources"][source]["disabled"]:
 			self.load_source(source, service)
 
 	def unload_source(self, name):
@@ -121,3 +123,12 @@ class Reloader(object):
 				return True
 
 		return False
+
+def load_database(name):
+	uri = ibid.config.databases[name]['uri']
+	engine = create_engine(uri)
+	ibid.databases[name] = sessionmaker(bind=engine)
+
+def load_databases():
+	for database in ibid.config.databases.keys():
+		load_database(database)

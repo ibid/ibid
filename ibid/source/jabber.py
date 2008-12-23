@@ -6,6 +6,7 @@ from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.event import Event
 
 class Message(domish.Element):
 	

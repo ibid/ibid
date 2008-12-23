@@ -27,6 +27,7 @@ def StaticConfig():
     
     config = dict(name = 'Ibid',
                   sources = dict(local=local, atrum=atrum, jabber=jabber, telnet=telnet, clock=timer),
+                  databases = dict(ibid=dict(uri='sqlite:///ibid.db')),
                   processors = ['core.Addressed', 'irc.Actions', 'core.Ignore', 'admin.ListModules', 'admin.LoadModules', 'basic.Greet', 'info.DateTime', 'basic.SayDo', 'test.Delay', 'basic.Complain', 'core.Responses', 'log.Log'],
                   modules = {
                     'core.Addressed': dict(names = ['Ibid', 'bot', 'ant']),
