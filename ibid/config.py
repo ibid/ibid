@@ -10,6 +10,13 @@ from configobj import ConfigObj, Section
 #        else:
 #            self[name] = value
 
+def monkeypatch(self, name):
+    if self.has_key(name):
+        return self[name]
+    super(ConfigObj, self).__getattr__(name)
+
+ConfigObj.__getattr__ = monkeypatch
+
 def StaticConfig():
     local = dict(name='local', type='irc', server='localhost', nick='Ibid', channels=['#cocoontest'])
     atrum = dict(type='irc', server='za.atrum.org', nick='Ibid', channels=['#ibid'])
