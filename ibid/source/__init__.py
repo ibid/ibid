@@ -12,4 +12,7 @@ class IbidSourceFactory(object):
     def connect(self):
         raise NotImplementedError
 
+    def disconnect(self):
+        raise NotImplementedError
+
 # vi: set et sta sw=4 ts=4:

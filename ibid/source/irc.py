@@ -18,6 +18,7 @@ class Ircbot(irc.IRCClient):
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
         self.factory.respond = self.respond
+        self.factory.proto = self
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -92,5 +93,11 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def connect(self):
         return self.setServiceParent(None)
+
+    def disconnect(self):
+        self.stopTrying()
+        self.stopFactory()
+        self.proto.transport.loseConnection()
+        return True
 
 # vi: set et sta sw=4 ts=4:

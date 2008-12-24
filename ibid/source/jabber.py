@@ -28,6 +28,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
         self.xmlstream.send(xmppim.AvailablePresence())
         self.name = self.parent.name
         self.parent.respond = self.respond
+        self.parent.proto = self
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
         event = Event(self.name, 'state')
@@ -45,7 +46,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 
     def onMessage(self, message):
         event = Event(self.parent.name, 'message')
-        event.messag = str(message.body)
+        event.message = str(message.body)
         event.user = message['from']
         event.channel = message['from']
         event.public = False
@@ -95,5 +96,10 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     def connect(self):
         return self.setServiceParent(None)
+
+    def disconnect(self):
+        self.stopFactory()
+        self.proto.xmlstream.transport.loseConnection()
+        return True
 
 # vi: set et sta sw=4 ts=4:
