@@ -4,47 +4,42 @@ import re
 
 class NewModule(Module):
 
-    require_message = True
-    require_message_addressed = True
-    allow_processed = False
-    match_regex = None
-
-    def match(self, event):
-        if self.match_regex is None:
-            raise RuntimeException("match_regex not specified. Please fix this message, too.")
-        matches = re.search(self.match_regex, event.message)
-        if not matches:
-            return None
-        return matches.groups()
-
-    def assert_require_message(self, event):
-        if not self.require_message: return true
-        return event.type == 'message'
-
-    def assert_require_message_addressed(self, event):
-        if not self.require_message_addressed: return true
-        return (event.type == 'message'
-                and event.addressed)
+    message = True
+    addressed = True
+    processed = False
 
     def process(self, event):
-        if not self.assert_require_message(event): return
-        if not self.assert_require_message_addressed(event): return
-        match = self.match(event)
-        if match is None: return
-        return self.handle_event(event, *match)
+        if self.message and event.type != 'message':
+            return
 
-    def handle_event(self, event):
-        raise NotImplementedError
+        if self.addressed and ('addressed' not in event or not event.addressed):
+            return
+
+        if not self.processed and event.processed:
+            return
+
+        handlers = filter(lambda x: x.startswith('match_'), dir(self))
+
+        if len(handlers) == 0:
+            raise RuntimeException('No handlers defined')
+
+        for regex in handlers:
+            match = re.search(getattr(self, regex), event.message)
+            if match is not None:
+                event = getattr(self, regex.replace('match_', 'handle_', 1))(event, *match.groups()) or event
+
+        return event
 
 class NewModuleTest1(NewModule):
 
-    match_regex = r'test (foo|bar) (.*)'
-
-    def handle_event(self, event, f_or_b, rest):
-        if f_or_b == "foo":
-            event.addresponse(u'Foo! [%s]' % rest)
-        elif f_or_b == "bar":
-            event.addresponse(u'Bar! <%s>' % rest)
+    match_foo = r'test foo (.*)'
+    def handle_foo(self, event, rest):
+        event.addresponse(u'Foo! [%s]' % rest)
         return event
 
+    match_bar = r'test bar (.*)'
+    def handle_bar(self, event, rest):
+        event.addresponse(u'Bar! <%s>' % rest)
+        return event
+        
 # vi: set et sta sw=4 ts=4:
