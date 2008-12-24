@@ -26,7 +26,6 @@ class Fortune(Module):
     def process(self, event):
         fortune = Popen(['fortune'], stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()
-        time.sleep(5)
         code = fortune.wait()
 
         if code == 0:

@@ -1,5 +1,6 @@
 from traceback import print_exc
 from time import time
+import inspect
 
 from twisted.internet import reactor
 from sqlalchemy import create_engine
@@ -89,12 +90,12 @@ class Reloader(object):
                 print "Couldn't load processor %s" % processor
 
     def load_processor(self, name):
-        type = name
-        if name in ibid.config['modules'] and 'type' in ibid.config['modules'][name]:
-            type = ibid.config['modules'][name]['type']
+        object = name
+        if name in ibid.config['modules'] and 'object' in ibid.config['modules'][name]:
+            object = ibid.config['modules'][name]['type']
 
-        module = 'ibid.module.' + type.split('.')[0]
-        classname = 'ibid.module.' + type
+        module = 'ibid.module.' + object.split('.')[0]
+        classname = 'ibid.module.' + object
         try:
             __import__(module)
             m = eval(module)
@@ -104,8 +105,14 @@ class Reloader(object):
             return False
 
         try:
-            moduleclass = eval(classname)
-            ibid.processors.append(moduleclass(name))
+            if module == classname:
+                for classname, klass in inspect.getmembers(m, inspect.isclass):
+                    if issubclass(klass, ibid.module.Module) and klass != ibid.module.Module:
+                        ibid.processors.append(klass(name))
+            else:
+                moduleclass = eval(classname)
+                ibid.processors.append(moduleclass(name))
+                
         except Exception:
             print_exc()
             return False
