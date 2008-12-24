@@ -78,7 +78,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
         server = ibid.config.sources[self.name]['server']
 
         if 'port' in ibid.config.sources[self.name]:
-            port = int(ibid.config.sources[self.name]['port'])
+            port = ibid.config.sources[self.name]['port']
 
         if 'ssl' in ibid.config.sources[self.name] and ibid.config.sources[self.name]['ssl']:
             sslctx = ssl.ClientContextFactory()

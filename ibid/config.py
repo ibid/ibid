@@ -1,14 +1,5 @@
 from configobj import ConfigObj, Section
-
-#class Config(dict):
-#    def __getattr__(self, name):
-#        return self[name]
-#
-#    def __setattr__(self, name, value):
-#        if type(value) == dict:
-#            self[name] = Config(value)
-#        else:
-#            self[name] = value
+from validate import Validator
 
 def monkeypatch(self, name):
     if self.has_key(name):
@@ -37,6 +28,9 @@ def StaticConfig():
     return ConfigObj(config)
 
 def FileConfig(filename):
-    return ConfigObj(filename)
+    configspec = ConfigObj('configspec.ini', list_values=False)
+    config = ConfigObj(filename, configspec=configspec, interpolation='Template')
+    config.validate(Validator())
+    return config
 
 # vi: set et sta sw=4 ts=4:
