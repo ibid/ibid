@@ -14,13 +14,16 @@ class HTTP(Module):
 	@match('^\s*(get|head)\s+(.+)\s*$')
 	def process(self, event, action, url):
 		http = Http()
-		response, content = http.request(url, action.upper())
+		headers={}
+		if action.lower() == 'get':
+			headers['Range'] = 'bytes=0-500'
+		response, content = http.request(url, action.upper(), headers=headers)
 		reply = u'%s %s' % (response.status, response.reason)
 
 		if action.lower() == 'get':
 			match = title.search(content)
 			if match:
-				reply = u'%s "%s"' % (reply, match.groups()[0])
+				reply = u'%s "%s"' % (reply, match.groups()[0].strip())
 
 		event.addresponse(reply)
 		return event

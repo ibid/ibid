@@ -1,4 +1,5 @@
 import time
+from subprocess import Popen, PIPE
 
 from ibid.module import Module
 from ibid.decorators import *
@@ -15,6 +16,24 @@ class DateTime(Module):
             reply = u'%s: %s' % (event.user, reply)
 
         event.addresponse(reply)
+        return event
+
+class Fortune(Module):
+
+    @addressed
+    @notprocessed
+    @match('^\s*fortune\s*$')
+    def process(self, event):
+        fortune = Popen(['fortune'], stdout=PIPE, stderr=PIPE)
+        output, error = fortune.communicate()
+        time.sleep(5)
+        code = fortune.wait()
+
+        if code == 0:
+            event.addresponse(output.strip())
+        else:
+            event.addresponse(u"Coludn't execute fortune")
+
         return event
 
 # vi: set et sta sw=4 ts=4:
