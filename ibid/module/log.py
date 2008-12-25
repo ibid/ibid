@@ -1,3 +1,5 @@
+"""Logs messages sent and received."""
+
 import time
 
 import ibid

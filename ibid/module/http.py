@@ -1,3 +1,5 @@
+"""Performs HTTP requests"""
+
 from httplib2 import Http
 import re
 
@@ -8,6 +10,7 @@ from ibid.decorators import *
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
 class HTTP(Module):
+	"""Usage: (get|head) <url>"""
 
 	@addressed
 	@notprocessed

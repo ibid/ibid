@@ -117,7 +117,7 @@ class Reloader(object):
             print_exc()
             return False
 
-        ibid.processors.sort(key=lambda x: ibid.config['processors'].index(x.name))
+        ibid.processors.sort(key=lambda x: ibid.config.processors.index(x.name))
 
         return True
 

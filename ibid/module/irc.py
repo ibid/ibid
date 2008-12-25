@@ -1,7 +1,10 @@
+"""Administrative commands for IRC"""
+
 from ibid.module import Module
 from ibid.decorators import *
 
 class Actions(Module):
+    """Usage: (join|part|leave) <channel>"""
 
     @addressed
     @notprocessed

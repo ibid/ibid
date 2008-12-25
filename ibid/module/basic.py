@@ -1,9 +1,12 @@
+"""Some basic processors"""
+
 import random
 
 from ibid.module import Module
 from ibid.decorators import *
 
 class Greet(Module):
+    """Usage: (hi|hello|hey)"""
 
     @addressedmessage('^\s*(?:hi|hello|hey)\s*$')
     def process(self, event):
@@ -12,6 +15,7 @@ class Greet(Module):
         return event
 
 class SayDo(Module):
+    """Usage: (say|do) <channel> <text>"""
 
     @addressed
     @notprocessed

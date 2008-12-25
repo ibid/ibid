@@ -1,3 +1,5 @@
+"""Administrative commands for loading modules and configuration."""
+
 import os
 
 import ibid
@@ -5,6 +7,7 @@ from ibid.module import Module
 from ibid.decorators import *
 
 class ReloadConfig(Module):
+    """Usage: reload config"""
 
     @addressed
     @notprocessed
@@ -17,10 +20,11 @@ class ReloadConfig(Module):
             event.addresponse(u"Error reloading configuration")
 
 class ListModules(Module):
+    """Usage: list plugins"""
 
     @addressed
     @notprocessed
-    @match('^\s*lsmod\s*$')
+    @match('^\s*lsmod|list\s+plugins\s*$')
     def process(self, event):
         reply = ''
         for processor in ibid.processors:
@@ -30,6 +34,7 @@ class ListModules(Module):
         return event
 
 class LoadModules(Module):
+    """Usage: (load|unload|reload) <plugin|processor>"""
 
     @addressed
     @notprocessed

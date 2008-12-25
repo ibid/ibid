@@ -1,3 +1,5 @@
+"""Retrieves various bits of information."""
+
 import time
 from subprocess import Popen, PIPE
 
@@ -5,6 +7,7 @@ from ibid.module import Module
 from ibid.decorators import *
 
 class DateTime(Module):
+    """Usage: (date|time)"""
 
     @addressed
     @notprocessed
@@ -19,6 +22,7 @@ class DateTime(Module):
         return event
 
 class Fortune(Module):
+    """Usage: fortune"""
 
     @addressed
     @notprocessed

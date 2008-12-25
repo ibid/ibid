@@ -1,3 +1,4 @@
+"""Core processors for managing events"""
 import re
 
 import ibid
