@@ -1,3 +1,5 @@
+import inspect
+
 from ibid.module import Module
 import re
 
@@ -18,26 +20,30 @@ class NewModule(Module):
         if not self.processed and event.processed:
             return
 
-        handlers = filter(lambda x: x.startswith('match_'), dir(self))
-
-        if len(handlers) == 0:
-            raise RuntimeException('No handlers defined')
-
-        for regex in handlers:
-            match = re.search(getattr(self, regex), event.message)
-            if match is not None:
-                event = getattr(self, regex.replace('match_', 'handle_', 1))(event, *match.groups()) or event
+        for name, method in inspect.getmembers(self, inspect.ismethod):
+            pattern = getattr(method, 'pattern', None)
+            if pattern:
+                match = pattern.search(event.message)
+                if match is not None:
+                    event = method(event, *match.groups()) or event
 
         return event
 
+def match(regex):
+    pattern = re.compile(regex, re.I)
+    def wrap(function):
+        setattr(function, 'pattern', pattern)
+        return function
+    return wrap
+
 class NewModuleTest1(NewModule):
 
-    match_foo = r'test foo (.*)'
+    @match(r'test foo (.*)')
     def handle_foo(self, event, rest):
         event.addresponse(u'Foo! [%s]' % rest)
         return event
 
-    match_bar = r'test bar (.*)'
+    @match(r'test bar (.*)')
     def handle_bar(self, event, rest):
         event.addresponse(u'Bar! <%s>' % rest)
         return event
