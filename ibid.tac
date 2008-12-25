@@ -2,25 +2,13 @@
 
 import sys
 sys.path.append("./lib/wokkel.egg")
-from twisted.application import service, internet
-from twisted.internet import ssl
-from twisted.manhole.telnet import ShellFactory
-import dbus
-from traceback import print_exc
 
+from twisted.application import service
 import ibid
-from ibid.config import FileConfig
 
 application = service.Application("Ibid")
 ibidService = service.MultiService()
 
-ibid.config = FileConfig("ibid.ini")
-ibid.config.merge(FileConfig("local.ini"))
-ibid.reload_reloader()
-ibid.reloader.reload_dispatcher()
-ibid.reloader.load_processors()
-ibid.reloader.load_sources(ibidService)
-ibid.reloader.reload_databases()
+ibid.setup(ibidService)
 
-internet.TCPServer(9876, ShellFactory()).setServiceParent(ibidService)
 ibidService.setServiceParent(application)

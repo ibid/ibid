@@ -15,6 +15,10 @@ class SourceFactory(IbidSourceFactory):
         if 'step' in ibid.config.sources[self.name]:
             step = ibid.config.sources[self.name]['step']
 
-        internet.TimerService(step, self.tick).setServiceParent(service)
+        s = internet.TimerService(step, self.tick)
+        if service is None:
+            s.startService()
+        else:
+            s.setServiceParent(service)
 
 # vi: set et sta sw=4 ts=4:
