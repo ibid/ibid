@@ -1,17 +1,24 @@
 import inspect
-
-from ibid.module import Module
 import re
 
+import ibid
+from ibid.module import Module
 
 class NewModule(Module):
 
-    message = True
+    type = 'message'
     addressed = True
     processed = False
 
+    def __init__(self, name):
+        self.name = name
+        if name in ibid.config.modules:
+            config = ibid.config.modules[name]
+            if 'addressed' in config:
+                self.addressed = config['addressed']
+
     def process(self, event):
-        if self.message and event.type != 'message':
+        if event.type != self.type:
             return
 
         if self.addressed and ('addressed' not in event or not event.addressed):
@@ -20,19 +27,23 @@ class NewModule(Module):
         if not self.processed and event.processed:
             return
 
+        found = False
         for name, method in inspect.getmembers(self, inspect.ismethod):
-            pattern = getattr(method, 'pattern', None)
-            if pattern:
-                match = pattern.search(event.message)
+            if hasattr(method, 'pattern'):
+                found = True
+                match = method.pattern.search(event.message)
                 if match is not None:
                     event = method(event, *match.groups()) or event
+
+        if not found:
+            raise RuntimeException(u'No handlers found in %s' % self)
 
         return event
 
 def match(regex):
     pattern = re.compile(regex, re.I)
     def wrap(function):
-        setattr(function, 'pattern', pattern)
+        function.pattern = pattern
         return function
     return wrap
 
