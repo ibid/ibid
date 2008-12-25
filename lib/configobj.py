@@ -578,8 +578,17 @@ class Section(dict):
     def __getitem__(self, key):
         """Fetch the item and do string interpolation."""
         val = dict.__getitem__(self, key)
-        if self.main.interpolation and isinstance(val, StringTypes):
-            return self._interpolate(key, val)
+        if self.main.interpolation:
+            if isinstance(val, StringTypes):
+                return self._interpolate(key, val)
+            if isinstance(val, list):
+                interpolated = []
+                for value in val:
+                    if isinstance(value, StringTypes):
+                        interpolated.append(self._interpolate(key, value))
+                    else:
+                        interpolated.append(value)
+                return interpolated
         return val
 
 

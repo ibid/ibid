@@ -4,6 +4,18 @@ import ibid
 from ibid.module import Module
 from ibid.decorators import *
 
+class ReloadConfig(Module):
+
+    @addressed
+    @notprocessed
+    @match('^\s*reload\s+config\s*$')
+    def process(self, event):
+        try:
+            ibid.config.reload()
+            event.addresponse(u"Configuration reloaded")
+        except:
+            event.addresponse(u"Error reloading configuration")
+
 class ListModules(Module):
 
     @addressed

@@ -2,6 +2,7 @@
 
 import sys
 sys.path.append("./lib/wokkel.egg")
+sys.path.insert(0, './lib')
 
 from twisted.application import service
 import ibid
