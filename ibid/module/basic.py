@@ -6,21 +6,23 @@ from ibid.module import Module
 from ibid.decorators import *
 
 class Greet(Module):
-    """Usage: (hi|hello|hey)"""
+    """Greets people"""
 
     @addressedmessage('^\s*(?:hi|hello|hey)\s*$')
     def process(self, event):
+        """Usage: (hi|hello|hey)"""
         response = u'Hi %s' % event.user
         event.addresponse(response)
         return event
 
 class SayDo(Module):
-    """Usage: (say|do) <channel> <text>"""
+    """Says or does things in a channel"""
 
     @addressed
     @notprocessed
     @match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
     def process(self, event, action, where, what):
+        """Usage: (say|do) <channel> <text>"""
         if (event.user != u"Vhata"):
             reply = u"No!  You're not the boss of me!"
             if action.lower() == "say":
@@ -39,6 +41,7 @@ class SayDo(Module):
 complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
 class Complain(Module):
+    """Responds with a complains. Used to handle unprocessed messages."""
 
     @addressedmessage()
     def process(self, event):

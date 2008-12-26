@@ -8,12 +8,13 @@ from ibid.decorators import *
 
 
 class Usage(Module):
-	"""Usage: usage <processor>"""
+	"""Outputs the usage syntax for a processor"""
 
 	@addressed
 	@notprocessed
 	@match(r'^\s*usage\s+(.+)\s*$')
 	def process(self, event, item):
+		"""Usage: usage <processor>"""
 		klass = None
 		for processor in ibid.processors:
 			if processor.name == item:
@@ -22,21 +23,25 @@ class Usage(Module):
 		if not klass:
 			try:
 				klass = eval('ibid.module.%s' % item)
-			except ImportError:
+			except:
 				pass
 
 		if klass:
-			event.addresponse(klass.__doc__)
-		else:
+			for name, method in inspect.getmembers(klass, inspect.ismethod):
+				if hasattr(method, 'pattern') and method.__doc__:
+					event.addresponse('%s: %s' % (name, method.__doc__))
+
+		if not event.responses:
 			event.addresponse(u'No usage for %s' % item)
 
 class Help(Module):
-	"""Usage: help <plugin>"""
+	"""Outputs the help message for a plugin or processor"""
 
 	@addressed
 	@notprocessed
 	@match(r'\s*help\s+(.+)\s*$')
 	def process(self, event, item):
+		"""Usage: help <plugin>"""
 		try:
 			module = eval('ibid.module.%s' % item)
 		except:
@@ -48,5 +53,6 @@ class Help(Module):
 			processors = []
 			for name, klass in inspect.getmembers(module, inspect.isclass):
 				if issubclass(klass, ibid.module.Module) and klass != ibid.module.Module:
-					processors.append(klass.__name__)
-			event.addresponse('Processors: %s' % ', '.join(processors))
+					processors.append('%s.%s' % (module.__name__.replace('ibid.module.', '', 1), klass.__name__))
+			if processors:
+				event.addresponse('Processors: %s' % ', '.join(processors))

@@ -1,3 +1,5 @@
+"""Sample module for the new plugin architecture."""
+
 import inspect
 import re
 
@@ -48,14 +50,17 @@ def match(regex):
     return wrap
 
 class NewModuleTest1(NewModule):
+    """Processor to test the new module architecture"""
 
     @match(r'test foo (.*)')
     def handle_foo(self, event, rest):
+        """test foo <text>"""
         event.addresponse(u'Foo! [%s]' % rest)
         return event
 
     @match(r'test bar (.*)')
     def handle_bar(self, event, rest):
+        """test bar <text>"""
         event.addresponse(u'Bar! <%s>' % rest)
         return event
         
