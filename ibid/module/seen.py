@@ -1,7 +1,7 @@
 from datetime import datetime
 from time import strftime
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, Unicode, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -14,10 +14,10 @@ class Saw(Base):
     __tablename__ = 'seen'
 
     id = Column(Integer, primary_key=True)
-    source = Column(String)
-    user = Column(String)
-    channel = Column(String)
-    saying = Column(String)
+    source = Column(Unicode)
+    user = Column(Unicode)
+    channel = Column(Unicode)
+    saying = Column(Unicode)
     time = Column(DateTime)
 
     def __init__(self, source, user, channel, saying):

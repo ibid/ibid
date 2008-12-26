@@ -29,13 +29,13 @@ class Ircbot(irc.IRCClient):
             self.join(channel)
 
     def privmsg(self, user, channel, msg):
-        who = user.split('!', 1)[0]
+        nick = user.split('!', 1)[0]
         event = Event(self.factory.name, 'message')
-        event.message = msg
-        event.sender = user
-        event.sender_id = who
-        event.who = who
-        event.channel = channel
+        event.message = unicode(msg)
+        event.sender = unicode(user)
+        event.sender_id = unicode(nick)
+        event.who = unicode(nick)
+        event.channel = unicode(channel)
         event.source = self.factory.name
 
         if channel.lower() == self.nickname.lower():
@@ -49,23 +49,26 @@ class Ircbot(irc.IRCClient):
 
     def userJoined(self, user, channel):
         event = Event(self.factory.name, 'state')
-        event.user = user,
+        nick = user.split('!', 1)[0]
+        event.sender = unicode(user)
+        event.sender_id = unicode(nick)
+        event.who = unicode(nick)
         event.state = 'joined'
         event.channel = channel
         ibid.dispatcher.dispatch(event)
 
     def respond(self, response):
         if 'action' in response and response['action']:
-            self.me(response['target'], response['reply'].encode(encoding))
+            self.me(response['target'].encode(encoding), response['reply'].encode(encoding))
         else:
-            self.msg(response['target'], response['reply'].encode(encoding))
+            self.msg(response['target'].encode(encoding), response['reply'].encode(encoding))
 
         if 'ircaction' in response:
             (action, channel) = response['ircaction']
             if action == 'join':
-                self.join(channel)
+                self.join(channel.encode(encoding))
             elif action == 'part':
-                self.part(channel)
+                self.part(channel.encode(encoding))
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot

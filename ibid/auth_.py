@@ -1,7 +1,8 @@
 from fnmatch import fnmatch
 from time import time
+from traceback import print_exc
 
-from sqlalchemy import Column, Integer, String, DateTime, or_
+from sqlalchemy import Column, Integer, Unicode, DateTime, or_
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
@@ -11,10 +12,10 @@ class Token(Base):
     __tablename__ = 'auth'
 
     id = Column(Integer, primary_key=True)
-    user = Column(String)
-    source = Column(String)
-    method = Column(String)
-    token = Column(String)
+    user = Column(Unicode)
+    source = Column(Unicode)
+    method = Column(Unicode)
+    token = Column(Unicode)
 
     def __init__(self, user, source, method, token):
         self.user = user
@@ -26,8 +27,8 @@ class Permission(Base):
     __tablename__ = 'permissions'
 
     id = Column(Integer, primary_key=True)
-    user = Column(String)
-    permission = Column(String)
+    user = Column(Unicode)
+    permission = Column(Unicode)
 
     def __init__(self, user, permission):
         self.user = user
@@ -59,10 +60,13 @@ class Auth(object):
 
         for method in methods:
             if hasattr(self, method):
-                if getattr(self, method)(event, password):
-                    self.cache[event.sender] = time()
-                    event.authenticated = True
-                    return True
+                try:
+                    if getattr(self, method)(event, password):
+                        self.cache[event.sender] = time()
+                        event.authenticated = True
+                        return True
+                except:
+                    print_exc()
 
         return False
 
@@ -77,9 +81,8 @@ class Auth(object):
 
         return False
 
-    def jid(self, event, password = None):
-        if ibid.config.sources[event.source]['type'] == 'jabber':
-            return True
+    def implicit(self, event, password = None):
+        return True
 
     def hostmask(self, event, password = None):
         if ibid.config.sources[event.source]['type'] != 'irc':

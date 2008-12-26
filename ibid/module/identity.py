@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, ForeignKey
 from sqlalchemy.orm import relation, backref
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,8 +14,8 @@ class Identity(Base):
 
     id = Column(Integer, primary_key=True)
     person_id = Column(Integer, ForeignKey('people.id'))
-    source = Column(String)
-    identity = Column(String)
+    source = Column(Unicode)
+    identity = Column(Unicode)
 
     def __init__(self, source, identity):
         self.source = source
@@ -29,8 +29,8 @@ class Attribute(Base):
     
     id = Column(Integer, primary_key=True)
     person_id = Column(Integer, ForeignKey('people.id'))
-    name = Column(String)
-    value = Column(String)
+    name = Column(Unicode)
+    value = Column(Unicode)
 
     def __init__(self, name, value):
         self.name = name
@@ -43,7 +43,7 @@ class Person(Base):
     __tablename__ = 'people'
 
     id = Column(Integer, primary_key=True)
-    username = Column(String)
+    username = Column(Unicode)
 
     identities = relation(Identity, backref='person')
     attributes = relation(Attribute)

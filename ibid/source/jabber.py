@@ -46,11 +46,11 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
 
     def onMessage(self, message):
         event = Event(self.parent.name, 'message')
-        event.message = str(message.body)
-        event.sender = message['from']
+        event.message = unicode(message.body)
+        event.sender = unicode(message['from'])
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
-        event.channel = message['from']
+        event.channel = event.sender
         event.public = False
         event.addressed = True
         ibid.dispatcher.dispatch(event)
@@ -59,7 +59,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
         print response
         message = domish.Element((None, 'message'))
         message['to'] = response['target']
-        message['from'] = 'ibid@gorven.za.net'
+        message['from'] = self.parent.jid.full()
         message['type'] = 'chat'
         message.addElement('body', content=response['reply'])
         self.xmlstream.send(message)
