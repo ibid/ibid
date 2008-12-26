@@ -48,6 +48,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol):
         event = Event(self.parent.name, 'message')
         event.message = str(message.body)
         event.user = message['from']
+        event.who = event.user.split('@')[0]
         event.channel = message['from']
         event.public = False
         event.addressed = True

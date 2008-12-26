@@ -29,10 +29,11 @@ class Ircbot(irc.IRCClient):
             self.join(channel)
 
     def privmsg(self, user, channel, msg):
-        user = user.split('!', 1)[0]
+        who = user.split('!', 1)[0]
         event = Event(self.factory.name, 'message')
         event.message = msg
         event.user = user
+        event.who = who
         event.channel = channel
         event.source = self.factory.name
 

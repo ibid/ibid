@@ -30,7 +30,7 @@ class Watch(Module):
 
     @message
     def process(self, event):
-        saw = Saw(event.source, event.user, event.channel, event.message)
+        saw = Saw(event.source, event.who, event.channel, event.message)
         session = ibid.databases.ibid()
         session.add(saw)
         session.commit()

@@ -29,7 +29,7 @@ class Ignore(Module):
     @message
     def process(self, event):
         for who in ibid.config.modules[self.name]['ignore']:
-            if event.user == who:
+            if event.who == who:
                 event.processed = True
 
         return event

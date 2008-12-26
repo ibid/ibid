@@ -18,6 +18,7 @@ class TelnetProtocol(basic.LineReceiver):
         event = Event(self.factory.name, 'message')
         event.message = line
         event.user = 'telnet'
+        event.who = 'telnet'
         event.channel = 'telnet'
         event.addressed = True
         event.public = False

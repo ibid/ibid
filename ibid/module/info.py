@@ -16,7 +16,7 @@ class DateTime(Module):
     def process(self, event):
         reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
         if event.public:
-            reply = u'%s: %s' % (event.user, reply)
+            reply = u'%s: %s' % (event.who, reply)
 
         event.addresponse(reply)
         return event
