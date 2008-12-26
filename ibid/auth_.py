@@ -21,6 +21,17 @@ class Token(Base):
         self.method = method
         self.token = token
 
+class Permission(Base):
+    __tablename__ = 'permissions'
+
+    id = Column(Integer, primary_key=True)
+    user = Column(String)
+    permission = Column(String)
+
+    def __init__(self, user, permission):
+        self.user = user
+        self.permission = permission
+
 class Auth(object):
 
     def authenticate(self, event, password=None):
@@ -35,6 +46,17 @@ class Auth(object):
             if hasattr(self, method):
                 if getattr(self, method)(event, password):
                     return True
+
+        return False
+
+    def authorise(self, event, permission):
+
+        if 'user' not in event:
+            return False
+
+        session = ibid.databases.ibid()
+        if session.query(Permission).filter_by(user=event.user).filter_by(permission=permission).first():
+            return True
 
         return False
 

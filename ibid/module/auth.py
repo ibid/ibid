@@ -1,11 +1,9 @@
-
-
 import ibid
 from ibid.module import Module
 from ibid.decorators import *
-from ibid.auth_ import Token
+from ibid.auth_ import Token, Permission
 
-class Admin(Module):
+class AddAuth(Module):
 
     @addressed
     @notprocessed
@@ -15,6 +13,20 @@ class Admin(Module):
         tok = Token(user, source, method, token)
         session = ibid.databases.ibid()
         session.add(tok)
+        session.commit()
+
+        event.addresponse(u'Okay')
+
+class AddPermission(Module):
+
+    @addressed
+    @notprocessed
+    @match('^\s*add\s+permission\s+(.+)\s+for\s+(.+)\s*$')
+    def process(self, event, permission, user):
+
+        perm = Permission(user, permission)
+        session = ibid.databases.ibid()
+        session.add(perm)
         session.commit()
 
         event.addresponse(u'Okay')
