@@ -65,7 +65,6 @@ class Address(Module):
                     addressed.append('%s: %s' % (event.who, response))
                 else:
                     addressed.append(response)
-            print addressed
 
             event.responses = addressed
                 

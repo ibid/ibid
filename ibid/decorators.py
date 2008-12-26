@@ -1,5 +1,7 @@
 import re
 
+import ibid
+
 def addressed(function):
     @message
     def new(self, event):
@@ -44,6 +46,24 @@ def addressedmessage(pattern=None):
             return match(pattern)(new)
         else:
             return new
+    return wrap
+
+def authorised(permission):
+    print "Wrapping with permission %s" % permission
+    def wrap(function):
+        print "Wrapping %s" % function
+        def new(self, event, *args):
+            print "Authenticating " + str(event)
+            if not ibid.auth.authenticate(event):
+                event.addresponse('You are not authenticated')
+                return
+
+            if not ibid.auth.authorise(event, permission):
+                event.addresponse('You are not authorised')
+                return
+
+            return function(self, event, *args)
+        return new
     return wrap
 
 # vi: set et sta sw=4 ts=4:

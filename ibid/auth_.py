@@ -1,4 +1,5 @@
 from fnmatch import fnmatch
+from time import time
 
 from sqlalchemy import Column, Integer, String, DateTime, or_
 from sqlalchemy.ext.declarative import declarative_base
@@ -34,6 +35,9 @@ class Permission(Base):
 
 class Auth(object):
 
+    def __init__(self):
+        self.cache = {}
+
     def authenticate(self, event, password=None):
 
         config = ibid.config.auth
@@ -42,9 +46,18 @@ class Auth(object):
             methods.extend(ibid.config.sources[event.source]['auth'])
         methods.extend(config['methods'])
 
+        if event.sender in self.cache:
+            (user, timestamp) = self.cache[event.sender]
+            if time() - timestamp < ibid.config.auth['timeout']:
+                event.user = user
+                return True
+            else:
+                del self.cache[event.sender]
+
         for method in methods:
             if hasattr(self, method):
                 if getattr(self, method)(event, password):
+                    self.cache[event.sender] = (event.user, time())
                     return True
 
         return False
@@ -76,7 +89,9 @@ class Auth(object):
                 return True
 
     def password(self, event, password):
-        print "Trying password auth with %s" % password
+        if password is None:
+            return False
+
         session = ibid.databases.ibid()
         for token in session.query(Token).filter_by(method='password').filter_by(user=event.who).filter(or_(Token.source == event.source, Token.source == None)).all():
             if token.token == password:

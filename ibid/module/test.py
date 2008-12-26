@@ -14,16 +14,13 @@ class Delay(Module):
         event.addresponse('Done')
         return event
 
-class TestPerm(Module):
+class Protected(Module):
 
     @addressed
     @notprocessed
     @match('^protected$')
+    @authorised('protected')
     def process(self, event):
-
-        if not ibid.auth.authenticate(event) or not ibid.auth.authorise(event, 'protected'):
-            event.addresponse('Not authorised')
-        else:
-            event.addresponse('Authorised!')
+        event.addresponse('Executing protected command')
 
 # vi: set et sta sw=4 ts=4:

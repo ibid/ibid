@@ -1,6 +1,6 @@
 import ibid
 from ibid.module import Module
-from ibid.decorators import *
+from ibid.decorators import addressed, notprocessed, match
 from ibid.auth_ import Token, Permission
 
 class AddAuth(Module):
