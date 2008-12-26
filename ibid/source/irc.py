@@ -32,7 +32,7 @@ class Ircbot(irc.IRCClient):
         who = user.split('!', 1)[0]
         event = Event(self.factory.name, 'message')
         event.message = msg
-        event.user = user
+        event.sender = user
         event.who = who
         event.channel = channel
         event.source = self.factory.name
@@ -40,7 +40,7 @@ class Ircbot(irc.IRCClient):
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = user
+            event.channel = who
         else:
             event.public = True
 

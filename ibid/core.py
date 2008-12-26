@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 import ibid
 import ibid.module
+import ibid.auth_
 
 class Dispatcher(object):
 
@@ -133,6 +134,10 @@ class Reloader(object):
     def reload_databases(self):
         reload(ibid.core)
         ibid.databases = DatabaseManager()
+
+    def reload_auth(self):
+        reload(ibid.auth_)
+        ibid.auth = ibid.auth_.Auth()
 
 class DatabaseManager(dict):
 

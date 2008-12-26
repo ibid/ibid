@@ -7,6 +7,7 @@ dispatcher = None
 processors = []
 reloader = None
 databases = None
+auth = None
 
 def setup(service=None):
     ibid.config = FileConfig("ibid.ini")
@@ -16,6 +17,7 @@ def setup(service=None):
     ibid.reloader.load_processors()
     ibid.reloader.load_sources(service)
     ibid.reloader.reload_databases()
+    ibid.reloader.reload_auth()
 
 
 def reload_reloader():

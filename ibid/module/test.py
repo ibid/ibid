@@ -14,4 +14,13 @@ class Delay(Module):
         event.addresponse('Done')
         return event
 
+class Auth(Module):
+
+    @addressed
+    @notprocessed
+    @match('^\s*auth\s*$')
+    def process(self, event):
+        result = ibid.auth.authenticate(event)
+        event.addresponse(str(result))
+
 # vi: set et sta sw=4 ts=4:
