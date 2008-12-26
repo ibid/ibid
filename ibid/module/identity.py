@@ -64,6 +64,7 @@ class People(Module):
         person = Person(username)
         session.add(person)
         session.commit()
+        session.close()
         event.addresponse(u'Done')
 
 class Identities(Module):
@@ -88,6 +89,7 @@ class Identities(Module):
         person.identities.append(Identity(source, identity))
         session.add(person)
         session.commit()
+        session.close()
         event.addresponse(u'Done')
 
 class Attributes(Module):
@@ -112,6 +114,7 @@ class Attributes(Module):
         person.attributes.append(Attribute(name, value))
         session.add(person)
         session.commit()
+        session.close()
         event.addresponse(u'Done')
 
 class Describe(Module):
@@ -138,6 +141,7 @@ class Describe(Module):
             event.addresponse(str(identity))
         for attribute in person.attributes:
             event.addresponse(str(attribute))
+        session.close()
 
 class Identify(Module):
 
@@ -160,5 +164,6 @@ class Identify(Module):
 
             event.user = identity.person.username
             self.cache[event.sender] = event.user
+            session.close()
         
 # vi: set et sta sw=4 ts=4:

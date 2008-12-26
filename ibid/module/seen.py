@@ -3,6 +3,7 @@ from time import strftime
 
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.module import Module
@@ -30,10 +31,18 @@ class Watch(Module):
 
     @message
     def process(self, event):
-        saw = Saw(event.source, event.who, event.channel, event.message)
         session = ibid.databases.ibid()
+        try:
+            saw = session.query(Saw).filter_by(user=event.who).one()
+            saw.channel = event.channel
+            saw.saying = event.message
+            saw.time = datetime.now()
+        except NoResultFound:
+            saw = Saw(event.source, event.who, event.channel, event.message)
+            
         session.add(saw)
         session.commit()
+        session.close()
 
 class Seen(Module):
 
@@ -42,13 +51,16 @@ class Seen(Module):
     @match('^\s*seen\s+(\S+)\s*$')
     def process(self, event, who):
         session = ibid.databases.ibid()
-        saw = session.query(Saw).filter_by(user=who).first()
-        if not saw:
-            reply = "I haven't seen %s" % who
-        else:
-            reply = "Saw %s on %s in %s saying '%s'" % (saw.user, strftime('%Y/%m/%d %H:%M:%S', saw.time.timetuple()), saw.channel, saw.saying)
+        try:
+            saw = session.query(Saw).filter_by(user=who).first()
+        except NoResultFound:
+            event.addresponse("I haven't seen %s" % who)
+            return
+
+        reply = "Saw %s on %s in %s saying '%s'" % (saw.user, strftime('%Y/%m/%d %H:%M:%S', saw.time.timetuple()), saw.channel, saw.saying)
 
         event.addresponse(reply)
+        session.close()
         return event
 
 # vi: set et sta sw=4 ts=4:

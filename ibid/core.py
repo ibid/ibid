@@ -4,7 +4,7 @@ import inspect
 
 from twisted.internet import reactor
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 import ibid
 import ibid.module
@@ -148,7 +148,7 @@ class DatabaseManager(dict):
     def load(self, name):
         uri = ibid.config.databases[name]['uri']
         engine = create_engine(uri, echo=True)
-        self[name] = sessionmaker(bind=engine)
+        self[name] = scoped_session(sessionmaker(bind=engine))
 
     def __getattr__(self, name):
         return self[name]
