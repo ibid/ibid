@@ -17,8 +17,6 @@ class Identity(Base):
     source = Column(String)
     identity = Column(String)
 
-    person = relation('Person')
-
     def __init__(self, source, identity):
         self.source = source
         self.identity = identity
@@ -47,7 +45,7 @@ class Person(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String)
 
-    identities = relation(Identity)
+    identities = relation(Identity, backref='person')
     attributes = relation(Attribute)
 
     def __init__(self, username):
@@ -72,19 +70,25 @@ class Identities(Module):
 
     @addressed
     @notprocessed
-    @match('^\s*(I|.+)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
+    @match('^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
     def process(self, event, username, identity, source):
         session = ibid.databases.ibid()
-        if username == 'I':
+        if username.upper() == 'I':
+            if 'user' not in event:
+                event.addresponse(u"I don't know who you are")
+                return
             username = event.user
-        person = session.query(Person).filter_by(username=username).one()
-        if not person:
-            event.addresponse(u"%s doesn't exist. Please use 'add person' first")
-        else:
-            person.identities.append(Identity(source, identity))
-            session.add(person)
-            session.commit()
-            event.addresponse(u'Done')
+
+        try:
+            person = session.query(Person).filter_by(username=username).one()
+        except NoResultFound:
+            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            return
+
+        person.identities.append(Identity(source, identity))
+        session.add(person)
+        session.commit()
+        event.addresponse(u'Done')
 
 class Attributes(Module):
 
@@ -92,31 +96,43 @@ class Attributes(Module):
     @notprocessed
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
     def process(self, event, username, name, value):
-        if username == 'my':
+        if username.lower() == 'my':
+            if 'user' not in event:
+                event.addresponse(u"I don't know who you are")
+                return
             username = event.user
+
         session = ibid.databases.ibid()
-        person = session.query(Person).filter_by(username=username).one()
-        if not person:
-            event.addresponse(u"%s doesn't exist. Please use 'add person' first")
-        else:
-            person.attributes.append(Attribute(name, value))
-            session.add(person)
-            session.commit()
-            event.addresponse(u'Done')
+        try:
+            person = session.query(Person).filter_by(username=username).one()
+        except NoResultFound:
+            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            return
+
+        person.attributes.append(Attribute(name, value))
+        session.add(person)
+        session.commit()
+        event.addresponse(u'Done')
 
 class Describe(Module):
 
     @addressed
     @notprocessed
-    @match('^\s*describe\s+(.+)\s*$')
+    @match('^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
     def process(self, event, username):
-        if username == 'me':
+        if username.upper() == 'I':
             if 'user' not in event:
                 event.addresponse(u"I don't know who you are")
                 return
             username = event.user
+
         session = ibid.databases.ibid()
-        person = session.query(Person).filter_by(username=username).one()
+        try:
+            person = session.query(Person).filter_by(username=username).one()
+        except NoResultFound:
+            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            return
+
         event.addresponse(str(person))
         for identity in person.identities:
             event.addresponse(str(identity))
