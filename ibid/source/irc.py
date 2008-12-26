@@ -33,6 +33,7 @@ class Ircbot(irc.IRCClient):
         event = Event(self.factory.name, 'message')
         event.message = msg
         event.sender = user
+        event.sender_id = who
         event.who = who
         event.channel = channel
         event.source = self.factory.name
