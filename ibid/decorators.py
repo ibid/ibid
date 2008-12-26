@@ -49,11 +49,8 @@ def addressedmessage(pattern=None):
     return wrap
 
 def authorised(permission):
-    print "Wrapping with permission %s" % permission
     def wrap(function):
-        print "Wrapping %s" % function
         def new(self, event, *args):
-            print "Authenticating " + str(event)
             if not ibid.auth.authenticate(event):
                 event.addresponse('You are not authenticated')
                 return

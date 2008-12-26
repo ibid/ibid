@@ -85,6 +85,8 @@ class Ircbot(irc.IRCClient):
     def irc_unknown(self, prefix, command, params):
         if command == '307' and len(params) == 3 and params[2] == 'is a registered nick':
             self.do_auth_callback(params[1], True)
+        elif command == '307' and len(params) == 3 and params[2] == 'user has identified to services':
+            self.do_auth_callback(params[1], True)
         elif command == '320' and len(params) == 3 and params[2] == 'is identified to services ':
             self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
