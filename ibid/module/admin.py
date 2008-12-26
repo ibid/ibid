@@ -26,11 +26,12 @@ class ListModules(Module):
     @notprocessed
     @match('^\s*lsmod|list\s+plugins\s*$')
     def process(self, event):
-        reply = ''
+        plugins = []
         for processor in ibid.processors:
-            reply = u'%s%s, ' % (reply, processor.name)
+            if processor.name not in plugins:
+                plugins.append(processor.name)
 
-        event.addresponse(reply)
+        event.addresponse(', '.join(plugins))
         return event
 
 class LoadModules(Module):
@@ -39,7 +40,7 @@ class LoadModules(Module):
     @addressed
     @notprocessed
     @message
-    @match('^\s*(load|unload|reload)\s+(\S+)\s*$')
+    @match('^\s*(load|unload|reload)\s+(\S+)\s+plugin\s*$')
     def process(self, event, action, module):
         reply = ''
 

@@ -12,7 +12,7 @@ class Greet(Module):
     def process(self, event):
         """Usage: (hi|hello|hey)"""
         response = u'Hi %s' % event.who
-        event.addresponse(response)
+        event.addresponse({'reply': response})
         return event
 
 class SayDo(Module):
@@ -45,11 +45,7 @@ class Complain(Module):
 
     @addressedmessage()
     def process(self, event):
-        reply = complaints[random.randrange(len(complaints))]
-        if event.public:
-            reply = u'%s: %s' % (event.who, reply)
-
-        event.addresponse(reply)
+        event.addresponse(complaints[random.randrange(len(complaints))])
         return event
 
 # vi: set et sta sw=4 ts=4:

@@ -53,4 +53,20 @@ class Responses(Module):
         event.responses = converted
         return event
 
+class Address(Module):
+
+    @addressed
+    @message
+    def process(self, event):
+        if event.public:
+            addressed = []
+            for response in event.responses:
+                if isinstance(response, basestring) and event.public:
+                    addressed.append('%s: %s' % (event.who, response))
+                else:
+                    addressed.append(response)
+            print addressed
+
+            event.responses = addressed
+                
 # vi: set et sta sw=4 ts=4:
