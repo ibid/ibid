@@ -40,6 +40,9 @@ class Auth(object):
 
     def authenticate(self, event, password=None):
 
+        if 'user' not in event:
+            return
+
         config = ibid.config.auth
         methods = []
         if 'auth' in ibid.config.sources[event.source]:
@@ -47,9 +50,9 @@ class Auth(object):
         methods.extend(config['methods'])
 
         if event.sender in self.cache:
-            (user, timestamp) = self.cache[event.sender]
+            timestamp = self.cache[event.sender]
             if time() - timestamp < ibid.config.auth['timeout']:
-                event.user = user
+                event.authenticated = True
                 return True
             else:
                 del self.cache[event.sender]
@@ -57,14 +60,15 @@ class Auth(object):
         for method in methods:
             if hasattr(self, method):
                 if getattr(self, method)(event, password):
-                    self.cache[event.sender] = (event.user, time())
+                    self.cache[event.sender] = time()
+                    event.authenticated = True
                     return True
 
         return False
 
     def authorise(self, event, permission):
 
-        if 'user' not in event:
+        if 'authenticated' not in event:
             return False
 
         session = ibid.databases.ibid()
@@ -75,7 +79,6 @@ class Auth(object):
 
     def jid(self, event, password = None):
         if ibid.config.sources[event.source]['type'] == 'jabber':
-            event.user = event.sender.split('/')[0]
             return True
 
     def hostmask(self, event, password = None):
@@ -83,9 +86,8 @@ class Auth(object):
             return
 
         session = ibid.databases.ibid()
-        for token in session.query(Token).filter_by(method='hostmask').filter_by(user=event.who).filter(or_(Token.source == event.source, Token.source == None)).all():
+        for token in session.query(Token).filter_by(method='hostmask').filter_by(user=event.user).filter(or_(Token.source == event.source, Token.source == None)).all():
             if fnmatch(event.sender, token.token):
-                event.user = event.who
                 return True
 
     def password(self, event, password):
@@ -93,9 +95,8 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        for token in session.query(Token).filter_by(method='password').filter_by(user=event.who).filter(or_(Token.source == event.source, Token.source == None)).all():
+        for token in session.query(Token).filter_by(method='password').filter_by(user=event.user).filter(or_(Token.source == event.source, Token.source == None)).all():
             if token.token == password:
-                event.user = event.who
                 return True
         
 # vi: set et sta sw=4 ts=4:

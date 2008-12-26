@@ -21,8 +21,8 @@ class AddPermission(Module):
 
     @addressed
     @notprocessed
-    @match('^\s*add\s+permission\s+(.+)\s+for\s+(.+)\s*$')
-    def process(self, event, permission, user):
+    @match('^\s*grant\s+(.+)\s+permission\s+(.+)\s*$')
+    def process(self, event, user, permission):
 
         perm = Permission(user, permission)
         session = ibid.databases.ibid()

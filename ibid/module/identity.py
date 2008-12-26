@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relation, backref
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
@@ -110,6 +111,9 @@ class Describe(Module):
     @match('^\s*describe\s+(.+)\s*$')
     def process(self, event, username):
         if username == 'me':
+            if 'user' not in event:
+                event.addresponse(u"I don't know who you are")
+                return
             username = event.user
         session = ibid.databases.ibid()
         person = session.query(Person).filter_by(username=username).one()
@@ -121,13 +125,24 @@ class Describe(Module):
 
 class Identify(Module):
 
+    def __init__(self, name):
+        Module.__init__(self, name)
+        self.cache = {}
+
     @message
     def process(self, event):
         if 'sender_id' in event:
+            if event.sender in self.cache:
+                event.user = self.cache[event.sender]
+                return
+
             session = ibid.databases.ibid()
-            identity = session.query(Identity).filter_by(source=event.source).filter_by(identity=event.sender_id).one()
-            print identity
-            if identity:
-                event.user = identity.person.username
+            try:
+                identity = session.query(Identity).filter_by(source=event.source).filter_by(identity=event.sender_id).one()
+            except NoResultFound:
+                return
+
+            event.user = identity.person.username
+            self.cache[event.sender] = event.user
         
 # vi: set et sta sw=4 ts=4:
