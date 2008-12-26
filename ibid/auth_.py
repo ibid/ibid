@@ -1,9 +1,10 @@
 from fnmatch import fnmatch
-from time import time
+from time import time, sleep
 from traceback import print_exc
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, or_
 from sqlalchemy.ext.declarative import declarative_base
+from twisted.internet import reactor
 
 import ibid
 
@@ -38,6 +39,7 @@ class Auth(object):
 
     def __init__(self):
         self.cache = {}
+        self.irc = {}
 
     def authenticate(self, event, password=None):
 
@@ -101,5 +103,23 @@ class Auth(object):
         for token in session.query(Token).filter_by(method='password').filter_by(user=event.user).filter(or_(Token.source == event.source, Token.source == None)).all():
             if token.token == password:
                 return True
+
+    def _irc_auth_callback(self, nick, result):
+        self.irc[nick] = result
+
+    def nickserv(self, event, password):
+        if ibid.config.sources[event.source]['type'] != 'irc':
+            return
+
+        reactor.callFromThread(ibid.sources[event.source].proto.authenticate, event.who, self._irc_auth_callback)
+        for i in xrange(150):
+            if event.who in self.irc:
+                break
+            sleep(0.1)
+
+        if event.who in self.irc:
+            result = self.irc[event.who]
+            del self.irc[event.who]
+            return result
         
 # vi: set et sta sw=4 ts=4:

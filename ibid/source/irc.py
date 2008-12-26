@@ -12,6 +12,8 @@ from ibid.event import Event
 encoding = 'latin-1'
 
 class Ircbot(irc.IRCClient):
+
+    encoding = 'latin-1'
         
     def connectionMade(self):
         self.nickname = ibid.config.sources[self.factory.name]['nick']
@@ -19,6 +21,7 @@ class Ircbot(irc.IRCClient):
         self.factory.resetDelay()
         self.factory.respond = self.respond
         self.factory.proto = self
+        self.auth_callbacks = {}
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -41,7 +44,7 @@ class Ircbot(irc.IRCClient):
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = who
+            event.channel = event.who
         else:
             event.public = True
 
@@ -54,7 +57,7 @@ class Ircbot(irc.IRCClient):
         event.sender_id = unicode(nick)
         event.who = unicode(nick)
         event.state = 'joined'
-        event.channel = channel
+        event.channel = event.who
         ibid.dispatcher.dispatch(event)
 
     def respond(self, response):
@@ -69,6 +72,23 @@ class Ircbot(irc.IRCClient):
                 self.join(channel.encode(encoding))
             elif action == 'part':
                 self.part(channel.encode(encoding))
+
+    def authenticate(self, nick, callback):
+        self.sendLine('WHOIS %s' % nick.encode(encoding))
+        self.auth_callbacks[nick] = callback
+
+    def do_auth_callback(self, nick, result):
+        if nick in self.auth_callbacks:
+            self.auth_callbacks[nick](nick, result)
+            del self.auth_callbacks[nick]
+
+    def irc_unknown(self, prefix, command, params):
+        if command == '307' and len(params) == 3 and params[2] == 'is a registered nick':
+            self.do_auth_callback(params[1], True)
+        elif command == '320' and len(params) == 3 and params[2] == 'is identified to services ':
+            self.do_auth_callback(params[1], True)
+        elif command == "RPL_ENDOFWHOIS":
+            self.do_auth_callback(params[1], False)
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
