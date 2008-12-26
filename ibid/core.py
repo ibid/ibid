@@ -147,7 +147,7 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]['uri']
-        engine = create_engine(uri)
+        engine = create_engine(uri, echo=True)
         self[name] = sessionmaker(bind=engine)
 
     def __getattr__(self, name):

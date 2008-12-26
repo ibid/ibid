@@ -1,6 +1,6 @@
 from fnmatch import fnmatch
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, or_
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
@@ -23,7 +23,7 @@ class Token(Base):
 
 class Auth(object):
 
-    def authenticate(self, event):
+    def authenticate(self, event, password=None):
 
         config = ibid.config.auth
         methods = []
@@ -33,26 +33,31 @@ class Auth(object):
 
         for method in methods:
             if hasattr(self, method):
-                if getattr(self, method)(event):
+                if getattr(self, method)(event, password):
                     return True
 
         return False
 
-    def jid(self, event):
+    def jid(self, event, password = None):
         if ibid.config.sources[event.source]['type'] == 'jabber':
             event.user = event.sender.split('/')[0]
             return True
 
-    def hostmask(self, event):
+    def hostmask(self, event, password = None):
         if ibid.config.sources[event.source]['type'] != 'irc':
             return
 
         session = ibid.databases.ibid()
-        for token in session.query(Token).filter_by(user=event.who).all():
-            if token.source and token.source != event.source:
-                continue
-
+        for token in session.query(Token).filter_by(method='hostmask').filter_by(user=event.who).filter(or_(Token.source == event.source, Token.source == None)).all():
             if fnmatch(event.sender, token.token):
+                event.user = event.who
+                return True
+
+    def password(self, event, password):
+        print "Trying password auth with %s" % password
+        session = ibid.databases.ibid()
+        for token in session.query(Token).filter_by(method='password').filter_by(user=event.who).filter(or_(Token.source == event.source, Token.source == None)).all():
+            if token.token == password:
                 event.user = event.who
                 return True
         

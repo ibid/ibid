@@ -19,4 +19,16 @@ class Admin(Module):
 
         event.addresponse(u'Okay')
 
+class Auth(Module):
+
+    @addressed
+    @notprocessed
+    @match('^\s*auth(?:\s+(.+))?\s*$')
+    def process(self, event, password):
+        result = ibid.auth.authenticate(event, password)
+        if result:
+            event.addresponse(u'You are authenticated')
+        else:
+            event.addresponse(u'Authentication failed')
+
 # vi: set et sta sw=4 ts=4:
