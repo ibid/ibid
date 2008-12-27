@@ -91,11 +91,7 @@ class Address(Processor):
 
 class Timestamp(Processor):
 
-    addressed = False
-    priority = -1900
-
-    @handler
-    def timestamp(self, event):
+    def process(self, event):
         event.time = time()
                 
 # vi: set et sta sw=4 ts=4:
