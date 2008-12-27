@@ -8,10 +8,12 @@ from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.models import Identity, Sighting
+from ibid.models import Identity, Sighting, Account
 from ibid.plugins.identity import identify
 
 class See(Processor):
+
+    priority = 1500
 
     def process(self, event):
         if event.type != 'message' and event.type != 'state':
@@ -39,29 +41,61 @@ class See(Processor):
 
 class Seen(Processor):
 
-    @match('^\s*seen\s+(\S+)\s*$')
-    def handler(self, event, who):
-        identity = identify(event.source, who)
-        if not identity:
+    @match('^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
+    def handler(self, event, who, source):
+
+        session = ibid.databases.ibid()
+        account = None
+        identity = None
+        try:
+            identity = session.query(Identity).filter_by(source=source or event.source).filter_by(identity=who).one()
+            if identity.account:
+                account = identity.account
+
+        except NoResultFound:
+            if not source:
+                account = session.query(Account).filter_by(username=who).one()
+
+        if not identity and not account:
             event.addresponse(u"I don't know who %s is" % who)
             return
 
-        session = ibid.databases.ibid()
-        try:
-            sighting = session.query(Sighting).filter_by(identity_id=identity.id).first()
-        except NoResultFound:
+        messages = []
+        states = []
+        if account:
+            for identity in account.identities:
+                for sighting in session.query(Sighting).filter_by(identity_id=identity.id).all():
+                    if sighting.type == 'message':
+                        messages.append(sighting)
+                    else:
+                        states.append(sighting)
+        else:
+            for sighting in session.query(Sighting).filter_by(identity_id=identity.id).all():
+                if sighting.type == 'message':
+                    messages.append(sighting)
+                else:
+                    states.append(sighting)
+
+        if len(messages) == 0 and len(states) == 0:
             event.addresponse(u"I haven't seen %s" % who)
             return
-        finally:
-            session.close()
 
-        reply = "Saw %s at %s in " % (identity.identity, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
-        if sighting.channel:
-            reply = reply + "%s saying '%s'" (sighting.channel, sighting.saying)
-        else:
-            reply = reply + 'private'
 
-        event.addresponse(reply)
+        messages.sort(key=lambda x: x.time, reverse=True)
+        states.sort(key=lambda x: x.time, reverse=True)
+
+        if len(messages) > 0:
+            sighting = messages[0]
+            reply = "Saw %s at %s in %s on %s" % (who, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.channel or 'private', sighting.identity.source)
+            if sighting.value:
+                reply = reply + " saying '%s'" % sighting.value
+            event.addresponse(reply)
+
+        if len(states) > 0:
+            sighting = states[0]
+            event.addresponse(u"%s's state on %s has been %s since %s" % (who, sighting.identity.source, sighting.value, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple())))
+
+        session.close()
         return event
 
 # vi: set et sta sw=4 ts=4:

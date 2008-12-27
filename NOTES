@@ -40,7 +40,6 @@ plugins
   -- not only interesting, but useful for pruning?
   -- ooh, also the first time the dude was seen?  is that excessive?
 - the Seen processor uses 'identify' from the identity processor?  not so keen on that...
-  -- it also uses 'channel', which leads to things like "Vhata was seen in Vhata saying hello"
 - sources processor:  needs a bit of error checking, authentication and...  all sorts.
   -- (no, I know, it was there for debugging, just a note for Future Us)
 

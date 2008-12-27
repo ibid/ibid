@@ -25,10 +25,10 @@ class AddAuth(Processor):
 
         event.addresponse(u'Okay')
 
-class Permission(Processor):
+class Permissions(Processor):
 
     @match('^grant\s+(.+)\s+permission\s+(.+)$')
-    def add(self, event, user, permission):
+    def grant(self, event, user, permission):
 
         session = ibid.databases.ibid()
         try:
