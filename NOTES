@@ -39,7 +39,6 @@ plugins
 - sighting processor should keep track of the number of times the dude has been sighted
   -- not only interesting, but useful for pruning?
   -- ooh, also the first time the dude was seen?  is that excessive?
-- the Seen processor uses 'identify' from the identity processor?  not so keen on that...
 - sources processor:  needs a bit of error checking, authentication and...  all sorts.
   -- (no, I know, it was there for debugging, just a note for Future Us)
 

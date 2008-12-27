@@ -42,7 +42,7 @@ class Identities(Processor):
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
-            if 'account' not in event:
+            if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
             account = session.query(Account).filter_by(id=event.account).one()
@@ -74,7 +74,7 @@ class Attributes(Processor):
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
     def attribute(self, event, username, name, value):
         if username.lower() == 'my':
-            if 'user' not in event:
+            if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
             username = event.user

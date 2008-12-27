@@ -88,6 +88,7 @@ class Sighting(Base):
     channel = Column(Unicode)
     value = Column(Unicode)
     time = Column(DateTime)
+    count = Column(Integer)
 
     identity = relation('Identity')
 
@@ -96,5 +97,6 @@ class Sighting(Base):
         self.channel = channel
         self.saying = saying
         self.time = datetime.now()
+        self.count = 0
 
 # vi: set et sta sw=4 ts=4:

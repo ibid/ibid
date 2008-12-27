@@ -34,6 +34,7 @@ class See(Processor):
         elif event.type == 'state':
             sighting.value = event.state
         sighting.time = datetime.now()
+        sighting.count = sighting.count + 1
 
         session.add(sighting)
         session.commit()
@@ -49,12 +50,15 @@ class Seen(Processor):
         identity = None
         try:
             identity = session.query(Identity).filter_by(source=source or event.source).filter_by(identity=who).one()
-            if identity.account:
+            if identity.account and not source:
                 account = identity.account
 
         except NoResultFound:
             if not source:
-                account = session.query(Account).filter_by(username=who).one()
+                try:
+                    account = session.query(Account).filter_by(username=who).one()
+                except NoResultFound:
+                    pass
 
         if not identity and not account:
             event.addresponse(u"I don't know who %s is" % who)
@@ -86,14 +90,14 @@ class Seen(Processor):
 
         if len(messages) > 0:
             sighting = messages[0]
-            reply = "Saw %s at %s in %s on %s" % (who, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.channel or 'private', sighting.identity.source)
+            reply = u"I've seen %s %s times on %s, and last at %s in %s" % (who, sighting.count, sighting.identity.source, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.channel or 'private')
             if sighting.value:
                 reply = reply + " saying '%s'" % sighting.value
             event.addresponse(reply)
 
         if len(states) > 0:
             sighting = states[0]
-            event.addresponse(u"%s's state on %s has been %s since %s" % (who, sighting.identity.source, sighting.value, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple())))
+            event.addresponse(u"%s's state on %s has been %s since %s and has changed %s times" % (who, sighting.identity.source, sighting.value, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.count))
 
         session.close()
         return event
