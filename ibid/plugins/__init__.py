@@ -42,20 +42,28 @@ class Processor(object):
 
         found = False
         for name, method in inspect.getmembers(self, inspect.ismethod):
-            if hasattr(method, 'pattern'):
+            if hasattr(method, 'handler'):
                 found = True
-                match = method.pattern.search(event.message)
-                if match is not None:
-                    event = method(event, *match.groups()) or event
+                if hasattr(method, 'pattern'):
+                    match = method.pattern.search(event.message)
+                    if match is not None:
+                        event = method(event, *match.groups()) or event
+                else:
+                    event = method(event) or event
 
         if not found:
             raise RuntimeException(u'No handlers found in %s' % self)
 
         return event
 
+def handler(function):
+    function.handler = True
+    return function
+
 def match(regex):
     pattern = re.compile(regex, re.I)
     def wrap(function):
+        function.handler = True
         function.pattern = pattern
         return function
     return wrap

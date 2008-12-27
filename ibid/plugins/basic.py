@@ -2,13 +2,13 @@
 
 import random
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 
 class Greet(Processor):
     """Greets people"""
 
     @match('^\s*(?:hi|hello|hey)\s*$')
-    def handle_greet(self, event):
+    def greet(self, event):
         """Usage: (hi|hello|hey)"""
         response = u'Hi %s' % event.who
         event.addresponse({'reply': response})
@@ -18,7 +18,7 @@ class SayDo(Processor):
     """Says or does things in a channel"""
 
     @match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
-    def handler(self, event, action, where, what):
+    def saydo(self, event, action, where, what):
         """Usage: (say|do) <channel> <text>"""
         if (event.who != u"cocooncrash"):
             reply = u"No!  You're not the boss of me!"
@@ -38,12 +38,12 @@ class SayDo(Processor):
 complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
 class Complain(Processor):
-    """Responds with a complains. Used to handle unprocessed messages."""
+    """Responds with a complaint. Used to handle unprocessed messages."""
 
     priority = 900
 
-    @match(r'')
-    def handler(self, event):
+    @handler
+    def complain(self, event):
         event.addresponse(complaints[random.randrange(len(complaints))])
         return event
 

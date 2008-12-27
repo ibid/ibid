@@ -2,7 +2,7 @@
 import re
 
 import ibid
-from ibid.plugins import Module, Processor, match
+from ibid.plugins import Module, Processor, match, handler
 
 class Addressed(Processor):
 
@@ -13,8 +13,8 @@ class Addressed(Processor):
         Processor.__init__(self, name)
         self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I)
 
-    @match(r'')
-    def handler(self, event):
+    @handler
+    def handle(self, event):
         if 'addressed' not in event:
             newmsg = self.pattern.sub('', event.message)
             if newmsg != event.message:
@@ -28,8 +28,8 @@ class Ignore(Processor):
 
     addressed = False
 
-    @match(r'')
-    def handler(self, event):
+    @handler
+    def ignore(self, event):
         for who in ibid.config.plugins[self.name]['ignore']:
             if event.who == who:
                 event.processed = True
@@ -40,7 +40,8 @@ class Responses(Processor):
 
     processed = True
 
-    def process(self, event):
+    @handler
+    def responses(self, event):
         if 'responses' not in event:
             return
 
@@ -61,8 +62,8 @@ class Address(Processor):
 
     processed = True
 
-    @match(r'')
-    def handler(self, event):
+    @handler
+    def address(self, event):
         if event.public:
             addressed = []
             for response in event.responses:

@@ -2,13 +2,13 @@ from sqlalchemy.orm import eagerload
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.models import Account, Identity, Attribute
 
 class Accounts(Processor):
 
     @match('^\s*add\s+account\s+(.+)\s*$')
-    def handler(self, event, username):
+    def account(self, event, username):
         session = ibid.databases.ibid()
         account = Account(username)
         session.add(account)
@@ -19,7 +19,7 @@ class Accounts(Processor):
 class Identities(Processor):
 
     @match('^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
-    def handler(self, event, username, identity, source):
+    def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
             if 'user' not in event:
@@ -51,7 +51,7 @@ class Identities(Processor):
 class Attributes(Processor):
 
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
-    def handler(self, event, username, name, value):
+    def attribute(self, event, username, name, value):
         if username.lower() == 'my':
             if 'user' not in event:
                 event.addresponse(u"I don't know who you are")
@@ -74,7 +74,7 @@ class Attributes(Processor):
 class Describe(Processor):
 
     @match('^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
-    def handler(self, event, username):
+    def describe(self, event, username):
         if username.upper() == 'I':
             if 'user' not in event:
                 event.addresponse(u"I don't know who you are")
@@ -104,8 +104,8 @@ class Identify(Processor):
         Processor.__init__(self, name)
         self.cache = {}
 
-    @match(r'')
-    def handler(self, event):
+    @handler
+    def identify(self, event):
         if 'sender_id' in event:
             #if event.sender in self.cache:
             #    (event.identity, event.account) = self.cache[event.sender]

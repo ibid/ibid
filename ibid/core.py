@@ -119,7 +119,6 @@ class Reloader(object):
             return False
 
         ibid.processors.sort(key=lambda x: x.priority)
-        print ibid.processors
 
         return True
 
