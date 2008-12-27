@@ -98,7 +98,7 @@ class Describe(Processor):
     def describe(self, event, username):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
-            if 'account' not in event:
+            if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
             account = session.query(Account).filter_by(id=event.account).one()
@@ -133,7 +133,13 @@ class Identify(Processor):
             #    (event.identity, event.account) = self.cache[event.sender]
             #    return
 
-            identity = identify(event.source, event.sender_id, True)
+            session = ibid.databases.ibid()
+            try:
+                identity = session.query(Identity).options(eagerload('account')).filter_by(source=event.source).filter_by(identity=event.sender_id).one()
+            except NoResultFound:
+                identity = Identity(event.source, event.sender_id)
+                session.add(identity)
+                session.commit()
 
             event.identity = identity.id
             if identity.account:
@@ -142,22 +148,30 @@ class Identify(Processor):
                 event.account = None
             self.cache[event.sender] = (event.identity, event.account)
 
-def identify(source, user, create=False):
+            session.close()
+
+def identify(source, user):
 
     session = ibid.databases.ibid()
-    try:
-        identity = session.query(Identity).options(eagerload('account')).filter_by(source=source).filter_by(identity=user).one()
-        return identity
-    except NoResultFound:
-        if not create:
-            return None
+    identity = None
+    account = None
 
-        identity = Identity(source, user)
-        session.add(identity)
-        session.commit()
-        identity.account
+    try:
+        identity = session.query(Identity).filter_by(source=source).filter_by(identity=user).one()
+    except NoResultFound:
+        pass
+
+    try:
+        account = session.query(Account).filter_by(username=user).one()
+    except NoResultFound:
+        pass
+
+    if not account and not identity:
+        return None
+    if not accout:
         return identity
-    finally:
-        session.close()
-        
+    if not identity or identity in account.identities:
+        return account
+    return (account, identity)
+
 # vi: set et sta sw=4 ts=4:

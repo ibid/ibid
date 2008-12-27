@@ -1,41 +1,66 @@
+from sqlalchemy.orm.exc import NoResultFound
+
 import ibid
 from ibid.plugins import Processor, match
 from ibid.auth_ import Credential, Permission
-from ibid.plugins.identity import identify
+from ibid.plugins.identity import Account
 
 class AddAuth(Processor):
 
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def handler(self, event, user, source, method, credential):
 
-        account = identify(event.source, user)
-        if not account:
+        session = ibid.databases.ibid()
+        try:
+            account = session.query(Account).filter_by(username=user).one()
+        except NoResultFound:
             event.addresponse(u"I don't know who %s is" % user)
+            session.close()
+            return
 
-        else:
-            credential = Credential(account.id, source, method, credential)
-            session = ibid.databases.ibid()
-            session.add(credential)
-            session.commit()
+        credential = Credential(account.id, source, method, credential)
+        session.add(credential)
+        session.commit()
+        session.close()
 
-            event.addresponse(u'Okay')
+        event.addresponse(u'Okay')
 
-class AddPermission(Processor):
+class Permission(Processor):
 
-    @match('^\s*grant\s+(.+)\s+permission\s+(.+)\s*$')
-    def handler(self, event, user, permission):
+    @match('^grant\s+(.+)\s+permission\s+(.+)$')
+    def add(self, event, user, permission):
 
-        account = identify(event.source, user)
-        if not account:
+        session = ibid.databases.ibid()
+        try:
+            account = session.query(Account).filter_by(username=user).one()
+        except NoResultFound:
             event.addresponse(u"I don't know who %s is" % user)
+            session.close()
+            return
 
+        permission = Permission(account.id, permission)
+        session.add(permission)
+        session.commit()
+        session.close()
+
+        event.addresponse(u'Okay')
+
+    @match(r'^permissions(?:\s+for\s+(\S+))?$')
+    def list(self, event, username):
+        session = ibid.databases.ibid()
+        if not username:
+            if not event.account:
+                event.addresponse(u"I don't know who you are")
+                return
+            account = session.query(Account).filter_by(id=event.account).one()
         else:
-            permission = Permission(account.id, permission)
-            session = ibid.databases.ibid()
-            session.add(permission)
-            session.commit()
+            try:
+                account = session.query(Account).filter_by(username=username).one()
+            except NoResultFound:
+                event.addresponse(u"I don't know who %s is" % username)
+                return
 
-            event.addresponse(u'Okay')
+        event.addresponse(', '.join([perm.permission for perm in account.permissions]))
 
 class Auth(Processor):
 
