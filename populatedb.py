@@ -3,9 +3,9 @@
 import sys
 from sqlalchemy import create_engine
 
-import ibid.module
+import ibid.plugins
 
-models = [('ibid.models', 'Base'), ('ibid.module.seen', 'Base')]
+models = [('ibid.models', 'Base')]
 engine = create_engine('sqlite:///ibid.db')
 
 for module, model in models:

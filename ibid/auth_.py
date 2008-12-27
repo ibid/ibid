@@ -1,19 +1,17 @@
-from fnmatch import fnmatch
-from time import time, sleep
 from traceback import print_exc
+from time import time
 
 from twisted.internet import reactor
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.models import Authenticator, Permission, Account
+from ibid.models import Credential, Permission, Account
 
 class Auth(object):
 
     def __init__(self):
         self.cache = {}
-        self.irc = {}
 
     def authenticate(self, event, credential=None):
 
@@ -35,14 +33,21 @@ class Auth(object):
                 del self.cache[event.sender]
 
         for method in methods:
-            if hasattr(self, method):
-                try:
-                    if getattr(self, method)(event, credential):
-                        self.cache[event.sender] = time()
-                        event.authenticated = True
-                        return True
-                except:
-                    print_exc()
+            if hasattr(ibid.sources[event.source], 'auth_%s' % method):
+                function = getattr(ibid.sources[event.source], 'auth_%s' % method)
+            elif hasattr(self, method):
+                function = getattr(self, method)
+            else:
+                print "Couldn't find auth method %s" % method
+                continue
+
+            try:
+                if function(event, credential):
+                    self.cache[event.sender] = time()
+                    event.authenticated = True
+                    return True
+            except:
+                print_exc()
 
         return False
 
@@ -63,40 +68,13 @@ class Auth(object):
     def implicit(self, event, credential = None):
         return True
 
-    def hostmask(self, event, credential = None):
-        if ibid.config.sources[event.source]['type'] != 'irc':
-            return
-
-        session = ibid.databases.ibid()
-        for authenticator in session.query(Authenticator).filter_by(method='hostmask').filter_by(account_id=event.account).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
-            if fnmatch(event.sender, authenticator.authenticator):
-                return True
-
     def password(self, event, password):
         if password is None:
             return False
 
         session = ibid.databases.ibid()
-        for authenticator in session.query(Authenticator).filter_by(method='password').filter_by(account_id=event.account).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
-            if authenticator.authenticator == password:
+        for credential in session.query(Credential).filter_by(method='password').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
+            if credential.credential == password:
                 return True
 
-    def _irc_auth_callback(self, nick, result):
-        self.irc[nick] = result
-
-    def nickserv(self, event, credential):
-        if ibid.config.sources[event.source]['type'] != 'irc':
-            return
-
-        reactor.callFromThread(ibid.sources[event.source].proto.authenticate, event.who, self._irc_auth_callback)
-        for i in xrange(150):
-            if event.who in self.irc:
-                break
-            sleep(0.1)
-
-        if event.who in self.irc:
-            result = self.irc[event.who]
-            del self.irc[event.who]
-            return result
-        
 # vi: set et sta sw=4 ts=4:

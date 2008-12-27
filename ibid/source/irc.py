@@ -1,11 +1,15 @@
 import re
+from fnmatch import fnmatch
+from time import sleep
 
 from twisted.internet import reactor
 from twisted.words.protocols import irc
 from twisted.internet import protocol, ssl
 from twisted.application import internet
+from sqlalchemy import or_
 
 import ibid
+from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
@@ -112,6 +116,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def __init__(self, name):
         self.name = name
         self.respond = None
+        self.auth = {}
 
     def setServiceParent(self, service):
         port = 6667
@@ -140,5 +145,26 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         self.stopFactory()
         self.proto.transport.loseConnection()
         return True
+
+    def auth_hostmask(self, event, credential = None):
+        session = ibid.databases.ibid()
+        for credential in session.query(Credential).filter_by(method='hostmask').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
+            if fnmatch(event.sender, credential.credential):
+                return True
+
+    def _irc_auth_callback(self, nick, result):
+        self.auth[nick] = result
+
+    def auth_nickserv(self, event, credential):
+        reactor.callFromThread(self.proto.authenticate, event.who, self._irc_auth_callback)
+        for i in xrange(150):
+            if event.who in self.auth:
+                break
+            sleep(0.1)
+
+        if event.who in self.auth:
+            result = self.auth[event.who]
+            del self.auth[event.who]
+            return result
 
 # vi: set et sta sw=4 ts=4:

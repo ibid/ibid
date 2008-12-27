@@ -8,7 +8,6 @@ general
 auth
 ====
 - has special cases for IRC
-- surely special case auth such as nickserv should be pushed into the sources, and the auth module must delegate
 - is auth_ called auth_ because ibid.auth was already taken?  not cool
 
 core
@@ -35,10 +34,6 @@ plugins
     -- not a source.  Sounds like proper logging needs to be set up, actually.  Future Jonathan:  add python.logging like you said you would.
 - load/reload is a good example of the reloader not being generic enough... I think?
 - addressed regex needs work (add some whitespace, remove some punctuation, and consider tea-style: "ct weather, bot?" addressing)
-  -- also destroys "saw" because it changes the message in-place
-  -- royally fucks up the Log module too, now that I've seen it
-  -- should plugins examine a post-processed field, or use *the* field (and look elsewhere for a preprocessed field if they want?) - i.e. some plugins require 'raw' events (like 'Saw'), and some want the address etc stripped out
-  -- on that note, what about punctuation?  question marks at the end of queries are super-common.  Knab-style removing of "what is" is *bad* though
 - is ignore strong enough?  it just sets processed to true - postprocessors won't ignore this.  is that bad?
 - applause to Michael for the Responses processor: that's clever
   -- that said, not at all convinced by Address processor

@@ -37,20 +37,20 @@ class Attribute(Base):
     def __repr__(self):
         return '<Attribute %s = %s>' % (self.name, self.value)
 
-class Authenticator(Base):
-    __tablename__ = 'authenticators'
+class Credential(Base):
+    __tablename__ = 'credentials'
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
     source = Column(Unicode)
     method = Column(Unicode)
-    authenticator = Column(Unicode)
+    credential = Column(Unicode)
 
-    def __init__(self, account_id, source, method, authenticator):
+    def __init__(self, account_id, source, method, credential):
         self.account_id = account_id
         self.source = source
         self.method = method
-        self.authenticator = authenticator
+        self.credential = credential
 
 class Permission(Base):
     __tablename__ = 'permissions'

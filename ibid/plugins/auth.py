@@ -1,21 +1,21 @@
 import ibid
 from ibid.plugins import Processor, match
-from ibid.auth_ import Authenticator, Permission
+from ibid.auth_ import Credential, Permission
 from ibid.plugins.identity import identify
 
 class AddAuth(Processor):
 
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
-    def handler(self, event, user, source, method, authenticator):
+    def handler(self, event, user, source, method, credential):
 
         account = identify(event.source, user)
         if not account:
             event.addresponse(u"I don't know who %s is" % user)
 
         else:
-            authenticator = Authenticator(account.id, source, method, authenticator)
+            credential = Credential(account.id, source, method, credential)
             session = ibid.databases.ibid()
-            session.add(authenticator)
+            session.add(credential)
             session.commit()
 
             event.addresponse(u'Okay')
