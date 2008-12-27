@@ -32,15 +32,27 @@ class Ircbot(irc.IRCClient):
         for channel in ibid.config.sources[self.factory.name]['channels']:
             self.join(channel)
 
-    def privmsg(self, user, channel, msg):
+    def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
-        event = Event(self.factory.name, 'message')
-        event.message = unicode(msg)
+        event = Event(self.factory.name, type)
         event.sender = unicode(user)
         event.sender_id = unicode(nick)
         event.who = unicode(nick)
         event.channel = unicode(channel)
         event.source = self.factory.name
+        return event
+
+    def _state_event(self, user, channel, action, kicker=None, message=None):
+        event = self._create_event('state', user, channel)
+        event.channel = event.who
+        event.state = action
+        if kicker: event.kicker = kicker
+        if message: event.message = message
+        ibid.dispatcher.dispatch(event)
+
+    def privmsg(self, user, channel, msg):
+        event = self._create_event('message', user, channel)
+        event.message = unicode(msg)
 
         if channel.lower() == self.nickname.lower():
             event.addressed = True
@@ -52,14 +64,16 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event)
 
     def userJoined(self, user, channel):
-        event = Event(self.factory.name, 'state')
-        nick = user.split('!', 1)[0]
-        event.sender = unicode(user)
-        event.sender_id = unicode(nick)
-        event.who = unicode(nick)
-        event.state = 'joined'
-        event.channel = event.who
-        ibid.dispatcher.dispatch(event)
+        self._state_event(user, channel, 'joined')
+
+    def userLeft(self, user, channel):
+        self._state_event(user, channel, 'parted')
+
+    def userQuit(self, user, channel):
+        self._state_event(user, channel, 'quit')
+
+    def userKicked(self, kickee, channel, kicker, message):
+        self._state_event(kickee, channel, 'kicked', kicker, message)
 
     def respond(self, response):
         if 'action' in response and response['action']:
