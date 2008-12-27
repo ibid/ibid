@@ -21,11 +21,8 @@ core
 sources
 =======
 - telnet source: add auth -> identity -> accounts?  (user 'telnet' is a bit blah)
-- event.channel = sender   # smacks of hacking jabber on top of IRC
   -- we should think about event.sender sender_id who channel - what do they all mean?  what do we actually care about (as opposed to what is foisted on us by the vagaries of our IRC/jabber sources)?
     -- note from Slightly-Future Jonathan to Past Jonathan: the identity plugin seems to have some opinions about this
-- irc source:  response.ircaction - bit crap, can the processor not actually manipulate the IRC source itself?  like the reloader processor manipulates the reloader?
-  -- the IRC Processor shouldn't be loaded without the IRC Source, and so can make all sorts of assumptions based on that (but should still check and exit gracefully if the Source isn't there)
 - irc source:  do_auth_callback looks all kinds of hackety
 
 plugins

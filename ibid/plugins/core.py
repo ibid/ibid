@@ -13,18 +13,30 @@ class Addressed(Processor):
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I)
+        self.pattern = re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I)
 
     @handler
     def handle(self, event):
         if 'addressed' not in event:
-            newmsg = self.pattern.sub('', event.message)
-            if newmsg != event.message:
-                event.addressed = True
-                event.message = newmsg
+            matches = self.pattern.search(event.message)
+            if matches:
+                event.addressed = matches.group(1)
+                event.message = self.pattern.sub('', event.message)
             else:
                 event.addressed = False
         return event
+
+class Strip(Processor):
+
+    priority = -1600
+    addressed = False
+    pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$')
+
+    @handler
+    def handle(self, event):
+        if 'message_raw' not in event:
+            event.message_raw = event.message
+        event.message = self.pattern.search(event.message).group(1)
 
 class Ignore(Processor):
 

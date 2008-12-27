@@ -15,7 +15,7 @@ class Auth(object):
         self.cache = {}
         self.irc = {}
 
-    def authenticate(self, event, password=None):
+    def authenticate(self, event, credential=None):
 
         if 'account' not in event:
             return
@@ -37,7 +37,7 @@ class Auth(object):
         for method in methods:
             if hasattr(self, method):
                 try:
-                    if getattr(self, method)(event, password):
+                    if getattr(self, method)(event, credential):
                         self.cache[event.sender] = time()
                         event.authenticated = True
                         return True
@@ -60,10 +60,10 @@ class Auth(object):
         finally:
             session.close()
 
-    def implicit(self, event, password = None):
+    def implicit(self, event, credential = None):
         return True
 
-    def hostmask(self, event, password = None):
+    def hostmask(self, event, credential = None):
         if ibid.config.sources[event.source]['type'] != 'irc':
             return
 
@@ -84,7 +84,7 @@ class Auth(object):
     def _irc_auth_callback(self, nick, result):
         self.irc[nick] = result
 
-    def nickserv(self, event, password):
+    def nickserv(self, event, credential):
         if ibid.config.sources[event.source]['type'] != 'irc':
             return
 
