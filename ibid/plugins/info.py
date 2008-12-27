@@ -3,6 +3,7 @@
 import time
 from subprocess import Popen, PIPE
 
+import ibid
 from ibid.plugins import Processor, match
 
 class DateTime(Processor):
@@ -19,14 +20,18 @@ class Fortune(Processor):
 
     @match('^\s*fortune\s*$')
     def handler(self, event):
-        fortune = Popen(['fortune'], stdout=PIPE, stderr=PIPE)
+        command = 'fortune'
+        if self.name in ibid.config.plugins and 'fortune' in ibid.config.plugins[self.name]:
+            command = ibid.config.plugins[self.name]['fortune']
+
+        fortune = Popen(command, stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()
         code = fortune.wait()
 
         if code == 0:
             event.addresponse(output.strip())
         else:
-            event.addresponse(u"Coludn't execute fortune")
+            event.addresponse(u"Couldn't execute fortune")
 
         return event
 
