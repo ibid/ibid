@@ -2,7 +2,7 @@
 import re
 
 import ibid
-from ibid.plugins import Module, Processor, match, handler
+from ibid.plugins import Processor, match, handler
 
 class Addressed(Processor):
 
@@ -39,6 +39,7 @@ class Ignore(Processor):
 class Responses(Processor):
 
     processed = True
+    addressed = False
 
     @handler
     def responses(self, event):

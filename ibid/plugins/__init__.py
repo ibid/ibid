@@ -3,16 +3,6 @@ import re
 
 import ibid
 
-class Module(object):
-
-    priority = 0
-
-    def __init__(self, name):
-        self.name = name
-
-    def process(self, query):
-        raise NotImplementedError
-
 class Processor(object):
 
     type = 'message'
@@ -22,13 +12,16 @@ class Processor(object):
 
     def __init__(self, name):
         self.name = name
-        if name in ibid.config.plugins:
-            config = ibid.config.plugins[name]
-            if 'addressed' in config:
-                self.addressed = config['addressed']
 
         if self.processed and self.priority == 0:
             self.priority = 1500
+
+        if name in ibid.config.plugins:
+            config = ibid.config.plugins[name]
+
+            for setting in ('addressed', 'priority', 'processed', 'type'):
+                if setting in config:
+                    setattr(self, setting, config[setting])
 
     def process(self, event):
         if event.type != self.type:
