@@ -7,22 +7,11 @@ general
 
 auth
 ====
-- has special cases for IRC
 - is auth_ called auth_ because ibid.auth was already taken?  not cool
-
-core
-====
-- reloader can be refactored and made simpler surely?  (I think it has remnants of days gone by, e.g. run())
-  -- do we need to explicitly reload each type, or can it be made generic?  Also, *should* it be made generic?
-  -- compare the auth relaoder, database reloader, and reloader reloader - they're the same
-  -- but those three are all 'core modules'.  sources and plugins are different:  maybe a reload_* for each of these three types of things (so, consolidate the above three, keep the rest separate)
 
 sources
 =======
 - telnet source: add auth -> identity -> accounts?  (user 'telnet' is a bit blah)
-  -- we should think about event.sender sender_id who channel - what do they all mean?  what do we actually care about (as opposed to what is foisted on us by the vagaries of our IRC/jabber sources)?
-    -- note from Slightly-Future Jonathan to Past Jonathan: the identity plugin seems to have some opinions about this
-- irc source:  do_auth_callback looks all kinds of hackety
 
 plugins
 =======
@@ -33,7 +22,6 @@ plugins
   -- how about an "admin" source?  that mails exceptions or logs them to syslog or something?
     -- not a source.  Sounds like proper logging needs to be set up, actually.  Future Jonathan:  add python.logging like you said you would.
 - load/reload is a good example of the reloader not being generic enough... I think?
-- addressed regex needs work (add some whitespace, remove some punctuation, and consider tea-style: "ct weather, bot?" addressing)
 - is ignore strong enough?  it just sets processed to true - postprocessors won't ignore this.  is that bad?
 - applause to Michael for the Responses processor: that's clever
   -- that said, not at all convinced by Address processor

@@ -13,18 +13,20 @@ class Addressed(Processor):
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        self.pattern = re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I)
+        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I),
+                            re.compile(r',\s*(%s)\s*$' % '|'.join(ibid.config.plugins[name]['names']), re.I)
+                        ]
 
     @handler
     def handle(self, event):
         if 'addressed' not in event:
-            matches = self.pattern.search(event.message)
-            if matches:
-                event.addressed = matches.group(1)
-                event.message = self.pattern.sub('', event.message)
-            else:
-                event.addressed = False
-        return event
+            event.addressed = False
+            for pattern in self.patterns:
+                matches = pattern.search(event.message)
+                if matches:
+                    event.addressed = matches.group(1)
+                    event.message = pattern.sub('', event.message)
+                    return event
 
 class Strip(Processor):
 
