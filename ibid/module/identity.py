@@ -1,58 +1,9 @@
-from sqlalchemy import Column, Integer, Unicode, ForeignKey
-from sqlalchemy.orm import relation, backref
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.module import Module
 from ibid.decorators import *
-
-Base = declarative_base()
-
-class Identity(Base):
-    __tablename__ = 'identities'
-
-    id = Column(Integer, primary_key=True)
-    person_id = Column(Integer, ForeignKey('people.id'))
-    source = Column(Unicode)
-    identity = Column(Unicode)
-
-    def __init__(self, source, identity):
-        self.source = source
-        self.identity = identity
-
-    def __repr__(self):
-        return '<Identity %s on %s>' % (self.identity, self.source)
-
-class Attribute(Base):
-    __tablename__ = 'person_attributes'
-    
-    id = Column(Integer, primary_key=True)
-    person_id = Column(Integer, ForeignKey('people.id'))
-    name = Column(Unicode)
-    value = Column(Unicode)
-
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-    def __repr__(self):
-        return '<Attribute %s = %s>' % (self.name, self.value)
-
-class Person(Base):
-    __tablename__ = 'people'
-
-    id = Column(Integer, primary_key=True)
-    username = Column(Unicode)
-
-    identities = relation(Identity, backref='person')
-    attributes = relation(Attribute)
-
-    def __init__(self, username):
-        self.username = username
-
-    def __repr__(self):
-        return '<Person %s>' % self.username
+from ibid.models import Person, Identity, Attribute
 
 class People(Module):
 
@@ -156,14 +107,21 @@ class Identify(Module):
                 event.user = self.cache[event.sender]
                 return
 
-            session = ibid.databases.ibid()
-            try:
-                identity = session.query(Identity).filter_by(source=event.source).filter_by(identity=event.sender_id).one()
-            except NoResultFound:
-                return
+            account = identify(event.sender_id, event.source)
 
-            event.user = identity.person.username
-            self.cache[event.sender] = event.user
-            session.close()
+            if account:
+                event.user = account.username
+                self.cache[event.sender] = event.user
+
+def identify(user, source):
+
+    session = ibid.databases.ibid()
+    try:
+        identity = session.query(Identity).filter_by(source=source).filter_by(identity=user).one()
+        return identity.person
+    except NoResultFound:
+        return None
+    finally:
+        session.close()
         
 # vi: set et sta sw=4 ts=4:

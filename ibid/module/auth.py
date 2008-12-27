@@ -2,20 +2,26 @@ import ibid
 from ibid.module import Module
 from ibid.decorators import addressed, notprocessed, match
 from ibid.auth_ import Token, Permission
+from ibid.module.identity import identify
 
 class AddAuth(Module):
 
     @addressed
     @notprocessed
-    @match('^\s*add\s+auth\s+for\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
+    @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def process(self, event, user, source, method, token):
 
-        tok = Token(user, source, method, token)
-        session = ibid.databases.ibid()
-        session.add(tok)
-        session.commit()
+        account = identify(user, event.source)
+        if not account:
+            event.addresponse(u"I don't know who %s is" % user)
 
-        event.addresponse(u'Okay')
+        else:
+            token = Token(account.id, source, method, token)
+            session = ibid.databases.ibid()
+            session.add(token)
+            session.commit()
+
+            event.addresponse(u'Okay')
 
 class AddPermission(Module):
 
@@ -24,12 +30,17 @@ class AddPermission(Module):
     @match('^\s*grant\s+(.+)\s+permission\s+(.+)\s*$')
     def process(self, event, user, permission):
 
-        perm = Permission(user, permission)
-        session = ibid.databases.ibid()
-        session.add(perm)
-        session.commit()
+        account = identify(user, event.source)
+        if not account:
+            event.addresponse(u"I don't know who %s is" % user)
 
-        event.addresponse(u'Okay')
+        else:
+            permission = Permission(account.id, permission)
+            session = ibid.databases.ibid()
+            session.add(permission)
+            session.commit()
+
+            event.addresponse(u'Okay')
 
 class Auth(Module):
 

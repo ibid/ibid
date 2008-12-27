@@ -2,38 +2,12 @@ from fnmatch import fnmatch
 from time import time, sleep
 from traceback import print_exc
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, or_
-from sqlalchemy.ext.declarative import declarative_base
 from twisted.internet import reactor
+from sqlalchemy import or_
+from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-
-Base = declarative_base()
-class Token(Base):
-    __tablename__ = 'auth'
-
-    id = Column(Integer, primary_key=True)
-    user = Column(Unicode)
-    source = Column(Unicode)
-    method = Column(Unicode)
-    token = Column(Unicode)
-
-    def __init__(self, user, source, method, token):
-        self.user = user
-        self.source = source
-        self.method = method
-        self.token = token
-
-class Permission(Base):
-    __tablename__ = 'permissions'
-
-    id = Column(Integer, primary_key=True)
-    user = Column(Unicode)
-    permission = Column(Unicode)
-
-    def __init__(self, user, permission):
-        self.user = user
-        self.permission = permission
+from ibid.models import Token, Permission, Person
 
 class Auth(object):
 
@@ -78,10 +52,14 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        if session.query(Permission).filter_by(user=event.user).filter_by(permission=permission).first():
-            return True
-
-        return False
+        account = session.query(Person).filter_by(username=event.user).one()
+        try:
+            if session.query(Permission).filter_by(account_id=account.id).filter_by(permission=permission).one():
+                return True
+        except NoResultFound:
+            return False
+        finally:
+            session.close()
 
     def implicit(self, event, password = None):
         return True
@@ -91,7 +69,8 @@ class Auth(object):
             return
 
         session = ibid.databases.ibid()
-        for token in session.query(Token).filter_by(method='hostmask').filter_by(user=event.user).filter(or_(Token.source == event.source, Token.source == None)).all():
+        account = session.query(Person).filter_by(username=event.user).one()
+        for token in session.query(Token).filter_by(method='hostmask').filter_by(account_id=account.id).filter(or_(Token.source == event.source, Token.source == None)).all():
             if fnmatch(event.sender, token.token):
                 return True
 
@@ -100,7 +79,8 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        for token in session.query(Token).filter_by(method='password').filter_by(user=event.user).filter(or_(Token.source == event.source, Token.source == None)).all():
+        account = session.query(Person).filter_by(username=event.user).one()
+        for token in session.query(Token).filter_by(method='password').filter_by(account_id=account.id).filter(or_(Token.source == event.source, Token.source == None)).all():
             if token.token == password:
                 return True
 
