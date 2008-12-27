@@ -8,8 +8,10 @@ processors = []
 reloader = None
 databases = None
 auth = None
+service = None
 
 def setup(service=None):
+    service = service
     ibid.config = FileConfig("ibid.ini")
     ibid.config.merge(FileConfig("local.ini"))
     ibid.reload_reloader()

@@ -60,6 +60,7 @@ class Reloader(object):
 
         ibid.sources[name] = moduleclass(name)
         ibid.sources[name].setServiceParent(service)
+        return True
 
     def load_sources(self, service=None):
         for source in ibid.config['sources'].keys():
