@@ -17,7 +17,7 @@ class Auth(object):
 
     def authenticate(self, event, password=None):
 
-        if 'user' not in event:
+        if 'account' not in event:
             return
 
         config = ibid.config.auth
@@ -52,9 +52,8 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        account = session.query(Account).filter_by(username=event.user).one()
         try:
-            if session.query(Permission).filter_by(account_id=account.id).filter_by(permission=permission).one():
+            if session.query(Permission).filter_by(account_id=event.account).filter_by(permission=permission).one():
                 return True
         except NoResultFound:
             return False
@@ -69,8 +68,7 @@ class Auth(object):
             return
 
         session = ibid.databases.ibid()
-        account = session.query(Account).filter_by(username=event.user).one()
-        for authenticator in session.query(Authenticator).filter_by(method='hostmask').filter_by(account_id=account.id).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
+        for authenticator in session.query(Authenticator).filter_by(method='hostmask').filter_by(account_id=event.account).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
             if fnmatch(event.sender, authenticator.authenticator):
                 return True
 
@@ -79,8 +77,7 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        account = session.query(Account).filter_by(username=event.user).one()
-        for authenticator in session.query(Authenticator).filter_by(method='password').filter_by(account_id=account.id).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
+        for authenticator in session.query(Authenticator).filter_by(method='password').filter_by(account_id=event.account).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
             if authenticator.authenticator == password:
                 return True
 

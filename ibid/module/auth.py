@@ -11,7 +11,7 @@ class AddAuth(Module):
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def process(self, event, user, source, method, authenticator):
 
-        account = identify(user, event.source)
+        account = identify(event.source, user)
         if not account:
             event.addresponse(u"I don't know who %s is" % user)
 
@@ -30,7 +30,7 @@ class AddPermission(Module):
     @match('^\s*grant\s+(.+)\s+permission\s+(.+)\s*$')
     def process(self, event, user, permission):
 
-        account = identify(user, event.source)
+        account = identify(event.source, user)
         if not account:
             event.addresponse(u"I don't know who %s is" % user)
 
