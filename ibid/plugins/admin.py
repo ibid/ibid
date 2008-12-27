@@ -5,18 +5,6 @@ import os
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-class ReloadConfig(Processor):
-    """Usage: reload config"""
-
-    @match('^\s*reload\s+config\s*$')
-    @authorise('core')
-    def handler(self, event):
-        try:
-            ibid.config.reload()
-            event.addresponse(u"Configuration reloaded")
-        except:
-            event.addresponse(u"Error reloading configuration")
-
 class ListModules(Processor):
     """Usage: list plugins"""
 
