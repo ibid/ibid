@@ -1,5 +1,7 @@
 """Core processors for managing events"""
+
 import re
+from time import time
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -74,5 +76,14 @@ class Address(Processor):
                     addressed.append(response)
 
             event.responses = addressed
+
+class Timestamp(Processor):
+
+    addressed = False
+    priority = -1900
+
+    @handler
+    def timestamp(self, event):
+        event.time = time()
                 
 # vi: set et sta sw=4 ts=4:

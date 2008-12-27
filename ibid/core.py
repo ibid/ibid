@@ -1,5 +1,4 @@
 from traceback import print_exc
-from time import time
 import inspect
 
 from twisted.internet import reactor
@@ -13,14 +12,10 @@ import ibid.auth_
 class Dispatcher(object):
 
     def _process(self, event):
-        event.time = time()
-
         for processor in ibid.processors:
             try:
-                result = processor.process(event)
-                if result:
-                    event = result
-            except Exception, e:
+                event = processor.process(event) or event
+            except Exception:
                 print_exc()
 
         print event
@@ -43,8 +38,14 @@ class Reloader(object):
         reactor.run()
 
     def reload_dispatcher(self):
-        reload(ibid.core)
-        ibid.dispatcher = ibid.core.Dispatcher()
+        try:
+            reload(ibid.core)
+            dispatcher = ibid.core.Dispatcher()
+            ibid.dispatcher = dispatcher
+            return True
+        except Exception:
+            print_exc()
+            return False
         
     def load_source(self, name, service=None):
         type = ibid.config['sources'][name]['type']
@@ -135,10 +136,12 @@ class Reloader(object):
     def reload_databases(self):
         reload(ibid.core)
         ibid.databases = DatabaseManager()
+        return True
 
     def reload_auth(self):
         reload(ibid.auth_)
         ibid.auth = ibid.auth_.Auth()
+        return True
 
 class DatabaseManager(dict):
 

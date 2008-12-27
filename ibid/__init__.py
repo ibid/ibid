@@ -1,3 +1,5 @@
+from traceback import print_exc
+
 import ibid.core
 from ibid.config import FileConfig
 
@@ -21,10 +23,14 @@ def setup(service=None):
     ibid.reloader.reload_databases()
     ibid.reloader.reload_auth()
 
-
 def reload_reloader():
-    reload(ibid.core)
-    new_reloader = ibid.core.Reloader()
-    ibid.reloader = new_reloader
+    try:
+        reload(ibid.core)
+        new_reloader = ibid.core.Reloader()
+        ibid.reloader = new_reloader
+        return True
+    except:
+        print_exc()
+        return False
 
 # vi: set et sta sw=4 ts=4:

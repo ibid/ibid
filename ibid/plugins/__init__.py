@@ -61,7 +61,7 @@ def match(regex):
         return function
     return wrap
 
-def authorised(permission):
+def authorise(permission):
     def wrap(function):
         def new(self, event, *args):
             if not ibid.auth.authenticate(event):

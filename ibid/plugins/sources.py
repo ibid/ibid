@@ -1,9 +1,10 @@
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
 
 class Admin(Processor):
 
 	@match('^\s*connect\s+(?:to\s+)?(\S+)\s*$')
+	@authorise('sources')
 	def connect(self, event, source):
 
 		if ibid.sources[source].connect():
@@ -12,6 +13,7 @@ class Admin(Processor):
 			event.addresponse(u"I couldn't connect to %s" % source)
 
 	@match('^\s*disconnect\s+(?:from\s+)?(\S+)\s*$')
+	@authorise('sources')
 	def disconnect(self, event, source):
 
 		if ibid.sources[source].disconnect():
@@ -20,6 +22,7 @@ class Admin(Processor):
 			event.addresponse(u"I couldn't disconnect from %s" % source)
 
 	@match('^\s*(?:re)?load\s+(\S+)\s+source\s*$')
+	@authorise('sources')
 	def load(self, event, source):
 		if ibid.reloader.load_source(source, ibid.service):
 			event.addresponse(u"%s source loaded" % source)

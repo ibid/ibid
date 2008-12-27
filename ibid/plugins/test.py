@@ -1,7 +1,7 @@
 from time import sleep
 
 import ibid
-from ibid.plugins import Processor, match, authorised
+from ibid.plugins import Processor, match, authorise
 
 class Delay(Processor):
 
@@ -14,7 +14,7 @@ class Delay(Processor):
 class Protected(Processor):
 
     @match('^protected$')
-    @authorised('protected')
+    @authorise('protected')
     def handler(self, event):
         event.addresponse('Executing protected command')
 

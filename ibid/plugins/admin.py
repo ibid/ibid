@@ -3,12 +3,13 @@
 import os
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
 
 class ReloadConfig(Processor):
     """Usage: reload config"""
 
     @match('^\s*reload\s+config\s*$')
+    @authorise('core')
     def handler(self, event):
         try:
             ibid.config.reload()
@@ -29,33 +30,35 @@ class ListModules(Processor):
         event.addresponse(', '.join(plugins))
         return event
 
+class ReloadCoreModules(Processor):
+
+    priority = -5
+
+    @match(r'^\s*reload\s+(reloader|dispatcher|databases|auth)\s*')
+    @authorise('core')
+    def reload(self, event, module):
+        module = module.lower()
+        if module == 'reloader':
+            result = ibid.reload_reloader()
+        else:
+            result = getattr(ibid.reloader, 'reload_%s' % module)()
+
+        event.addresponse(result and u'%s reloaded' % module or u"Couldn't reload %s" % module)
+
 class LoadModules(Processor):
     """Usage: (load|unload|reload) <plugin|processor>"""
 
-    @match('^\s*(load|unload|reload)\s+(\S+)\s+plugin\s*$')
-    def handler(self, event, action, module):
-        reply = ''
+    @match('^\s*(?:re)?load\s+(\S+)\s*$')
+    @authorise('plugins')
+    def load(self, event, plugin):
+        result = ibid.reloader.unload_processor(plugin)
+        result = ibid.reloader.load_processor(plugin)
+        event.addresponse(result and u'%s reloaded' % plugin or u"Couldn't reload %s" % plugin)
 
-        if action == u'load':
-            reply = ibid.reloader.load_processor(module)
-            reply = reply and u'Loaded %s' % module or u"Couldn't load %s" % module
-        elif action == u'unload':
-            reply = ibid.reloader.unload_processor(module)
-            reply = reply and u'Unloaded %s' % module or u"Couldn't unload %s" % module
-        elif action == u'reload':
-            if module == u'reloader':
-                ibid.reload_reloader()
-                reply = "Done"
-            elif module == u'dispatcher':
-                ibid.reloader.reload_dispatcher()
-                reply = "done"
-            else:
-                ibid.reloader.unload_processor(module)
-                reply = ibid.reloader.load_processor(module)
-                reply = reply and u'Reloaded %s' % module or u"Couldn't reload %s" % module
-
-        if reply:
-            event.addresponse(reply)
-            return event
+    @match('^\s*unload\s+(\S+)\s*')
+    @authorise('plugins')
+    def unload(self, event, plugin):
+        result = ibid.reloader.unload_processor(plugin)
+        event.addresponse(result and u'%s unloaded' % plugin or u"Couldn't unload %s" % plugin)
 
 # vi: set et sta sw=4 ts=4:
