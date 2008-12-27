@@ -27,7 +27,8 @@ class Ircbot(irc.IRCClient):
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
-        self.mode(self.nickname, True, 'B')
+        if 'mode' in ibid.config.sources[self.factory.name]:
+            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'])
         for channel in ibid.config.sources[self.factory.name]['channels']:
             self.join(channel)
 
