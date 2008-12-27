@@ -8,8 +8,6 @@ general
 auth
 ====
 - has special cases for IRC
-- not sure what is going on with the hostmask 'Authenticator'?
-- nickserv auth is really really bad (waiting a few secs for a reply to arrive and looping?)
 - surely special case auth such as nickserv should be pushed into the sources, and the auth module must delegate
 - is auth_ called auth_ because ibid.auth was already taken?  not cool
 
@@ -19,22 +17,15 @@ core
   -- do we need to explicitly reload each type, or can it be made generic?  Also, *should* it be made generic?
   -- compare the auth relaoder, database reloader, and reloader reloader - they're the same
   -- but those three are all 'core modules'.  sources and plugins are different:  maybe a reload_* for each of these three types of things (so, consolidate the above three, keep the rest separate)
-- note to Future Jonathan: check out load_processor and read up on inspect
 
 sources
 =======
 - telnet source: add auth -> identity -> accounts?  (user 'telnet' is a bit blah)
-- jabber source: methinks it could do with a complete rewrite - it looks copy-pasted: handles some jabber events, not others.  Do we care about subscriptions?
-  -- thought: people with Accounts with jabber IDs can be subscribed to?  presence updates will be useful for "Seen"-type queries
-- the jabber resource might conceivably be useful?  we should take it into account when replying at least, surely?
-- what about jabber MUC?
 - event.channel = sender   # smacks of hacking jabber on top of IRC
   -- we should think about event.sender sender_id who channel - what do they all mean?  what do we actually care about (as opposed to what is foisted on us by the vagaries of our IRC/jabber sources)?
     -- note from Slightly-Future Jonathan to Past Jonathan: the identity plugin seems to have some opinions about this
-- irc source:  mode +B = make this generic (not all ircds), user config or something
 - irc source:  response.ircaction - bit crap, can the processor not actually manipulate the IRC source itself?  like the reloader processor manipulates the reloader?
   -- the IRC Processor shouldn't be loaded without the IRC Source, and so can make all sorts of assumptions based on that (but should still check and exit gracefully if the Source isn't there)
-- irc source:  we only respond to user joining, we need a few more irc events to be handled
 - irc source:  do_auth_callback looks all kinds of hackety
 
 plugins
@@ -62,8 +53,6 @@ plugins
 - adding an account seems a little too easy.  Lots of un-claimed name grabs?
 - identity plugin:  'identify' is different in different scopes and it's a little confusing - not cool to a first-time reader
 - twisted helper functions (with that whole blocking-wrapper thing) may as well be written
-- Fortune plugin - FreeBSD would keep fortune in /usr/local/bin, config-ize this?
-  -- spell "Couldn't" right...
 - log module is interesting (if a bit screwed by the Addressed module)
   -- we want IRC-log style logs (for use in log analysers, etc), but how do you handle this with multiple sources?
   -- some sort of configurable thing?  see irssi's logfile-name settings:  simple variable interpolation leads to quite flexible logging
@@ -72,10 +61,8 @@ plugins
   -- ooh, also the first time the dude was seen?  is that excessive?
 - the Seen processor uses 'identify' from the identity processor?  not so keen on that...
   -- it also uses 'channel', which leads to things like "Vhata was seen in Vhata saying hello"
-  -- also, some privacy please!
 - sources processor:  needs a bit of error checking, authentication and...  all sorts.
   -- (no, I know, it was there for debugging, just a note for Future Us)
-  -- the 'disconnect' processor is going to be interesting if you disconnect from your current source...
 
 factoids
 ========

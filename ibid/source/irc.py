@@ -81,12 +81,11 @@ class Ircbot(irc.IRCClient):
         else:
             self.msg(response['target'].encode(encoding), response['reply'].encode(encoding))
 
-        if 'ircaction' in response:
-            (action, channel) = response['ircaction']
-            if action == 'join':
-                self.join(channel.encode(encoding))
-            elif action == 'part':
-                self.part(channel.encode(encoding))
+    def join(self, channel):
+        irc.IRCClient.join(self, channel.encode(encoding))
+
+    def part(self, channel):
+        irc.IRCClient.part(self, channel.encode(encoding))
 
     def authenticate(self, nick, callback):
         self.sendLine('WHOIS %s' % nick.encode(encoding))
