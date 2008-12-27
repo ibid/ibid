@@ -84,8 +84,9 @@ class Sighting(Base):
 
     id = Column(Integer, primary_key=True)
     identity_id = Column(Integer, ForeignKey('identities.id'))
+    type = Column(Unicode)
     channel = Column(Unicode)
-    saying = Column(Unicode)
+    value = Column(Unicode)
     time = Column(DateTime)
 
     identity = relation('Identity')

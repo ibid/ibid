@@ -119,15 +119,13 @@ class Describe(Processor):
 
 class Identify(Processor):
 
-    addressed = False
     priority = -1600
 
     def __init__(self, name):
         Processor.__init__(self, name)
         self.cache = {}
 
-    @handler
-    def identify(self, event):
+    def process(self, event):
         if 'sender_id' in event:
             #if event.sender in self.cache:
             #    (event.identity, event.account) = self.cache[event.sender]
@@ -168,7 +166,7 @@ def identify(source, user):
 
     if not account and not identity:
         return None
-    if not accout:
+    if not account:
         return identity
     if not identity or identity in account.identities:
         return account

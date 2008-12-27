@@ -43,6 +43,7 @@ class Ircbot(irc.IRCClient):
         event.sender_id = unicode(nick)
         event.who = unicode(nick)
         event.channel = unicode(channel)
+        event.public = True
         event.source = self.factory.name
         return event
 

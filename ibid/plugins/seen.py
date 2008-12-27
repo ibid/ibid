@@ -7,25 +7,30 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.models import Identity, Sighting
 from ibid.plugins.identity import identify
 
-class Watch(Processor):
+class See(Processor):
 
-    addressed = False
-    processed = True
+    def process(self, event):
+        if event.type != 'message' and event.type != 'state':
+            return
 
-    @match(r'')
-    def handler(self, event):
         session = ibid.databases.ibid()
         try:
-            sighting = session.query(Sighting).filter_by(identity_id=event.identity).one()
+            sighting = session.query(Sighting).filter_by(identity_id=event.identity).filter_by(type=event.type).one()
         except NoResultFound:
             sighting = Sighting()
-            
-        sighting.channel = event.public and event.channel or None
-        sighting.saying = event.public and event.message or None
+            sighting.identity_id = event.identity
+            sighting.type = event.type
+
+        if 'channel' in event:
+            sighting.channel = 'public' in event and event.public and event.channel or None
+        if event.type == 'message':
+            sighting.value = event.public and event.message or None
+        elif event.type == 'state':
+            sighting.value = event.state
         sighting.time = datetime.now()
 
         session.add(sighting)
@@ -50,7 +55,11 @@ class Seen(Processor):
         finally:
             session.close()
 
-        reply = "Saw %s on %s in %s saying '%s'" % (identity.identity, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.channel, sighting.saying)
+        reply = "Saw %s at %s in " % (identity.identity, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
+        if sighting.channel:
+            reply = reply + "%s saying '%s'" (sighting.channel, sighting.saying)
+        else:
+            reply = reply + 'private'
 
         event.addresponse(reply)
         return event
