@@ -3,28 +3,22 @@
 import time
 from subprocess import Popen, PIPE
 
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class DateTime(Module):
+class DateTime(Processor):
     """Usage: (date|time)"""
 
-    @addressed
-    @notprocessed
-    @message
     @match('^\s*(?:date|time)\s*$')
-    def process(self, event):
+    def handler(self, event):
         reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
         event.addresponse(reply)
         return event
 
-class Fortune(Module):
+class Fortune(Processor):
     """Usage: fortune"""
 
-    @addressed
-    @notprocessed
     @match('^\s*fortune\s*$')
-    def process(self, event):
+    def handler(self, event):
         fortune = Popen(['fortune'], stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()
         code = fortune.wait()

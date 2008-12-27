@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 import ibid
-import ibid.module
+import ibid.plugins
 import ibid.auth_
 
 class Dispatcher(object):
@@ -86,17 +86,17 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
-        for processor in ibid.config['processors']:
+        for processor in ibid.config['load']:
             if not self.load_processor(processor):
                 print "Couldn't load processor %s" % processor
 
     def load_processor(self, name):
         object = name
-        if name in ibid.config['modules'] and 'object' in ibid.config['modules'][name]:
-            object = ibid.config['modules'][name]['type']
+        if name in ibid.config.plugins and 'type' in ibid.config.plugins[name]:
+            object = ibid.config['plugins'][name]['type']
 
-        module = 'ibid.module.' + object.split('.')[0]
-        classname = 'ibid.module.' + object
+        module = 'ibid.plugins.' + object.split('.')[0]
+        classname = 'ibid.plugins.' + object
         try:
             __import__(module)
             m = eval(module)
@@ -108,7 +108,7 @@ class Reloader(object):
         try:
             if module == classname:
                 for classname, klass in inspect.getmembers(m, inspect.isclass):
-                    if issubclass(klass, ibid.module.Module) and klass != ibid.module.Module:
+                    if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
                         ibid.processors.append(klass(name))
             else:
                 moduleclass = eval(classname)
@@ -118,7 +118,8 @@ class Reloader(object):
             print_exc()
             return False
 
-        ibid.processors.sort(key=lambda x: ibid.config.processors.index(x.name))
+        ibid.processors.sort(key=lambda x: x.priority)
+        print ibid.processors
 
         return True
 

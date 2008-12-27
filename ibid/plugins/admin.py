@@ -3,29 +3,24 @@
 import os
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class ReloadConfig(Module):
+class ReloadConfig(Processor):
     """Usage: reload config"""
 
-    @addressed
-    @notprocessed
     @match('^\s*reload\s+config\s*$')
-    def process(self, event):
+    def handler(self, event):
         try:
             ibid.config.reload()
             event.addresponse(u"Configuration reloaded")
         except:
             event.addresponse(u"Error reloading configuration")
 
-class ListModules(Module):
+class ListModules(Processor):
     """Usage: list plugins"""
 
-    @addressed
-    @notprocessed
     @match('^\s*lsmod|list\s+plugins\s*$')
-    def process(self, event):
+    def handler(self, event):
         plugins = []
         for processor in ibid.processors:
             if processor.name not in plugins:
@@ -34,14 +29,11 @@ class ListModules(Module):
         event.addresponse(', '.join(plugins))
         return event
 
-class LoadModules(Module):
+class LoadModules(Processor):
     """Usage: (load|unload|reload) <plugin|processor>"""
 
-    @addressed
-    @notprocessed
-    @message
     @match('^\s*(load|unload|reload)\s+(\S+)\s+plugin\s*$')
-    def process(self, event, action, module):
+    def handler(self, event, action, module):
         reply = ''
 
         if action == u'load':

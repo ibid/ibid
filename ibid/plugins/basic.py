@@ -2,28 +2,25 @@
 
 import random
 
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class Greet(Module):
+class Greet(Processor):
     """Greets people"""
 
-    @addressedmessage('^\s*(?:hi|hello|hey)\s*$')
-    def process(self, event):
+    @match('^\s*(?:hi|hello|hey)\s*$')
+    def handle_greet(self, event):
         """Usage: (hi|hello|hey)"""
         response = u'Hi %s' % event.who
         event.addresponse({'reply': response})
         return event
 
-class SayDo(Module):
+class SayDo(Processor):
     """Says or does things in a channel"""
 
-    @addressed
-    @notprocessed
     @match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
-    def process(self, event, action, where, what):
+    def handler(self, event, action, where, what):
         """Usage: (say|do) <channel> <text>"""
-        if (event.who != u"Vhata"):
+        if (event.who != u"cocooncrash"):
             reply = u"No!  You're not the boss of me!"
             if action.lower() == "say":
                 event['responses'].append({'target': where, 'reply': u"Ooooh! %s was trying to make me say '%s'!" % (event.who, what)})
@@ -40,11 +37,13 @@ class SayDo(Module):
 
 complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
-class Complain(Module):
+class Complain(Processor):
     """Responds with a complains. Used to handle unprocessed messages."""
 
-    @addressedmessage()
-    def process(self, event):
+    priority = 900
+
+    @match(r'')
+    def handler(self, event):
         event.addresponse(complaints[random.randrange(len(complaints))])
         return event
 

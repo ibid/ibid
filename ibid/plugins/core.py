@@ -2,17 +2,19 @@
 import re
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Module, Processor, match
 
-class Addressed(Module):
+class Addressed(Processor):
+
+    priority = -1500
+    addressed = False
 
     def __init__(self, name):
-        Module.__init__(self, name)
-        self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.modules[name]['names']), re.I)
+        Processor.__init__(self, name)
+        self.pattern = re.compile(r'^\s*(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I)
 
-    @message
-    def process(self, event):
+    @match(r'')
+    def handler(self, event):
         if 'addressed' not in event:
             newmsg = self.pattern.sub('', event.message)
             if newmsg != event.message:
@@ -22,19 +24,21 @@ class Addressed(Module):
                 event.addressed = False
         return event
 
-class Ignore(Module):
+class Ignore(Processor):
 
-    @addressed
-    @notprocessed
-    @message
-    def process(self, event):
-        for who in ibid.config.modules[self.name]['ignore']:
+    addressed = False
+
+    @match(r'')
+    def handler(self, event):
+        for who in ibid.config.plugins[self.name]['ignore']:
             if event.who == who:
                 event.processed = True
 
         return event
 
-class Responses(Module):
+class Responses(Processor):
+
+    processed = True
 
     def process(self, event):
         if 'responses' not in event:
@@ -53,11 +57,12 @@ class Responses(Module):
         event.responses = converted
         return event
 
-class Address(Module):
+class Address(Processor):
 
-    @addressed
-    @message
-    def process(self, event):
+    processed = True
+
+    @match(r'')
+    def handler(self, event):
         if event.public:
             addressed = []
             for response in event.responses:

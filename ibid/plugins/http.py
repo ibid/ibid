@@ -4,18 +4,15 @@ from httplib2 import Http
 import re
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
-class HTTP(Module):
+class HTTP(Processor):
 	"""Usage: (get|head) <url>"""
 
-	@addressed
-	@notprocessed
 	@match('^\s*(get|head)\s+(.+)\s*$')
-	def process(self, event, action, url):
+	def handler(self, event, action, url):
 		http = Http()
 		headers={}
 		if action.lower() == 'get':

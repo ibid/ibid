@@ -7,15 +7,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 from ibid.models import Identity, Sighting
-from ibid.module.identity import identify
+from ibid.plugins.identity import identify
 
-class Watch(Module):
+class Watch(Processor):
 
-    @message
-    def process(self, event):
+    addressed = False
+    processed = True
+
+    @match(r'')
+    def handler(self, event):
         session = ibid.databases.ibid()
         try:
             sighting = session.query(Sighting).filter_by(identity_id=event.identity).one()
@@ -30,12 +32,10 @@ class Watch(Module):
         session.commit()
         session.close()
 
-class Seen(Module):
+class Seen(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*seen\s+(\S+)\s*$')
-    def process(self, event, who):
+    def handler(self, event, who):
         identity = identify(event.source, who)
         if not identity:
             event.addresponse(u"I don't know who %s is" % who)

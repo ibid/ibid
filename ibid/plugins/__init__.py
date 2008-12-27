@@ -1,23 +1,34 @@
-"""Sample module for the new plugin architecture."""
-
 import inspect
 import re
 
 import ibid
-from ibid.module import Module
 
-class NewModule(Module):
+class Module(object):
+
+    priority = 0
+
+    def __init__(self, name):
+        self.name = name
+
+    def process(self, query):
+        raise NotImplementedError
+
+class Processor(object):
 
     type = 'message'
     addressed = True
     processed = False
+    priority = 0
 
     def __init__(self, name):
         self.name = name
-        if name in ibid.config.modules:
-            config = ibid.config.modules[name]
+        if name in ibid.config.plugins:
+            config = ibid.config.plugins[name]
             if 'addressed' in config:
                 self.addressed = config['addressed']
+
+        if self.processed and self.priority == 0:
+            self.priority = 1500
 
     def process(self, event):
         if event.type != self.type:
@@ -49,19 +60,19 @@ def match(regex):
         return function
     return wrap
 
-class NewModuleTest1(NewModule):
-    """Processor to test the new module architecture"""
+def authorised(permission):
+    def wrap(function):
+        def new(self, event, *args):
+            if not ibid.auth.authenticate(event):
+                event.addresponse('You are not authenticated')
+                return
 
-    @match(r'test foo (.*)')
-    def handle_foo(self, event, rest):
-        """test foo <text>"""
-        event.addresponse(u'Foo! [%s]' % rest)
-        return event
+            if not ibid.auth.authorise(event, permission):
+                event.addresponse('You are not authorised')
+                return
 
-    @match(r'test bar (.*)')
-    def handle_bar(self, event, rest):
-        """test bar <text>"""
-        event.addresponse(u'Bar! <%s>' % rest)
-        return event
-        
+            return function(self, event, *args)
+        return new
+    return wrap
+
 # vi: set et sta sw=4 ts=4:

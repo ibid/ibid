@@ -3,17 +3,20 @@
 import time
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class Log(Module):
+class Log(Processor):
+
+    addressed = False
+    processed = True
+    priority = 1900
 
     def __init__(self, name):
-        Module.__init__(self, name)
-        self.log = open(ibid.config.modules[self.name]['logfile'], 'a')
+        Processor.__init__(self, name)
+        self.log = open(ibid.config.plugins[self.name]['logfile'], 'a')
 
-    @message
-    def process(self, event):
+    @match(r'')
+    def handler(self, event):
         then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(event.time))
         now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
         self.log.write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.sender, event.channel, event.message))

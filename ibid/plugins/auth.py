@@ -1,15 +1,12 @@
 import ibid
-from ibid.module import Module
-from ibid.decorators import addressed, notprocessed, match
+from ibid.plugins import Processor, match
 from ibid.auth_ import Authenticator, Permission
-from ibid.module.identity import identify
+from ibid.plugins.identity import identify
 
-class AddAuth(Module):
+class AddAuth(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
-    def process(self, event, user, source, method, authenticator):
+    def handler(self, event, user, source, method, authenticator):
 
         account = identify(event.source, user)
         if not account:
@@ -23,12 +20,10 @@ class AddAuth(Module):
 
             event.addresponse(u'Okay')
 
-class AddPermission(Module):
+class AddPermission(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*grant\s+(.+)\s+permission\s+(.+)\s*$')
-    def process(self, event, user, permission):
+    def handler(self, event, user, permission):
 
         account = identify(event.source, user)
         if not account:
@@ -42,12 +37,10 @@ class AddPermission(Module):
 
             event.addresponse(u'Okay')
 
-class Auth(Module):
+class Auth(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*auth(?:\s+(.+))?\s*$')
-    def process(self, event, password):
+    def handler(self, event, password):
         result = ibid.auth.authenticate(event, password)
         if result:
             event.addresponse(u'You are authenticated')

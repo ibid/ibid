@@ -3,17 +3,13 @@
 import inspect
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-
-class Usage(Module):
+class Usage(Processor):
 	"""Outputs the usage syntax for a processor"""
 
-	@addressed
-	@notprocessed
 	@match(r'^\s*usage\s+(.+)\s*$')
-	def process(self, event, item):
+	def handler(self, event, item):
 		"""Usage: usage <processor>"""
 		klass = None
 		for processor in ibid.processors:
@@ -22,7 +18,7 @@ class Usage(Module):
 
 		if not klass:
 			try:
-				klass = eval('ibid.module.%s' % item)
+				klass = eval('ibid.plugins.%s' % item)
 			except:
 				pass
 
@@ -34,16 +30,14 @@ class Usage(Module):
 		if not event.responses:
 			event.addresponse(u'No usage for %s' % item)
 
-class Help(Module):
+class Help(Processor):
 	"""Outputs the help message for a plugin or processor"""
 
-	@addressed
-	@notprocessed
 	@match(r'\s*help\s+(.+)\s*$')
-	def process(self, event, item):
+	def handler(self, event, item):
 		"""Usage: help <plugin>"""
 		try:
-			module = eval('ibid.module.%s' % item)
+			module = eval('ibid.plugins.%s' % item)
 		except:
 			pass
 
@@ -52,7 +46,7 @@ class Help(Module):
 				event.addresponse(module.__doc__)
 			processors = []
 			for name, klass in inspect.getmembers(module, inspect.isclass):
-				if issubclass(klass, ibid.module.Module) and klass != ibid.module.Module:
-					processors.append('%s.%s' % (module.__name__.replace('ibid.module.', '', 1), klass.__name__))
+				if issubclass(klass, ibid.plugins.Module) and klass != ibid.plugins.Processor:
+					processors.append('%s.%s' % (module.__name__.replace('ibid.plugins.', '', 1), klass.__name__))
 			if processors:
 				event.addresponse('Processors: %s' % ', '.join(processors))

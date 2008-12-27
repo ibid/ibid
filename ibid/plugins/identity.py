@@ -2,16 +2,13 @@ from sqlalchemy.orm import eagerload
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 from ibid.models import Account, Identity, Attribute
 
-class Accounts(Module):
+class Accounts(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*add\s+account\s+(.+)\s*$')
-    def process(self, event, username):
+    def handler(self, event, username):
         session = ibid.databases.ibid()
         account = Account(username)
         session.add(account)
@@ -19,12 +16,10 @@ class Accounts(Module):
         session.close()
         event.addresponse(u'Done')
 
-class Identities(Module):
+class Identities(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
-    def process(self, event, username, identity, source):
+    def handler(self, event, username, identity, source):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
             if 'user' not in event:
@@ -53,12 +48,10 @@ class Identities(Module):
         session.close()
         event.addresponse(u'Done')
 
-class Attributes(Module):
+class Attributes(Processor):
 
-    @addressed
-    @notprocessed
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
-    def process(self, event, username, name, value):
+    def handler(self, event, username, name, value):
         if username.lower() == 'my':
             if 'user' not in event:
                 event.addresponse(u"I don't know who you are")
@@ -78,12 +71,10 @@ class Attributes(Module):
         session.close()
         event.addresponse(u'Done')
 
-class Describe(Module):
+class Describe(Processor):
 
-    @addressed
-    @notprocessed
     @match('^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
-    def process(self, event, username):
+    def handler(self, event, username):
         if username.upper() == 'I':
             if 'user' not in event:
                 event.addresponse(u"I don't know who you are")
@@ -104,14 +95,17 @@ class Describe(Module):
             event.addresponse(str(attribute))
         session.close()
 
-class Identify(Module):
+class Identify(Processor):
+
+    addressed = False
+    priority = -1600
 
     def __init__(self, name):
-        Module.__init__(self, name)
+        Processor.__init__(self, name)
         self.cache = {}
 
-    @message
-    def process(self, event):
+    @match(r'')
+    def handler(self, event):
         if 'sender_id' in event:
             #if event.sender in self.cache:
             #    (event.identity, event.account) = self.cache[event.sender]

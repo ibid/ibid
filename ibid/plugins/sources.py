@@ -1,25 +1,20 @@
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class Connect(Module):
+class Connect(Processor):
 
-	@addressed
-	@notprocessed
 	@match('^\s*(connect)\s+(?:to\s+)?(\S+)\s*$')
-	def process(self, event, action, source):
+	def handler(self, event, action, source):
 
 		if ibid.sources[source].connect():
 			event.addresponse(u'Connecting to %s' % source)
 		else:
 			event.addresponse(u"I couldn't connect to %s" % source)
 
-class Disconnect(Module):
+class Disconnect(Processor):
 
-	@addressed
-	@notprocessed
 	@match('^\s*(disconnect)\s+(?:from\s+)?(\S+)\s*$')
-	def process(self, event, action, source):
+	def handler(self, event, action, source):
 
 		if ibid.sources[source].disconnect():
 			event.addresponse(u'Disconnecting from %s' % source)

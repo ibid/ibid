@@ -1,16 +1,12 @@
 """Administrative commands for IRC"""
 
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor, match
 
-class Actions(Module):
+class Actions(Processor):
     """Usage: (join|part|leave) <channel>"""
 
-    @addressed
-    @notprocessed
-    @message
     @match('^\s*(join|part|leave)\s+(#\S*)\s*$')
-    def process(self, event, action, channel):
+    def handler(self, event, action, channel):
         if action == u'leave':
             action = 'part'
 
