@@ -7,7 +7,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.models import Token, Permission, Person
+from ibid.models import Authenticator, Permission, Account
 
 class Auth(object):
 
@@ -52,7 +52,7 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        account = session.query(Person).filter_by(username=event.user).one()
+        account = session.query(Account).filter_by(username=event.user).one()
         try:
             if session.query(Permission).filter_by(account_id=account.id).filter_by(permission=permission).one():
                 return True
@@ -69,9 +69,9 @@ class Auth(object):
             return
 
         session = ibid.databases.ibid()
-        account = session.query(Person).filter_by(username=event.user).one()
-        for token in session.query(Token).filter_by(method='hostmask').filter_by(account_id=account.id).filter(or_(Token.source == event.source, Token.source == None)).all():
-            if fnmatch(event.sender, token.token):
+        account = session.query(Account).filter_by(username=event.user).one()
+        for authenticator in session.query(Authenticator).filter_by(method='hostmask').filter_by(account_id=account.id).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
+            if fnmatch(event.sender, authenticator.authenticator):
                 return True
 
     def password(self, event, password):
@@ -79,9 +79,9 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        account = session.query(Person).filter_by(username=event.user).one()
-        for token in session.query(Token).filter_by(method='password').filter_by(account_id=account.id).filter(or_(Token.source == event.source, Token.source == None)).all():
-            if token.token == password:
+        account = session.query(Account).filter_by(username=event.user).one()
+        for authenticator in session.query(Authenticator).filter_by(method='password').filter_by(account_id=account.id).filter(or_(Authenticator.source == event.source, Authenticator.source == None)).all():
+            if authenticator.authenticator == password:
                 return True
 
     def _irc_auth_callback(self, nick, result):

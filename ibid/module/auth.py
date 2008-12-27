@@ -1,7 +1,7 @@
 import ibid
 from ibid.module import Module
 from ibid.decorators import addressed, notprocessed, match
-from ibid.auth_ import Token, Permission
+from ibid.auth_ import Authenticator, Permission
 from ibid.module.identity import identify
 
 class AddAuth(Module):
@@ -9,16 +9,16 @@ class AddAuth(Module):
     @addressed
     @notprocessed
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
-    def process(self, event, user, source, method, token):
+    def process(self, event, user, source, method, authenticator):
 
         account = identify(user, event.source)
         if not account:
             event.addresponse(u"I don't know who %s is" % user)
 
         else:
-            token = Token(account.id, source, method, token)
+            authenticator = Authenticator(account.id, source, method, authenticator)
             session = ibid.databases.ibid()
-            session.add(token)
+            session.add(authenticator)
             session.commit()
 
             event.addresponse(u'Okay')

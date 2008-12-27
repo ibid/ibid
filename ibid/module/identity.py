@@ -1,19 +1,20 @@
+from sqlalchemy.orm import eagerload
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.module import Module
 from ibid.decorators import *
-from ibid.models import Person, Identity, Attribute
+from ibid.models import Account, Identity, Attribute
 
-class People(Module):
+class Accounts(Module):
 
     @addressed
     @notprocessed
-    @match('^\s*add\s+person\s+(.+)\s*$')
+    @match('^\s*add\s+account\s+(.+)\s*$')
     def process(self, event, username):
         session = ibid.databases.ibid()
-        person = Person(username)
-        session.add(person)
+        account = Account(username)
+        session.add(account)
         session.commit()
         session.close()
         event.addresponse(u'Done')
@@ -32,13 +33,22 @@ class Identities(Module):
             username = event.user
 
         try:
-            person = session.query(Person).filter_by(username=username).one()
+            account = session.query(Account).filter_by(username=username).one()
         except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
             return
 
-        person.identities.append(Identity(source, identity))
-        session.add(person)
+        try:
+            identity = session.query(Identity).filter_by(identity=identity).filter_by(source=source).one()
+            if identity.account:
+                event.addresponse(u'This identity is already attached to account %s' % identity.account.username)
+                return
+            else:
+                identity.account_id = account.id
+        except NoResultFound:
+            identity = Identity(source, identity, account.id)
+
+        session.add(identity)
         session.commit()
         session.close()
         event.addresponse(u'Done')
@@ -57,13 +67,13 @@ class Attributes(Module):
 
         session = ibid.databases.ibid()
         try:
-            person = session.query(Person).filter_by(username=username).one()
+            account = session.query(Account).filter_by(username=username).one()
         except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
             return
 
-        person.attributes.append(Attribute(name, value))
-        session.add(person)
+        account.attributes.append(Attribute(name, value))
+        session.add(account)
         session.commit()
         session.close()
         event.addresponse(u'Done')
@@ -82,15 +92,15 @@ class Describe(Module):
 
         session = ibid.databases.ibid()
         try:
-            person = session.query(Person).filter_by(username=username).one()
+            account = session.query(Account).filter_by(username=username).one()
         except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add person' first" % username)
+            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
             return
 
-        event.addresponse(str(person))
-        for identity in person.identities:
+        event.addresponse(str(account))
+        for identity in account.identities:
             event.addresponse(str(identity))
-        for attribute in person.attributes:
+        for attribute in account.attributes:
             event.addresponse(str(attribute))
         session.close()
 
@@ -103,24 +113,34 @@ class Identify(Module):
     @message
     def process(self, event):
         if 'sender_id' in event:
-            if event.sender in self.cache:
-                event.user = self.cache[event.sender]
-                return
+            #if event.sender in self.cache:
+            #    (event.identity, event.account) = self.cache[event.sender]
+            #    return
 
-            account = identify(event.sender_id, event.source)
+            identity = identify(event.source, event.sender_id, True)
 
-            if account:
-                event.user = account.username
-                self.cache[event.sender] = event.user
+            event.identity = identity.id
+            if identity.account:
+                event.account = identity.account.id
+            else:
+                event.account = None
+            self.cache[event.sender] = (event.identity, event.account)
 
-def identify(user, source):
+def identify(source, user, create=False):
 
     session = ibid.databases.ibid()
     try:
-        identity = session.query(Identity).filter_by(source=source).filter_by(identity=user).one()
-        return identity.person
+        identity = session.query(Identity).options(eagerload('account')).filter_by(source=source).filter_by(identity=user).one()
+        return identity
     except NoResultFound:
-        return None
+        if not create:
+            return None
+
+        identity = Identity(source, user)
+        session.add(identity)
+        session.commit()
+        identity.account
+        return identity
     finally:
         session.close()
         

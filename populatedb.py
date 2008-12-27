@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 import ibid.module
 
-models = [('ibid.module.seen', 'Base'), ('ibid.models', 'Base')]
+models = [('ibid.models', 'Base'), ('ibid.module.seen', 'Base')]
 engine = create_engine('sqlite:///ibid.db')
 
 for module, model in models:
