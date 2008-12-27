@@ -90,7 +90,7 @@ class Sighting(Base):
 
     identity = relation('Identity')
 
-    def __init__(self, identity_id, channel, saying):
+    def __init__(self, identity_id=None, channel=None, saying=None):
         self.identity_id = identity_id
         self.channel = channel
         self.saying = saying

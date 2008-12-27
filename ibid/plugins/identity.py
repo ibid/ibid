@@ -7,11 +7,31 @@ from ibid.models import Account, Identity, Attribute
 
 class Accounts(Processor):
 
-    @match('^\s*add\s+account\s+(.+)\s*$')
+    @match('^\s*create\s+account\s+(.+)\s*$')
     def account(self, event, username):
         session = ibid.databases.ibid()
+
+        if 'account' in event and event.account:
+            try:
+                account = session.query(Account).filter_by(id=event.account).one()
+                event.addresponse(u'You already have an account called "%s".' % account.username)
+                return
+            except NoResultFound:
+                pass
+
+        try:
+            account = session.query(Account).filter_by(username=username).one()
+            event.addresponse(u'There is already an account called "%s". Please choose a different name.' % account.username)
+            return
+        except NoResultFound:
+            pass
+
         account = Account(username)
         session.add(account)
+        session.commit()
+        identity = session.query(Identity).filter_by(id=event.identity).one()
+        identity.account_id = account.id
+        session.add(identity)
         session.commit()
         session.close()
         event.addresponse(u'Done')
@@ -22,16 +42,17 @@ class Identities(Processor):
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
-            if 'user' not in event:
+            if 'account' not in event:
                 event.addresponse(u"I don't know who you are")
                 return
-            username = event.user
+            account = session.query(Account).filter_by(id=event.account).one()
 
-        try:
-            account = session.query(Account).filter_by(username=username).one()
-        except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
-            return
+        else:
+            try:
+                account = session.query(Account).filter_by(username=username).one()
+            except NoResultFound:
+                event.addresponse(u"I don't know who %s is" % username)
+                return
 
         try:
             identity = session.query(Identity).filter_by(identity=identity).filter_by(source=source).one()
@@ -75,18 +96,19 @@ class Describe(Processor):
 
     @match('^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
     def describe(self, event, username):
+        session = ibid.databases.ibid()
         if username.upper() == 'I':
-            if 'user' not in event:
+            if 'account' not in event:
                 event.addresponse(u"I don't know who you are")
                 return
-            username = event.user
+            account = session.query(Account).filter_by(id=event.account).one()
 
-        session = ibid.databases.ibid()
-        try:
-            account = session.query(Account).filter_by(username=username).one()
-        except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
-            return
+        else:
+            try:
+                account = session.query(Account).filter_by(username=username).one()
+            except NoResultFound:
+                event.addresponse(u"I don't know who %s is" % username)
+                return
 
         event.addresponse(str(account))
         for identity in account.identities:
