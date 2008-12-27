@@ -1,0 +1,84 @@
+general
+=======
+- 'object' and 'type' are probably keywords that shouldn't be reused, btw
+- proper exception handling needed all round (and maybe some more error checks?)
+- could a Processor dynamically alter priority?  of itself, or another class?  if so, would it ever want to?  "learning"?
+- the patch on ConfigObj only does one level of list interpolation.  Does ConfigObj support multi-level nested lists?
+
+auth
+====
+- has special cases for IRC
+- not sure what is going on with the hostmask 'Authenticator'?
+- nickserv auth is really really bad (waiting a few secs for a reply to arrive and looping?)
+- surely special case auth such as nickserv should be pushed into the sources, and the auth module must delegate
+- is auth_ called auth_ because ibid.auth was already taken?  not cool
+
+core
+====
+- reloader can be refactored and made simpler surely?  (I think it has remnants of days gone by, e.g. run())
+  -- do we need to explicitly reload each type, or can it be made generic?  Also, *should* it be made generic?
+  -- compare the auth relaoder, database reloader, and reloader reloader - they're the same
+  -- but those three are all 'core modules'.  sources and plugins are different:  maybe a reload_* for each of these three types of things (so, consolidate the above three, keep the rest separate)
+- note to Future Jonathan: check out load_processor and read up on inspect
+
+sources
+=======
+- telnet source: add auth -> identity -> accounts?  (user 'telnet' is a bit blah)
+- jabber source: methinks it could do with a complete rewrite - it looks copy-pasted: handles some jabber events, not others.  Do we care about subscriptions?
+  -- thought: people with Accounts with jabber IDs can be subscribed to?  presence updates will be useful for "Seen"-type queries
+- the jabber resource might conceivably be useful?  we should take it into account when replying at least, surely?
+- what about jabber MUC?
+- event.channel = sender   # smacks of hacking jabber on top of IRC
+  -- we should think about event.sender sender_id who channel - what do they all mean?  what do we actually care about (as opposed to what is foisted on us by the vagaries of our IRC/jabber sources)?
+    -- note from Slightly-Future Jonathan to Past Jonathan: the identity plugin seems to have some opinions about this
+- irc source:  mode +B = make this generic (not all ircds), user config or something
+- irc source:  response.ircaction - bit crap, can the processor not actually manipulate the IRC source itself?  like the reloader processor manipulates the reloader?
+  -- the IRC Processor shouldn't be loaded without the IRC Source, and so can make all sorts of assumptions based on that (but should still check and exit gracefully if the Source isn't there)
+- irc source:  we only respond to user joining, we need a few more irc events to be handled
+- irc source:  do_auth_callback looks all kinds of hackety
+
+plugins
+=======
+- load *all* class variables from a sub-section of the plugin conf, allowing authors to override anything that we haven't thought of yet (i.e. no special cases)
+- process() is still a bit biased towards type=message?
+- how about having a lambda decorator like @match(pattern) to allow other types of matching?
+- reload config is a good example of somewhere that error reporting should occur
+  -- how about an "admin" source?  that mails exceptions or logs them to syslog or something?
+    -- not a source.  Sounds like proper logging needs to be set up, actually.  Future Jonathan:  add python.logging like you said you would.
+- load/reload is a good example of the reloader not being generic enough... I think?
+- addressed regex needs work (add some whitespace, remove some punctuation, and consider tea-style: "ct weather, bot?" addressing)
+  -- also destroys "saw" because it changes the message in-place
+  -- royally fucks up the Log module too, now that I've seen it
+  -- should plugins examine a post-processed field, or use *the* field (and look elsewhere for a preprocessed field if they want?) - i.e. some plugins require 'raw' events (like 'Saw'), and some want the address etc stripped out
+  -- on that note, what about punctuation?  question marks at the end of queries are super-common.  Knab-style removing of "what is" is *bad* though
+- is ignore strong enough?  it just sets processed to true - postprocessors won't ignore this.  is that bad?
+- applause to Michael for the Responses processor: that's clever
+  -- that said, not at all convinced by Address processor
+    -- it takes a basestring only, not a dict as well
+    -- do we even want what it does?  cf. the Announce plugin - I think Processors should decide for themselves whether they want to address their replies or not.  (But what about private replies - adding an address in to that is crap)
+- we get usage on a processor name (which could be 'Rupert') - is that right? is this because names == 'features'?
+  -- docstring/help/usage could do with an investigation and proper discussion a-la this afternoon's discussion of the plugin architecture
+  -- the help regex is faulty, I believe (.+ will grab a space if there's nothing else for it to grab?)
+- adding an account seems a little too easy.  Lots of un-claimed name grabs?
+- identity plugin:  'identify' is different in different scopes and it's a little confusing - not cool to a first-time reader
+- twisted helper functions (with that whole blocking-wrapper thing) may as well be written
+- Fortune plugin - FreeBSD would keep fortune in /usr/local/bin, config-ize this?
+  -- spell "Couldn't" right...
+- log module is interesting (if a bit screwed by the Addressed module)
+  -- we want IRC-log style logs (for use in log analysers, etc), but how do you handle this with multiple sources?
+  -- some sort of configurable thing?  see irssi's logfile-name settings:  simple variable interpolation leads to quite flexible logging
+- sighting processor should keep track of the number of times the dude has been sighted
+  -- not only interesting, but useful for pruning?
+  -- ooh, also the first time the dude was seen?  is that excessive?
+- the Seen processor uses 'identify' from the identity processor?  not so keen on that...
+  -- it also uses 'channel', which leads to things like "Vhata was seen in Vhata saying hello"
+  -- also, some privacy please!
+- sources processor:  needs a bit of error checking, authentication and...  all sorts.
+  -- (no, I know, it was there for debugging, just a note for Future Us)
+  -- the 'disconnect' processor is going to be interesting if you disconnect from your current source...
+
+factoids
+========
+- these don't exist yet, but anyway
+- Knab has variable substitutions - $day, $hour, etc.  Would make the DateTime plugin unnecessary, for a start
+
