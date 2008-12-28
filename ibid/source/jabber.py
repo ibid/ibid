@@ -21,6 +21,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
     def __init__(self):
         xmppim.MessageProtocol.__init__(self)
+        self.rooms = []
 
     def connectionInitialized(self):
         xmppim.MessageProtocol.connectionInitialized(self)
@@ -58,13 +59,25 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
     def onMessage(self, message):
         event = Event(self.parent.name, 'message')
+        print message['to']
+        print message['from']
         event.message = unicode(message.body)
         event.sender = unicode(message['from'])
-        event.sender_id = event.sender.split('/')[0]
-        event.who = event.sender.split('@')[0]
-        event.channel = event.sender
-        event.public = False
-        event.addressed = True
+
+        if message['from'].split('/')[0] in self.rooms:
+            event.sender_id = message['from'].split('/')[1]
+            if event.sender_id == ibid.config.sources[self.name]['nick']:
+                return
+            event.who = event.sender_id
+            event.channel = message['from'].split('/')[0]
+            event.public = True
+        else:
+            event.sender_id = event.sender.split('/')[0]
+            event.who = event.sender.split('@')[0]
+            event.channel = event.sender
+            event.public = False
+            event.addressed = True
+
         ibid.dispatcher.dispatch(event)
 
     def respond(self, response):
@@ -72,9 +85,24 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         message = domish.Element((None, 'message'))
         message['to'] = response['target']
         message['from'] = self.parent.jid.full()
-        message['type'] = 'chat'
+        if message['to'] in self.rooms:
+            message['type'] = 'groupchat'
+        else:
+            message['type'] = 'chat'
         message.addElement('body', content=response['reply'])
         self.xmlstream.send(message)
+
+    def join(self, room):
+        jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
+        presence = xmppim.AvailablePresence(to=jid)
+        self.xmlstream.send(presence)
+        self.rooms.append(room)
+
+    def part(self, room):
+        jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
+        presence = xmppim.UnavailablePresence(to=jid)
+        self.xmlstream.send(presence)
+        self.rooms.remove(room)
 
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
@@ -115,5 +143,11 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
         self.stopFactory()
         self.proto.xmlstream.transport.loseConnection()
         return True
+
+    def join(self, room):
+        return self.proto.join(room)
+
+    def part(self, room):
+        return self.proto.part(room)
 
 # vi: set et sta sw=4 ts=4:
