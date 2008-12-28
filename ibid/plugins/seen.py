@@ -84,21 +84,35 @@ class Seen(Processor):
             event.addresponse(u"I haven't seen %s" % who)
             return
 
-
         messages.sort(key=lambda x: x.time, reverse=True)
         states.sort(key=lambda x: x.time, reverse=True)
 
+        reply = ''
         if len(messages) > 0:
             sighting = messages[0]
-            reply = u"I've seen %s %s times on %s, and last at %s in %s" % (who, sighting.count, sighting.identity.source, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.channel or 'private')
+            delta = datetime.now() - sighting.time
+            fdelta = ''
+            second = False
+            for name, value in [('second', delta.seconds%60), ('minute', delta.seconds/60%60), ('hour', delta.seconds/3600), ('day', delta.days % 365), ('year', delta.days/365)]:
+                if value != 0:
+                    sep = second and ' and ' or ', '
+                    second = not fdelta
+                    fdelta = '%s %s%s%s%s' % (value, name, value != 1 and 's' or '', fdelta and sep or '', fdelta)
+
+            reply = u"%s was last seen %s ago in %s on %s" % (who, fdelta, sighting.channel or 'private', sighting.identity.source)
             if sighting.value:
                 reply = reply + " saying '%s'" % sighting.value
-            event.addresponse(reply)
+            reply = u'%s [%s]' % (reply, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
 
         if len(states) > 0:
             sighting = states[0]
-            event.addresponse(u"%s's state on %s has been %s since %s and has changed %s times" % (who, sighting.identity.source, sighting.value, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()), sighting.count))
+            if reply:
+                reply = reply + u', and'
+            else:
+                reply = who
+            reply = reply + u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
 
+        event.addresponse(reply)
         session.close()
         return event
 

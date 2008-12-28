@@ -37,7 +37,6 @@ plugins
   -- we want IRC-log style logs (for use in log analysers, etc), but how do you handle this with multiple sources?
   -- some sort of configurable thing?  see irssi's logfile-name settings:  simple variable interpolation leads to quite flexible logging
 - sighting processor should keep track of the number of times the dude has been sighted
-  -- not only interesting, but useful for pruning?
   -- ooh, also the first time the dude was seen?  is that excessive?
 - sources processor:  needs a bit of error checking, authentication and...  all sorts.
   -- (no, I know, it was there for debugging, just a note for Future Us)
