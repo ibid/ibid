@@ -1,3 +1,6 @@
+import string
+from random import choice
+
 from sqlalchemy.orm import eagerload
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -40,11 +43,19 @@ class Accounts(Processor):
         session.close()
         event.addresponse(u'Done')
 
+chars = string.letters + string.digits
+
 class Identities(Processor):
+
+    def __init__(self, name):
+        Processor.__init__(self, name)
+        self.tokens = {}
 
     @match('^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
+        admin = False
+
         if username.upper() == 'I':
             if event.account:
                 account = session.query(Account).filter_by(id=event.account).one()
@@ -66,26 +77,50 @@ class Identities(Processor):
         else:
             if not auth_responses(event, 'accounts'):
                 return
+            admin = True
             try:
                 account = session.query(Account).filter_by(username=username).one()
             except NoResultFound:
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        try:
-            identity = session.query(Identity).filter(Identity.identity.like(identity)).filter_by(source=source).one()
-            if identity.account:
-                event.addresponse(u'This identity is already attached to account %s' % identity.account.username)
-                return
-            else:
-                identity.account_id = account.id
-        except NoResultFound:
-            identity = Identity(source, identity, account.id)
+        ident = session.query(Identity).filter(Identity.identity.like(identity)).filter_by(source=source).first()
+        if ident and ident.account:
+            event.addresponse(u'This identity is already attached to account %s' % ident.account.username)
+            return
 
-        session.add(identity)
-        session.commit()
-        session.close()
-        event.addresponse(u'Done')
+        if not admin:
+            token = ''.join([choice(chars) for i in xrange(16)])
+            self.tokens[token] = (account.id, identity, source)
+            event.addresponse(u'Please send me this message from %s on %s: %s' % (identity, source, token))
+
+        else:
+            if not ident:
+                identity = Identity(source, identity)
+            identity.account_id = account.id
+            session.add(identity)
+            session.commit()
+            event.addresponse(True)
+
+    @match(r'^(\S{16})$')
+    def token(self, event, token):
+        if token in self.tokens:
+            session = ibid.databases.ibid()
+            (account_id, user, source) = self.tokens[token]
+            if event.source != source or event.sender_id.lower() != user.lower():
+                event.addresponse(u'You need to send me this token from the identity you wish to add')
+                return
+
+            identity = session.query(Identity).filter(Identity.identity.like(user)).filter_by(source=source).first()
+            if not identity:
+                identity = Identity(source, user)
+            identity.account_id = account_id
+            session.add(identity)
+            session.commit()
+            session.close()
+
+            del self.tokens[token]
+            event.addresponse(u'Identity added')
 
 class Attributes(Processor):
 

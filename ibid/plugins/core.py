@@ -2,6 +2,7 @@
 
 import re
 from time import time
+from random import randrange
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -56,6 +57,7 @@ class Responses(Processor):
 
     processed = True
     addressed = False
+    priority = 1600
 
     @handler
     def responses(self, event):
@@ -75,6 +77,8 @@ class Responses(Processor):
         event.responses = converted
         return event
 
+acknowledgements = ('Okay', 'Sure', 'Done', 'Righto')
+
 class Address(Processor):
 
     processed = True
@@ -84,6 +88,8 @@ class Address(Processor):
         if event.public:
             addressed = []
             for response in event.responses:
+                if isinstance(response, bool):
+                    response = acknowledgements[randrange(len(acknowledgements))]
                 if isinstance(response, basestring) and event.public:
                     addressed.append('%s: %s' % (event.who, response))
                 else:
