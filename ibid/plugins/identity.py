@@ -55,7 +55,7 @@ class Identities(Processor):
                 return
 
         try:
-            identity = session.query(Identity).filter_by(identity=identity).filter_by(source=source).one()
+            identity = session.query(Identity).filter(Identity.identity.like(identity)).filter_by(source=source).one()
             if identity.account:
                 event.addresponse(u'This identity is already attached to account %s' % identity.account.username)
                 return
@@ -133,7 +133,7 @@ class Identify(Processor):
 
             session = ibid.databases.ibid()
             try:
-                identity = session.query(Identity).options(eagerload('account')).filter_by(source=event.source).filter_by(identity=event.sender_id).one()
+                identity = session.query(Identity).options(eagerload('account')).filter_by(source=event.source).filter(Identity.identity.like(event.sender_id)).one()
             except NoResultFound:
                 identity = Identity(event.source, event.sender_id)
                 session.add(identity)
@@ -155,7 +155,7 @@ def identify(source, user):
     account = None
 
     try:
-        identity = session.query(Identity).filter_by(source=source).filter_by(identity=user).one()
+        identity = session.query(Identity).filter_by(source=source).filter(Identity.identity.like(user)).one()
     except NoResultFound:
         pass
 

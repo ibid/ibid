@@ -49,7 +49,7 @@ class Seen(Processor):
         account = None
         identity = None
         try:
-            identity = session.query(Identity).filter_by(source=source or event.source).filter_by(identity=who).one()
+            identity = session.query(Identity).filter_by(source=source or event.source).filter(Identity.identity.like(who)).one()
             if identity.account and not source:
                 account = identity.account
 
@@ -100,8 +100,6 @@ class Seen(Processor):
                     fdelta = '%s %s%s%s%s' % (value, name, value != 1 and 's' or '', fdelta and sep or '', fdelta)
 
             reply = u"%s was last seen %s ago in %s on %s" % (who, fdelta, sighting.channel or 'private', sighting.identity.source)
-            if sighting.value:
-                reply = reply + " saying '%s'" % sighting.value
             reply = u'%s [%s]' % (reply, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
 
         if len(states) > 0:

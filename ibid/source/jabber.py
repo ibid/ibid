@@ -59,12 +59,10 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
     def onMessage(self, message):
         event = Event(self.parent.name, 'message')
-        print message['to']
-        print message['from']
         event.message = unicode(message.body)
         event.sender = unicode(message['from'])
 
-        if message['from'].split('/')[0] in self.rooms:
+        if message['type'] == 'groupchat':
             event.sender_id = message['from'].split('/')[1]
             if event.sender_id == ibid.config.sources[self.name]['nick']:
                 return
