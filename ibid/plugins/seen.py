@@ -49,7 +49,7 @@ class Seen(Processor):
         account = None
         identity = None
         try:
-            identity = session.query(Identity).filter_by(source=source or event.source).filter(Identity.identity.like(who)).one()
+            identity = session.query(Identity).filter(Identity.source.like(source and source or event.source)).filter(Identity.identity.like(who)).one()
             if identity.account and not source:
                 account = identity.account
 

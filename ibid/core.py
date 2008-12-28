@@ -21,8 +21,9 @@ class Dispatcher(object):
         print event
 
         for response in event['responses']:
-            if response['source'] in ibid.sources:
-                reactor.callFromThread(ibid.sources[response['source']].respond, response)
+            source = response['source'].lower()
+            if source in ibid.sources:
+                reactor.callFromThread(ibid.sources[source].respond, response)
             else:
                 print u'Invalid source %s' % response['source']
 
@@ -48,7 +49,7 @@ class Reloader(object):
             return False
         
     def load_source(self, name, service=None):
-        type = ibid.config['sources'][name]['type']
+        type = ibid.config.sources[name]['type']
 
         module = 'ibid.source.%s' % type
         factory = 'ibid.source.%s.SourceFactory' % type
@@ -59,16 +60,17 @@ class Reloader(object):
             print_exc()
             return
 
-        ibid.sources[name] = moduleclass(name)
-        ibid.sources[name].setServiceParent(service)
+        ibid.sources[name.lower()] = moduleclass(name)
+        ibid.sources[name.lower()].setServiceParent(service)
         return True
 
     def load_sources(self, service=None):
-        for source in ibid.config['sources'].keys():
+        for source in ibid.config.sources.keys():
             if 'disabled' not in ibid.config.sources[source]:
                 self.load_source(source, service)
 
     def unload_source(self, name):
+        name = name.lower()
         if name not in ibid.sources:
             return False
 

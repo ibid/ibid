@@ -33,8 +33,8 @@ class Auth(object):
                 del self.cache[event.sender]
 
         for method in methods:
-            if hasattr(ibid.sources[event.source], 'auth_%s' % method):
-                function = getattr(ibid.sources[event.source], 'auth_%s' % method)
+            if hasattr(ibid.sources[event.source.lower()], 'auth_%s' % method):
+                function = getattr(ibid.sources[event.source.lower()], 'auth_%s' % method)
             elif hasattr(self, method):
                 function = getattr(self, method)
             else:

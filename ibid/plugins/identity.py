@@ -84,7 +84,7 @@ class Identities(Processor):
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        ident = session.query(Identity).filter(Identity.identity.like(identity)).filter_by(source=source).first()
+        ident = session.query(Identity).filter(Identity.identity.like(identity)).filter(Identity.source.like(source)).first()
         if ident and ident.account:
             event.addresponse(u'This identity is already attached to account %s' % ident.account.username)
             return
@@ -96,9 +96,9 @@ class Identities(Processor):
 
         else:
             if not ident:
-                identity = Identity(source, identity)
-            identity.account_id = account.id
-            session.add(identity)
+                ident = Identity(source, identity)
+            ident.account_id = account.id
+            session.add(ident)
             session.commit()
             event.addresponse(True)
 
@@ -107,11 +107,11 @@ class Identities(Processor):
         if token in self.tokens:
             session = ibid.databases.ibid()
             (account_id, user, source) = self.tokens[token]
-            if event.source != source or event.sender_id.lower() != user.lower():
-                event.addresponse(u'You need to send me this token from the identity you wish to add')
+            if event.source.lower() != source.lower() or event.sender_id.lower() != user.lower():
+                event.addresponse(u'You need to send me this token from %s on %s' % (user, source))
                 return
 
-            identity = session.query(Identity).filter(Identity.identity.like(user)).filter_by(source=source).first()
+            identity = session.query(Identity).filter(Identity.identity.like(user)).filter(Identity.source.like(source)).first()
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
@@ -194,7 +194,7 @@ class Identify(Processor):
 
             session = ibid.databases.ibid()
             try:
-                identity = session.query(Identity).options(eagerload('account')).filter_by(source=event.source).filter(Identity.identity.like(event.sender_id)).one()
+                identity = session.query(Identity).options(eagerload('account')).filter(Identity.source.like(event.source)).filter(Identity.identity.like(event.sender_id)).one()
             except NoResultFound:
                 identity = Identity(event.source, event.sender_id)
                 session.add(identity)
@@ -216,7 +216,7 @@ def identify(source, user):
     account = None
 
     try:
-        identity = session.query(Identity).filter_by(source=source).filter(Identity.identity.like(user)).one()
+        identity = session.query(Identity).filter(Identity.source.like(source)).filter(Identity.identity.like(user)).one()
     except NoResultFound:
         pass
 

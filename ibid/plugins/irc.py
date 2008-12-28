@@ -9,6 +9,8 @@ class Actions(Processor):
     @match('^\s*(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?\s*$')
     def join(self, event, action, channel, source):
         action = action.lower()
+        source = source.lower()
+
         if not source:
             source = event.source
         if not channel:
@@ -16,15 +18,17 @@ class Actions(Processor):
                 return
             channel = event.channel
 
-        if ibid.config.sources[source]['type'] != 'irc' and ibid.config.sources[source]['type'] != 'jabber':
-            event.addresponse(u"%s isn't an IRC or Jabber source" % source)
+        source = ibid.sources[source]
+
+        if ibid.config.sources[source.name]['type'] != 'irc' and ibid.config.sources[source.name]['type'] != 'jabber':
+            event.addresponse(u"%s isn't an IRC or Jabber source" % source.name)
             return
 
         if action == 'join':
-            ibid.sources[source].join(channel)
+            source.join(channel)
             event.addresponse(u"Joining %s" % channel)
         else:
-            ibid.sources[source].part(channel)
+            source.part(channel)
             event.addresponse(u"Parting %s" % channel)
 
 # vi: set et sta sw=4 ts=4:

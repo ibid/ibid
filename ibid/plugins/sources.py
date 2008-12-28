@@ -7,7 +7,7 @@ class Admin(Processor):
 	@authorise('sources')
 	def connect(self, event, source):
 
-		if ibid.sources[source].connect():
+		if ibid.sources[source.lower()].connect():
 			event.addresponse(u'Connecting to %s' % source)
 		else:
 			event.addresponse(u"I couldn't connect to %s" % source)
@@ -16,7 +16,7 @@ class Admin(Processor):
 	@authorise('sources')
 	def disconnect(self, event, source):
 
-		if ibid.sources[source].disconnect():
+		if ibid.sources[source.lower()].disconnect():
 			event.addresponse(u'Disconnecting from %s' % source)
 		else:
 			event.addresponse(u"I couldn't disconnect from %s" % source)
@@ -34,12 +34,12 @@ class Info(Processor):
 	@match('^sources$')
 	def list(self, event):
 		reply = u''
-		for source in ibid.sources.keys():
-			reply += source
-			if ibid.config.sources[source]['type'] == 'irc':
-				reply += ' (%s)' % ibid.config.sources[source]['server']
-			elif ibid.config.sources[source]['type'] == 'jabber':
-				reply += ' (%s)' % ibid.config.sources[source]['jid'].split('/')[0]
+		for name, source in ibid.sources.items():
+			reply += source.name
+			if ibid.config.sources[source.name]['type'] == 'irc':
+				reply += ' (%s)' % ibid.config.sources[source.name]['server']
+			elif ibid.config.sources[source.name]['type'] == 'jabber':
+				reply += ' (%s)' % ibid.config.sources[source.name]['jid'].split('/')[0]
 			reply += ', '
 		reply = reply[:-2]
 		event.addresponse(reply)
