@@ -1,6 +1,6 @@
 """Some basic processors"""
 
-import random
+from random import choice
 
 from ibid.plugins import Processor, match, handler
 
@@ -44,7 +44,7 @@ class Complain(Processor):
 
     @handler
     def complain(self, event):
-        event.addresponse(complaints[random.randrange(len(complaints))])
+        event.addresponse(choice(complaints))
         return event
 
 # vi: set et sta sw=4 ts=4:

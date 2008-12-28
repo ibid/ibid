@@ -31,10 +31,19 @@ class Admin(Processor):
 
 class Info(Processor):
 
-	@match('^\s*list\s+sources\s*$')
+	@match('^sources$')
 	def list(self, event):
-		event.addresponse(', '.join(ibid.sources.keys()))
+		reply = u''
+		for source in ibid.sources.keys():
+			reply += source
+			if ibid.config.sources[source]['type'] == 'irc':
+				reply += ' (%s)' % ibid.config.sources[source]['server']
+			elif ibid.config.sources[source]['type'] == 'jabber':
+				reply += ' (%s)' % ibid.config.sources[source]['jid'].split('/')[0]
+			reply += ', '
+		reply = reply[:-2]
+		event.addresponse(reply)
 
-	@match('^\s*list\s+configured\s+sources\s*$')
-	def list(self, event):
+	@match('^list\s+configured\s+sources$')
+	def listall(self, event):
 		event.addresponse(', '.join(ibid.config.sources.keys()))

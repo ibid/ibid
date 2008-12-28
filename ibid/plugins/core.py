@@ -2,7 +2,7 @@
 
 import re
 from time import time
-from random import randrange
+from random import choice
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -89,7 +89,7 @@ class Address(Processor):
             addressed = []
             for response in event.responses:
                 if isinstance(response, bool):
-                    response = acknowledgements[randrange(len(acknowledgements))]
+                    response = choice(acknowledgements)
                 if isinstance(response, basestring) and event.public:
                     addressed.append('%s: %s' % (event.who, response))
                 else:
