@@ -16,14 +16,13 @@ class AddAuth(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = session.query(Account).filter_by(id=event.account).one()
+            account = session.query(Account).filter_by(id=event.account).first()
 
         else:
             if not auth_responses(event, 'admin'):
                 return
-            try:
-                account = session.query(Account).filter_by(username=user).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(username=user).first()
+            if not account:
                 event.addresponse(u"I don't know who %s is" % user)
                 session.close()
                 return
@@ -42,9 +41,8 @@ class Permissions(Processor):
     def grant(self, event, user, permission):
 
         session = ibid.databases.ibid()
-        try:
-            account = session.query(Account).filter_by(username=user).one()
-        except NoResultFound:
+        account = session.query(Account).filter_by(username=user).first()
+        if not account:
             event.addresponse(u"I don't know who %s is" % user)
             session.close()
             return
@@ -63,11 +61,10 @@ class Permissions(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = session.query(Account).filter_by(id=event.account).one()
+            account = session.query(Account).filter_by(id=event.account).first()
         else:
-            try:
-                account = session.query(Account).filter_by(username=username).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 

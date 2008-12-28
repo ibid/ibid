@@ -57,13 +57,7 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        try:
-            if session.query(Permission).filter_by(account_id=event.account).filter_by(permission=permission).one():
-                return True
-        except NoResultFound:
-            return False
-        finally:
-            session.close()
+        return session.query(Permission).filter_by(account_id=event.account).filter_by(permission=permission).first() and True or False
 
     def implicit(self, event, credential = None):
         return True

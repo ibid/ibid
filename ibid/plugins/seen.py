@@ -20,9 +20,8 @@ class See(Processor):
             return
 
         session = ibid.databases.ibid()
-        try:
-            sighting = session.query(Sighting).filter_by(identity_id=event.identity).filter_by(type=event.type).one()
-        except NoResultFound:
+        sighting = session.query(Sighting).filter_by(identity_id=event.identity).filter_by(type=event.type).first()
+        if not sighting:
             sighting = Sighting()
             sighting.identity_id = event.identity
             sighting.type = event.type
@@ -47,18 +46,12 @@ class Seen(Processor):
 
         session = ibid.databases.ibid()
         account = None
-        identity = None
-        try:
-            identity = session.query(Identity).filter(Identity.source.like(source and source or event.source)).filter(Identity.identity.like(who)).one()
-            if identity.account and not source:
-                account = identity.account
+        identity = session.query(Identity).filter(Identity.source.like(source and source or event.source)).filter(Identity.identity.like(who)).first()
+        if identity and identity.account and not source:
+            account = identity.account
 
-        except NoResultFound:
-            if not source:
-                try:
-                    account = session.query(Account).filter_by(username=who).one()
-                except NoResultFound:
-                    pass
+        if not identity and not source:
+            account = session.query(Account).filter_by(username=who).first()
 
         if not identity and not account:
             event.addresponse(u"I don't know who %s is" % who)

@@ -19,23 +19,21 @@ class Accounts(Processor):
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
             else:
-                account = session.query(Account).filter_by(id=event.account).one()
+                account = session.query(Account).filter_by(id=event.account).first()
                 event.addresponse(u'You already have an account called "%s".' % account.username)
                 return
 
-        try:
-            account = session.query(Account).filter_by(username=username).one()
+        account = session.query(Account).filter_by(username=username).first()
+        if account:
             event.addresponse(u'There is already an account called "%s". Please choose a different name.' % account.username)
             return
-        except NoResultFound:
-            pass
 
         account = Account(username)
         session.add(account)
         session.commit()
 
         if not admin:
-            identity = session.query(Identity).filter_by(id=event.identity).one()
+            identity = session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
             session.add(identity)
             session.commit()
@@ -58,7 +56,7 @@ class Identities(Processor):
 
         if username.upper() == 'I':
             if event.account:
-                account = session.query(Account).filter_by(id=event.account).one()
+                account = session.query(Account).filter_by(id=event.account).first()
             else:
                 username = event.sender_id
                 account = session.query(Account).filter_by(username=username).first()
@@ -68,7 +66,7 @@ class Identities(Processor):
                 account = Account(username)
                 session.add(account)
                 session.commit()
-                currentidentity = session.query(Identity).filter_by(id=event.identity).one()
+                currentidentity = session.query(Identity).filter_by(id=event.identity).first()
                 currentidentity.account_id = account.id
                 session.add(currentidentity)
                 session.commit()
@@ -78,9 +76,8 @@ class Identities(Processor):
             if not auth_responses(event, 'accounts'):
                 return
             admin = True
-            try:
-                account = session.query(Account).filter_by(username=username).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
@@ -132,18 +129,16 @@ class Attributes(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            try:
-                account = session.query(Account).filter_by(id=event.account).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(id=event.account).first()
+            if not account:
                 event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
                 return
 
         else:
             if not auth_responses(event, 'accounts'):
                 return
-            try:
-                account = session.query(Account).filter_by(username=username).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
@@ -162,12 +157,11 @@ class Describe(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = session.query(Account).filter_by(id=event.account).one()
+            account = session.query(Account).filter_by(id=event.account).first()
 
         else:
-            try:
-                account = session.query(Account).filter_by(username=username).one()
-            except NoResultFound:
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
@@ -193,9 +187,8 @@ class Identify(Processor):
             #    return
 
             session = ibid.databases.ibid()
-            try:
-                identity = session.query(Identity).options(eagerload('account')).filter(Identity.source.like(event.source)).filter(Identity.identity.like(event.sender_id)).one()
-            except NoResultFound:
+            identity = session.query(Identity).options(eagerload('account')).filter(Identity.source.like(event.source)).filter(Identity.identity.like(event.sender_id)).first()
+            if not identity:
                 identity = Identity(event.source, event.sender_id)
                 session.add(identity)
                 session.commit()
@@ -212,18 +205,9 @@ class Identify(Processor):
 def identify(source, user):
 
     session = ibid.databases.ibid()
-    identity = None
-    account = None
 
-    try:
-        identity = session.query(Identity).filter(Identity.source.like(source)).filter(Identity.identity.like(user)).one()
-    except NoResultFound:
-        pass
-
-    try:
-        account = session.query(Account).filter_by(username=user).one()
-    except NoResultFound:
-        pass
+    identity = session.query(Identity).filter(Identity.source.like(source)).filter(Identity.identity.like(user)).first()
+    account = session.query(Account).filter_by(username=user).first()
 
     if not account and not identity:
         return None
