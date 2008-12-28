@@ -1,7 +1,7 @@
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.auth_ import Credential, Permission
 from ibid.plugins.identity import Account
 
@@ -10,13 +10,23 @@ class AddAuth(Processor):
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def handler(self, event, user, source, method, credential):
 
+        print 'here'
         session = ibid.databases.ibid()
-        try:
-            account = session.query(Account).filter_by(username=user).one()
-        except NoResultFound:
-            event.addresponse(u"I don't know who %s is" % user)
-            session.close()
-            return
+        if user.lower() == 'me':
+            if not event.account:
+                event.addresponse(u"I don't know who you are")
+                return
+            account = session.query(Account).filter_by(id=event.account).one()
+
+        else:
+            if not auth_responses(event, 'admin'):
+                return
+            try:
+                account = session.query(Account).filter_by(username=user).one()
+            except NoResultFound:
+                event.addresponse(u"I don't know who %s is" % user)
+                session.close()
+                return
 
         credential = Credential(method, credential, source, account.id)
         session.add(credential)
@@ -28,6 +38,7 @@ class AddAuth(Processor):
 class Permissions(Processor):
 
     @match('^grant\s+(.+)\s+permission\s+(.+)$')
+    @authorise('admin')
     def grant(self, event, user, permission):
 
         session = ibid.databases.ibid()

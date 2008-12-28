@@ -39,7 +39,7 @@ account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)
 
-for permission in (u'accounts', u'sources', u'plugins', u'core'):
+for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin'):
     perm = Permission(permission)
     account.permissions.append(perm)
 
