@@ -61,18 +61,22 @@ def match(regex):
         return function
     return wrap
 
+def auth_responses(event, permission):
+    if not ibid.auth.authenticate(event):
+        event.addresponse('You are not authenticated')
+        return False
+
+    if not ibid.auth.authorise(event, permission):
+        event.addresponse('You are not authorised')
+        return False
+
+    return True
+
 def authorise(permission):
     def wrap(function):
         def new(self, event, *args):
-            if not ibid.auth.authenticate(event):
-                event.addresponse('You are not authenticated')
-                return
-
-            if not ibid.auth.authorise(event, permission):
-                event.addresponse('You are not authorised')
-                return
-
-            return function(self, event, *args)
+            if auth_responses(event, permission):
+                return function(self, event, *args)
         return new
     return wrap
 

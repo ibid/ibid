@@ -2,7 +2,7 @@ from sqlalchemy.orm import eagerload
 from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, handler, auth_responses
 from ibid.models import Account, Identity, Attribute
 
 class Accounts(Processor):
@@ -10,14 +10,15 @@ class Accounts(Processor):
     @match('^\s*create\s+account\s+(.+)\s*$')
     def account(self, event, username):
         session = ibid.databases.ibid()
+        admin = False
 
-        if 'account' in event and event.account:
-            try:
+        if event.account:
+            if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
+                admin = True
+            else:
                 account = session.query(Account).filter_by(id=event.account).one()
                 event.addresponse(u'You already have an account called "%s".' % account.username)
                 return
-            except NoResultFound:
-                pass
 
         try:
             account = session.query(Account).filter_by(username=username).one()
@@ -29,10 +30,13 @@ class Accounts(Processor):
         account = Account(username)
         session.add(account)
         session.commit()
-        identity = session.query(Identity).filter_by(id=event.identity).one()
-        identity.account_id = account.id
-        session.add(identity)
-        session.commit()
+
+        if not admin:
+            identity = session.query(Identity).filter_by(id=event.identity).one()
+            identity.account_id = account.id
+            session.add(identity)
+            session.commit()
+
         session.close()
         event.addresponse(u'Done')
 
@@ -42,12 +46,26 @@ class Identities(Processor):
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
-            if not event.account:
-                event.addresponse(u"I don't know who you are")
-                return
-            account = session.query(Account).filter_by(id=event.account).one()
+            if event.account:
+                account = session.query(Account).filter_by(id=event.account).one()
+            else:
+                username = event.sender_id
+                account = session.query(Account).filter_by(username=username).first()
+                if account:
+                    event.addresponse(u"I tried to create the account %s for you, but it already exists. Please use 'create account <name>'." % username)
+                    return
+                account = Account(username)
+                session.add(account)
+                session.commit()
+                currentidentity = session.query(Identity).filter_by(id=event.identity).one()
+                currentidentity.account_id = account.id
+                session.add(currentidentity)
+                session.commit()
+                event.addresponse(u"I've created the account %s for you" % username)
 
         else:
+            if not auth_responses(event, 'accounts'):
+                return
             try:
                 account = session.query(Account).filter_by(username=username).one()
             except NoResultFound:
@@ -73,18 +91,26 @@ class Attributes(Processor):
 
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
     def attribute(self, event, username, name, value):
+        session = ibid.databases.ibid()
+
         if username.lower() == 'my':
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            username = event.user
+            try:
+                account = session.query(Account).filter_by(id=event.account).one()
+            except NoResultFound:
+                event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
+                return
 
-        session = ibid.databases.ibid()
-        try:
-            account = session.query(Account).filter_by(username=username).one()
-        except NoResultFound:
-            event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
-            return
+        else:
+            if not auth_responses(event, 'accounts'):
+                return
+            try:
+                account = session.query(Account).filter_by(username=username).one()
+            except NoResultFound:
+                event.addresponse(u"I don't know who %s is" % username)
+                return
 
         account.attributes.append(Attribute(name, value))
         session.add(account)
