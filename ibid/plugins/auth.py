@@ -18,7 +18,7 @@ class AddAuth(Processor):
             session.close()
             return
 
-        credential = Credential(account.id, source, method, credential)
+        credential = Credential(method, credential, source, account.id)
         session.add(credential)
         session.commit()
         session.close()
@@ -38,7 +38,7 @@ class Permissions(Processor):
             session.close()
             return
 
-        permission = Permission(account.id, permission)
+        permission = Permission(permission, account.id)
         session.add(permission)
         session.commit()
         session.close()

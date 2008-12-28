@@ -46,7 +46,7 @@ class Credential(Base):
     method = Column(Unicode)
     credential = Column(Unicode)
 
-    def __init__(self, account_id, source, method, credential):
+    def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
         self.source = source
         self.method = method
@@ -59,7 +59,7 @@ class Permission(Base):
     account_id = Column(Integer, ForeignKey('accounts.id'))
     permission = Column(Unicode)
 
-    def __init__(self, account_id, permission):
+    def __init__(self, permission, account_id=None):
         self.account_id = account_id
         self.permission = permission
 
@@ -72,6 +72,7 @@ class Account(Base):
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)
     permissions = relation(Permission)
+    credentials = relation(Credential)
 
     def __init__(self, username):
         self.username = username
