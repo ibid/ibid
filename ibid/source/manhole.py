@@ -6,6 +6,7 @@ from ibid.source import IbidSourceFactory
 
 class SourceFactory(ShellFactory, IbidSourceFactory):
     def __init__(self, name):
+        ShellFactory.__init__(self)
         self.name = name
 
     def setServiceParent(self, service=None):

@@ -1,5 +1,5 @@
 from twisted.internet import protocol, reactor
-from twisted.protocols import basic
+from twisted.conch import telnet
 from twisted.application import internet
 
 import ibid
@@ -8,24 +8,32 @@ from ibid.event import Event
 
 encoding = 'latin-1'
 
-class TelnetProtocol(basic.LineReceiver):
+class TelnetProtocol(telnet.StatefulTelnetProtocol):
+
+    state = 'User'
 
     def connectionMade(self):
         self.factory.respond = self.respond
+        self.transport.write('Username: ')
 
-    def lineReceived(self, line):
+    def telnet_User(self, line):
+        self.user = line.strip()
+        return 'Query'
 
+    def telnet_Query(self, line):
         event = Event(self.factory.name, 'message')
         event.message = line
-        event.user = 'telnet'
-        event.who = 'telnet'
-        event.channel = 'telnet'
+        event.sender = self.user
+        event.sender_id = self.user
+        event.who = event.sender
+        event.channel = event.sender
         event.addressed = True
         event.public = False
         ibid.dispatcher.dispatch(event)
+        return 'Query'
 
     def respond(self, response):
-        self.sendLine(response['reply'].encode(encoding))
+        self.transport.write(response['reply'].encode(encoding) + '\n')
 
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
