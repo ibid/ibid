@@ -89,7 +89,10 @@ class Identities(Processor):
         if not admin:
             token = ''.join([choice(chars) for i in xrange(16)])
             self.tokens[token] = (account.id, identity, source)
-            event.addresponse(u'Please send me this message from %s on %s: %s' % (identity, source, token))
+            response = {'reply': u'Please send me this message from %s on %s: %s' % (identity, source, token)}
+            if event.public:
+                response['target'] = event['sender_id']
+            event.addresponse(response)
 
         else:
             if not ident:

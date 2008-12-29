@@ -9,10 +9,6 @@ auth
 ====
 - is auth_ called auth_ because ibid.auth was already taken?  not cool
 
-sources
-=======
-- telnet source: add auth -> identity -> accounts?  (user 'telnet' is a bit blah)
-
 plugins
 =======
 - load *all* class variables from a sub-section of the plugin conf, allowing authors to override anything that we haven't thought of yet (i.e. no special cases)
@@ -30,7 +26,6 @@ plugins
 - we get usage on a processor name (which could be 'Rupert') - is that right? is this because names == 'features'?
   -- docstring/help/usage could do with an investigation and proper discussion a-la this afternoon's discussion of the plugin architecture
   -- the help regex is faulty, I believe (.+ will grab a space if there's nothing else for it to grab?)
-- adding an account seems a little too easy.  Lots of un-claimed name grabs?
 - identity plugin:  'identify' is different in different scopes and it's a little confusing - not cool to a first-time reader
 - twisted helper functions (with that whole blocking-wrapper thing) may as well be written
 - log module is interesting (if a bit screwed by the Addressed module)
