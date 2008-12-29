@@ -9,9 +9,18 @@ setup(
 	py_modules=['ibid'],
 	setup_requires=['setuptools_bzr'],
 	install_requires=[
-		'SQLAlchemy>=0.5',
+		'SQLAlchemy>=0.4',
+		'wokkel>=0.4',
+		'ConfigObj>=4.5.3',
+		'validate>=0.3.2',
 	],
-	packages=find_packages(),
+	packages=find_packages(exclude=['lib']),
 	scripts=['ibid.tac', 'ibid.py', 'populatedb.py'],
 	include_package_data=True,
+	package_data={
+		'': ['*.ini'],
+	},
+	exclude_package_data={
+		'lib': ['*'],
+	}
 )

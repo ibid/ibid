@@ -20,7 +20,6 @@ class Processor(object):
             config = ibid.config.plugins[name]
 
             for name, value in config.items():
-                print "Applying %s as %s" % (name, value)
                 setattr(self, name, value)
 
     def process(self, event):

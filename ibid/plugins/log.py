@@ -10,10 +10,11 @@ class Log(Processor):
     addressed = False
     processed = True
     priority = 1900
+    logfile = '/tmp/ibid.log'
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        self.log = open(ibid.config.plugins[self.name]['logfile'], 'a')
+        self.log = open(self.logfile, 'a')
 
     def process(self, event):
         then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(event.time))
