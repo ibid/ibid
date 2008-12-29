@@ -7,7 +7,6 @@ from ibid.event import Event
 
 class IbidRequest(resource.Resource):
 	isLeaf = True
-	requests = {}
 
 	def render_GET(self, request):
 		ibid.sources['http'].respond = self.respond
@@ -19,13 +18,12 @@ class IbidRequest(resource.Resource):
 		event.who = event.sender
 		event.sender_id = event.sender
 		event.message = request.args['m'][0]
-		event.id = request
-		ibid.dispatcher.dispatch(event)
+		ibid.dispatcher.dispatch(event).addCallback(self.respond, request)
 		return server.NOT_DONE_YET
 
-	def respond(self, response):
-		request = response['id']
-		request.write(response['reply'].encode('latin-1'))
+	def respond(self, event, request):
+		for response in event.responses:
+			request.write(response['reply'].encode('latin-1'))
 		request.finish()
 
 class SourceFactory(IbidSourceFactory):
