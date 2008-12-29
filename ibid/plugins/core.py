@@ -73,6 +73,8 @@ class Responses(Processor):
                 response['target'] = event.channel
             if 'source' not in response:
                 response['source'] = event.source
+            if 'id' in event:
+                response['id'] = event['id']
             converted.append(response)
 
         event.responses = converted
