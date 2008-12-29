@@ -23,7 +23,7 @@ class Ircbot(irc.IRCClient):
         self.nickname = ibid.config.sources[self.factory.name]['nick']
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
-        self.factory.respond = self.respond
+        self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
 
@@ -66,7 +66,7 @@ class Ircbot(irc.IRCClient):
         else:
             event.public = True
 
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
         self._state_event(user, channel, 'joined')
@@ -80,7 +80,11 @@ class Ircbot(irc.IRCClient):
     def userKicked(self, kickee, channel, kicker, message):
         self._state_event(kickee, channel, 'kicked', kicker, message)
 
-    def respond(self, response):
+    def respond(self, event):
+        for response in event.responses:
+            self.send(response)
+
+    def send(self, response):
         if 'action' in response and response['action']:
             self.me(response['target'].encode(encoding), response['reply'].encode(encoding))
         else:
@@ -115,8 +119,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
     def __init__(self, name):
-        self.name = name
-        self.respond = None
+        IbidSourceFactory.__init__(self, name)
         self.auth = {}
 
     def setServiceParent(self, service):

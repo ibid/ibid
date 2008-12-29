@@ -13,7 +13,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
     state = 'User'
 
     def connectionMade(self):
-        self.factory.respond = self.respond
+        self.factory.send = self.send
         self.transport.write('Username: ')
 
     def telnet_User(self, line):
@@ -29,10 +29,14 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
         event.channel = event.sender
         event.addressed = True
         event.public = False
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
         return 'Query'
 
-    def respond(self, response):
+    def respond(self, event):
+        for response in event.responses:
+            self.send(response)
+
+    def send(self, response):
         self.transport.write(response['reply'].encode(encoding) + '\n')
 
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):

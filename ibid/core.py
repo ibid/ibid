@@ -1,7 +1,7 @@
 from traceback import print_exc
 import inspect
 
-from twisted.internet import reactor
+from twisted.internet import reactor, threads
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -20,15 +20,22 @@ class Dispatcher(object):
 
         print event
 
+        filtered = []
         for response in event['responses']:
             source = response['source'].lower()
-            if source in ibid.sources:
-                reactor.callFromThread(ibid.sources[source].respond, response)
+            if source == event.source.lower():
+                filtered.append(response)
             else:
-                print u'Invalid source %s' % response['source']
+                if source in ibid.sources:
+                    reactor.callFromThread(ibid.sources[source].send, response)
+                else:
+                    print u'Invalid source %s' % response['source']
+
+        event.responses = filtered
+        return event
 
     def dispatch(self, event):
-        reactor.callInThread(self._process, event)
+        return threads.deferToThread(self._process, event)
 
 class Reloader(object):
 

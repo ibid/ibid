@@ -4,7 +4,7 @@ class IbidSourceFactory(object):
 
     def __init__(self, name):
         self.name = name
-        self.respond = None
+        self.send = None
 
     def setServiceParent(self, service):
         raise NotImplementedError

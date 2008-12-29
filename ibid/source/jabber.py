@@ -29,7 +29,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         xmppim.RosterClientProtocol.connectionInitialized(self)
         self.xmlstream.send(xmppim.AvailablePresence())
         self.name = self.parent.name
-        self.parent.respond = self.respond
+        self.parent.send = self.send
         self.parent.proto = self
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
@@ -76,10 +76,13 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             event.public = False
             event.addressed = True
 
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
-    def respond(self, response):
-        print response
+    def respond(self, event):
+        for response in event.responses:
+            self.send(response)
+
+    def send(self, response):
         message = domish.Element((None, 'message'))
         message['to'] = response['target']
         message['from'] = self.parent.jid.full()
@@ -106,12 +109,10 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     def __init__(self, name):
         client.DeferredClientFactory.__init__(self, JID(ibid.config.sources[name]['jid']), ibid.config.sources[name]['password'])
+        IbidSourceFactory.__init__(self, name)
         bot = JabberBot()
         self.addHandler(bot)
         bot.setHandlerParent(self)
-
-        self.name = name
-        self.respond = None
 
     def setServiceParent(self, service):
         port = None
