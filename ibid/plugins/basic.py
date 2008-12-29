@@ -7,11 +7,12 @@ from ibid.plugins import Processor, match, handler
 class Greet(Processor):
     """Greets people"""
 
+    greetings = (u'Hi %s', u'Hey %s', u'Howzit %s')
+
     @match('^\s*(?:hi|hello|hey)\s*$')
     def greet(self, event):
         """Usage: (hi|hello|hey)"""
-        response = u'Hi %s' % event.who
-        event.addresponse({'reply': response})
+        event.addresponse({'reply': choice(self.greetings) % event.who})
         return event
 
 class SayDo(Processor):
@@ -35,16 +36,16 @@ class SayDo(Processor):
         event.addresponse(reply)
         return event
 
-complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
 class Complain(Processor):
     """Responds with a complaint. Used to handle unprocessed messages."""
 
     priority = 900
+    complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
     @handler
     def complain(self, event):
-        event.addresponse(choice(complaints))
+        event.addresponse(choice(self.complaints))
         return event
 
 # vi: set et sta sw=4 ts=4:

@@ -18,13 +18,11 @@ class DateTime(Processor):
 class Fortune(Processor):
     """Usage: fortune"""
 
+    fortune = 'fortune'
+
     @match('^\s*fortune\s*$')
     def handler(self, event):
-        command = 'fortune'
-        if self.name in ibid.config.plugins and 'fortune' in ibid.config.plugins[self.name]:
-            command = ibid.config.plugins[self.name]['fortune']
-
-        fortune = Popen(command, stdout=PIPE, stderr=PIPE)
+        fortune = Popen(self.fortune, stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()
         code = fortune.wait()
 

@@ -11,7 +11,6 @@ auth
 
 plugins
 =======
-- load *all* class variables from a sub-section of the plugin conf, allowing authors to override anything that we haven't thought of yet (i.e. no special cases)
 - process() is still a bit biased towards type=message?
 - how about having a lambda decorator like @match(pattern) to allow other types of matching?
 - reload config is a good example of somewhere that error reporting should occur

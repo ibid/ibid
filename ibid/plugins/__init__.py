@@ -19,9 +19,9 @@ class Processor(object):
         if name in ibid.config.plugins:
             config = ibid.config.plugins[name]
 
-            for setting in ('addressed', 'priority', 'processed', 'type'):
-                if setting in config:
-                    setattr(self, setting, config[setting])
+            for name, value in config.items():
+                print "Applying %s as %s" % (name, value)
+                setattr(self, name, value)
 
     def process(self, event):
         if event.type != self.type:

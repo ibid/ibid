@@ -11,15 +11,16 @@ class Addressed(Processor):
 
     priority = -1500
     addressed = False
+    names = [ibid.config['botname']]
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(ibid.config.plugins[name]['names']), re.I),
-                            re.compile(r',\s*(%s)\s*$' % '|'.join(ibid.config.plugins[name]['names']), re.I)
+        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I),
+                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I)
                         ]
 
     @handler
-    def handle(self, event):
+    def handle_addressed(self, event):
         if 'addressed' not in event:
             event.addressed = False
             for pattern in self.patterns:
@@ -36,7 +37,7 @@ class Strip(Processor):
     pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$')
 
     @handler
-    def handle(self, event):
+    def handle_strip(self, event):
         if 'message_raw' not in event:
             event.message_raw = event.message
         event.message = self.pattern.search(event.message).group(1)
@@ -46,7 +47,7 @@ class Ignore(Processor):
     addressed = False
 
     @handler
-    def ignore(self, event):
+    def handle_ignore(self, event):
         for who in ibid.config.plugins[self.name]['ignore']:
             if event.who == who:
                 event.processed = True
@@ -77,11 +78,11 @@ class Responses(Processor):
         event.responses = converted
         return event
 
-acknowledgements = ('Okay', 'Sure', 'Done', 'Righto')
 
 class Address(Processor):
 
     processed = True
+    acknowledgements = (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir')
 
     @handler
     def address(self, event):
@@ -89,7 +90,7 @@ class Address(Processor):
             addressed = []
             for response in event.responses:
                 if isinstance(response, bool):
-                    response = choice(acknowledgements)
+                    response = choice(self.acknowledgements)
                 if isinstance(response, basestring) and event.public:
                     addressed.append('%s: %s' % (event.who, response))
                 else:
