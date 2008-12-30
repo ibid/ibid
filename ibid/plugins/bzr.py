@@ -27,5 +27,8 @@ class Bazaar(Processor):
 		f.seek(0)
 		commits = f.readlines()
 
-		event.responses.extend(commits)
-		event.processed = True
+		for commit in commits:
+			if event.source == 'http':
+				event.addresponse({'reply': commit.strip(), 'source': self.source, 'target': self.channel})
+			else:
+				event.addresponse(commit.strip())
