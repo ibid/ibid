@@ -14,18 +14,11 @@ class LogFormatter(log.LogFormatter):
 		then = datetime.fromtimestamp(time)
 		delta = datetime.now() - then
 		ago = ''
-		if delta.days / 365:
-			ago = '%s years' % (delta.days / 365)
-		elif delta.days / 30:
-			ago = '%s months' % (delta.days / 30)
-		elif delta.days:
-			ago = '%s days' % delta.days
-		elif delta.seconds / 3600:
-			ago = '%s hours' % (delta.seconds / 3600)
-		elif delta.seconds / 60:
-			ago = '%s minutes' % (delta.seconds / 60)
-		else:
-			ago = '%s seconds' % delta.seconds
+		for name, value in (('year', delta.days/365), ('month', delta.days/30), ('day', delta.days), ('hour', delta.seconds/3600), ('minute', delta.seconds/60), ('second', delta.seconds)):
+			if value >= 1 or name == 'second':
+				ago = '%s %s%s' % (value, name, value != 1 and 's' or '')
+				break
+
 		return ago
 
 	def log_revision(self, revision):
@@ -37,15 +30,17 @@ class Bazaar(Processor):
 		Processor.__init__(self, name)
 		self.branch = Branch.open(self.repository)
 
-	@match('^(last\s+)?commit(?:\s+(\d+))?$')
-	def commit(self, event, last, revno):
-		if last:
-			revid = self.branch.last_revision()
-			revno = self.branch.revision_id_to_revno(revid)
-		elif revno:
+	@match('^(?:last\s+)?commit(?:\s+(\d+))?$')
+	def commit(self, event, revno):
+		last = self.branch.revision_id_to_revno(self.branch.last_revision())
+
+		if revno:
 			revno = int(revno)
+			if revno < 1 or revno > last:
+				event.addresponse(u'No such revision')
+				return
 		else:
-			return
+			revno = last
 
 		f=StringIO();
 		log.show_log(self.branch, LogFormatter(f), start_revision=revno, end_revision=revno, limit=1)
