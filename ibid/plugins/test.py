@@ -18,4 +18,10 @@ class Protected(Processor):
     def handler(self, event):
         event.addresponse('Executing protected command')
 
+class Email(Processor):
+
+    @match(r'^email$')
+    def email(self, event):
+        event.addresponse({'reply': 'Test message', 'source': 'smtp', 'target': 'mgorven@localhost'})
+
 # vi: set et sta sw=4 ts=4:
