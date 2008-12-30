@@ -2,10 +2,11 @@ from urllib2 import urlopen
 
 from bzrlib import branch
 
+repository = '/srv/src/ibid/'
+boturl = 'http://kennels.dyndns.org:8080/'
+
 def post_change_branch_tip(params):
-	if params.branch.base.endswith('///srv/src/ibid/'):
-		f = urlopen('http://kennels.dyndns.org:8080/?m=commit+%s' % params.new_revno)
-		f.read()
-		f.close()
+	if params.branch.base.endswith('//%s' % repository):
+		urlopen('%s?m=commit+%s' % (boturl, params.new_revno)).close()
 
 branch.Branch.hooks.install_named_hook('post_change_branch_tip', post_change_branch_tip, 'Trigger Ibid to announce the commit')
