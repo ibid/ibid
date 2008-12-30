@@ -11,7 +11,7 @@ from ibid.plugins import Processor, match
 class LogFormatter(log.LogFormatter):
 
 	def ago(self, time):
-		then = datetime.utcfromtimestamp(time)
+		then = datetime.fromtimestamp(time)
 		delta = datetime.now() - then
 		ago = ''
 		if delta.days / 365:
