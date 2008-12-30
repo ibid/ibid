@@ -4,8 +4,11 @@ from random import choice
 
 from ibid.plugins import Processor, match, handler
 
+help = {}
+
+help['greet'] = 'Greets people when greeted.'
 class Greet(Processor):
-    """Greets people"""
+    feature = 'greet'
 
     greetings = (u'Hi %s', u'Hey %s', u'Howzit %s')
 
@@ -15,12 +18,13 @@ class Greet(Processor):
         event.addresponse({'reply': choice(self.greetings) % event.who})
         return event
 
+help['saydo'] = 'Says or does stuff in a channel.'
 class SayDo(Processor):
-    """Says or does things in a channel"""
+    """(say|do) <channel> <text>"""
+    feature = 'saydo'
 
     @match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
     def saydo(self, event, action, where, what):
-        """Usage: (say|do) <channel> <text>"""
         if (event.who != u"cocooncrash"):
             reply = u"No!  You're not the boss of me!"
             if action.lower() == "say":
@@ -36,9 +40,9 @@ class SayDo(Processor):
         event.addresponse(reply)
         return event
 
-
+help['complain'] = 'Responds with a complaint. Used to handle unprocessed messages.'
 class Complain(Processor):
-    """Responds with a complaint. Used to handle unprocessed messages."""
+    feature = 'complain'
 
     priority = 900
     complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')

@@ -3,50 +3,55 @@
 import inspect
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, provides
 
-class Usage(Processor):
-	"""Outputs the usage syntax for a processor"""
+help = {'help': 'Provides help and usage information about plugins.'}
 
-	@match(r'^\s*usage\s+(.+)\s*$')
-	def handler(self, event, item):
-		"""Usage: usage <processor>"""
-		klass = None
+class Features(Processor):
+	"""help"""
+	feature = 'help'
+
+	@match(r'^help$')
+	def features(self, event):
+		features = []
+
 		for processor in ibid.processors:
-			if processor.name == item:
-				klass = processor
+			module = eval(processor.__module__)
+			if hasattr(module, 'help'):
+				for feature in module.help.keys():
+					if feature not in features:
+						features.append(feature)
 
-		if not klass:
-			try:
-				klass = eval('ibid.plugins.%s' % item)
-			except:
-				pass
-
-		if klass:
-			for name, method in inspect.getmembers(klass, inspect.ismethod):
-				if hasattr(method, 'pattern') and method.__doc__:
-					event.addresponse('%s: %s' % (name, method.__doc__))
-
-		if not event.responses:
-			event.addresponse(u'No usage for %s' % item)
+		event.addresponse(' '.join(features))
 
 class Help(Processor):
-	"""Outputs the help message for a plugin or processor"""
+	"""help [<feature>]"""
+	feature = 'help'
 
-	@match(r'\s*help\s+(.+)\s*$')
-	def handler(self, event, item):
-		"""Usage: help <plugin>"""
-		try:
-			module = eval('ibid.plugins.%s' % item)
-		except:
-			pass
+	@match(r'^help\s+(.+)$')
+	def handler(self, event, feature):
+		feature = feature.lower()
 
-		if module:
-			if module.__doc__:
-				event.addresponse(module.__doc__)
-			processors = []
-			for name, klass in inspect.getmembers(module, inspect.isclass):
-				if issubclass(klass, ibid.plugins.Module) and klass != ibid.plugins.Processor:
-					processors.append('%s.%s' % (module.__name__.replace('ibid.plugins.', '', 1), klass.__name__))
-			if processors:
-				event.addresponse('Processors: %s' % ', '.join(processors))
+		for processor in ibid.processors:
+			module = eval(processor.__module__)
+			if hasattr(module, 'help') and feature in module.help:
+				event.addresponse(module.help[feature])
+				return
+
+		event.addresponse(u"I can't help you with %s" % feature)
+
+class Usage(Processor):
+	"""usage <feature>"""
+	feature = 'help'
+
+	@match(r'\s*usage\s+(.+)\s*$')
+	def handler(self, event, feature):
+		feature = feature.lower()
+
+		for processor in ibid.processors:
+			for name, klass in inspect.getmembers(processor, inspect.isclass):
+				if hasattr(klass, 'feature') and klass.feature == feature and klass.__doc__:
+					event.addresponse('Usage: %s' % klass.__doc__)
+
+		if not event.responses:
+			event.addresponse(u"Um, I don't know how to use %s either" % feature)
