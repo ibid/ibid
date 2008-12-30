@@ -1,5 +1,3 @@
-"""Core processors for managing events"""
-
 import re
 from time import time
 from random import choice

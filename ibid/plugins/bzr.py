@@ -8,6 +8,8 @@ from bzrlib import log
 import ibid
 from ibid.plugins import Processor, match
 
+help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
+
 class LogFormatter(log.LogFormatter):
 
 	def ago(self, time):
@@ -25,6 +27,8 @@ class LogFormatter(log.LogFormatter):
 		self.to_file.write('Commit %s by %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.ago(revision.rev.timestamp), revision.rev.message.replace('\n', '')))
 
 class Bazaar(Processor):
+	"""last commit | commit <revno>"""
+	feature = 'bzr'
 
 	def __init__(self, name):
 		Processor.__init__(self, name)

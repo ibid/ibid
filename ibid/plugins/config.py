@@ -2,8 +2,11 @@ import ibid
 
 from ibid.plugins import Processor, match, authorise
 
+help = {'config': 'Gets and sets configuration settings, and rereads the configuration file.'}
+
 class Config(Processor):
-    """Usage: reload config"""
+    """reload config | set config <name> <value> | get config <name>"""
+    feature = 'config'
 
     @match('^\s*reread\s+config\s*$')
     @authorise('config')

@@ -1,5 +1,3 @@
-"""Some basic processors"""
-
 from random import choice
 
 from ibid.plugins import Processor, match, handler

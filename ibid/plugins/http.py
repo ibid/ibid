@@ -1,15 +1,17 @@
-"""Performs HTTP requests"""
-
 from httplib2 import Http
 import re
 
 import ibid
 from ibid.plugins import Processor, match
 
+help = {}
+
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
+help['get'] = 'Retrieves a URL and returns the HTTP status and optionally the HTML title.'
 class HTTP(Processor):
-	"""Usage: (get|head) <url>"""
+	"""(get|head) <url>"""
+	feature = 'get'
 
 	max_size = 500
 

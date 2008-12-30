@@ -1,9 +1,7 @@
-"""Displays help and usage of plugins and processors."""
-
 import inspect
 
 import ibid
-from ibid.plugins import Processor, match, provides
+from ibid.plugins import Processor, match
 
 help = {'help': 'Provides help and usage information about plugins.'}
 

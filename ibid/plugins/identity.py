@@ -7,7 +7,12 @@ import ibid
 from ibid.plugins import Processor, match, handler, auth_responses
 from ibid.models import Account, Identity, Attribute
 
+help = {}
+
+help['accounts'] = 'Adds an account, which is used to link identities.'
 class Accounts(Processor):
+    """create account <name>"""
+    feature = 'accounts'
 
     @match('^\s*create\s+account\s+(.+)\s*$')
     def account(self, event, username):
@@ -42,7 +47,10 @@ class Accounts(Processor):
 
 chars = string.letters + string.digits
 
+help['identities'] = 'Adds and removes identities from accounts.'
 class Identities(Processor):
+    """I am <identity> on <source>"""
+    feature = 'identities'
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -121,7 +129,10 @@ class Identities(Processor):
             del self.tokens[token]
             event.addresponse(u'Identity added')
 
+help['attributes'] = 'Adds and removes attributes attached to an account'
 class Attributes(Processor):
+    """my <name> is <value>"""
+    feature = 'attributes'
 
     @match(r"^\s*(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)\s*$")
     def attribute(self, event, username, name, value):

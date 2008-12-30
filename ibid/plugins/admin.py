@@ -1,12 +1,14 @@
-"""Administrative commands for loading modules and configuration."""
-
 import os
 
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-class ListModules(Processor):
-    """Usage: list plugins"""
+help = {}
+
+help['plugins'] = 'Lists, loads and unloads plugins.'
+class ListPLugins(Processor):
+    """list plugins"""
+    feature = 'plugins'
 
     @match('^\s*lsmod|list\s+plugins\s*$')
     def handler(self, event):
@@ -18,7 +20,9 @@ class ListModules(Processor):
         event.addresponse(', '.join(plugins))
         return event
 
+help['core'] = 'Reloads core modules.'
 class ReloadCoreModules(Processor):
+    feature = 'core'
 
     priority = -5
 
@@ -34,7 +38,8 @@ class ReloadCoreModules(Processor):
         event.addresponse(result and u'%s reloaded' % module or u"Couldn't reload %s" % module)
 
 class LoadModules(Processor):
-    """Usage: (load|unload|reload) <plugin|processor>"""
+    """(load|unload|reload) <plugin|processor>"""
+    feature = 'plugins'
 
     @match('^\s*(?:re)?load\s+(\S+)\s*$')
     @authorise('plugins')

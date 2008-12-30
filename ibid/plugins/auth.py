@@ -3,7 +3,12 @@ from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.auth_ import Credential, Permission
 from ibid.plugins.identity import Account
 
+help = {}
+
+help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
+    """authenticate <account> using <method> [<credential>]"""
+    feature = 'auth'
 
     @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def handler(self, event, user, source, method, credential):
@@ -33,6 +38,8 @@ class AddAuth(Processor):
         event.addresponse(u'Okay')
 
 class Permissions(Processor):
+    """grant <account> permission <permission> | list permissions"""
+    feature = 'auth'
 
     @match('^grant\s+(.+)\s+permission\s+(.+)$')
     @authorise('admin')
@@ -69,6 +76,8 @@ class Permissions(Processor):
         event.addresponse(', '.join([perm.permission for perm in account.permissions]))
 
 class Auth(Processor):
+    """auth <credential>"""
+    feature = 'auth'
 
     @match('^\s*auth(?:\s+(.+))?\s*$')
     def handler(self, event, password):
