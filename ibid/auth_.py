@@ -3,7 +3,6 @@ from time import time
 
 from twisted.internet import reactor
 from sqlalchemy import or_
-from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.models import Credential, Permission, Account

@@ -1,5 +1,3 @@
-from sqlalchemy.orm.exc import NoResultFound
-
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.auth_ import Credential, Permission

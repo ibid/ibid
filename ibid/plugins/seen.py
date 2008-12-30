@@ -4,7 +4,6 @@ from time import strftime
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.plugins import Processor, match, handler

@@ -2,7 +2,6 @@ import string
 from random import choice
 
 from sqlalchemy.orm import eagerload
-from sqlalchemy.orm.exc import NoResultFound
 
 import ibid
 from ibid.plugins import Processor, match, handler, auth_responses
