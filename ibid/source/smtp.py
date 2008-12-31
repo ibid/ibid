@@ -9,13 +9,10 @@ from ibid.source import IbidSourceFactory
 
 class SMTPClient(smtp.ESMTPClient):
 
-    mailFrom = 'test@example.com'
-    mailTo = ['mgorven@localhost']
-    headers = {'Subject': 'Testing'}
-    message = 'Just testing!'
-
     def getMailFrom(self):
-        return self.mailFrom
+        value = self.mailFrom
+        self.mailFrom = None
+        return value
 
     def getMailTo(self):
         return self.mailTo
@@ -29,26 +26,38 @@ class SMTPClient(smtp.ESMTPClient):
         return StringIO(body)
 
     def sentMail(self, code, resp, numOk, addresses, log):
-        print code
-        print resp
-        print numOk
-        print addresses
-        print log
-        self.transport.loseConnection()
+        pass
 
 class SMTPClientFactory(protocol.ClientFactory):
     protocol = SMTPClient
 
+    def __init__(self, name, response):
+        self.response = response
+        self.name = name
+
     def buildProtocol(self, addr):
-        return self.protocol(secret=None, identity='example.com')
+        client = self.protocol(secret=None, identity='localhost')
+        client.mailFrom = ibid.config.sources[self.name]['from']
+        client.mailTo = [self.response['target']]
+        client.message = self.response['reply']
+
+        self.response['To'] = self.response['target']
+        self.response['Date'] = smtp.rfc822date()
+        del self.response['target']
+        del self.response['source']
+        del self.response['reply']
+        client.headers = self.response
+
+        return client
 
 class SourceFactory(IbidSourceFactory):
 
     def setServiceParent(self, service):
         self.service = service
 
-    def send(self, event):
-        factory = SMTPClientFactory()
+    def send(self, response):
+        factory = SMTPClientFactory(self.name, response)
+        
         internet.TCPClient(ibid.config.sources[self.name]['relayhost'], 25, factory).setServiceParent(self.service)
 
 # vi: set et sta sw=4 ts=4:

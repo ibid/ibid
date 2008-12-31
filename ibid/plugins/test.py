@@ -22,6 +22,6 @@ class Email(Processor):
 
     @match(r'^email$')
     def email(self, event):
-        event.addresponse({'reply': 'Test message', 'source': 'smtp', 'target': 'mgorven@localhost'})
+        event.addresponse({'reply': 'Test message', 'source': 'smtp', 'target': 'mgorven@localhost', 'Subject': 'Test message from Ibid'})
 
 # vi: set et sta sw=4 ts=4:
