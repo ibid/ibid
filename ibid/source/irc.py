@@ -32,9 +32,9 @@ class Ircbot(irc.IRCClient):
 
     def signedOn(self):
         if 'mode' in ibid.config.sources[self.factory.name]:
-            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'])
+            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'].encode(encoding))
         for channel in ibid.config.sources[self.factory.name]['channels']:
-            self.join(channel)
+            self.join(channel.encode(encoding))
 
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
@@ -56,7 +56,13 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event)
 
     def privmsg(self, user, channel, msg):
-        event = self._create_event(u'message', user, channel)
+        self._message_event(u'message', user, channel, msg)
+
+    def noticed(self, user, channel, msg):
+        self._message_event(u'notice', user, channel, msg)
+
+    def _message_event(self, msgtype, user, channel, msg):
+        event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg)
 
         if channel.lower() == self.nickname.lower():
