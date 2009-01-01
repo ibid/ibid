@@ -15,7 +15,7 @@ class HTTP(Processor):
 
 	max_size = 500
 
-	@match('^\s*(get|head)\s+(.+)\s*$')
+	@match(r'^\s*(get|head)\s+(.+)\s*$')
 	def handler(self, event, action, url):
 		http = Http()
 		headers={}

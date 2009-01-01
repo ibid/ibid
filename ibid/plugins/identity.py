@@ -14,7 +14,7 @@ class Accounts(Processor):
     """create account <name>"""
     feature = 'accounts'
 
-    @match('^\s*create\s+account\s+(.+)\s*$')
+    @match(r'^\s*create\s+account\s+(.+)\s*$')
     def account(self, event, username):
         session = ibid.databases.ibid()
         admin = False
@@ -56,7 +56,7 @@ class Identities(Processor):
         Processor.__init__(self, name)
         self.tokens = {}
 
-    @match('^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
+    @match(r'^\s*(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)\s*$')
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         admin = False
@@ -163,7 +163,7 @@ class Attributes(Processor):
 
 class Describe(Processor):
 
-    @match('^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
+    @match(r'^\s*who\s+(?:is|am)\s+(I|.+?)\s*$')
     def describe(self, event, username):
         session = ibid.databases.ibid()
         if username.upper() == 'I':

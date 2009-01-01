@@ -3,7 +3,7 @@ from ibid.plugins import Processor, match, authorise
 
 class Admin(Processor):
 
-	@match('^\s*connect\s+(?:to\s+)?(\S+)\s*$')
+	@match(r'^\s*connect\s+(?:to\s+)?(\S+)\s*$')
 	@authorise('sources')
 	def connect(self, event, source):
 
@@ -12,7 +12,7 @@ class Admin(Processor):
 		else:
 			event.addresponse(u"I couldn't connect to %s" % source)
 
-	@match('^\s*disconnect\s+(?:from\s+)?(\S+)\s*$')
+	@match(r'^\s*disconnect\s+(?:from\s+)?(\S+)\s*$')
 	@authorise('sources')
 	def disconnect(self, event, source):
 
@@ -21,7 +21,7 @@ class Admin(Processor):
 		else:
 			event.addresponse(u"I couldn't disconnect from %s" % source)
 
-	@match('^\s*(?:re)?load\s+(\S+)\s+source\s*$')
+	@match(r'^\s*(?:re)?load\s+(\S+)\s+source\s*$')
 	@authorise('sources')
 	def load(self, event, source):
 		if ibid.reloader.load_source(source, ibid.service):
@@ -31,7 +31,7 @@ class Admin(Processor):
 
 class Info(Processor):
 
-	@match('^sources$')
+	@match(r'^sources$')
 	def list(self, event):
 		reply = u''
 		for name, source in ibid.sources.items():
@@ -44,6 +44,6 @@ class Info(Processor):
 		reply = reply[:-2]
 		event.addresponse(reply)
 
-	@match('^list\s+configured\s+sources$')
+	@match(r'^list\s+configured\s+sources$')
 	def listall(self, event):
 		event.addresponse(', '.join(ibid.config.sources.keys()))

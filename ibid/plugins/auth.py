@@ -10,7 +10,7 @@ class AddAuth(Processor):
     """authenticate <account> using <method> [<credential>]"""
     feature = 'auth'
 
-    @match('^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
+    @match(r'^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
     def handler(self, event, user, source, method, credential):
 
         print 'here'
@@ -41,7 +41,7 @@ class Permissions(Processor):
     """grant <account> permission <permission> | list permissions"""
     feature = 'auth'
 
-    @match('^grant\s+(.+)\s+permission\s+(.+)$')
+    @match(r'^grant\s+(.+)\s+permission\s+(.+)$')
     @authorise('admin')
     def grant(self, event, user, permission):
 
@@ -79,7 +79,7 @@ class Auth(Processor):
     """auth <credential>"""
     feature = 'auth'
 
-    @match('^\s*auth(?:\s+(.+))?\s*$')
+    @match(r'^\s*auth(?:\s+(.+))?\s*$')
     def handler(self, event, password):
         result = ibid.auth.authenticate(event, password)
         if result:

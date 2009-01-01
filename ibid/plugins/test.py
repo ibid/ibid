@@ -5,7 +5,7 @@ from ibid.plugins import Processor, match, authorise
 
 class Delay(Processor):
 
-    @match('^\s*delay\s+(\d+\.?\d*)\s*$')
+    @match(r'^\s*delay\s+(\d+\.?\d*)\s*$')
     def handler(self, event, delay):
         sleep(float(delay))
         event.addresponse('Done')
@@ -13,7 +13,7 @@ class Delay(Processor):
 
 class Protected(Processor):
 
-    @match('^protected$')
+    @match(r'^protected$')
     @authorise('protected')
     def handler(self, event):
         event.addresponse('Executing protected command')

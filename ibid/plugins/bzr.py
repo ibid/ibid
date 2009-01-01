@@ -34,7 +34,7 @@ class Bazaar(Processor):
 		Processor.__init__(self, name)
 		self.branch = Branch.open(self.repository)
 
-	@match('^(?:last\s+)?commit(?:\s+(\d+))?$')
+	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?$')
 	def commit(self, event, revno):
 		last = self.branch.revision_id_to_revno(self.branch.last_revision())
 

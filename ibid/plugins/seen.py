@@ -40,7 +40,7 @@ class See(Processor):
 
 class Seen(Processor):
 
-    @match('^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
+    @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):
 
         session = ibid.databases.ibid()

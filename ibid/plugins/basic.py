@@ -10,7 +10,7 @@ class Greet(Processor):
 
     greetings = (u'Hi %s', u'Hey %s', u'Howzit %s')
 
-    @match('^\s*(?:hi|hello|hey)\s*$')
+    @match(r'^\s*(?:hi|hello|hey)\s*$')
     def greet(self, event):
         """Usage: (hi|hello|hey)"""
         event.addresponse({'reply': choice(self.greetings) % event.who})
@@ -21,7 +21,7 @@ class SayDo(Processor):
     """(say|do) <channel> <text>"""
     feature = 'saydo'
 
-    @match('^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
+    @match(r'^\s*(say|do)\s+(\S+)\s+(.*)\s*$')
     def saydo(self, event, action, where, what):
         if (event.who != u"cocooncrash"):
             reply = u"No!  You're not the boss of me!"

@@ -44,7 +44,7 @@ class Processor(object):
                     event = method(event) or event
 
         if not found:
-            raise RuntimeException(u'No handlers found in %s' % self)
+            raise RuntimeError(u'No handlers found in %s' % self)
 
         return event
 
