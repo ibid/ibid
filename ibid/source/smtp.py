@@ -39,10 +39,15 @@ class Message:
     def eomReceived(self):
         headers = {}
         for line in self.lines:
+            print line
             if line == '':
                 break
-            (header, value) = line.split(':')
-            headers[header.strip().lower()] = value.strip()
+            if line.startswith('  '):
+                headers[last] += line
+            else:
+                (header, value) = line.split(':', 1)
+                last = header.strip().lower()
+                headers[last] = value.strip()
 
         event = Event(self.name, 'message')
         event.sender = headers['from']
@@ -51,9 +56,10 @@ class Message:
         event.channel = event.sender
         event.public = False
         event.addressed = True
-        event.message = headers['subject']
+        event.subject = headers['subject']
+        event.message = event.subject
 
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
         return defer.succeed(None)
 
     def connectionLost(self):
@@ -73,6 +79,19 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
     def setServiceParent(self, service):
         self.service = service
         internet.TCPServer(10025, self).setServiceParent(service)
+
+    def respond(self, event):
+        messages = {}
+        for response in event.responses:
+            if response['target'] not in messages:
+                messages[response['target']] = response
+            else:
+                messages[response['target']]['reply'] += '\n' + response['reply']
+
+        for message in messages.values():
+            if 'subject' not in message:
+                message['subject'] = 'Re: ' + event['subject']
+            self.send(message)
 
     def send(self, response):
         message = response['reply']
