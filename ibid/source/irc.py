@@ -20,7 +20,7 @@ class Ircbot(irc.IRCClient):
     encoding = 'latin-1'
         
     def connectionMade(self):
-        self.nickname = ibid.config.sources[self.factory.name]['nick']
+        self.nickname = ibid.config.sources[self.factory.name]['nick'].encode(encoding)
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
         self.factory.send = self.send
@@ -48,7 +48,7 @@ class Ircbot(irc.IRCClient):
         return event
 
     def _state_event(self, user, channel, action, kicker=None, message=None):
-        event = self._create_event('state', user, channel)
+        event = self._create_event(u'state', user, channel)
         event.channel = event.who
         event.state = action
         if kicker: event.kicker = kicker
@@ -56,7 +56,7 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event)
 
     def privmsg(self, user, channel, msg):
-        event = self._create_event('message', user, channel)
+        event = self._create_event(u'message', user, channel)
         event.message = unicode(msg)
 
         if channel.lower() == self.nickname.lower():
@@ -69,16 +69,16 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
-        self._state_event(user, channel, 'joined')
+        self._state_event(user, channel, u'joined')
 
     def userLeft(self, user, channel):
-        self._state_event(user, channel, 'parted')
+        self._state_event(user, channel, u'parted')
 
     def userQuit(self, user, channel):
-        self._state_event(user, channel, 'quit')
+        self._state_event(user, channel, u'quit')
 
     def userKicked(self, kickee, channel, kicker, message):
-        self._state_event(kickee, channel, 'kicked', kicker, message)
+        self._state_event(kickee, channel, u'kicked', kicker, message)
 
     def respond(self, event):
         for response in event.responses:

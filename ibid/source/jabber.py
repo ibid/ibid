@@ -33,7 +33,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.parent.proto = self
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
-        event = Event(self.name, 'state')
+        event = Event(self.name, u'state')
         event.sender = entity.full()
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
@@ -42,7 +42,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         ibid.dispatcher.dispatch(event)
 
     def unavailableReceived(self, entity, statuses):
-        event = Event(self.name, 'state')
+        event = Event(self.name, u'state')
         event.sender = entity.full()
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
@@ -58,7 +58,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(response)
 
     def onMessage(self, message):
-        event = Event(self.parent.name, 'message')
+        event = Event(self.parent.name, u'message')
         event.message = unicode(message.body)
         event.sender = unicode(message['from'])
 

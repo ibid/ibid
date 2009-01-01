@@ -107,8 +107,10 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     def send(self, response):
         message = response['reply']
-        response['To'] = response['target']
-        response['Date'] = smtp.rfc822date()
+        response['to'] = response['target']
+        response['date'] = smtp.rfc822date()
+        if 'subject' not in response:
+            response['subject'] = 'Message from %s' % ibid.config['botname']
 
         del response['target']
         del response['source']
@@ -120,6 +122,6 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += '\n'
         body += message
 
-        smtp.sendmail(ibid.config.sources[self.name]['relayhost'], ibid.config.sources[self.name]['address'], response['To'], body)
+        smtp.sendmail(ibid.config.sources[self.name]['relayhost'], ibid.config.sources[self.name]['address'], response['to'], body)
 
 # vi: set et sta sw=4 ts=4:

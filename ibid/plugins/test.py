@@ -20,8 +20,9 @@ class Protected(Processor):
 
 class Email(Processor):
 
-    @match(r'^email$')
-    def email(self, event):
-        event.addresponse({'reply': 'Test message', 'source': 'smtp', 'target': 'mgorven@localhost', 'Subject': 'Test message from Ibid'})
+    @match(r'^email\s+(.+)$')
+    def email(self, event, address):
+        event.addresponse({'reply': 'Test message', 'source': 'email', 'target': unicode(address)})
+        event.addresponse(u"I've emailed %s" % address)
 
 # vi: set et sta sw=4 ts=4:

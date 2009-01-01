@@ -28,8 +28,8 @@ def StaticConfig():
     return ConfigObj(config)
 
 def FileConfig(filename):
-    configspec = ConfigObj('configspec.ini', list_values=False)
-    config = ConfigObj(filename, configspec=configspec, interpolation='Template')
+    configspec = ConfigObj('configspec.ini', list_values=False, encoding='utf-8')
+    config = ConfigObj(filename, configspec=configspec, interpolation='Template', encoding='utf-8')
     config.validate(Validator())
     return config
 
