@@ -38,16 +38,23 @@ class Message:
 
     def eomReceived(self):
         headers = {}
+        message = []
+        inmessage = False
         for line in self.lines:
-            print line
-            if line == '':
-                break
-            if line.startswith('  '):
-                headers[last] += line
+            if inmessage:
+                if line == '-- ':
+                    break
+                elif line != '':
+                    message.append(line)
             else:
-                (header, value) = line.split(':', 1)
-                last = header.strip().lower()
-                headers[last] = value.strip()
+                if line == '':
+                    inmessage = True
+                elif line.startswith('  '):
+                    headers[last] += line
+                else:
+                    (header, value) = line.split(':', 1)
+                    last = header.strip().lower()
+                    headers[last] = value.strip()
 
         event = Event(self.name, 'message')
         event.sender = headers['from']
@@ -57,7 +64,10 @@ class Message:
         event.public = False
         event.addressed = True
         event.subject = headers['subject']
-        event.message = event.subject
+        if len(message) > 0:
+            event.message = ' '.join(message)
+        else:
+            event.message = event.subject
 
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
         return defer.succeed(None)
