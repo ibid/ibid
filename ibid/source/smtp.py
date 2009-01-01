@@ -1,4 +1,5 @@
 from StringIO import StringIO
+from email.utils import parseaddr
 
 from twisted.application import internet
 from twisted.internet import protocol, defer
@@ -57,9 +58,10 @@ class Message:
                     headers[last] = value.strip()
 
         event = Event(self.name, 'message')
-        event.sender = headers['from']
-        event.sender_id = event.sender
-        event.who = event.sender
+        (realname, email) = parseaddr(headers['from'])
+        event.sender = email
+        event.sender_id = email
+        event.who = realname != '' and realname or email
         event.channel = event.sender
         event.public = False
         event.addressed = True
