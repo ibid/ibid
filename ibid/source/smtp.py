@@ -9,49 +9,6 @@ import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-class SMTPClient(smtp.ESMTPClient):
-
-    def getMailFrom(self):
-        value = self.mailFrom
-        self.mailFrom = None
-        return value
-
-    def getMailTo(self):
-        return self.mailTo
-
-    def getMailData(self):
-        body = ''
-        for header, value in self.headers.items():
-            body += '%s: %s\n' % (header, value)
-        body += '\n'
-        body += self.message
-        return StringIO(body)
-
-    def sentMail(self, code, resp, numOk, addresses, log):
-        pass
-
-class SMTPClientFactory(protocol.ClientFactory):
-    protocol = SMTPClient
-
-    def __init__(self, name, response):
-        self.response = response
-        self.name = name
-
-    def buildProtocol(self, addr):
-        client = self.protocol(secret=None, identity='localhost')
-        client.mailFrom = ibid.config.sources[self.name]['from']
-        client.mailTo = [self.response['target']]
-        client.message = self.response['reply']
-
-        self.response['To'] = self.response['target']
-        self.response['Date'] = smtp.rfc822date()
-        del self.response['target']
-        del self.response['source']
-        del self.response['reply']
-        client.headers = self.response
-
-        return client
-
 class IbidDelivery:
     implements(smtp.IMessageDelivery)
 
@@ -65,7 +22,7 @@ class IbidDelivery:
         return origin
 
     def validateTo(self, user):
-        if str(user) == 'ibid@localhost':
+        if str(user) == ibid.config.sources[self.name]['address']:
             return lambda: Message(self.name)
         raise smtp.SMTPBadRcpt(user)
 
@@ -118,8 +75,20 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         internet.TCPServer(10025, self).setServiceParent(service)
 
     def send(self, response):
-        factory = SMTPClientFactory(self.name, response)
-        
-        internet.TCPClient(ibid.config.sources[self.name]['relayhost'], 25, factory).setServiceParent(self.service)
+        message = response['reply']
+        response['To'] = response['target']
+        response['Date'] = smtp.rfc822date()
+
+        del response['target']
+        del response['source']
+        del response['reply']
+
+        body = ''
+        for header, value in response.items():
+            body += '%s: %s\n' % (header, value)
+        body += '\n'
+        body += message
+
+        smtp.sendmail(ibid.config.sources[self.name]['relayhost'], ibid.config.sources[self.name]['address'], response['To'], body)
 
 # vi: set et sta sw=4 ts=4:
