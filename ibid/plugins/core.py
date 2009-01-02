@@ -11,8 +11,7 @@ class Addressed(Processor):
     addressed = False
     names = [ibid.config['botname']]
 
-    def __init__(self, name):
-        Processor.__init__(self, name)
+    def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I),
                             re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I)
                         ]

@@ -152,6 +152,10 @@ class Reloader(object):
         ibid.auth = ibid.auth_.Auth()
         return True
 
+    def reload_config(self):
+        for processor in ibid.processors:
+            processor.load_config()
+
 class DatabaseManager(dict):
 
     def __init__(self):

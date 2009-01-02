@@ -13,6 +13,7 @@ class Config(Processor):
     def reload(self, event):
         try:
             ibid.config.reload()
+            ibid.reloader.reload_config()
             event.addresponse(u"Configuration reread")
         except:
             event.addresponse(u"Error reloading configuration")
@@ -29,6 +30,7 @@ class Config(Processor):
 
         config[key.split('.')[-1]] = value
         ibid.config.write()
+        ibid.reloader.reload_config()
 
         event.addresponse(u'Done')
 

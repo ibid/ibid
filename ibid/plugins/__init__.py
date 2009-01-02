@@ -16,11 +16,19 @@ class Processor(object):
         if self.processed and self.priority == 0:
             self.priority = 1500
 
-        if name in ibid.config.plugins:
-            config = ibid.config.plugins[name]
+        self.load_config()
+
+    def load_config(self):
+        if self.name in ibid.config.plugins:
+            config = ibid.config.plugins[self.name]
 
             for name, value in config.items():
                 setattr(self, name, value)
+
+        self.setup()
+
+    def setup(self):
+        pass
 
     def process(self, event):
         if event.type != self.type:

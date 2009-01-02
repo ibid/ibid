@@ -30,8 +30,7 @@ class Bazaar(Processor):
 	"""last commit | commit <revno>"""
 	feature = 'bzr'
 
-	def __init__(self, name):
-		Processor.__init__(self, name)
+	def setup(self):
 		self.branch = Branch.open(self.repository)
 
 	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?$')
