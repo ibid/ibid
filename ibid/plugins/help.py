@@ -5,8 +5,8 @@ from ibid.plugins import Processor, match
 
 help = {'help': 'Provides help and usage information about plugins.'}
 
-class Features(Processor):
-	"""help"""
+class Help(Processor):
+	"""(help|usage) [<feature>]"""
 	feature = 'help'
 
 	@match(r'^help$')
@@ -22,12 +22,8 @@ class Features(Processor):
 
 		event.addresponse(' '.join(features))
 
-class Help(Processor):
-	"""help [<feature>]"""
-	feature = 'help'
-
 	@match(r'^help\s+(.+)$')
-	def handler(self, event, feature):
+	def help(self, event, feature):
 		feature = feature.lower()
 
 		for processor in ibid.processors:
@@ -38,12 +34,8 @@ class Help(Processor):
 
 		event.addresponse(u"I can't help you with %s" % feature)
 
-class Usage(Processor):
-	"""usage <feature>"""
-	feature = 'help'
-
-	@match(r'usage\s+(.+)$')
-	def handler(self, event, feature):
+	@match(r'^(?:usage|how\s+do\s+I\s+use)\s+(.+)$')
+	def usage(self, event, feature):
 		feature = feature.lower()
 
 		for processor in ibid.processors:
@@ -52,4 +44,4 @@ class Usage(Processor):
 					event.addresponse('Usage: %s' % klass.__doc__)
 
 		if not event.responses:
-			event.addresponse(u"Um, I don't know how to use %s either" % feature)
+			event.addresponse(u"I don't know how to use %s either" % feature)

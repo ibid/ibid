@@ -5,9 +5,14 @@ from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 
+help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
 
+help['dns'] = u'Performs DNS lookups'
 class DNS(Processor):
+	"""(dns|nslookup|<record type>) [for] <host>"""
+
+	feature = 'dns'
 
 	@match(r'^(dns|nslookup|a|aaaa|ptr|ns|cname|mx|txt|spf|srv|sshfp|cert)\s+(?:for\s+)?(.+?)$')
 	def resolve(self, event, record, host):
