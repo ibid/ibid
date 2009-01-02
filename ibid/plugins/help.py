@@ -42,7 +42,7 @@ class Usage(Processor):
 	"""usage <feature>"""
 	feature = 'help'
 
-	@match(r'\s*usage\s+(.+)\s*$')
+	@match(r'usage\s+(.+)$')
 	def handler(self, event, feature):
 		feature = feature.lower()
 

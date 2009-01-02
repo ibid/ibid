@@ -10,7 +10,7 @@ class AddAuth(Processor):
     """authenticate <account> using <method> [<credential>]"""
     feature = 'auth'
 
-    @match(r'^\s*authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)\s*$')
+    @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
     def handler(self, event, user, source, method, credential):
 
         print 'here'
@@ -79,7 +79,7 @@ class Auth(Processor):
     """auth <credential>"""
     feature = 'auth'
 
-    @match(r'^\s*auth(?:\s+(.+))?\s*$')
+    @match(r'^auth(?:\s+(.+))?$')
     def handler(self, event, password):
         result = ibid.auth.authenticate(event, password)
         if result:

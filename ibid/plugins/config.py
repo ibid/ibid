@@ -8,7 +8,7 @@ class Config(Processor):
     """reread config | set config <name> <value> | get config <name>"""
     feature = 'config'
 
-    @match(r'^\s*reread\s+config\s*$')
+    @match(r'^reread\s+config$')
     @authorise('config')
     def reload(self, event):
         try:
@@ -18,7 +18,7 @@ class Config(Processor):
         except:
             event.addresponse(u"Error reloading configuration")
 
-    @match(r'\s*set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)\s*$')
+    @match(r'set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
     @authorise('config')
     def set(self, event, key, value):
         print "Setting '%s' to '%s'" % (key, value)
@@ -34,7 +34,7 @@ class Config(Processor):
 
         event.addresponse(u'Done')
 
-    @match(r'\s*get\s+config\s+(\S+?)\s*$')
+    @match(r'get\s+config\s+(\S+?)$')
     def get(self, event, key):
         config = ibid.config
         for part in key.split('.'):

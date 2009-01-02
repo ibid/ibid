@@ -10,7 +10,7 @@ class ListPLugins(Processor):
     """list plugins"""
     feature = 'plugins'
 
-    @match(r'^\s*lsmod|list\s+plugins\s*$')
+    @match(r'^lsmod|list\s+plugins$')
     def handler(self, event):
         plugins = []
         for processor in ibid.processors:
@@ -26,7 +26,7 @@ class ReloadCoreModules(Processor):
 
     priority = -5
 
-    @match(r'^\s*reload\s+(reloader|dispatcher|databases|auth)\s*')
+    @match(r'^reload\s+(reloader|dispatcher|databases|auth)')
     @authorise('core')
     def reload(self, event, module):
         module = module.lower()
@@ -41,14 +41,14 @@ class LoadModules(Processor):
     """(load|unload|reload) <plugin|processor>"""
     feature = 'plugins'
 
-    @match(r'^\s*(?:re)?load\s+(\S+)\s*$')
+    @match(r'^(?:re)?load\s+(\S+)$')
     @authorise('plugins')
     def load(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         result = ibid.reloader.load_processor(plugin)
         event.addresponse(result and u'%s reloaded' % plugin or u"Couldn't reload %s" % plugin)
 
-    @match(r'^\s*unload\s+(\S+)\s*')
+    @match(r'^unload\s+(\S+)')
     @authorise('plugins')
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
