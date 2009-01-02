@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-sys.path.append("./lib/wokkel.egg")
-sys.path.insert(0, './lib')
-
 from twisted.application import service
 import ibid
 
@@ -13,3 +9,5 @@ ibidService = service.MultiService()
 ibid.setup(ibidService)
 
 ibidService.setServiceParent(application)
+
+# vi: set et sta sw=4 ts=4:

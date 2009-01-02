@@ -1,5 +1,9 @@
 from traceback import print_exc
 
+import sys
+sys.path.append("./lib/wokkel.egg")
+sys.path.insert(0, './lib')
+
 import ibid.core
 from ibid.config import FileConfig
 

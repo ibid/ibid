@@ -2,7 +2,7 @@ from StringIO import StringIO
 from email.utils import parseaddr
 
 from twisted.application import internet
-from twisted.internet import protocol, defer
+from twisted.internet import protocol, defer, reactor
 from twisted.mail import smtp
 from zope.interface import implements
 
@@ -90,7 +90,11 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     def setServiceParent(self, service):
         self.service = service
-        internet.TCPServer(10025, self).setServiceParent(service)
+        port = 10025
+        if service:
+            internet.TCPServer(port, self).setServiceParent(service)
+        else:
+            reactor.listenTCP(port, self)
 
     def respond(self, event):
         messages = {}

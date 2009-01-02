@@ -1,5 +1,6 @@
 from twisted.web import server, resource
 from twisted.application import internet
+from twisted.internet import reactor
 
 import ibid
 from ibid.source import IbidSourceFactory
@@ -33,4 +34,8 @@ class SourceFactory(IbidSourceFactory):
 		self.site = server.Site(IbidRequest())
 
 	def setServiceParent(self, service):
-		internet.TCPServer(8080, self.site).setServiceParent(service)
+            port = 8080
+            if service:
+                return internet.TCPServer(port, self.site).setServiceParent(service)
+            else:
+                reactor.listenTCP(port, self.site)
