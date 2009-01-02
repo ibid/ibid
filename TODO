@@ -4,7 +4,6 @@ Exception handling and logging
 Refactor Reloader class
 Better meaning for "Ibid"
 Factoid aliases
-Email source
 Console source
 Improve NickServ authentication
 Better names for event.{sender,sender_id,who}

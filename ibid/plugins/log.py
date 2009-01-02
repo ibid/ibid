@@ -1,6 +1,8 @@
 """Logs messages sent and received."""
 
-import time
+from time import time, localtime, strftime
+from os.path import dirname
+from os import makedirs
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -10,27 +12,46 @@ class Log(Processor):
     addressed = False
     processed = True
     priority = 1900
-    logfile = '/tmp/ibid.log'
+    log = 'logs/%(source)s.%(where)s.%(year)d.%(month)02d.%(day)02d.log'
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        self.log = open(self.logfile, 'a')
+        self.logs = {}
+
+    def get_logfile(self, source, where, when):
+        when = localtime(when)
+        filename = self.log %   {   'source': source,
+                                    'where': where,
+                                    'year': when[0],
+                                    'month': when[1],
+                                    'day': when[2],
+                                }
+        if filename not in self.logs:
+            try:
+                makedirs(dirname(filename))
+            except OSError, e:
+                if e.errno != 17:
+                    raise e
+
+            file = open(filename, 'a')
+            self.logs[filename] = [file, None]
+
+        self.logs[filename][1] = time()
+        return self.logs[filename][0]
 
     def process(self, event):
-        then = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime(event.time))
+        then = strftime(u"%Y/%m/%d %H:%M:%S", localtime(event.time))
 
         if event.type == 'message':
-            now = time.strftime(u"%Y/%m/%d %H:%M:%S", time.localtime())
-            self.log.write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.sender, event.channel, event.message_raw))
+            now = strftime(u"%Y/%m/%d %H:%M:%S", localtime())
+            self.get_logfile(event.source, event.channel, event.time).write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.sender, event.channel, event.message_raw))
             for response in event.responses:
-                self.log.write(u'%s %s: %s > %s: %s\n' % (now, event.source, ibid.config['botname'], response['target'], response['reply']))
+                self.get_logfile(response['source'], response['target'], time()).write(u'%s %s: %s > %s: %s\n' % (now, response['source'], ibid.config['botname'], response['target'], response['reply']))
 
         elif event.type == 'state':
-            self.log.write(u'%s %s: %s is now %s\n' % (then, event.source, event.sender, event.state))
+            self.get_logfile(event.source, 'presence', time()).write(u'%s %s: %s is now %s\n' % (then, event.source, event.sender, event.state))
 
         else:
             return
-
-        self.log.flush()
 
 # vi: set et sta sw=4 ts=4:
