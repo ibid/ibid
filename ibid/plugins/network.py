@@ -1,14 +1,23 @@
+import re
+
 from dns.resolver import query, NoAnswer, NXDOMAIN
+from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 
+ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
+
 class DNS(Processor):
 
-	@match(r'^(dns|nslookup|a|aaaa|ns|cname|mx|txt|spf|srv|sshfp|cert)\s+(?:for\s+)?(.+?)$')
+	@match(r'^(dns|nslookup|a|aaaa|ptr|ns|cname|mx|txt|spf|srv|sshfp|cert)\s+(?:for\s+)?(.+?)$')
 	def resolve(self, event, record, host):
 		record = record.upper()
 		if record == 'DNS' or record == 'NSLOOKUP':
 			record = 'A'
+
+		if ipaddr.search(host):
+			host = from_address(host)
+			record = 'PTR'
 
 		try:
 			answers = query(host, str(record))
