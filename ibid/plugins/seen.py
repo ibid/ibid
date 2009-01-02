@@ -9,6 +9,7 @@ import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.models import Identity, Sighting, Account
 from ibid.plugins.identity import identify
+from ibid.utils import ago
 
 class See(Processor):
 
@@ -83,15 +84,7 @@ class Seen(Processor):
         if len(messages) > 0:
             sighting = messages[0]
             delta = datetime.now() - sighting.time
-            fdelta = ''
-            second = False
-            for name, value in [('second', delta.seconds%60), ('minute', delta.seconds/60%60), ('hour', delta.seconds/3600), ('day', delta.days % 365), ('year', delta.days/365)]:
-                if value != 0:
-                    sep = second and ' and ' or ', '
-                    second = not fdelta
-                    fdelta = '%s %s%s%s%s' % (value, name, value != 1 and 's' or '', fdelta and sep or '', fdelta)
-
-            reply = u"%s was last seen %s ago in %s on %s" % (who, fdelta, sighting.channel or 'private', sighting.identity.source)
+            reply = u"%s was last seen %s ago in %s on %s" % (who, ago(delta), sighting.channel or 'private', sighting.identity.source)
             reply = u'%s [%s]' % (reply, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
 
         if len(states) > 0:
