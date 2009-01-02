@@ -24,7 +24,7 @@ class LogFormatter(log.LogFormatter):
 		return ago
 
 	def log_revision(self, revision):
-		self.to_file.write('Commit %s by %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.ago(revision.rev.timestamp), revision.rev.message.replace('\n', '')))
+		self.to_file.write('Commit %s by %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.ago(revision.rev.timestamp), revision.rev.message.replace('\n', ' ')))
 
 class Bazaar(Processor):
 	"""last commit | commit <revno>"""
