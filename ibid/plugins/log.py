@@ -12,16 +12,18 @@ class Log(Processor):
     addressed = False
     processed = True
     priority = 1900
-    log = 'logs/%(source)s.%(where)s.%(year)d.%(month)02d.%(day)02d.log'
+    log = 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.%(day)02d.log'
+    message_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(who)s> %(message)s'
+    presence_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(who)s (%(sender)s) is now %(state)s'
 
     def __init__(self, name):
         Processor.__init__(self, name)
         self.logs = {}
 
-    def get_logfile(self, source, where, when):
+    def get_logfile(self, source, channel, when):
         when = localtime(when)
         filename = self.log %   {   'source': source,
-                                    'where': where,
+                                    'channel': channel,
                                     'year': when[0],
                                     'month': when[1],
                                     'day': when[2],
@@ -39,19 +41,47 @@ class Log(Processor):
         self.logs[filename][1] = time()
         return self.logs[filename][0]
 
-    def process(self, event):
-        then = strftime(u"%Y/%m/%d %H:%M:%S", localtime(event.time))
+    def log_message(self, file, source, channel, sender_id, sender, who, when, message):
+        when = localtime(when)
+        file.write(self.message_format %    {   'source': source,
+                                                'channel': channel,
+                                                'sender': sender,
+                                                'sender_id': sender_id,
+                                                'who': who,
+                                                'message': message,
+                                                'year': when[0],
+                                                'month': when[1],
+                                                'day': when[2],
+                                                'hour': when[3],
+                                                'minute': when[4],
+                                                'second': when[5],
+                                            } + '\n')
 
+    def log_presence(self, file, source, channel, sender_id, sender, who, when, state):
+        when = localtime(when)
+        file.write(self.presence_format %   {   'source': source,
+                                                'channel': channel,
+                                                'sender_id': sender_id,
+                                                'sender': sender,
+                                                'who': who,
+                                                'state': state,
+                                                'year': when[0],
+                                                'month': when[1],
+                                                'day': when[2],
+                                                'hour': when[3],
+                                                'minute': when[4],
+                                                'second': when[5],
+                                            } + '\n')
+
+    def process(self, event):
         if event.type == 'message':
-            now = strftime(u"%Y/%m/%d %H:%M:%S", localtime())
-            self.get_logfile(event.source, event.channel, event.time).write(u'%s %s: %s > %s: %s\n' % (then, event.source, event.sender, event.channel, event.message_raw))
-            for response in event.responses:
-                self.get_logfile(response['source'], response['target'], time()).write(u'%s %s: %s > %s: %s\n' % (now, response['source'], ibid.config['botname'], response['target'], response['reply']))
+            self.log_message(self.get_logfile(event.source, event.channel, event.time), event.source, event.channel, event.sender_id, event.sender, event.who, event.time, event.message_raw)
 
         elif event.type == 'state':
-            self.get_logfile(event.source, 'presence', time()).write(u'%s %s: %s is now %s\n' % (then, event.source, event.sender, event.state))
+            self.log_presence(self.get_logfile(event.source, event.channel, time()), event.source, event.channel, event.sender_id, event.sender, event.who, time(), event.state)
 
-        else:
-            return
+        for response in event.responses:
+            if 'reply' in response and isinstance(response['reply'], basestring):
+                self.log_message(self.get_logfile(response['source'], response['target'], time()), response['source'], response['target'], ibid.config['botname'], ibid.config['botname'], ibid.config['botname'], time(), response['reply'])
 
 # vi: set et sta sw=4 ts=4:

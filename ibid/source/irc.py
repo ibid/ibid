@@ -49,7 +49,6 @@ class Ircbot(irc.IRCClient):
 
     def _state_event(self, user, channel, action, kicker=None, message=None):
         event = self._create_event(u'state', user, channel)
-        event.channel = event.who
         event.state = action
         if kicker: event.kicker = kicker
         if message: event.message = message
