@@ -42,7 +42,7 @@ help['complain'] = 'Responds with a complaint. Used to handle unprocessed messag
 class Complain(Processor):
     feature = 'complain'
 
-    priority = 900
+    priority = 950
     complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?')
 
     @handler

@@ -56,12 +56,31 @@ mapper(Fact, name_table, properties={
 mapper(Factoid, value_table, properties={
     'facts': relation(Fact, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[name_table.c.factoid_id])})
 
-sub_percent = re.compile(r'(?<!\\\\)\\%')
-args = ['$one', '$two', '$three', '$four', '$five', '$six', '$seven', '$eight', '$nine', '$ten']
-actionre = re.compile(r'\s*<action>\s*')
-replyre = re.compile(r'\s*<reply>\s*')
+percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
+percent_re = re.compile(r'(?<!\\)%')
+args = ('$one', '$two', '$three', '$four', '$five', '$six', '$seven', '$eight', '$nine', '$ten')
+action_re = re.compile(r'\s*<action>\s*')
+reply_re = re.compile(r'\s*<reply>\s*')
+
+class Literal(Processor):
+
+    @match(r'literal\s+(.+)')
+    def literal(self, event, name):
+
+        session = ibid.databases.ibid()
+        facts = session.query(Fact).filter_by(name=name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')).all()
+        if facts:
+            replies = []
+            for fact in facts:
+                values = []
+                for factoid in fact.factoids:
+                    values.append(factoid.value)
+                replies.append('%s =%s= %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, ', '.join(values)))
+            event.addresponse('; '.join(replies))
 
 class Get(Processor):
+
+    priority = 900
 
     @match(r'(.*)')
     def get_factoid(self, event, name):
@@ -70,7 +89,7 @@ class Get(Processor):
         fact = session.query(Fact).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
         if fact:
             reply = choice(fact.factoids).value
-            pattern = sub_percent.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%')
+            pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 0
             for capture in re.match(pattern, name).groups():
@@ -90,13 +109,15 @@ class Get(Processor):
             reply = reply.replace('$time', strftime('%H:%M:%S', now))
             reply = reply.replace('$dow', strftime('%A', now))
 
-            (reply, count) = actionre.subn('', reply)
+            (reply, count) = action_re.subn('', reply)
             if count:
                 event.addresponse({'action': True, 'reply': reply})
             else:
-                (reply, count) = replyre.subn('', reply)
-                if not count:
-                    reply = '%s %s %s' % (fact.name, fact.verb, reply)
-                event.addresponse(reply)
+                (reply, count) = reply_re.subn('', reply)
+                if count:
+                    event.addresponse({'reply': reply})
+                else:
+                    reply = '%s %s %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, reply)
+                    event.addresponse(reply)
 
 # vi: set et sta sw=4 ts=4:
