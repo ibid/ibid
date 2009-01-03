@@ -131,10 +131,10 @@ class Identities(Processor):
 
 help['attributes'] = 'Adds and removes attributes attached to an account'
 class Attributes(Processor):
-    """my <name> is <value>"""
+    """set (my|<account>) <name> to <value>"""
     feature = 'attributes'
 
-    @match(r"^(my|.+?)(?:\'s)?\s+(.+)\s+is\s+(.+)$")
+    @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
     def attribute(self, event, username, name, value):
         session = ibid.databases.ibid()
 

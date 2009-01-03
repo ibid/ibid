@@ -6,6 +6,7 @@ import re
 from sqlalchemy import Column, Integer, Unicode, DateTime, Table, MetaData
 from sqlalchemy.orm import relation, mapper
 from sqlalchemy.sql.expression import desc
+from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -16,35 +17,35 @@ name_table = Table('factoid_names', metadata,
     Column('id', Integer, primary_key=True),
     Column('name', Unicode),
     Column('factoid_id', Integer),
-    Column('who', Unicode),
+    Column('identity', Unicode),
     Column('time', DateTime),
     )
 
 class Fact(object):
 
-    def __init__(self, name, who, factoid_id=None):
+    def __init__(self, name, identity, factoid_id=None):
         self.name = name
         self.factoid_id = factoid_id
-        self.who = who
+        self.identity = identity
         self.time = datetime.now()
 
     def __repr__(self):
-        return u'<Fact %s %s %s>' % (self.name, self.verb, self.factoid_id)
+        return u'<Fact %s %s>' % (self.name, self.factoid_id)
 
 value_table = Table('factoid_values', metadata,
     Column('id', Integer, primary_key=True),
     Column('value', Unicode),
     Column('factoid_id', Integer),
-    Column('who', Unicode),
+    Column('identity', Unicode),
     Column('time', DateTime),
     )
 
 class Factoid(object):
 
-    def __init__(self, value, who, factoid_id=None):
+    def __init__(self, value, identity, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
-        self.who = who
+        self.identity = identity
         self.time = datetime.now()
 
     def __repr__(self):
@@ -71,7 +72,7 @@ class Utils(Processor):
     def literal(self, event, name):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
+        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
         values = []
         for factoid in fact.factoids:
             values.append(factoid.value)
@@ -83,7 +84,7 @@ class Utils(Processor):
     def forget(self, event, name):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
+        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
         if fact:
             session.delete(fact)
             session.commit()
@@ -96,9 +97,9 @@ class Utils(Processor):
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter_by(name=escape_name(source)).first()
+        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(source).lower()).first()
         if fact:
-            new = Fact(target, event.sender_id, fact.factoid_id)
+            new = Fact(escape_name(target), event.identity, fact.factoid_id)
             session.add(new)
             session.commit()
             session.close()
@@ -168,7 +169,7 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
+        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
         if fact:
             if correction:
                 while len(fact.factoids) > 0:
@@ -183,13 +184,13 @@ class Set(Processor):
                 next = max.factoid_id + 1
             else:
                 next = 1
-            fact = Fact(escape_name(name), event.sender_id, next)
+            fact = Fact(escape_name(name), event.identity, next)
             session.add(fact)
             session.commit()
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
-        factoid = Factoid(value, event.sender_id)
+        factoid = Factoid(value, event.identity)
         fact.factoids.append(factoid)
         session.add(fact)
         session.commit()
