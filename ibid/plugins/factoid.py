@@ -42,7 +42,7 @@ value_table = Table('factoid_values', metadata,
 
 class Factoid(object):
 
-    def __init__(self, value, factoid_id, who=None):
+    def __init__(self, value, who, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
         self.who = who
@@ -129,5 +129,40 @@ class Get(Processor):
                     event.addresponse(reply)
 
         session.close()
+
+class Set(Processor):
+
+    verbs = verbs
+    priority = 910
+    
+    def setup(self):
+        verbs = '|'.join(self.verbs)
+        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(%s)=)?(?(3)|(%s))(\s+also)?\s+([^=]+?)$' % (verbs, verbs))
+
+    @handler
+    def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
+        verb = verb1 and verb1 or verb2
+
+        session = ibid.databases.ibid()
+        name_escaped = name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
+        fact = session.query(Fact).filter_by(name=name_escaped).first()
+        if fact:
+            if correction:
+                for factoid in fact.factoids:
+                    session.delete(factoid)
+            elif not addition:
+                event.addresponse(u"I already know stuff about %s" % name)
+                return
+        else:
+            max = session.query(Fact).order_by(Fact.factoid_id).all()
+            max = max[-1]
+            fact = Fact(name_escaped, verb, max.factoid_id+1)
+
+        factoid = Factoid(value, event.sender_id)
+        fact.factoids.append(factoid)
+        session.add(fact)
+        session.commit()
+        session.close()
+        event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:
