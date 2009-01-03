@@ -83,17 +83,16 @@ class Address(Processor):
 
     @handler
     def address(self, event):
-        if event.public:
-            addressed = []
-            for response in event.responses:
-                if isinstance(response, bool):
-                    response = choice(self.acknowledgements)
-                if isinstance(response, basestring) and event.public:
-                    addressed.append('%s: %s' % (event.who, response))
-                else:
-                    addressed.append(response)
+        addressed = []
+        for response in event.responses:
+            if isinstance(response, bool):
+                response = choice(self.acknowledgements)
+            if isinstance(response, basestring) and event.public:
+                addressed.append('%s: %s' % (event.who, response))
+            else:
+                addressed.append(response)
 
-            event.responses = addressed
+        event.responses = addressed
 
 class Timestamp(Processor):
 
