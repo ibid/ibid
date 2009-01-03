@@ -18,7 +18,7 @@ class Config(Processor):
         except:
             event.addresponse(u"Error reloading configuration")
 
-    @match(r'set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
+    @match(r'^set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
     @authorise('config')
     def set(self, event, key, value):
         print "Setting '%s' to '%s'" % (key, value)
@@ -34,7 +34,7 @@ class Config(Processor):
 
         event.addresponse(u'Done')
 
-    @match(r'get\s+config\s+(\S+?)$')
+    @match(r'^get\s+config\s+(\S+?)$')
     def get(self, event, key):
         config = ibid.config
         for part in key.split('.'):

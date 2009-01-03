@@ -9,7 +9,7 @@ from ibid.plugins import Processor, match
 class DateTime(Processor):
     """Usage: (date|time)"""
 
-    @match(r'^\s*(?:date|time)\s*$')
+    @match(r'^(?:date|time)$')
     def handler(self, event):
         reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
         event.addresponse(reply)
@@ -20,7 +20,7 @@ class Fortune(Processor):
 
     fortune = 'fortune'
 
-    @match(r'^\s*fortune\s*$')
+    @match(r'^fortune$')
     def handler(self, event):
         fortune = Popen(self.fortune, stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()

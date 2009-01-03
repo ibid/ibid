@@ -5,7 +5,7 @@ from ibid.plugins import Processor, match, authorise
 
 class Delay(Processor):
 
-    @match(r'^\s*delay\s+(\d+\.?\d*)\s*$')
+    @match(r'^delay\s+(\d+\.?\d*)$')
     def handler(self, event, delay):
         sleep(float(delay))
         event.addresponse('Done')

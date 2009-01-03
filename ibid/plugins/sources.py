@@ -3,7 +3,7 @@ from ibid.plugins import Processor, match, authorise
 
 class Admin(Processor):
 
-	@match(r'^\s*connect\s+(?:to\s+)?(\S+)\s*$')
+	@match(r'^connect\s+(?:to\s+)?(\S+)$')
 	@authorise('sources')
 	def connect(self, event, source):
 
@@ -12,7 +12,7 @@ class Admin(Processor):
 		else:
 			event.addresponse(u"I couldn't connect to %s" % source)
 
-	@match(r'^\s*disconnect\s+(?:from\s+)?(\S+)\s*$')
+	@match(r'^disconnect\s+(?:from\s+)?(\S+)$')
 	@authorise('sources')
 	def disconnect(self, event, source):
 
@@ -21,7 +21,7 @@ class Admin(Processor):
 		else:
 			event.addresponse(u"I couldn't disconnect from %s" % source)
 
-	@match(r'^\s*(?:re)?load\s+(\S+)\s+source\s*$')
+	@match(r'^(?:re)?load\s+(\S+)\s+source$')
 	@authorise('sources')
 	def load(self, event, source):
 		if ibid.reloader.load_source(source, ibid.service):

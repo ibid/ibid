@@ -6,7 +6,7 @@ from ibid.plugins import Processor, match
 class Actions(Processor):
     """Usage: (join|part|leave) <channel>"""
 
-    @match(r'^\s*(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?\s*$')
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
     def join(self, event, action, channel, source):
         action = action.lower()
 
