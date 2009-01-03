@@ -1,52 +1,57 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey
-from sqlalchemy.orm import relation, backref
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Unicode, DateTime, Table, MetaData
+from sqlalchemy.orm import relation, mapper
 
 import ibid
 from ibid.plugins import Processor, match
 
-Base = declarative_base()
+metadata = MetaData()
 
-class Fact(Base):
-    __tablename__ = 'facts'
+name_table = Table('factoid_names', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', Unicode),
+    Column('verb', Unicode),
+    Column('factoid_id', Integer),
+    Column('who', Unicode),
+    Column('time', DateTime),
+    )
 
-    id = Column(Integer, primary_key=True)
-    fact = Column(Unicode)
-    verb = Column(Unicode)
-    factoid = Column(Integer)
-    factoids = relation('Factoid')
-    who = Column(Unicode)
-    time = Column(DateTime)
+class Fact(object):
 
-    def __init__(self, fact, verb, factoid, who=None):
-        self.fact = fact
+    def __init__(self, name, verb, factoid_id, who=None):
+        self.name = name
         self.verb = verb
-        self.factoid = factoid
+        self.factoid_id = factoid_id
         self.who = who
         self.time = datetime.now()
 
     def __repr__(self):
-        return u'<Fact %s %s %s>' % (self.fact, self.verb, self.factoid)
+        return u'<Fact %s %s %s>' % (self.name, self.verb, self.factoid_id)
 
-class Factoid(Base):
-    __tablename__ = 'factoids'
 
-    id = Column(Integer, primary_key=True)
-    value = Column(Unicode)
-    factoid = Column(Integer, ForeignKey('facts.factoid'))
-    fact = relation(Fact)
-    who = Column(Unicode)
-    time = Column(DateTime)
+value_table = Table('factoid_values', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('value', Unicode),
+    Column('factoid_id', Integer),
+    Column('who', Unicode),
+    Column('time', DateTime),
+    )
 
-    def __init__(self, value, factoid, who=None):
+class Factoid(object):
+
+    def __init__(self, value, factoid_id, who=None):
         self.value = value
-        self.factoid = factoid
+        self.factoid_id = factoid_id
         self.who = who
         self.time = datetime.now()
 
     def __repr__(self):
-        return u'<Factoid %s %s>' % (self.factoid, self.value)
+        return u'<Factoid %s %s>' % (self.factoid_id, self.value)
+
+mapper(Fact, name_table, properties={
+    'factoids': relation(Factoid, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[value_table.c.factoid_id])})
+mapper(Factoid, value_table, properties={
+    'facts': relation(Fact, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[name_table.c.factoid_id])})
 
 # vi: set et sta sw=4 ts=4:
