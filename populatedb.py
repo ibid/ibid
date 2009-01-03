@@ -12,13 +12,19 @@ from ibid.models import Account, Identity, Permission, Credential
 
 config = FileConfig('ibid.ini')
 
-models = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base')]
+bases = [('ibid.models', 'Base')]
+metadatas = [('ibid.plugins.factoid', 'metadata')]
 engine = create_engine(config.databases['ibid']['uri'])
 
-for module, model in models:
+for module, model in bases:
     __import__(module)
     klass = eval('%s.%s' % (module, model))
     klass.metadata.create_all(engine)
+
+for module, metadata in metadatas:
+    __import__(module)
+    klass = eval('%s.%s' % (module, metadata))
+    klass.create_all(engine)
 
 print u'Database tables created'
 
