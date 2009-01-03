@@ -9,10 +9,10 @@ class Actions(Processor):
     @match(r'^\s*(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?\s*$')
     def join(self, event, action, channel, source):
         action = action.lower()
-        source = source.lower()
 
         if not source:
             source = event.source
+        source = source.lower()
         if not channel:
             if action == 'join':
                 return
