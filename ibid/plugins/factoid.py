@@ -5,6 +5,7 @@ import re
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, Table, MetaData
 from sqlalchemy.orm import relation, mapper
+from sqlalchemy.sql.expression import desc
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -100,7 +101,7 @@ class Get(Processor):
             pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 0
-            for capture in re.match(pattern, name).groups():
+            for capture in re.match(pattern, name, re.I).groups():
                 reply = reply.replace(args[position], capture)
                 position = position + 1
 
@@ -148,14 +149,14 @@ class Set(Processor):
         fact = session.query(Fact).filter_by(name=name_escaped).first()
         if fact:
             if correction:
-                for factoid in fact.factoids:
-                    session.delete(factoid)
+                while len(fact.factoids) > 0:
+                    del fact.factoids[0]
+                session.commit()
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
         else:
-            max = session.query(Fact).order_by(Fact.factoid_id).all()
-            max = max[-1]
+            max = session.query(Fact).order_by(desc(Fact.factoid_id)).first()
             fact = Fact(name_escaped, verb, max.factoid_id+1)
 
         factoid = Factoid(value, event.sender_id)

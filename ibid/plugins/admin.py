@@ -26,7 +26,7 @@ class ReloadCoreModules(Processor):
 
     priority = -5
 
-    @match(r'^reload\s+(reloader|dispatcher|databases|auth)')
+    @match(r'^reload\s+(reloader|dispatcher|databases|auth)$')
     @authorise('core')
     def reload(self, event, module):
         module = module.lower()
@@ -48,7 +48,7 @@ class LoadModules(Processor):
         result = ibid.reloader.load_processor(plugin)
         event.addresponse(result and u'%s reloaded' % plugin or u"Couldn't reload %s" % plugin)
 
-    @match(r'^unload\s+(\S+)')
+    @match(r'^unload\s+(\S+)$')
     @authorise('plugins')
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
