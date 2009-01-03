@@ -12,7 +12,7 @@ from ibid.models import Account, Identity, Permission, Credential
 
 config = FileConfig('ibid.ini')
 
-models = [('ibid.models', 'Base')]
+models = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base')]
 engine = create_engine(config.databases['ibid']['uri'])
 
 for module, model in models:
