@@ -64,13 +64,16 @@ action_re = re.compile(r'\s*<action>\s*')
 reply_re = re.compile(r'\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
-class Literal(Processor):
+def escape_name(name):
+    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
+
+class Factoid(Processor):
 
     @match(r'literal\s+(.+)')
     def literal(self, event, name):
 
         session = ibid.databases.ibid()
-        facts = session.query(Fact).filter_by(name=name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')).all()
+        facts = session.query(Fact).filter_by(name=escape_name(name)).all()
         if facts:
             replies = []
             for fact in facts:
@@ -81,6 +84,33 @@ class Literal(Processor):
             event.addresponse('; '.join(replies))
 
         session.close()
+
+    @match(r'forget\s+(.+)$')
+    def forget(self, event, name):
+
+        session = ibid.databases.ibid()
+        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
+        if fact:
+            session.delete(fact)
+            session.commit()
+            session.close()
+            event.addresponse(True)
+        else:
+            event.addresponse(u"I didn't know about %s anyway" % name)
+
+    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
+    def alias(self, event, target, source):
+
+        session = ibid.databases.ibid()
+        fact = session.query(Fact).filter_by(name=escape_name(source)).first()
+        if fact:
+            new = Fact(target, 'is', fact.factoid_id)
+            session.add(new)
+            session.commit()
+            session.close()
+            event.addresponse(True)
+        else:
+            event.addresponse(u"I don't know about %s" % name)
 
 class Get(Processor):
 
@@ -145,8 +175,7 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        name_escaped = name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
-        fact = session.query(Fact).filter_by(name=name_escaped).first()
+        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
         if fact:
             if correction:
                 while len(fact.factoids) > 0:
@@ -157,7 +186,7 @@ class Set(Processor):
                 return
         else:
             max = session.query(Fact).order_by(desc(Fact.factoid_id)).first()
-            fact = Fact(name_escaped, verb, max.factoid_id+1)
+            fact = Fact(escape_name(name), verb, max.factoid_id+1)
 
         factoid = Factoid(value, event.sender_id)
         fact.factoids.append(factoid)
