@@ -15,7 +15,6 @@ metadata = MetaData()
 name_table = Table('factoid_names', metadata,
     Column('id', Integer, primary_key=True),
     Column('name', Unicode),
-    Column('verb', Unicode),
     Column('factoid_id', Integer),
     Column('who', Unicode),
     Column('time', DateTime),
@@ -23,9 +22,8 @@ name_table = Table('factoid_names', metadata,
 
 class Fact(object):
 
-    def __init__(self, name, verb, factoid_id, who=None):
+    def __init__(self, name, who, factoid_id=None):
         self.name = name
-        self.verb = verb
         self.factoid_id = factoid_id
         self.who = who
         self.time = datetime.now()
@@ -67,21 +65,17 @@ verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
 
-class Factoid(Processor):
+class Utils(Processor):
 
     @match(r'literal\s+(.+)')
     def literal(self, event, name):
 
         session = ibid.databases.ibid()
-        facts = session.query(Fact).filter_by(name=escape_name(name)).all()
-        if facts:
-            replies = []
-            for fact in facts:
-                values = []
-                for factoid in fact.factoids:
-                    values.append(factoid.value)
-                replies.append('%s =%s= %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, ', '.join(values)))
-            event.addresponse('; '.join(replies))
+        fact = session.query(Fact).filter_by(name=escape_name(name)).first()
+        values = []
+        for factoid in fact.factoids:
+            values.append(factoid.value)
+        event.addresponse(', '.join(values))
 
         session.close()
 
@@ -104,7 +98,7 @@ class Factoid(Processor):
         session = ibid.databases.ibid()
         fact = session.query(Fact).filter_by(name=escape_name(source)).first()
         if fact:
-            new = Fact(target, 'is', fact.factoid_id)
+            new = Fact(target, event.sender_id, fact.factoid_id)
             session.add(new)
             session.commit()
             session.close()
@@ -156,7 +150,7 @@ class Get(Processor):
                 if count:
                     event.addresponse({'reply': reply})
                 else:
-                    reply = '%s %s %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, reply)
+                    reply = '%s %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), reply)
                     event.addresponse(reply)
 
         session.close()
@@ -167,8 +161,7 @@ class Set(Processor):
     priority = 910
     
     def setup(self):
-        verbs = '|'.join(self.verbs)
-        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(%s)=)?(?(3)|(%s))(\s+also)?\s+([^=]+?)$' % (verbs, verbs))
+        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' %  '|'.join(self.verbs))
 
     @handler
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
@@ -186,8 +179,16 @@ class Set(Processor):
                 return
         else:
             max = session.query(Fact).order_by(desc(Fact.factoid_id)).first()
-            fact = Fact(escape_name(name), verb, max.factoid_id+1)
+            if max:
+                next = max.factoid_id + 1
+            else:
+                next = 1
+            fact = Fact(escape_name(name), event.sender_id, next)
+            session.add(fact)
+            session.commit()
 
+        if not reply_re.match(value) and not action_re.match(value):
+            value = '%s %s' % (verb, value)
         factoid = Factoid(value, event.sender_id)
         fact.factoids.append(factoid)
         session.add(fact)
