@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, Table, MetaData
 from sqlalchemy.orm import relation, mapper
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 
 metadata = MetaData()
 
@@ -61,6 +61,7 @@ percent_re = re.compile(r'(?<!\\)%')
 args = ('$one', '$two', '$three', '$four', '$five', '$six', '$seven', '$eight', '$nine', '$ten')
 action_re = re.compile(r'\s*<action>\s*')
 reply_re = re.compile(r'\s*<reply>\s*')
+verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 class Literal(Processor):
 
@@ -78,12 +79,19 @@ class Literal(Processor):
                 replies.append('%s =%s= %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, ', '.join(values)))
             event.addresponse('; '.join(replies))
 
+        session.close()
+
 class Get(Processor):
 
+    verbs = verbs
     priority = 900
+    interrogatives = ('what', 'wtf', 'where', 'when', 'who')
 
-    @match(r'(.*)')
-    def get_factoid(self, event, name):
+    def setup(self):
+        self.get_factoid.im_func.pattern = re.compile('^(?:(?:%s)\s+(%s)\s+)?(.+)$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)))
+
+    @handler
+    def get_factoid(self, event, verb, name):
 
         session = ibid.databases.ibid()
         fact = session.query(Fact).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
@@ -119,5 +127,7 @@ class Get(Processor):
                 else:
                     reply = '%s %s %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), fact.verb, reply)
                     event.addresponse(reply)
+
+        session.close()
 
 # vi: set et sta sw=4 ts=4:
