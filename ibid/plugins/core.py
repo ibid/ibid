@@ -20,12 +20,12 @@ class Addressed(Processor):
     def handle_addressed(self, event):
         if 'addressed' not in event:
             event.addressed = False
-            for pattern in self.patterns:
-                matches = pattern.search(event.message)
-                if matches:
-                    event.addressed = matches.group(1)
-                    event.message = pattern.sub('', event.message)
-                    return event
+        for pattern in self.patterns:
+            matches = pattern.search(event.message)
+            if matches:
+                event.addressed = matches.group(1)
+                event.message = pattern.sub('', event.message)
+                return event
 
 class Strip(Processor):
 
