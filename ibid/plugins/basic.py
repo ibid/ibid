@@ -39,7 +39,10 @@ class SayDo(Processor):
         event.addresponse(reply)
         return event
 
+help['redirect'] = u'Redirects the response to a command to a different channel.'
 class RedirectCommand(Processor):
+    """redirect [to] <channel> [on <source>] <command>"""
+    feature = 'redirect'
 
     priority = -1200
 
@@ -52,6 +55,7 @@ class RedirectCommand(Processor):
         event.message = command
 
 class Redirect(Processor):
+    feature = 'redirect'
 
     processed = True
     priority = 1700
