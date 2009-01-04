@@ -1,7 +1,7 @@
 from random import choice
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, handler, authorise
 
 help = {}
 
@@ -38,6 +38,32 @@ class SayDo(Processor):
 
         event.addresponse(reply)
         return event
+
+class RedirectCommand(Processor):
+
+    priority = -1200
+
+    @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
+    @authorise(u'saydo')
+    def redirect(self, event, channel, source, command):
+        event.redirect = channel
+        if source:
+            event.redirect_source = source
+        event.message = command
+
+class Redirect(Processor):
+
+    processed = True
+    priority = 1700
+
+    @handler
+    def redirect(self, event):
+        if 'redirect' in event:
+            for response in event.responses:
+                if response['target'] == event.channel:
+                    response['target'] = event.redirect
+                    if 'redirect_source' in event:
+                        response['source'] = event.redirect_source
 
 help['complain'] = 'Responds with a complaint. Used to handle unprocessed messages.'
 class Complain(Processor):
