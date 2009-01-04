@@ -1,9 +1,19 @@
+import string
+from hashlib import sha512
+from random import choice
+
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.auth_ import Credential, Permission
 from ibid.plugins.identity import Account
 
 help = {}
+
+chars = string.letters + string.digits
+
+def hash(password):
+    salt = ''.join([choice(chars) for i in xrange(8)])
+    return salt + sha512(salt + password).hexdigest()
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
@@ -13,7 +23,6 @@ class AddAuth(Processor):
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
     def handler(self, event, user, source, method, credential):
 
-        print 'here'
         session = ibid.databases.ibid()
         if user.lower() == 'me':
             if not event.account:
@@ -29,6 +38,12 @@ class AddAuth(Processor):
                 event.addresponse(u"I don't know who %s is" % user)
                 session.close()
                 return
+
+        if source:
+            source = ibid.sources[source.lower()].name
+
+        if method.lower() == 'password':
+            credential = hash(credential)
 
         credential = Credential(method, credential, source, account.id)
         session.add(credential)

@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from getpass import getpass
 
 import ibid.plugins
+from ibid.plugins.auth import hash
 from ibid.config import FileConfig
 from ibid.models import Account, Identity, Permission, Credential
 
@@ -45,11 +46,11 @@ account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)
 
-for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config'):
+for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config', u'saydo'):
     perm = Permission(permission)
     account.permissions.append(perm)
 
-credential = Credential(u'password', unicode(pass1))
+credential = Credential(u'password', hash(unicode(pass1)))
 account.credentials.append(credential)
 
 session.add(account)

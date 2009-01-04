@@ -1,5 +1,6 @@
 from traceback import print_exc
 from time import time
+from hashlib import sha512
 
 from twisted.internet import reactor
 from sqlalchemy import or_
@@ -67,7 +68,7 @@ class Auth(object):
 
         session = ibid.databases.ibid()
         for credential in session.query(Credential).filter_by(method='password').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
-            if credential.credential == password:
+            if sha512(credential.credential[:8]+password).hexdigest() == credential.credential[8:]:
                 return True
 
 # vi: set et sta sw=4 ts=4:
