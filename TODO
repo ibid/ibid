@@ -13,4 +13,4 @@ Factoid authorisation
 Deleting factoids: SQL circular dependencies, confirmation?, marking as deleted?
 Accounts: Modify/delete accounts, identities and attributes
 Private attributes?
-Actions on non-IRC sources
+Hashed passwords
