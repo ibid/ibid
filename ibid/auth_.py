@@ -1,12 +1,15 @@
 from traceback import print_exc
 from time import time
 from hashlib import sha512
+import re
 
 from twisted.internet import reactor
 from sqlalchemy import or_
 
 import ibid
 from ibid.models import Credential, Permission, Account
+
+permission_re = re.compile('^([+-]?)(\S+)$')
 
 class Auth(object):
 
@@ -51,13 +54,37 @@ class Auth(object):
 
         return False
 
-    def authorise(self, event, permission):
-
-        if 'authenticated' not in event:
-            return False
+    def authorise(self, event, name):
 
         session = ibid.databases.ibid()
-        return session.query(Permission).filter_by(account_id=event.account).filter_by(permission=permission).first() and True or False
+        permission = session.query(Permission).filter_by(account_id=event.account).filter_by(name=name).first()
+        if permission:
+            if permission.value == 'no':
+                return False
+            elif permission.value == 'yes':
+                return True
+            elif permission.value == 'auth':
+                return self.authenticate(event)
+
+        permissions = []
+        if 'permissions' in ibid.config.sources[event.source]:
+            permissions.extend(ibid.config.sources[event.source]['permissions'])
+        if 'permissions' in ibid.config.auth:
+            permissions.extend(ibid.config.auth['permissions'])
+        print permissions
+
+        for permission in permissions:
+            match = permission_re.match(permission)
+            if match and match.group(2) == name :
+                if match.group(1) == '+':
+                    return True
+                elif match.group(1) == '-':
+                    return False
+                else:
+                    return self.authenticate(event)
+
+
+        return False
 
     def implicit(self, event, credential = None):
         return True

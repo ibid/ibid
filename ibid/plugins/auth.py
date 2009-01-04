@@ -53,22 +53,30 @@ class AddAuth(Processor):
         event.addresponse(u'Okay')
 
 class Permissions(Processor):
-    """grant <account> permission <permission> | list permissions"""
+    """(grant|revoke) <permission> (to|from|on) <username> [when authed] | list permissions"""
     feature = 'auth'
 
-    @match(r'^grant\s+(.+)\s+permission\s+(.+)$')
+    @match(r'^(grant|revoke)\s+(.+)\s+(?:to|from|on)\s+(.+)(\s+(when|if)\s+(auth|authed|authenticated))$')
     @authorise('admin')
-    def grant(self, event, user, permission):
+    def grant(self, event, action, permission, username, auth):
 
         session = ibid.databases.ibid()
-        account = session.query(Account).filter_by(username=user).first()
+        account = session.query(Account).filter_by(username=username).first()
         if not account:
             event.addresponse(u"I don't know who %s is" % user)
             session.close()
             return
 
-        permission = Permission(permission, account.id)
-        session.add(permission)
+        if action.lower() == 'revoke':
+            value = 'no'
+        elif auth:
+            value = 'auth'
+        else:
+            value = 'yes'
+
+        permission = Permission(permission, value)
+        account.permissions.append(permission)
+        session.add(account)
         session.commit()
         session.close()
 
@@ -88,7 +96,7 @@ class Permissions(Processor):
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        event.addresponse(', '.join([perm.permission for perm in account.permissions]))
+        event.addresponse(', '.join([perm.name for perm in account.permissions]))
 
 class Auth(Processor):
     """auth <credential>"""

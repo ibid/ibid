@@ -57,11 +57,13 @@ class Permission(Base):
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    permission = Column(Unicode)
+    name = Column(Unicode)
+    value = Column(Unicode)
 
-    def __init__(self, permission, account_id=None):
+    def __init__(self, name, value, account_id=None):
         self.account_id = account_id
-        self.permission = permission
+        self.name = name
+        self.value = value
 
 class Account(Base):
     __tablename__ = 'accounts'

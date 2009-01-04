@@ -69,10 +69,6 @@ def match(regex):
     return wrap
 
 def auth_responses(event, permission):
-    if not ibid.auth.authenticate(event):
-        event.addresponse('You are not authenticated')
-        return False
-
     if not ibid.auth.authorise(event, permission):
         event.addresponse('You are not authorised')
         return False

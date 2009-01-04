@@ -11,12 +11,14 @@ class Delay(Processor):
         event.addresponse('Done')
         return event
 
-class Protected(Processor):
+class Authorise(Processor):
 
-    @match(r'^protected$')
-    @authorise('protected')
-    def handler(self, event):
-        event.addresponse('Executing protected command')
+    @match(r'^authorise\s+(\S+)$')
+    def handler(self, event, permission):
+        if ibid.auth.authorise(event, permission):
+            event.addresponse(u'Yes')
+        else:
+            event.addresponse(u'No')
 
 class Email(Processor):
 

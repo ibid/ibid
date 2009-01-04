@@ -47,7 +47,7 @@ identity = Identity(source, identity)
 account.identities.append(identity)
 
 for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config', u'saydo'):
-    perm = Permission(permission)
+    perm = Permission(permission, 'auth')
     account.permissions.append(perm)
 
 credential = Credential(u'password', hash(unicode(pass1)))
