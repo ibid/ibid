@@ -30,7 +30,6 @@ class Auth(object):
         if event.sender in self.cache:
             timestamp = self.cache[event.sender]
             if time() - timestamp < ibid.config.auth['timeout']:
-                event.authenticated = True
                 return True
             else:
                 del self.cache[event.sender]
@@ -47,7 +46,6 @@ class Auth(object):
             try:
                 if function(event, credential):
                     self.cache[event.sender] = time()
-                    event.authenticated = True
                     return True
             except:
                 print_exc()
@@ -81,7 +79,6 @@ class Auth(object):
                     return False
                 else:
                     return self.authenticate(event)
-
 
         return False
 

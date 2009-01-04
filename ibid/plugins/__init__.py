@@ -70,7 +70,7 @@ def match(regex):
 
 def auth_responses(event, permission):
     if not ibid.auth.authorise(event, permission):
-        event.addresponse('You are not authorised')
+        event.notauthed = True
         return False
 
     return True
