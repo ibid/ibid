@@ -4,6 +4,7 @@ from time import strftime
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -46,7 +47,7 @@ class Seen(Processor):
 
         session = ibid.databases.ibid()
         account = None
-        identity = session.query(Identity).filter(Identity.source.like(source and source or event.source)).filter(Identity.identity.like(who)).first()
+        identity = session.query(Identity).filter(func.lower(Identity.source)==(source and source or event.source).lower()).filter(func.lower(Identity.identity)==who.lower()).first()
         if identity and identity.account and not source:
             account = identity.account
 

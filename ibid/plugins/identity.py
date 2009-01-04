@@ -2,6 +2,7 @@ import string
 from random import choice
 
 from sqlalchemy.orm import eagerload
+from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler, auth_responses
@@ -88,7 +89,7 @@ class Identities(Processor):
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        ident = session.query(Identity).filter(Identity.identity.like(identity)).filter(Identity.source.like(source)).first()
+        ident = session.query(Identity).filter(func.lower(Identity.identity)==identity.lower()).filter(func.lower(Identity.source)==source.lower()).first()
         if ident and ident.account:
             event.addresponse(u'This identity is already attached to account %s' % ident.account.username)
             return
@@ -118,7 +119,7 @@ class Identities(Processor):
                 event.addresponse(u'You need to send me this token from %s on %s' % (user, source))
                 return
 
-            identity = session.query(Identity).filter(Identity.identity.like(user)).filter(Identity.source.like(source)).first()
+            identity = session.query(Identity).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
@@ -200,7 +201,7 @@ class Identify(Processor):
             #    return
 
             session = ibid.databases.ibid()
-            identity = session.query(Identity).options(eagerload('account')).filter(Identity.source.like(event.source)).filter(Identity.identity.like(event.sender_id)).first()
+            identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender_id.lower()).first()
             if not identity:
                 identity = Identity(event.source, event.sender_id)
                 session.add(identity)
@@ -219,7 +220,7 @@ def identify(source, user):
 
     session = ibid.databases.ibid()
 
-    identity = session.query(Identity).filter(Identity.source.like(source)).filter(Identity.identity.like(user)).first()
+    identity = session.query(Identity).filter(func.lower(Identity.source)==source.lower()).filter(func.lower(Identity.identity)==user.lower()).first()
     account = session.query(Account).filter_by(username=user).first()
 
     if not account and not identity:

@@ -9,4 +9,8 @@ Improve NickServ authentication
 Better names for event.{sender,sender_id,who}
 Race condition where two identities are created if multiple messages received at the same time (usually from services/bots)
 SMTP source: Handle multiple queries in a single message
-Factoids: Case-insensitivity, deleting, auth
+Factoid authorisation
+Deleting factoids: SQL circular dependencies, confirmation?, marking as deleted?
+Accounts: Modify/delete accounts, identities and attributes
+Private attributes?
+Actions on non-IRC sources

@@ -58,9 +58,8 @@ mapper(Factoid, value_table, properties={
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
 percent_re = re.compile(r'(?<!\\)%')
-args = ('$one', '$two', '$three', '$four', '$five', '$six', '$seven', '$eight', '$nine', '$ten')
-action_re = re.compile(r'\s*<action>\s*')
-reply_re = re.compile(r'\s*<reply>\s*')
+action_re = re.compile(r'^\s*<action>\s*')
+reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
@@ -125,9 +124,11 @@ class Get(Processor):
             reply = choice(fact.factoids).value
             pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
-            position = 0
+            position = 1
             for capture in re.match(pattern, name, re.I).groups():
-                reply = reply.replace(args[position], capture)
+                if capture.startswith('$arg'):
+                    return
+                reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
             reply = reply.replace('$who', event.who)
@@ -162,7 +163,7 @@ class Set(Processor):
     priority = 910
     
     def setup(self):
-        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' %  '|'.join(self.verbs))
+        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs))
 
     @handler
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
