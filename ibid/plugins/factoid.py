@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, handler, authorise
 
 metadata = MetaData()
 
@@ -21,7 +21,7 @@ name_table = Table('factoid_names', metadata,
     Column('time', DateTime),
     )
 
-class Fact(object):
+class FactoidName(object):
 
     def __init__(self, name, identity, factoid_id=None):
         self.name = name
@@ -30,7 +30,7 @@ class Fact(object):
         self.time = datetime.now()
 
     def __repr__(self):
-        return u'<Fact %s %s>' % (self.name, self.factoid_id)
+        return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
 value_table = Table('factoid_values', metadata,
     Column('id', Integer, primary_key=True),
@@ -40,7 +40,7 @@ value_table = Table('factoid_values', metadata,
     Column('time', DateTime),
     )
 
-class Factoid(object):
+class FactoidValue(object):
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
@@ -49,12 +49,10 @@ class Factoid(object):
         self.time = datetime.now()
 
     def __repr__(self):
-        return u'<Factoid %s %s>' % (self.factoid_id, self.value)
+        return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-mapper(Fact, name_table, properties={
-    'factoids': relation(Factoid, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[value_table.c.factoid_id])})
-mapper(Factoid, value_table, properties={
-    'facts': relation(Fact, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[name_table.c.factoid_id])})
+mapper(FactoidName, name_table, properties={'factoids': relation(FactoidValue, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[value_table.c.factoid_id], cascade='')})
+mapper(FactoidValue, value_table)
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
 percent_re = re.compile(r'(?<!\\)%')
@@ -67,11 +65,11 @@ def escape_name(name):
 
 class Utils(Processor):
 
-    @match(r'literal\s+(.+)')
+    @match(r'^literal\s+(.+)$')
     def literal(self, event, name):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         values = []
         for factoid in fact.factoids:
             values.append(factoid.value)
@@ -79,12 +77,16 @@ class Utils(Processor):
 
         session.close()
 
-    @match(r'forget\s+(.+)$')
+    @match(r'^forget\s+(.+)$')
+    @authorise(u'factoid')
     def forget(self, event, name):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if fact:
+            if session.query(FactoidName).filter_by(factoid_id=fact.factoid_id).count() == 1:
+                for factoid in fact.factoids:
+                    session.delete(factoid)
             session.delete(fact)
             session.commit()
             session.close()
@@ -93,12 +95,13 @@ class Utils(Processor):
             event.addresponse(u"I didn't know about %s anyway" % name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
+    @authorise(u'factoid')
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(source).lower()).first()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if fact:
-            new = Fact(escape_name(target), event.identity, fact.factoid_id)
+            new = FactoidName(escape_name(target), event.identity, fact.factoid_id)
             session.add(new)
             session.commit()
             session.close()
@@ -119,7 +122,7 @@ class Get(Processor):
     def get_factoid(self, event, verb, name):
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
+        fact = session.query(FactoidName).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
         if fact:
             reply = choice(fact.factoids).value
             pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
@@ -166,34 +169,33 @@ class Set(Processor):
         self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs))
 
     @handler
+    @authorise(u'factoid')
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        fact = session.query(Fact).filter(func.lower(Fact.name)==escape_name(name).lower()).first()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if fact:
             if correction:
-                while len(fact.factoids) > 0:
-                    del fact.factoids[0]
-                session.commit()
+                for factoid in fact.factoids:
+                    session.delete(factoid)
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
         else:
-            max = session.query(Fact).order_by(desc(Fact.factoid_id)).first()
+            max = session.query(FactoidName).order_by(desc(FactoidName.factoid_id)).first()
             if max:
                 next = max.factoid_id + 1
             else:
                 next = 1
-            fact = Fact(escape_name(name), event.identity, next)
+            fact = FactoidName(escape_name(name), event.identity, next)
             session.add(fact)
             session.commit()
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
-        factoid = Factoid(value, event.identity)
-        fact.factoids.append(factoid)
-        session.add(fact)
+        factoid = FactoidValue(value, event.identity, fact.factoid_id)
+        session.add(factoid)
         session.commit()
         session.close()
         event.addresponse(True)
