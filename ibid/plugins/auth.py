@@ -52,6 +52,7 @@ class AddAuth(Processor):
 
         event.addresponse(u'Okay')
 
+permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
     """(grant|revoke) <permission> (to|from|on) <username> [when authed] | list permissions"""
     feature = 'auth'
@@ -96,7 +97,7 @@ class Permissions(Processor):
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        event.addresponse(', '.join([perm.name for perm in account.permissions]))
+        event.addresponse(', '.join(['%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions]))
 
 class Auth(Processor):
     """auth <credential>"""

@@ -41,7 +41,7 @@ class LoadModules(Processor):
     """(load|unload|reload) <plugin|processor>"""
     feature = 'plugins'
 
-    @match(r'^(?:re)?load\s+(\S+)$')
+    @match(r'^(?:re)?load\s+(\S+)(?:\s+plugin)?$')
     @authorise('plugins')
     def load(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
