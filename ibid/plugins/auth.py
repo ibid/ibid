@@ -56,7 +56,7 @@ class Permissions(Processor):
     """(grant|revoke) <permission> (to|from|on) <username> [when authed] | list permissions"""
     feature = 'auth'
 
-    @match(r'^(grant|revoke)\s+(.+)\s+(?:to|from|on)\s+(.+)(\s+(when|if)\s+(auth|authed|authenticated))$')
+    @match(r'^(grant|revoke)\s+(.+)\s+(?:to|from|on)\s+(.+)(\s+(?:when|if)\s+(?:auth|authed|authenticated))?$')
     @authorise('admin')
     def grant(self, event, action, permission, username, auth):
 

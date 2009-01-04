@@ -22,6 +22,8 @@ class Log(Processor):
 
     def get_logfile(self, source, channel, when):
         when = localtime(when)
+        if ibid.config.sources[source]['type'] == 'jabber':
+            channel = channel.split('/')[0]
         filename = self.log %   {   'source': source,
                                     'channel': channel,
                                     'year': when[0],
