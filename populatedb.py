@@ -13,8 +13,8 @@ from ibid.models import Account, Identity, Permission, Credential
 
 config = FileConfig('ibid.ini')
 
-bases = [('ibid.models', 'Base')]
-metadatas = [('ibid.plugins.factoid', 'metadata')]
+bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base')]
+metadatas = []
 engine = create_engine(config.databases['ibid']['uri'])
 
 for module, model in bases:

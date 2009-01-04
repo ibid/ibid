@@ -3,44 +3,25 @@ from random import choice
 from time import localtime, strftime
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, Table, MetaData
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
 from sqlalchemy.orm import relation, mapper
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql import func
+from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
 
-metadata = MetaData()
+Base = declarative_base()
 
-name_table = Table('factoid_names', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('name', Unicode),
-    Column('factoid_id', Integer),
-    Column('identity', Unicode),
-    Column('time', DateTime),
-    )
+class FactoidValue(Base):
+    __tablename__ = 'factoid_values'
 
-class FactoidName(object):
-
-    def __init__(self, name, identity, factoid_id=None):
-        self.name = name
-        self.factoid_id = factoid_id
-        self.identity = identity
-        self.time = datetime.now()
-
-    def __repr__(self):
-        return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
-
-value_table = Table('factoid_values', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('value', Unicode),
-    Column('factoid_id', Integer),
-    Column('identity', Unicode),
-    Column('time', DateTime),
-    )
-
-class FactoidValue(object):
+    id = Column(Integer, primary_key=True)
+    value = Column(Unicode)
+    factoid_id = Column(Integer)
+    identity = Column(Unicode)
+    time = Column(DateTime)
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
@@ -51,8 +32,24 @@ class FactoidValue(object):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-mapper(FactoidName, name_table, properties={'factoids': relation(FactoidValue, primaryjoin=value_table.c.factoid_id==name_table.c.factoid_id, foreign_keys=[value_table.c.factoid_id], cascade='')})
-mapper(FactoidValue, value_table)
+class FactoidName(Base):
+    __tablename__ = 'factoid_names'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode)
+    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
+    factoids = relation(FactoidValue, uselist=True)
+    identity = Column(Unicode)
+    time = Column(DateTime)
+
+    def __init__(self, name, identity, factoid_id=None):
+        self.name = name
+        self.factoid_id = factoid_id
+        self.identity = identity
+        self.time = datetime.now()
+
+    def __repr__(self):
+        return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
 percent_re = re.compile(r'(?<!\\)%')
