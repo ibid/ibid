@@ -14,30 +14,12 @@ from ibid.plugins import Processor, match, handler, authorise
 
 Base = declarative_base()
 
-class FactoidValue(Base):
-    __tablename__ = 'factoid_values'
-
-    id = Column(Integer, primary_key=True)
-    value = Column(Unicode)
-    factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id', use_alter=True, name='factoid_fk'))
-    identity = Column(Unicode)
-    time = Column(DateTime)
-
-    def __init__(self, value, identity, factoid_id=None):
-        self.value = value
-        self.factoid_id = factoid_id
-        self.identity = identity
-        self.time = datetime.now()
-
-    def __repr__(self):
-        return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
-
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode)
-    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
+    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id', use_alter=True, name='factoid_fk'))
     identity = Column(Unicode)
     time = Column(DateTime)
 
@@ -50,7 +32,25 @@ class FactoidName(Base):
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
-FactoidName.factoids = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
+class FactoidValue(Base):
+    __tablename__ = 'factoid_values'
+
+    id = Column(Integer, primary_key=True)
+    value = Column(Unicode)
+    factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id'))
+    identity = Column(Unicode)
+    time = Column(DateTime)
+
+    def __init__(self, value, identity, factoid_id=None):
+        self.value = value
+        self.factoid_id = factoid_id
+        self.identity = identity
+        self.time = datetime.now()
+
+    def __repr__(self):
+        return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
+
+FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
 FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
@@ -70,7 +70,7 @@ class Utils(Processor):
         session = ibid.databases.ibid()
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         values = []
-        for factoid in fact.factoids:
+        for factoid in fact.values:
             values.append(factoid.value)
         event.addresponse(', '.join(values))
 
@@ -84,7 +84,7 @@ class Utils(Processor):
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if fact:
             if session.query(FactoidName).filter_by(factoid_id=fact.factoid_id).count() == 1:
-                for factoid in fact.factoids:
+                for factoid in fact.values:
                     session.delete(factoid)
             session.delete(fact)
             session.commit()
@@ -123,7 +123,7 @@ class Get(Processor):
         session = ibid.databases.ibid()
         fact = session.query(FactoidName).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
         if fact:
-            reply = choice(fact.factoids).value
+            reply = choice(fact.values).value
             pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 1
@@ -176,8 +176,9 @@ class Set(Processor):
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if fact:
             if correction:
-                for factoid in fact.factoids:
+                for factoid in fact.values:
                     session.delete(factoid)
+                session.commit()
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
