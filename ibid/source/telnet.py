@@ -22,7 +22,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     def telnet_Query(self, line):
         event = Event(self.factory.name, 'message')
-        event.message = line
+        event.message = line.strip()
         event.sender = self.user
         event.sender_id = self.user
         event.who = event.sender
