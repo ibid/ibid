@@ -50,8 +50,8 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
-FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
+FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
+FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
 percent_re = re.compile(r'(?<!\\)%')
@@ -176,15 +176,17 @@ class Set(Processor):
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if fact:
             if correction:
+                factoid_id = fact.factoid_id
                 for factoid in fact.values:
                     session.delete(factoid)
                 session.commit()
+                fact.factoid_id = factoid_id
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
         else:
             max = session.query(FactoidName).order_by(desc(FactoidName.factoid_id)).first()
-            if max:
+            if max and max.factoid_id:
                 next = max.factoid_id + 1
             else:
                 next = 1
