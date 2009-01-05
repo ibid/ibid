@@ -14,3 +14,4 @@ Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts, identities and attributes
 Private attributes?
 Handle SQL errors and rollback transaction
+Factoid patterns (edit and retrieve)

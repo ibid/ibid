@@ -1,34 +1,30 @@
-import random
+from random import randint
 
 import ibid
 from ibid.plugins import Processor, match
 
 help = {}
 
+choices = ['paper', 'rock', 'scissors']
+
 help['roshambo'] = 'Plays rock, paper, scissors.'
 class RoShamBo(Processor):
-	"""roshambo (rock|paper|scissors)"""
-	feature = 'roshambo'
+    """roshambo (rock|paper|scissors)"""
+    feature = 'roshambo'
 
-	@match(r'^roshambo\s+(rock|paper|scissors)$')
-	def roshambo(self, event, choice):
-		input = choice.lower()
-		cpu = random.randint(0,2)
-		list = ['paper', 'rock', 'scissors']
-		
-		if input == 'paper':
-			input_number = 0
-		elif input == 'rock':
-			input_number = 1
-		elif input == 'scissors':
-			input_number = 2
-	
-		if input_number == cpu:
-			reply = 'Draw!'
-		elif (input_number + 1) % 3 == cpu:
-			reply = 'You win! I had: %s, You had: %s' % (list[cpu], input)
-		else:
-			reply = 'I win! I had: %s, You had: %s' % (list[cpu], input)
-	
-		event.addresponse(reply)
-		return event
+    @match(r'^roshambo\s+(rock|paper|scissors)$')
+    def roshambo(self, event, uchoice):
+        uchoice = choices.index(uchoice.lower())
+        bchoice = randint(0, 2)
+ 
+        if uchoice == bchoice:
+            reply = 'We drew! I also chose %s' % choices[bchoice]
+        elif (uchoice + 1) % 3 == bchoice:
+            reply = 'You win! I chose %s :-(' % choices[bchoice]
+        else:
+            reply = 'I win! I chose %s' % choices[bchoice]
+ 
+        event.addresponse(reply)
+        return event
+
+# vi: set et sta sw=4 ts=4:
