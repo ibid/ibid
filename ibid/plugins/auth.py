@@ -43,7 +43,10 @@ class AddAuth(Processor):
             source = ibid.sources[source.lower()].name
 
         if method.lower() == 'password':
-            credential = hash(credential)
+            password = hash(credential)
+            event.message = event.message[:-len(credential)] + password
+            event.message_raw = event.message_raw[:event.message_raw.rfind(credential)] + password + event.message_raw[event.message_raw.rfind(credential)+len(credential):]
+            credential = password
 
         credential = Credential(method, credential, source, account.id)
         session.add(credential)
