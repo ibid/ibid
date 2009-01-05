@@ -19,7 +19,7 @@ class FactoidValue(Base):
 
     id = Column(Integer, primary_key=True)
     value = Column(Unicode)
-    factoid_id = Column(Integer)
+    factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id', use_alter=True, name='factoid_fk'))
     identity = Column(Unicode)
     time = Column(DateTime)
 
@@ -38,7 +38,6 @@ class FactoidName(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode)
     factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
-    factoids = relation(FactoidValue, uselist=True)
     identity = Column(Unicode)
     time = Column(DateTime)
 
@@ -50,6 +49,9 @@ class FactoidName(Base):
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
+
+FactoidName.factoids = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
+FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
 
 percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
 percent_re = re.compile(r'(?<!\\)%')
