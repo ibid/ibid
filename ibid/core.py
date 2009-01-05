@@ -1,5 +1,6 @@
 from traceback import print_exc
 import inspect
+import re
 
 from twisted.internet import reactor, threads
 from sqlalchemy import create_engine
@@ -156,6 +157,19 @@ class Reloader(object):
         for processor in ibid.processors:
             processor.load_config()
 
+def regexp(pattern, item):
+    result = re.search(pattern, item) and True or False
+    print 'Returning %s for %s on %s' % (result, pattern, item)
+    return result
+
+def sqlite_creator(database):
+    from pysqlite2 import dbapi2 as sqlite
+    def connect():
+        connection = sqlite.connect(database)
+        connection.create_function('regexp', 2, regexp)
+        return connection
+    return connect
+
 class DatabaseManager(dict):
 
     def __init__(self):
@@ -164,7 +178,10 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]['uri']
-        engine = create_engine(uri, echo=False)
+        if uri.startswith('sqlite:///'):
+            engine = create_engine('sqlite:///', creator=sqlite_creator(uri.replace('sqlite:///', '', 1)), echo=True)
+        else:
+            engine = create_engine(uri)
         self[name] = scoped_session(sessionmaker(bind=engine))
 
     def __getattr__(self, name):
