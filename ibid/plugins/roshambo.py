@@ -3,7 +3,13 @@ import random
 import ibid
 from ibid.plugins import Processor, match
 
+help = {}
+
+help['roshambo'] = 'Plays rock, paper, scissors.'
 class RoShamBo(Processor):
+	"""roshambo (rock|paper|scissors)"""
+	feature = 'roshambo'
+
 	@match(r'^roshambo\s+(rock|paper|scissors)$')
 	def roshambo(self, event, choice):
 		input = choice.lower()
