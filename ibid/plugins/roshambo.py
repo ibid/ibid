@@ -24,7 +24,7 @@ class RoShamBo(Processor):
 			input_number = 2
 	
 		if input_number == cpu:
-			reply = 'Draw %s %s' % (list[cpu], input)
+			reply = 'Draw!'
 		elif (input_number + 1) % 3 == cpu:
 			reply = 'You win! I had: %s, You had: %s' % (list[cpu], input)
 		else:
