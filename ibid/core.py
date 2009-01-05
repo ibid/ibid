@@ -158,9 +158,7 @@ class Reloader(object):
             processor.load_config()
 
 def regexp(pattern, item):
-    result = re.search(pattern, item) and True or False
-    print 'Returning %s for %s on %s' % (result, pattern, item)
-    return result
+    return re.search(pattern, item) and True or False
 
 def sqlite_creator(database):
     from pysqlite2 import dbapi2 as sqlite

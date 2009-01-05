@@ -4,13 +4,15 @@ from time import localtime, strftime
 import re
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
-from sqlalchemy.orm import relation, mapper
+from sqlalchemy.orm import relation, mapper, eagerload
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
+
+help = {'factoids': 'Factoids are arbitrary pieces of information stored by a key.'}
 
 Base = declarative_base()
 
@@ -63,6 +65,9 @@ def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
 
 class Utils(Processor):
+    """(literal|forget) <name>
+    <name> is the same as <name>"""
+    feature = 'factoids'
 
     @match(r'^literal\s+(.+)$')
     def literal(self, event, name):
@@ -109,21 +114,33 @@ class Utils(Processor):
             event.addresponse(u"I don't know about %s" % name)
 
 class Get(Processor):
+    """<factoid> [( #<number> | /<pattern>/ )]"""
+    feature = 'factoids'
 
     verbs = verbs
     priority = 900
     interrogatives = ('what', 'wtf', 'where', 'when', 'who')
 
     def setup(self):
-        self.get_factoid.im_func.pattern = re.compile('^(?:(?:%s)\s+(%s)\s+)?(.+)$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)))
+        self.get_factoid.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)))
 
     @handler
-    def get_factoid(self, event, verb, name):
-
+    def get_factoid(self, event, verb, name, number, pattern):
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).first()
-        if fact:
-            reply = choice(fact.values).value
+        query = session.query(FactoidName).options(eagerload('values')).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
+        if pattern:
+            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        if number:
+            try:
+                factoid = query.order_by(FactoidValue.id)[int(number)]
+            except IndexError:
+                return
+        else:
+            factoid = query.order_by(func.random()).first()
+
+        if factoid:
+            (fact, value) = factoid
+            reply = value.value
             pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 1
@@ -160,12 +177,14 @@ class Get(Processor):
         session.close()
 
 class Set(Processor):
+    """<name> (<verb>|=<verb>=) <value>"""
+    feature = 'factoids'
 
     verbs = verbs
     priority = 910
     
     def setup(self):
-        self.set_factoid.im_func.pattern = re.compile('^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs))
+        self.set_factoid.im_func.pattern = re.compile(r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs))
 
     @handler
     @authorise(u'factoid')
