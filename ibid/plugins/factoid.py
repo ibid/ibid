@@ -65,19 +65,23 @@ def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
 
 class Utils(Processor):
-    """(literal|forget) <name>
+    """literal <name> [starting at <number>]
+    forget <name>
     <name> is the same as <name>"""
     feature = 'factoids'
 
-    @match(r'^literal\s+(.+)$')
-    def literal(self, event, name):
-
+    @match(r'^literal\s+(.+?)(?:\s+start(?:ing)?\s+(?:from\s+)?(\d+))?$')
+    def literal(self, event, name, start):
+        start = start and int(start) or 0
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
-        values = []
-        for factoid in fact.values:
-            values.append(factoid.value)
-        event.addresponse(', '.join(values))
+        fact = session.query(FactoidName).options(eagerload('values')).filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
+        if fact:
+            values = []
+            count = 0
+            for factoid in fact.values:
+                values.append('%s: %s' % (count, factoid.value))
+                count = count + 1
+            event.addresponse(', '.join(values[start:]))
 
         session.close()
 
@@ -127,7 +131,7 @@ class Get(Processor):
     @handler
     def get_factoid(self, event, verb, name, number, pattern):
         session = ibid.databases.ibid()
-        query = session.query(FactoidName).options(eagerload('values')).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
+        query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
         if pattern:
             query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
         if number:
