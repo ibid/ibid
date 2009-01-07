@@ -180,7 +180,7 @@ class DatabaseManager(dict):
             engine = create_engine('sqlite:///', creator=sqlite_creator(uri.replace('sqlite:///', '', 1)), echo=True)
         else:
             engine = create_engine(uri)
-        self[name] = scoped_session(sessionmaker(bind=engine))
+        self[name] = scoped_session(sessionmaker(bind=engine, autocommit=False))
 
     def __getattr__(self, name):
         return self[name]
