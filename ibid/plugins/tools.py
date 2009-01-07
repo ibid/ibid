@@ -20,7 +20,7 @@ class Random(Processor):
 	"""random [ <max> | <min> <max> ]"""
 	feature = 'random'
 
-	@match('^random(?:\s+(\d+)(?:\s+(\d+))?)?$')
+	@match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
 	def random(self, event, begin, end):
 		if not begin and not end:
 			event.addresponse(str(random()))
