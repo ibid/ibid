@@ -126,7 +126,7 @@ class Get(Processor):
     interrogatives = ('what', 'wtf', 'where', 'when', 'who')
 
     def setup(self):
-        self.get_factoid.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)))
+        self.get_factoid.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
 
     @handler
     def get_factoid(self, event, verb, name, number, pattern):
@@ -188,7 +188,7 @@ class Set(Processor):
     priority = 910
     
     def setup(self):
-        self.set_factoid.im_func.pattern = re.compile(r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs))
+        self.set_factoid.im_func.pattern = re.compile(r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs), re.I)
 
     @handler
     @authorise(u'factoid')
