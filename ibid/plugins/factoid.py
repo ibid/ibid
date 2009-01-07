@@ -21,7 +21,7 @@ class FactoidName(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode)
-    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id', use_alter=True, name='factoid_fk'))
+    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
     identity = Column(Unicode)
     time = Column(DateTime)
 
@@ -39,7 +39,7 @@ class FactoidValue(Base):
 
     id = Column(Integer, primary_key=True)
     value = Column(Unicode)
-    factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id'))
+    factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id', use_alter=True, name='factoid_fk'))
     identity = Column(Unicode)
     time = Column(DateTime)
 
@@ -131,7 +131,7 @@ class Get(Processor):
     @handler
     def get_factoid(self, event, verb, name, number, pattern):
         session = ibid.databases.ibid()
-        query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
+        query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).filter(FactoidName.factoid_id==FactoidValue.factoid_id)
         if pattern:
             query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
         if number:
@@ -140,7 +140,7 @@ class Get(Processor):
             except IndexError:
                 return
         else:
-            factoid = query.order_by(func.random()).first()
+            factoid = query.first()
 
         if factoid:
             (fact, value) = factoid
