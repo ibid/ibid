@@ -7,7 +7,7 @@ help = {'dict': 'Defines words and checks spellings.'}
 
 class Dict(Processor):
     """(spell|define) <word> [using (<dictionary>|<stratergy>)]
-    (dictionaries|stratergies)"""
+    (dictionaries|strategies)"""
     feature = 'dict'
 
     server = 'localhost'
@@ -16,7 +16,7 @@ class Dict(Processor):
     def setup(self):
         self.connection = Connection(self.server, self.port)
         self.dictionaries = self.connection.getdbdescs()
-        self.stratergies = self.connection.getstratdescs()
+        self.strategies = self.connection.getstratdescs()
 
     @match(r'^define\s+(.+?)(?:\s+using\s+(.+))?$')
     def define(self, event, word, dictionary):
@@ -32,9 +32,9 @@ class Dict(Processor):
     def handle_dictionaries(self, event):
         event.addresponse(', '.join(self.dictionaries.keys()))
 
-    @match(r'^stratergies$')
-    def handle_stratergies(self, event):
-        event.addresponse(', '.join(self.stratergies.keys()))
+    @match(r'^strategies$')
+    def handle_strategies(self, event):
+        event.addresponse(', '.join(self.strategies.keys()))
 
     @match(r'^dictionary\s+(.+?)$')
     def handle_dictionary(self, event, dictionary):
@@ -45,8 +45,8 @@ class Dict(Processor):
 
     @match(r'^stratergy\s+(.+?)$')
     def handle_stratergy(self, event, stratergy):
-        if stratergy in self.stratergies:
-            event.addresponse(self.stratergies[stratergy])
+        if stratergy in self.strategies:
+            event.addresponse(self.strategies[stratergy])
         else:
             event.addresponse(u"I don't have that response")
 
