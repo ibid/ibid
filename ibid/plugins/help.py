@@ -41,7 +41,8 @@ class Help(Processor):
 		for processor in ibid.processors:
 			for name, klass in inspect.getmembers(processor, inspect.isclass):
 				if hasattr(klass, 'feature') and klass.feature == feature and klass.__doc__:
-					event.addresponse('Usage: %s' % klass.__doc__)
+					for line in klass.__doc__.splitlines():
+						event.addresponse('Usage: %s' % line.strip())
 
 		if not event.responses:
 			event.addresponse(u"I don't know how to use %s either" % feature)
