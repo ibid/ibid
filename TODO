@@ -14,3 +14,34 @@ Accounts: Modify/delete accounts, identities and attributes
 Private attributes?
 Handle SQL errors and rollback transaction
 Factoids: Use _% instead of %
+
+Plugins:
+Babel
+Base convertor
+Bash.org
+Choose
+Dict
+Divine (factoid?)
+Dvorak
+Exchange
+Feeds
+Google (with define)
+HowFar
+Karma
+LastFM
+Logs
+Lotto
+Memo
+Morse
+Nickometer
+Ping/Traceroute
+RFC
+Rot13
+Events
+Summon
+SVN
+Twitter
+Units
+URL grab
+URL lengthen/shorten
+Weather
