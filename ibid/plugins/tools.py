@@ -1,5 +1,6 @@
 import re
 from random import random, randint
+from subprocess import Popen, PIPE
 
 import ibid
 from ibid.plugins import Processor, match
@@ -35,7 +36,7 @@ bases = {   'bin': (lambda x: int(x, 2), lambda x: "".join(map(lambda y:str((x>>
             'dec': (lambda x: int(x, 10), lambda x: x),
             'ascii': (ord, chr),
         }
-help['base'] = 'Convert between numeric bases as well as ASCII.'
+help['base'] = 'Converts between numeric bases as well as ASCII.'
 class Base(Processor):
     """convert <num> from <base> to <base>"""
     feature = 'base'
@@ -45,5 +46,30 @@ class Base(Processor):
         number = bases[frm.lower()][0](number)
         number = bases[to.lower()][1](number)
         event.addresponse(str(number))
+
+unit_names =    {   'fahrenheit': 'degF',
+                    'celsius': 'degC',
+                }
+help['units'] = 'Converts values between various units.'
+class Units(Processor):
+    """convert [<value>] <unit> to <unit>"""
+    feature = 'units'
+    units = 'units'
+
+    @match(r'^convert\s+([0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
+    def convert(self, event, value, frm, to):
+        if frm.lower() in unit_names:
+            frm = unit_names[frm.lower()]
+        if to in unit_names:
+            to = unit_names[to.lower()]
+        if value:
+            frm = '%s %s' % (value, frm)
+
+        units = Popen([self.units, '--verbose', frm, to], stdout=PIPE, stderr=PIPE)
+        output, error = units.communicate()
+        code = units.wait()
+
+        if code == 0:
+            event.addresponse(output.splitlines()[0].strip())
 
 # vi: set et sta sw=4 ts=4:
