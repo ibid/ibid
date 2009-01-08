@@ -72,7 +72,7 @@ class Responses(Processor):
                 response['target'] = event.channel
             if 'source' not in response:
                 response['source'] = event.source
-            if 'action' in response and ibid.config.sources[ibid.sources[response['source']].name]['type'] != 'irc':
+            if 'action' in response and ibid.config.sources[ibid.sources[response['source'].lower()].name]['type'] != 'irc':
                 response['reply'] = '* %s %s' % (ibid.config['botname'], response['reply'])
             converted.append(response)
 

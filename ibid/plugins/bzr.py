@@ -37,7 +37,7 @@ class LogFormatter(log.LogFormatter):
 		self.to_file.write(commit)
 
 class Bazaar(Processor):
-	"""last commit | commit <revno>"""
+	"""last commit | commit <revno> [full]"""
 	feature = 'bzr'
 
 	def setup(self):
