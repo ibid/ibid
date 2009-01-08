@@ -55,14 +55,12 @@ class FactoidValue(Base):
 FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
 FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
 
-percent_escaped_re = re.compile(r'(?<!\\\\)\\%')
-percent_re = re.compile(r'(?<!\\)%')
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
-    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '%')
+    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
 class Utils(Processor):
     """literal <name> [starting at <number>]
@@ -145,7 +143,7 @@ class Get(Processor):
         if factoid:
             (fact, value) = factoid
             reply = value.value
-            pattern = percent_escaped_re.sub('(.*)', re.escape(fact.name)).replace('\\\\\\%', '%').replace('\\\\\\_', '_')
+            pattern = re.escape(fact.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 1
             for capture in re.match(pattern, name, re.I).groups():
@@ -175,7 +173,7 @@ class Get(Processor):
                 if count:
                     event.addresponse({'reply': reply})
                 else:
-                    reply = '%s %s' % (percent_re.sub('$arg', fact.name).replace('\\%', '%').replace('\\_', '_'), reply)
+                    reply = '%s %s' % (fact.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
                     event.addresponse(reply)
 
         session.close()
