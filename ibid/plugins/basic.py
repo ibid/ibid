@@ -1,4 +1,5 @@
 from random import choice
+import re
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
@@ -68,5 +69,15 @@ class Redirect(Processor):
                     response['target'] = event.redirect
                     if 'redirect_source' in event:
                         response['source'] = event.redirect_source
+
+choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
+help['choose'] = 'Choose one of the given options.'
+class Choose(Processor):
+    """choose <choice> or <choice>..."""
+    feature = 'choose'
+
+    @match(r'^(?:choose|choice|pick)\s+(.+)$')
+    def choose(self, event, choices):
+        event.addresponse('I choose %s' % choice(choose_re.split(choices)))
 
 # vi: set et sta sw=4 ts=4:
