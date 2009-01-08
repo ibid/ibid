@@ -42,12 +42,8 @@ class Base(Processor):
 
     @match(r'^convert\s+(\S+)\s+(?:from\s+)?(%s)\s+(?:to\s+)?(%s)$' % ('|'.join(bases.keys()), '|'.join(bases.keys())))
     def base(self, event, number, frm, to):
-        frm = frm.lower()
-        to = to.lower()
-
-        number = bases[frm][0](number)
-        number = bases[to][1](number)
-
+        number = bases[frm.lower()][0](number)
+        number = bases[to.lower()][1](number)
         event.addresponse(str(number))
 
 # vi: set et sta sw=4 ts=4:
