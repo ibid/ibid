@@ -69,20 +69,4 @@ class Redirect(Processor):
                     if 'redirect_source' in event:
                         response['source'] = event.redirect_source
 
-help['complain'] = 'Responds with a complaint. Used to handle unprocessed messages.'
-class Complain(Processor):
-    feature = 'complain'
-
-    priority = 950
-    complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?')
-    notauthed = (u"You're not my bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me")
-
-    @handler
-    def complain(self, event):
-        if 'notauthed' in event:
-            event.addresponse(choice(self.notauthed))
-        else:
-            event.addresponse(choice(self.complaints))
-        return event
-
 # vi: set et sta sw=4 ts=4:
