@@ -18,6 +18,7 @@ Single declarative_base()
 Bazaar: Multiple branches
 Redirect: Don't redirect complaints
 Permissions: Add remove
+Plugin testing script
 
 Plugins:
 Babel
