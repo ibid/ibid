@@ -1,7 +1,6 @@
 from cStringIO import StringIO
 from time import strftime, localtime
 from datetime import datetime
-from urlparse import urlparse
 
 from bzrlib.branch import Branch
 from bzrlib import log
@@ -41,14 +40,18 @@ class LogFormatter(log.LogFormatter):
 		self.to_file.write(commit)
 
 class Bazaar(Processor):
-	"""last commit | commit <revno> [full]"""
+	"""last commit | commit <revno> [full]
+	repositories"""
 	feature = 'bzr'
 
 	def setup(self):
 		self.branches = {}
-		for repository in self.repositories:
-			path = urlparse(repository)[2].split('/')
-			self.branches[(path[-1] or path[-2]).lower()] = Branch.open(repository)
+		for name, repository in self.repositories.items():
+			self.branches[name.lower()] = Branch.open(repository)
+
+	@match(r'^(?:repos|repositories)$')
+	def handle_repositories(self, event):
+		event.addresponse(', '.join(self.repositories.keys()))
 
 	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
 	def commit(self, event, revno, repository, full):
