@@ -31,6 +31,9 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.name = self.parent.name
         self.parent.send = self.send
         self.parent.proto = self
+        if 'rooms' in ibid.config.sources[self.name]:
+            for room in ibid.config.sources[self.name]['rooms']:
+                self.join(room)
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
         event = Event(self.name, u'state')
