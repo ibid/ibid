@@ -15,7 +15,6 @@ Accounts: Modify/delete accounts, identities and attributes
 Private attributes?
 Handle SQL errors and rollback transaction
 Single declarative_base()
-Bazaar: Multiple branches
 Redirect: Don't redirect complaints
 Permissions: Add remove
 Plugin testing script
@@ -26,7 +25,6 @@ Divine (factoid?)
 Dvorak
 Exchange
 Feeds
-Google (with define)
 HowFar
 Karma
 LastFM

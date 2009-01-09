@@ -13,12 +13,10 @@ from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-encoding = 'latin-1'
+encoding = 'utf-8'
 
 class Ircbot(irc.IRCClient):
 
-    encoding = 'latin-1'
-        
     def connectionMade(self):
         self.nickname = ibid.config.sources[self.factory.name]['nick'].encode(encoding)
         irc.IRCClient.connectionMade(self)

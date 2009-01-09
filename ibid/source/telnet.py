@@ -6,7 +6,7 @@ import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-encoding = 'latin-1'
+encoding = 'utf-8'
 
 class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
