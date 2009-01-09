@@ -1,13 +1,15 @@
-"""Retrieves various bits of information."""
-
 import time
 from subprocess import Popen, PIPE
+
+from nickometer import nickometer
 
 import ibid
 from ibid.plugins import Processor, match
 
+help = {}
+
 class DateTime(Processor):
-    """Usage: (date|time)"""
+    """(date|time)"""
 
     @match(r'^(?:date|time)$')
     def handler(self, event):
@@ -15,8 +17,10 @@ class DateTime(Processor):
         event.addresponse(reply)
         return event
 
+help['fortune'] = 'Returns a random fortune.'
 class Fortune(Processor):
-    """Usage: fortune"""
+    """fortune"""
+    feature = 'fortune'
 
     fortune = 'fortune'
 
@@ -32,5 +36,19 @@ class Fortune(Processor):
             event.addresponse(u"Couldn't execute fortune")
 
         return event
+
+help['nickometer'] = 'Calculates how lame a nick is.'
+class Nickometer(Processor):
+    """nickometer [<nick>] [with reasons]"""
+    feature = 'nickometer'
+    
+    @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
+    def handle_nickometer(self, event, nick, wreasons):
+        nick = nick or event.who
+        score, reasons = nickometer(str(nick))
+        print reasons
+        event.addresponse(u"%s is %s%% lame" % (nick, score))
+        if wreasons:
+            event.addresponse(', '.join(['%s (%s)' % reason for reason in reasons]))
 
 # vi: set et sta sw=4 ts=4:
