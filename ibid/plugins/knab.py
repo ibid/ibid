@@ -5,8 +5,8 @@ from ibid.plugins import Processor, handler
 
 class Knab(Processor):
 
-	knabdir = '/home/mgorven/projects/knab/'
-	config = '/home/mgorven/projects/ibid/Knab.cfg'
+	knabdir = '../knab/'
+	config = 'Knab.cfg'
 
 	def __init__(self, name):
 		Processor.__init__(self, name)
@@ -18,10 +18,14 @@ class Knab(Processor):
 		perl.require('Knab::Processor')
 		perl.eval('$::dumper=new Knab::Dumper();')
 		perl.eval('$::config = new Knab::Conf(Basedir=>"%s", Filename=>"%s");' % (self.knabdir, self.config))
+		factoidDB = perl.eval('$::config->getValue("FactoidDB/module");')
+		perl.require(factoidDB)
+		perl.eval('$::db=new %s();' % factoidDB)
 		modules = perl.callm('new', 'Knab::Modules')
 		self.processor = perl.callm('new', 'Knab::Processor', modules)
 
-	def process(self, event):
+	@handler
+	def handler(self, event):
 		event.input = event.message
 		event.oldinput = event.message_raw
 		event.withpunc = event.message_raw
