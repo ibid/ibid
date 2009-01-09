@@ -22,7 +22,9 @@ class Python(Processor):
 	def eval(self, event, code):
 		try:
 			globals = {}
-			#exec('import os', globals)
+			exec('import os', globals)
+			exec('import sys', globals)
+			exec('import re', globals)
 			result = str(eval(code, globals, {}))
 		except Exception, e:
 			result = str(e)
