@@ -50,7 +50,7 @@ class Bazaar(Processor):
 			path = urlparse(repository)[2].split('/')
 			self.branches[(path[-1] or path[-2]).lower()] = Branch.open(repository)
 
-	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:\s+(\S+))?(\s+full)?$')
+	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
 	def commit(self, event, revno, repository, full):
 		branch = None
 		if repository:
