@@ -30,4 +30,13 @@ class Base64(Processor):
     def base64(self, event, base, operation, string):
         event.addresponse(eval('base64.b%s%sode' % (base, operation.lower()))(string))
 
+help['rot13'] = 'Transforms a string with ROT13.'
+class Rot13(Processor):
+    """rot13 <string>"""
+    feature = 'rot13'
+
+    @match(r'^rot13\s+(.+)$')
+    def rot13(self, event, string):
+        event.addresponse(string.encode('rot13'))
+
 # vi: set et sta sw=4 ts=4:

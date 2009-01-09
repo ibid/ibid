@@ -9,6 +9,8 @@ from httplib2 import Http
 import ibid
 from ibid.plugins import Processor, match, handler
 
+help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
+
 Base = declarative_base()
 
 class URL(Base):
@@ -46,6 +48,8 @@ class Grab(Processor):
         session.close()
 
 class Shorten(Processor):
+    """shorten <url>"""
+    feature = 'url'
 
     @match(r'^shorten\s+(\S+\.\S+)$')
     def shorten(self, event, url):
@@ -61,6 +65,8 @@ class NullRedirect(HTTPRedirectHandler):
         return None
 
 class Lengthen(Processor):
+    """<url>"""
+    feature = 'url'
 
     services = ('http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/', 'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/', 'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/')
 
