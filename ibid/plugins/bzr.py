@@ -4,7 +4,7 @@ from datetime import datetime
 
 from bzrlib.branch import Branch
 from bzrlib import log
-from bzrlib.errors import InvalidRevisionNumber
+from bzrlib.errors import InvalidRevisionNumber, NotBranchError
 
 import ibid
 from ibid.plugins import Processor, match
@@ -48,11 +48,14 @@ class Bazaar(Processor):
 	def setup(self):
 		self.branches = {}
 		for name, repository in self.repositories.items():
-			self.branches[name.lower()] = Branch.open(repository)
+			try:
+				self.branches[name.lower()] = Branch.open(repository)
+			except NotBranchError, e:
+				print str(e)
 
 	@match(r'^(?:repos|repositories)$')
 	def handle_repositories(self, event):
-		event.addresponse(', '.join(self.repositories.keys()))
+		event.addresponse(', '.join(self.branches.keys()))
 
 	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
 	def commit(self, event, revno, repository, full):
