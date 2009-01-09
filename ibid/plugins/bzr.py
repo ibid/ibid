@@ -1,9 +1,11 @@
 from cStringIO import StringIO
 from time import strftime, localtime
 from datetime import datetime
+from urlparse import urlparse
 
 from bzrlib.branch import Branch
 from bzrlib import log
+from bzrlib.errors import InvalidRevisionNumber
 
 import ibid
 from ibid.plugins import Processor, match
@@ -43,22 +45,42 @@ class Bazaar(Processor):
 	feature = 'bzr'
 
 	def setup(self):
-		self.branch = Branch.open(self.repository)
+		self.branches = {}
+		for repository in self.repositories:
+			path = urlparse(repository)[2].split('/')
+			self.branches[(path[-1] or path[-2]).lower()] = Branch.open(repository)
 
-	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(\s+full)?$')
-	def commit(self, event, revno, full):
-		last = self.branch.revision_id_to_revno(self.branch.last_revision())
+	@match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:\s+(\S+))?(\s+full)?$')
+	def commit(self, event, revno, repository, full):
+		branch = None
+		if repository:
+			repository = repository.lower()
+			if repository not in self.branches:
+				event.addresponse(u"I don't know about that repository")
+				return
+			branch = self.branches[repository]
+
+		if not branch:
+			if len(self.branches) == 1:
+				branch = self.branches.values()[0]
+			else:
+				branches = self.branches.values()
+				branches.sort(reverse=True, key=lambda x: x.repository.get_revision(x.last_revision_info()[1]).timestamp)
+				branch = branches[0]
 
 		if revno:
 			revno = int(revno)
-			if revno < 1 or revno > last:
+			try:
+				branch.check_revno(revno)
+			except InvalidRevisionNumber:
 				event.addresponse(u'No such revision')
 				return
 		else:
+			last = branch.revision_id_to_revno(branch.last_revision())
 			revno = last
 
 		f=StringIO();
-		log.show_log(self.branch, LogFormatter(f, self.branch, full), start_revision=revno, end_revision=revno, limit=1)
+		log.show_log(branch, LogFormatter(f, branch, full), start_revision=revno, end_revision=revno, limit=1)
 		f.seek(0)
 		commits = f.readlines()
 
