@@ -52,7 +52,7 @@ class Ping(Processor):
 
     ping = 'ping'
 
-    @match(r'^ping\s+(\S+)$$')
+    @match(r'^ping\s+(\S+)$')
     def handle_ping(self, event, host):
         
         ping = Popen([self.ping, '-q', '-c', '3', host], stdout=PIPE, stderr=PIPE)
@@ -63,5 +63,25 @@ class Ping(Processor):
             event.addresponse(' '.join(output.splitlines()[-2:]))
         else:
             event.addresponse(error.replace('\n', ' ').replace('ping:', '', 1).strip())
+
+help['tracepath'] = 'Traces the path to the given host.'
+class Tracepath(Processor):
+    """tracepath <host>"""
+    feature = 'tracepath'
+
+    tracepath = 'tracepath'
+
+    @match(r'^tracepath\s+(\S+)$')
+    def handle_tracepath(self, event, host):
+
+        tracepath = Popen([self.tracepath, host], stdout=PIPE, stderr=PIPE)
+        output, error = tracepath.communicate()
+        code = tracepath.wait()
+
+        if code == 0:
+            for line in output.splitlines():
+                event.addresponse(line)
+        else:
+            event.addresponse(error.replace('\n', ' ').strip())
 
 # vi: set et sta sw=4 ts=4:
