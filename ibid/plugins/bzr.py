@@ -30,6 +30,8 @@ class LogFormatter(log.LogFormatter):
 				changes.append('Modified: %s' % ', '.join([file[0] for file in delta.modified]))
 			if delta.removed:
 				changes.append('Removed: %s' % ', '.join([file[0] for file in delta.removed]))
+			if delta.renamed:
+				changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
 			commit = 'Commit %s by %s on %s at %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), strftime('%Y/%m/%d', when), strftime('%H:%M:%S', when), revision.rev.message.replace('\n', ' '), '; '.join(changes))
 		else:
