@@ -14,10 +14,11 @@ help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
 
 class LogFormatter(log.LogFormatter):
 
-	def __init__(self, f, branch, full):
+	def __init__(self, f, repository, branch, full):
 		log.LogFormatter.__init__(self, f)
 		self.branch = branch
 		self.full = full
+		self.repository = repository
 
 	def log_revision(self, revision):
 		if self.full:
@@ -34,13 +35,13 @@ class LogFormatter(log.LogFormatter):
 			if delta.renamed:
 				changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
-			commit = 'Commit %s by %s on %s at %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), strftime('%Y/%m/%d', when), strftime('%H:%M:%S', when), revision.rev.message.replace('\n', ' '), '; '.join(changes))
+			commit = 'Commit %s by %s to %s on %s at %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), self.repository, strftime('%Y/%m/%d', when), strftime('%H:%M:%S', when), revision.rev.message.replace('\n', ' '), '; '.join(changes))
 		else:
-			commit = 'Commit %s by %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2), revision.rev.get_summary().replace('\n', ' '))
+			commit = 'Commit %s by %s to %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.repository, ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2), revision.rev.get_summary().replace('\n', ' '))
 		self.to_file.write(commit)
 
 class Bazaar(Processor):
-	"""last commit | commit <revno> [full]
+	"""last commit to <repo> | commit <revno> [full]
 	repositories"""
 	feature = 'bzr'
 
@@ -67,9 +68,7 @@ class Bazaar(Processor):
 			if len(self.branches) == 1:
 				branch = self.branches.values()[0]
 			else:
-				branches = self.branches.values()
-				branches.sort(reverse=True, key=lambda x: x.repository.get_revision(x.last_revision_info()[1]).timestamp)
-				branch = branches[0]
+				(repository, branch) = sorted(self.branches.iteritems(), reverse=True, key=lambda (k,v): v.repository.get_revision(v.last_revision_info()[1]).timestamp)[0]
 
 		if revno:
 			revno = int(revno)
@@ -83,7 +82,7 @@ class Bazaar(Processor):
 			revno = last
 
 		f=StringIO();
-		log.show_log(branch, LogFormatter(f, branch, full), start_revision=revno, end_revision=revno, limit=1)
+		log.show_log(branch, LogFormatter(f, repository, branch, full), start_revision=revno, end_revision=revno, limit=1)
 		f.seek(0)
 		commits = f.readlines()
 
