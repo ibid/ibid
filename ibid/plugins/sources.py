@@ -1,7 +1,11 @@
 import ibid
 from ibid.plugins import Processor, match, authorise
 
+help = {'sources': 'Controls and lists the configured sources.'}
+
 class Admin(Processor):
+	"""(connect|disconnect) (to|from) <source>"""
+	feature = 'sources'
 
 	@match(r'^connect\s+(?:to\s+)?(\S+)$')
 	@authorise('sources')
@@ -30,6 +34,8 @@ class Admin(Processor):
 			event.addresponse(u"Couldn't load %s source" % source)
 
 class Info(Processor):
+	"""sources"""
+	feature = 'sources'
 
 	@match(r'^sources$')
 	def list(self, event):
@@ -37,9 +43,13 @@ class Info(Processor):
 		for name, source in ibid.sources.items():
 			reply += source.name
 			if ibid.config.sources[source.name]['type'] == 'irc':
-				reply += ' (%s)' % ibid.config.sources[source.name]['server']
+				reply += ' (irc://%s)' % ibid.config.sources[source.name]['server']
 			elif ibid.config.sources[source.name]['type'] == 'jabber':
-				reply += ' (%s)' % ibid.config.sources[source.name]['jid'].split('/')[0]
+				reply += ' (xmpp://%s)' % ibid.config.sources[source.name]['jid'].split('/')[0]
+			elif ibid.config.sources[source.name]['type'] == 'smtp':
+				reply += ' (mailto:%s)' % ibid.config.sources[source.name]['address']
+			elif ibid.config.sources[source.name]['type'] == 'http' and 'host' in ibid.config.sources[source.name]:
+				reply += ' (http://%s%s)' % (ibid.config.sources[source.name]['host'], 'port' in ibid.config.sources[source.name] and ':%s' % ibid.config.sources[source.name]['port'] or '')
 			reply += ', '
 		reply = reply[:-2]
 		event.addresponse(reply)
