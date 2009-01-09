@@ -22,8 +22,6 @@ Plugin testing script
 
 Plugins:
 Babel
-Bash.org
-Dict
 Divine (factoid?)
 Dvorak
 Exchange
@@ -44,7 +42,6 @@ Events
 Summon
 SVN
 Twitter
-Units
 URL grab
 URL lengthen/shorten
 Weather
