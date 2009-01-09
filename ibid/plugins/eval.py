@@ -11,7 +11,11 @@ except ImportError:
 import ibid
 from ibid.plugins import Processor, match, authorise
 
+help = {'eval': 'Evaluates Python, Perl and Lua code.'}
+
 class Python(Processor):
+	"""py <code>"""
+	feature = 'eval'
 
 	@match(r'^py(?:thon)?\s+(.+)$')
 	@authorise('eval')
@@ -25,6 +29,8 @@ class Python(Processor):
 		event.addresponse(result)
 
 class Perl(Processor):
+	"""pl <code>"""
+	feature = 'eval'
 
 	@match(r'^(?:perl|pl)\s+(.+)$')
 	@authorise('eval')
@@ -37,6 +43,8 @@ class Perl(Processor):
 		event.addresponse(str(result))
 
 class Lua(Processor):
+	"""lua <code>"""
+	feature = 'eval'
 
 	@match(r'^lua\s+(.+)$')
 	@authorise('eval')
