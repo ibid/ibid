@@ -3,12 +3,17 @@ try:
 except ImportError:
 	pass
 
+try:
+	import lua
+except ImportError:
+	pass
+
 import ibid
 from ibid.plugins import Processor, match, authorise
 
 class Python(Processor):
 
-	@match(r'^py\s+(.+)$')
+	@match(r'^py(?:thon)?\s+(.+)$')
 	@authorise('eval')
 	def eval(self, event, code):
 		try:
@@ -21,12 +26,24 @@ class Python(Processor):
 
 class Perl(Processor):
 
-	@match(r'^perl\s+(.+)$')
+	@match(r'^(?:perl|pl)\s+(.+)$')
 	@authorise('eval')
 	def eval(self, event, code):
 		try:
-			result = str(perl.eval(code))
+			result = perl.eval(code)
 		except Exception, e:
-			result = str(e)
+			result = e
 
-		event.addresponse(result)
+		event.addresponse(str(result))
+
+class Lua(Processor):
+
+	@match(r'^lua\s+(.+)$')
+	@authorise('eval')
+	def eval(self, event, code):
+		try:
+			result = lua.eval(code)
+		except Exception, e:
+			result = e
+
+		event.addresponse(str(result))
