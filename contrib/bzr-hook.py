@@ -9,6 +9,8 @@ boturl = 'http://kennels.dyndns.org:8080/'
 
 def post_change_branch_tip(params):
 	repository = urlparse(params.branch.base)[2]
+	if repository.startswith('///'):
+		repository = repository.replace('//', '', 1)
 	if repository in repositories:
 		for revno in xrange(params.old_revno+1, params.new_revno+1):
 			urlopen('%s?m=commit+%s+%s' % (boturl, revno, repositories[repository])).close()
