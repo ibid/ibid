@@ -60,7 +60,7 @@ class Permission(Base):
     name = Column(Unicode)
     value = Column(Unicode)
 
-    def __init__(self, name, value, account_id=None):
+    def __init__(self, name=None, value=None, account_id=None):
         self.account_id = account_id
         self.name = name
         self.value = value

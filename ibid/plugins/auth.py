@@ -2,6 +2,8 @@ import string
 from hashlib import sha512
 from random import choice
 
+from sqlalchemy.sql import func
+
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.auth_ import Credential, Permission
@@ -57,12 +59,12 @@ class AddAuth(Processor):
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
-    """(grant|revoke) <permission> (to|from|on) <username> [when authed] | list permissions"""
+    """(grant|revoke|remove) <permission> (to|from|on) <username> [when authed] | list permissions"""
     feature = 'auth'
 
-    @match(r'^(grant|revoke)\s+(.+?)\s+(?:to|from|on)\s+(.+?)(\s+(?:when|if)\s+(?:auth|authed|authenticated))?$')
+    @match(r'^(grant|revoke|remove)\s+(.+?)\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
     @authorise('admin')
-    def grant(self, event, action, permission, username, auth):
+    def grant(self, event, action, name, username, auth):
 
         session = ibid.databases.ibid()
         account = session.query(Account).filter_by(username=username).first()
@@ -71,20 +73,32 @@ class Permissions(Processor):
             session.close()
             return
 
-        if action.lower() == 'revoke':
-            value = 'no'
-        elif auth:
-            value = 'auth'
-        else:
-            value = 'yes'
+        permission = session.query(Permission).filter_by(account_id=account.id).filter(func.lower(Permission.name)==name.lower()).first()
+        if action.lower() == 'remove':
+            if permission:
+                session.delete(permission)
+            else:
+                event.addresponse(u"%s doesn't have that permission anyway")
+                return
 
-        permission = Permission(permission, value)
-        account.permissions.append(permission)
-        session.add(account)
+        else:
+            if not permission:
+                permission = Permission(name, account_id=account.id)
+
+            if action.lower() == 'revoke':
+                value = 'no'
+            elif auth:
+                value = 'auth'
+            else:
+                value = 'yes'
+
+            permission.value = value
+            session.add(permission)
+
         session.commit()
         session.close()
 
-        event.addresponse(u'Okay')
+        event.addresponse(True)
 
     @match(r'^permissions(?:\s+for\s+(\S+))?$')
     def list(self, event, username):
