@@ -2,7 +2,7 @@ from datetime import datetime
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from httplib2 import Http
 
@@ -17,8 +17,8 @@ class URL(Base):
     __tablename__ = 'urls'
 
     id = Column(Integer, primary_key=True)
-    url = Column(Unicode)
-    channel = Column(Unicode)
+    url = Column(UnicodeText)
+    channel = Column(Unicode(32))
     identity = Column(Integer)
     time = Column(DateTime)
 

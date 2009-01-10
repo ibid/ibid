@@ -16,7 +16,7 @@ class Karma(Base):
     __tablename__ = 'karma'
 
     id = Column(Integer, primary_key=True)
-    subject = Column(Unicode)
+    subject = Column(Unicode(32))
     karma = Column(Integer)
     time = Column(DateTime)
 

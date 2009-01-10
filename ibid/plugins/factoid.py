@@ -3,7 +3,7 @@ from random import choice
 from time import localtime, strftime
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
 from sqlalchemy.orm import relation, mapper, eagerload
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql import func
@@ -20,9 +20,9 @@ class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode)
+    name = Column(Unicode(256))
     factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
-    identity = Column(Unicode)
+    identity = Column(Integer)
     time = Column(DateTime)
 
     def __init__(self, name, identity, factoid_id=None):
@@ -38,9 +38,9 @@ class FactoidValue(Base):
     __tablename__ = 'factoid_values'
 
     id = Column(Integer, primary_key=True)
-    value = Column(Unicode)
+    value = Column(UnicodeText)
     factoid_id = Column(Integer, ForeignKey('factoid_names.factoid_id', use_alter=True, name='factoid_fk'))
-    identity = Column(Unicode)
+    identity = Column(Integer)
     time = Column(DateTime)
 
     def __init__(self, value, identity, factoid_id=None):

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey, Boolean, UnicodeText
 from sqlalchemy.orm import relation, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -11,8 +11,8 @@ class Identity(Base):
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    source = Column(Unicode)
-    identity = Column(Unicode)
+    source = Column(Unicode(16))
+    identity = Column(Unicode(64))
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -27,8 +27,8 @@ class Attribute(Base):
     
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    name = Column(Unicode)
-    value = Column(Unicode)
+    name = Column(Unicode(16))
+    value = Column(Unicode(64))
 
     def __init__(self, name, value):
         self.name = name
@@ -42,9 +42,9 @@ class Credential(Base):
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    source = Column(Unicode)
-    method = Column(Unicode)
-    credential = Column(Unicode)
+    source = Column(Unicode(16))
+    method = Column(Unicode(16))
+    credential = Column(Unicode(256))
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
@@ -57,8 +57,8 @@ class Permission(Base):
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    name = Column(Unicode)
-    value = Column(Unicode)
+    name = Column(Unicode(16))
+    value = Column(Unicode(4))
 
     def __init__(self, name=None, value=None, account_id=None):
         self.account_id = account_id
@@ -69,7 +69,7 @@ class Account(Base):
     __tablename__ = 'accounts'
 
     id = Column(Integer, primary_key=True)
-    username = Column(Unicode)
+    username = Column(Unicode(32))
 
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)
@@ -87,9 +87,9 @@ class Sighting(Base):
 
     id = Column(Integer, primary_key=True)
     identity_id = Column(Integer, ForeignKey('identities.id'))
-    type = Column(Unicode)
-    channel = Column(Unicode)
-    value = Column(Unicode)
+    type = Column(Unicode(8))
+    channel = Column(Unicode(32))
+    value = Column(UnicodeText)
     time = Column(DateTime)
     count = Column(Integer)
 
@@ -108,7 +108,7 @@ class Memo(Base):
     id = Column(Integer, primary_key=True)
     frm = Column(Integer, ForeignKey('identities.id'))
     to = Column(Integer, ForeignKey('identities.id'))
-    memo = Column(Unicode)
+    memo = Column(UnicodeText)
     private = Column(Boolean)
     delivered = Column(Boolean)
     time = Column(DateTime)
