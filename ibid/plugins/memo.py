@@ -35,11 +35,10 @@ class Tell(Processor):
 
 class Deliver(Processor):
 
-    addressed = False
-    processed = True
+    def process(self, event):
+        if event.type not in ('message', 'state'):
+            return
 
-    @handler
-    def deliver(self, event):
         session = ibid.databases.ibid()
         if event.account:
             account = session.query(Account).get(event.account)
@@ -47,17 +46,24 @@ class Deliver(Processor):
         else:
             identities = (event.identity,)
         memos = session.query(Memo).filter_by(delivered=False).filter(Memo.to.in_(identities)).all()
-        for memo in memos:
-            message = 'By the way, %s told me to tell you %s %s ago' % (memo.sender.identity, memo.memo, ago(datetime.now()-memo.time))
-            if memo.private:
-                event.addresponse({'reply': message, 'target': event.sender_id})
-            else:
-                event.addresponse(message)
 
-            memo.delivered = True
-            session.add(memo)
+        if len(memos) > 0:
+            if event.type == 'state' and event.state in ('joined', 'available'):
+                event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender_id})
 
-        session.commit()
+            elif event.type == 'message':
+                for memo in memos:
+                    message = 'By the way, %s told me to tell you %s %s ago' % (memo.sender.identity, memo.memo, ago(datetime.now()-memo.time))
+                    if memo.private:
+                        event.addresponse({'reply': message, 'target': event.sender_id})
+                    else:
+                        event.addresponse(message)
+
+                    memo.delivered = True
+                    session.add(memo)
+
+                session.commit()
+
         session.close()
 
 # vi: set et sta sw=4 ts=4:
