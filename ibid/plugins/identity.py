@@ -10,7 +10,7 @@ from ibid.models import Account, Identity, Attribute
 
 help = {}
 
-help['accounts'] = 'Adds an account, which is used to link identities.'
+help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
     """create account <name>"""
     feature = 'accounts'
@@ -48,10 +48,11 @@ class Accounts(Processor):
 
 chars = string.letters + string.digits
 
-help['identities'] = 'Adds and removes identities from accounts.'
 class Identities(Processor):
-    """I am <identity> on <source>"""
-    feature = 'identities'
+    """(I|<username>) (am|is) <identity> on <source>
+    remove identity <identity> on <source> [from <username>]"""
+    feature = 'accounts'
+    priority = -10
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -130,10 +131,35 @@ class Identities(Processor):
             del self.tokens[token]
             event.addresponse(u'Identity added')
 
+    @match(r'^remove\s+identity\s+(.+?)\s+on\s+(\S+)(?:\s+from\s+(\S+))?$')
+    def remove(self, event, user, source, username):
+        session = ibid.databases.ibid()
+
+        if not username:
+            account = session.query(Account).get(event.account)
+        else:
+            if not auth_responses(event, 'accounts'):
+                return
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
+                event.addresponse(u"I don't know who %s is" % username)
+                return
+
+        identity = session.query(Identity).filter_by(account_id=account.id).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+        if not identity:
+            event.addresponse(u"I don't know about that identity")
+        else:
+            identity.account_id = None
+            session.add(identity)
+            session.commit()
+            event.addresponse(True)
+
+        session.close()
+
 help['attributes'] = 'Adds and removes attributes attached to an account'
 class Attributes(Processor):
     """set (my|<account>) <name> to <value>"""
-    feature = 'attributes'
+    feature = 'accounts'
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
     def attribute(self, event, username, name, value):

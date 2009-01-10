@@ -11,7 +11,8 @@ Race condition where two identities are created if multiple messages received at
 SMTP source: Handle multiple queries in a single message
 Factoid authorisation
 Deleting factoids: confirmation?, marking as deleted?
-Accounts: Modify/delete accounts, identities and attributes
+Accounts: Modify/delete accounts
+Cache identify
 Private attributes?
 Handle SQL errors and rollback transaction
 Single declarative_base()
