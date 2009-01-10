@@ -29,19 +29,26 @@ class Set(Processor):
     decrease = ('--', 'ftl')
     neutral = ('==',)
     reply = True
+    public = True
 
     def setup(self):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+(.+?)[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
     def set(self, event, subject, adjust, reason):
-        print reason
+        if self.public and not event.public:
+            event.addresponse(u"Karma must be done in public")
+            return
+
         session = ibid.databases.ibid()
         karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
         if not karma:
             karma = Karma(subject)
 
         if adjust.lower() in self.increase:
+            if subject.lower() == event.who.lower():
+                event.addresponse(u"You can't karma yourself!")
+                return
             karma.karma += 1
         elif adjust.lower() in self.decrease:
             karma.karma -= 1
