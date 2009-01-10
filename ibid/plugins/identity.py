@@ -9,6 +9,7 @@ from ibid.plugins import Processor, match, handler, auth_responses
 from ibid.models import Account, Identity, Attribute
 
 help = {}
+identify_cache = {}
 
 help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
@@ -42,6 +43,7 @@ class Accounts(Processor):
             identity.account_id = account.id
             session.add(identity)
             session.commit()
+            identify_cache.clear()
 
         session.close()
         event.addresponse(u'Done')
@@ -109,6 +111,7 @@ class Identities(Processor):
             ident.account_id = account.id
             session.add(ident)
             session.commit()
+            identify_cache.clear()
             event.addresponse(True)
 
     @match(r'^(\S{16})$')
@@ -127,6 +130,7 @@ class Identities(Processor):
             session.add(identity)
             session.commit()
             session.close()
+            identify_cache.clear()
 
             del self.tokens[token]
             event.addresponse(u'Identity added')
@@ -152,6 +156,7 @@ class Identities(Processor):
             identity.account_id = None
             session.add(identity)
             session.commit()
+            identify_cache.clear()
             event.addresponse(True)
 
         session.close()
@@ -216,15 +221,11 @@ class Identify(Processor):
 
     priority = -1600
 
-    def __init__(self, name):
-        Processor.__init__(self, name)
-        self.cache = {}
-
     def process(self, event):
         if 'sender_id' in event:
-            #if event.sender in self.cache:
-            #    (event.identity, event.account) = self.cache[event.sender]
-            #    return
+            if (event.source, event.sender) in identify_cache:
+                (event.identity, event.account) = identify_cache[(event.source, event.sender)]
+                return
 
             session = ibid.databases.ibid()
             identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender_id.lower()).first()
@@ -238,7 +239,7 @@ class Identify(Processor):
                 event.account = identity.account.id
             else:
                 event.account = None
-            self.cache[event.sender] = (event.identity, event.account)
+            identify_cache[(event.source, event.sender)] = (event.identity, event.account)
 
             session.close()
 
