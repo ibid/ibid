@@ -113,8 +113,11 @@ class Reloader(object):
             __import__(module)
             m = eval(module)
             reload(m)
-        except Exception:
-            print_exc()
+        except Exception, e:
+            if isinstance(e, ImportError):
+                print u"Couldn't load %s because it requires module %s" % (name, e.message.replace('No module named ', ''))
+            else:
+                print_exc()
             return False
 
         try:
