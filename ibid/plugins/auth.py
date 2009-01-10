@@ -1,5 +1,8 @@
 import string
-from hashlib import sha512
+try:
+    from hashlib import sha1
+except ImportError:
+    from sha import new as sha1
 from random import choice
 
 from sqlalchemy.sql import func
@@ -13,9 +16,12 @@ help = {}
 
 chars = string.letters + string.digits
 
-def hash(password):
-    salt = ''.join([choice(chars) for i in xrange(8)])
-    return unicode(salt + sha512(salt + password).hexdigest())
+def hash(password, salt=None):
+    if salt:
+        salt = salt[:8]
+    else:
+        salt = ''.join([choice(chars) for i in xrange(8)])
+    return unicode(salt + sha1(salt + password).hexdigest())
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):

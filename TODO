@@ -12,7 +12,6 @@ Factoid authorisation
 Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts
 Private attributes?
-Handle SQL errors and rollback transaction
 Single declarative_base()
 Tests for everything
 Factpacks

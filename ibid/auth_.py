@@ -1,6 +1,5 @@
 from traceback import print_exc
 from time import time
-from hashlib import sha512
 import re
 
 from twisted.internet import reactor
@@ -8,6 +7,7 @@ from sqlalchemy import or_
 
 import ibid
 from ibid.models import Credential, Permission, Account
+from ibid.plugins.auth import hash
 
 permission_re = re.compile('^([+-]?)(\S+)$')
 
@@ -90,8 +90,8 @@ class Auth(object):
             return False
 
         session = ibid.databases.ibid()
-        for credential in session.query(Credential).filter_by(method='password').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
-            if sha512(credential.credential[:8]+password).hexdigest() == credential.credential[8:]:
+        for credential in session.query(Credential).filter_by(method=u'password').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
+            if hash(password, credential.credential) == credential.credential:
                 return True
 
 # vi: set et sta sw=4 ts=4:
