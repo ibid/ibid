@@ -10,6 +10,8 @@ from ibid.plugins import Processor, handler, match
 from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
 
+memo_cache = {}
+
 class Tell(Processor):
 
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
@@ -31,6 +33,7 @@ class Tell(Processor):
         session.add(memo)
         session.commit()
         session.close()
+        memo_cache.clear()
 
         event.addresponse(True)
 
@@ -40,7 +43,7 @@ def get_memos(session, event, delivered=False):
         identities = [identity.id for identity in account.identities]
     else:
         identities = (event.identity,)
-    return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to.in_(identities)).order_by(Memo.time).all()
+    return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to.in_(identities)).order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
 
@@ -49,6 +52,10 @@ class Deliver(Processor):
 
     @handler
     def deliver(self, event):
+        print memo_cache
+        if event.identity in memo_cache:
+            return
+
         session = ibid.databases.ibid()
         memos = get_memos(session, event)
 
@@ -64,6 +71,7 @@ class Deliver(Processor):
 
         session.commit()
         session.close()
+        memo_cache[event.identity] = None
 
 class Notify(Processor):
 
