@@ -36,7 +36,7 @@ class See(Processor):
         sighting.time = datetime.now()
         sighting.count = sighting.count + 1
 
-        session.add(sighting)
+        session.save_or_update(sighting)
         session.commit()
         session.close()
 

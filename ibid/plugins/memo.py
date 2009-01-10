@@ -34,7 +34,7 @@ class Tell(Processor):
             return
 
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg'))
-        session.add(memo)
+        session.save_or_update(memo)
         session.commit()
         session.close()
         memo_cache.clear()
@@ -72,7 +72,7 @@ class Deliver(Processor):
                 event.addresponse(message)
 
             memo.delivered = True
-            session.add(memo)
+            session.save_or_update(memo)
 
         session.commit()
         session.close()

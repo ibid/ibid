@@ -51,7 +51,7 @@ class AddAuth(Processor):
             credential = password
 
         credential = Credential(method, credential, source, account.id)
-        session.add(credential)
+        session.save_or_update(credential)
         session.commit()
         session.close()
 
@@ -93,7 +93,7 @@ class Permissions(Processor):
                 value = 'yes'
 
             permission.value = value
-            session.add(permission)
+            session.save_or_update(permission)
 
         session.commit()
         session.close()

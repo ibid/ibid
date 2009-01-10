@@ -57,7 +57,7 @@ class Set(Processor):
         elif adjust.lower() in self.decrease:
             karma.karma -= 1
 
-        session.add(karma)
+        session.save_or_update(karma)
         session.commit()
         session.close()
 

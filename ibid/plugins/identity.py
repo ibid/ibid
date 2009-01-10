@@ -35,13 +35,13 @@ class Accounts(Processor):
             return
 
         account = Account(username)
-        session.add(account)
+        session.save_or_update(account)
         session.commit()
 
         if not admin:
             identity = session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
-            session.add(identity)
+            session.save_or_update(identity)
             session.commit()
             identify_cache.clear()
 
@@ -75,11 +75,11 @@ class Identities(Processor):
                     event.addresponse(u"I tried to create the account %s for you, but it already exists. Please use 'create account <name>'." % username)
                     return
                 account = Account(username)
-                session.add(account)
+                session.save_or_update(account)
                 session.commit()
                 currentidentity = session.query(Identity).filter_by(id=event.identity).first()
                 currentidentity.account_id = account.id
-                session.add(currentidentity)
+                session.save_or_update(currentidentity)
                 session.commit()
                 event.addresponse(u"I've created the account %s for you" % username)
 
@@ -109,7 +109,7 @@ class Identities(Processor):
             if not ident:
                 ident = Identity(source, identity)
             ident.account_id = account.id
-            session.add(ident)
+            session.save_or_update(ident)
             session.commit()
             identify_cache.clear()
             event.addresponse(True)
@@ -127,7 +127,7 @@ class Identities(Processor):
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
-            session.add(identity)
+            session.save_or_update(identity)
             session.commit()
             session.close()
             identify_cache.clear()
@@ -154,7 +154,7 @@ class Identities(Processor):
             event.addresponse(u"I don't know about that identity")
         else:
             identity.account_id = None
-            session.add(identity)
+            session.save_or_update(identity)
             session.commit()
             identify_cache.clear()
             event.addresponse(True)
@@ -188,7 +188,7 @@ class Attributes(Processor):
                 return
 
         account.attributes.append(Attribute(name, value))
-        session.add(account)
+        session.save_or_update(account)
         session.commit()
         session.close()
         event.addresponse(u'Done')
@@ -231,7 +231,7 @@ class Identify(Processor):
             identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender_id.lower()).first()
             if not identity:
                 identity = Identity(event.source, event.sender_id)
-                session.add(identity)
+                session.save_or_update(identity)
                 session.commit()
 
             event.identity = identity.id

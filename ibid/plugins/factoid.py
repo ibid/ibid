@@ -108,7 +108,7 @@ class Utils(Processor):
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if fact:
             new = FactoidName(escape_name(target), event.identity, fact.factoid_id)
-            session.add(new)
+            session.save_or_update(new)
             session.commit()
             session.close()
             event.addresponse(True)
@@ -212,13 +212,13 @@ class Set(Processor):
             else:
                 next = 1
             fact = FactoidName(escape_name(name), event.identity, next)
-            session.add(fact)
+            session.save_or_update(fact)
             session.commit()
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
         factoid = FactoidValue(value, event.identity, fact.factoid_id)
-        session.add(factoid)
+        session.save_or_update(factoid)
         session.commit()
         session.close()
         event.addresponse(True)

@@ -51,8 +51,8 @@ for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'con
 credential = Credential(u'password', hash(unicode(pass1)))
 account.credentials.append(credential)
 
-session.add(account)
-session.add(identity)
+session.save_or_update(account)
+session.save_or_update(identity)
 session.commit()
 session.close()
 

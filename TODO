@@ -18,6 +18,7 @@ Tests for everything
 Factpacks
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
+Specify lengths on Unicode columns
 
 Plugins:
 Babel
