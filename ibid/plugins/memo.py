@@ -24,11 +24,12 @@ class Tell(Processor):
         to = session.query(Identity).filter(func.lower(Identity.identity)==who.lower()).filter_by(source=event.source).first()
         if not to:
             account = session.query(Account).filter(func.lower(Account.username)==who.lower()).first()
-            for identity in account.identities:
-                if identity.source == event.source:
-                    to = identity
-            if not identity:
-                identity = account.identities[0]
+            if account:
+                for identity in account.identities:
+                    if identity.source == event.source:
+                        to = identity
+                if not identity:
+                    identity = account.identities[0]
         if not to:
             event.addresponse(u"I don't know who %s is" % who)
             return
@@ -57,7 +58,6 @@ class Deliver(Processor):
 
     @handler
     def deliver(self, event):
-        print memo_cache
         if event.identity in memo_cache:
             return
 
@@ -90,11 +90,16 @@ class Notify(Processor):
         if event.state not in ('joined', 'available'):
             return
 
+        if event.identity in memo_cache:
+            return
+
         session = ibid.databases.ibid()
         memos = get_memos(session, event)
 
         if len(memos) > 0:
-                event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender_id})
+            event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender_id})
+        else:
+            memo_cache[event.identity] = None
 
         session.close()
 
