@@ -15,6 +15,7 @@ Private attributes?
 Handle SQL errors and rollback transaction
 Single declarative_base()
 Tests for everything
+Factpacks
 
 Plugins:
 Babel

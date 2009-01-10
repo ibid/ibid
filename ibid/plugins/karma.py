@@ -8,6 +8,8 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match, handler
 
+help = {'karma': 'Keeps track of karma for people and things.'}
+
 Base = declarative_base()
 
 class Karma(Base):
@@ -24,6 +26,8 @@ class Karma(Base):
         self.time = datetime.now()
 
 class Set(Processor):
+    """<subject> (++|--|==|ftw|ftl) [[reason]]"""
+    feature = 'karma'
 
     increase = ('++', 'ftw')
     decrease = ('--', 'ftl')
@@ -61,6 +65,9 @@ class Set(Processor):
             event.addresponse(True)
 
 class Get(Processor):
+    """karma for <subject>
+    [reverse] karmaladder"""
+    feature = 'karma'
 
     @match(r'^karma\s+(?:for\s+)?(.+)$')
     def handle_karma(self, event, subject):

@@ -10,9 +10,13 @@ from ibid.plugins import Processor, handler, match
 from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
 
+help = {'memo': 'Keeps messages for people.'}
+
 memo_cache = {}
 
 class Tell(Processor):
+    """(tell|pm|privmsg|msg) <person> <message>"""
+    feature = 'memo'
 
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
     def tell(self, event, how, who, memo):
@@ -46,6 +50,7 @@ def get_memos(session, event, delivered=False):
     return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to.in_(identities)).order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
+    feature = 'memo'
 
     addressed = False
     processed = True
@@ -74,6 +79,7 @@ class Deliver(Processor):
         memo_cache[event.identity] = None
 
 class Notify(Processor):
+    feature = 'memo'
 
     type = 'state'
     addressed = False
@@ -93,6 +99,9 @@ class Notify(Processor):
         session.close()
 
 class Messages(Processor):
+    """my messages
+    message <number>"""
+    feature = 'memo'
 
     @match(r'^my\s+messages$')
     def messages(self, event):
