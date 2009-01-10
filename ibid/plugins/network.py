@@ -55,7 +55,7 @@ class Ping(Processor):
     @match(r'^ping\s+(\S+)$')
     def handle_ping(self, event, host):
         
-        ping = Popen([self.ping, '-q', '-c', '3', host], stdout=PIPE, stderr=PIPE)
+        ping = Popen([self.ping, '-q', '-c5', host], stdout=PIPE, stderr=PIPE)
         output, error = ping.communicate()
         code = ping.wait()
 
