@@ -16,6 +16,7 @@ Private attributes?
 Handle SQL errors and rollback transaction
 Single declarative_base()
 Plugin testing script
+Tests for everything
 
 Plugins:
 Babel
