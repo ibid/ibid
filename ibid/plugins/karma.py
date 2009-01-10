@@ -17,12 +17,16 @@ class Karma(Base):
 
     id = Column(Integer, primary_key=True)
     subject = Column(Unicode(32))
-    karma = Column(Integer)
+    increase = Column(Integer)
+    decrease = Column(Integer)
+    value = Column(Integer)
     time = Column(DateTime)
 
     def __init__(self, subject):
         self.subject = subject
-        self.karma = 0
+        self.increase = 0
+        self.decrease = 0
+        self.value = 0
         self.time = datetime.now()
 
 class Set(Processor):
@@ -53,9 +57,14 @@ class Set(Processor):
             if subject.lower() == event.who.lower():
                 event.addresponse(u"You can't karma yourself!")
                 return
-            karma.karma += 1
+            karma.increase += 1
+            karma.value += 1
         elif adjust.lower() in self.decrease:
-            karma.karma -= 1
+            karma.decrease += 1
+            karma.value -= 1
+        else:
+            karma.increase += 1
+            karma.decrease += 1
 
         session.save_or_update(karma)
         session.flush()
@@ -76,12 +85,12 @@ class Get(Processor):
         if not karma:
             event.addresponse(u"%s has neutral karma" % subject)
         else:
-            event.addresponse(u"%s has karma of %s" % (subject, karma.karma))
+            event.addresponse(u"%s has karma of %s" % (subject, karma.increase - karma.decrease))
 
     @match(r'^(reverse\s+)?karmaladder$')
     def ladder(self, event, reverse):
         session = ibid.databases.ibid()
-        karmas = session.query(Karma).order_by(reverse and Karma.karma.asc() or Karma.karma.desc()).limit(30).all()
-        event.addresponse(', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.karma) for karma in karmas]))
+        karmas = session.query(Karma).order_by(reverse and Karma.value.asc() or Karma.value.desc()).limit(30).all()
+        event.addresponse(', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
 
 # vi: set et sta sw=4 ts=4:
