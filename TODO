@@ -1,6 +1,5 @@
 Identity recognition for Jabber MUC
 Jabber vCard
-Jabber: Ignore history sent when joining rooms
 Exception handling and logging
 Refactor Reloader class
 Better meaning for "Ibid"
