@@ -69,7 +69,7 @@ class Permissions(Processor):
         session = ibid.databases.ibid()
         account = session.query(Account).filter_by(username=username).first()
         if not account:
-            event.addresponse(u"I don't know who %s is" % user)
+            event.addresponse(u"I don't know who %s is" % username)
             session.close()
             return
 

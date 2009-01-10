@@ -52,8 +52,8 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
-FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, cascade='')
+FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
+FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id)
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')

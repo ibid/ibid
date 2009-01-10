@@ -16,6 +16,8 @@ Handle SQL errors and rollback transaction
 Single declarative_base()
 Tests for everything
 Factpacks
+Base: Handle arbitrary bases.
+Memo: Delete old memos.
 
 Plugins:
 Babel
