@@ -94,7 +94,7 @@ class Utils(Processor):
                 for factoid in fact.values:
                     session.delete(factoid)
             session.delete(fact)
-            session.commit()
+            session.flush()
             session.close()
             event.addresponse(True)
         else:
@@ -109,7 +109,7 @@ class Utils(Processor):
         if fact:
             new = FactoidName(escape_name(target), event.identity, fact.factoid_id)
             session.save_or_update(new)
-            session.commit()
+            session.flush()
             session.close()
             event.addresponse(True)
         else:
@@ -200,7 +200,7 @@ class Set(Processor):
                 factoid_id = fact.factoid_id
                 for factoid in fact.values:
                     session.delete(factoid)
-                session.commit()
+                session.flush()
                 fact.factoid_id = factoid_id
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
@@ -213,13 +213,13 @@ class Set(Processor):
                 next = 1
             fact = FactoidName(escape_name(name), event.identity, next)
             session.save_or_update(fact)
-            session.commit()
+            session.flush()
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
         factoid = FactoidValue(value, event.identity, fact.factoid_id)
         session.save_or_update(factoid)
-        session.commit()
+        session.flush()
         session.close()
         event.addresponse(True)
 

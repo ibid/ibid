@@ -44,7 +44,7 @@ class Grab(Processor):
         session = ibid.databases.ibid()
         u = URL(url, event.channel, event.identity)
         session.save_or_update(u)
-        session.commit()
+        session.flush()
         session.close()
 
 class Shorten(Processor):

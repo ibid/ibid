@@ -37,7 +37,7 @@ class See(Processor):
         sighting.count = sighting.count + 1
 
         session.save_or_update(sighting)
-        session.commit()
+        session.flush()
         session.close()
 
 class Seen(Processor):

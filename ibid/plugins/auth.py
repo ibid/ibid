@@ -52,7 +52,7 @@ class AddAuth(Processor):
 
         credential = Credential(method, credential, source, account.id)
         session.save_or_update(credential)
-        session.commit()
+        session.flush()
         session.close()
 
         event.addresponse(u'Okay')
@@ -95,7 +95,7 @@ class Permissions(Processor):
             permission.value = value
             session.save_or_update(permission)
 
-        session.commit()
+        session.flush()
         session.close()
 
         event.addresponse(True)

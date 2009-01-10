@@ -36,13 +36,13 @@ class Accounts(Processor):
 
         account = Account(username)
         session.save_or_update(account)
-        session.commit()
+        session.flush()
 
         if not admin:
             identity = session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
             session.save_or_update(identity)
-            session.commit()
+            session.flush()
             identify_cache.clear()
 
         session.close()
@@ -76,11 +76,11 @@ class Identities(Processor):
                     return
                 account = Account(username)
                 session.save_or_update(account)
-                session.commit()
+                session.flush()
                 currentidentity = session.query(Identity).filter_by(id=event.identity).first()
                 currentidentity.account_id = account.id
                 session.save_or_update(currentidentity)
-                session.commit()
+                session.flush()
                 event.addresponse(u"I've created the account %s for you" % username)
 
         else:
@@ -110,7 +110,7 @@ class Identities(Processor):
                 ident = Identity(source, identity)
             ident.account_id = account.id
             session.save_or_update(ident)
-            session.commit()
+            session.flush()
             identify_cache.clear()
             event.addresponse(True)
 
@@ -128,7 +128,7 @@ class Identities(Processor):
                 identity = Identity(source, user)
             identity.account_id = account_id
             session.save_or_update(identity)
-            session.commit()
+            session.flush()
             session.close()
             identify_cache.clear()
 
@@ -155,7 +155,7 @@ class Identities(Processor):
         else:
             identity.account_id = None
             session.save_or_update(identity)
-            session.commit()
+            session.flush()
             identify_cache.clear()
             event.addresponse(True)
 
@@ -189,7 +189,7 @@ class Attributes(Processor):
 
         account.attributes.append(Attribute(name, value))
         session.save_or_update(account)
-        session.commit()
+        session.flush()
         session.close()
         event.addresponse(u'Done')
 
@@ -232,7 +232,7 @@ class Identify(Processor):
             if not identity:
                 identity = Identity(event.source, event.sender_id)
                 session.save_or_update(identity)
-                session.commit()
+                session.flush()
 
             event.identity = identity.id
             if identity.account:

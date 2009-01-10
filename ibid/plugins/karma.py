@@ -58,7 +58,7 @@ class Set(Processor):
             karma.karma -= 1
 
         session.save_or_update(karma)
-        session.commit()
+        session.flush()
         session.close()
 
         if self.reply:
