@@ -115,7 +115,7 @@ class Reloader(object):
             reload(m)
         except Exception, e:
             if isinstance(e, ImportError):
-                print u"Couldn't load %s plugin because it requires module %s" % (name, e.message.replace('No module named ', ''))
+                print u"Couldn't load %s plugin because it requires module %s" % (name, e.args[0].replace('No module named ', ''))
             else:
                 print_exc()
             return False

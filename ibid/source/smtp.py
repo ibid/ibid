@@ -1,5 +1,8 @@
 from StringIO import StringIO
-from email.utils import parseaddr
+try:
+    from email.utils import parseaddr
+except ImportError:
+    from email.Utils import parseaddr
 
 from twisted.application import internet
 from twisted.internet import protocol, defer, reactor
