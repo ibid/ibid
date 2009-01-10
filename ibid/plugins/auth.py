@@ -15,7 +15,7 @@ chars = string.letters + string.digits
 
 def hash(password):
     salt = ''.join([choice(chars) for i in xrange(8)])
-    return salt + sha512(salt + password).hexdigest()
+    return unicode(salt + sha512(salt + password).hexdigest())
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):

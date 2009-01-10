@@ -29,10 +29,8 @@ for module, metadata in metadatas:
 
 print u'Database tables created'
 
-print 'Enter your nick/JID: ',
-identity = unicode(stdin.readline().strip())
-print 'Enter the source name: ',
-source = unicode(stdin.readline().strip())
+identity = unicode(raw_input('Enter your nick/JID: '))
+source = unicode(raw_input('Enter the source name: '))
 pass1 = getpass('Enter your password: ')
 pass2 = getpass('Confirm password: ')
 
