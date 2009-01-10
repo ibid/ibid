@@ -55,13 +55,11 @@ class Ignore(Processor):
 
 class Responses(Processor):
 
-    processed = True
-    addressed = False
     priority = 1600
 
-    @handler
-    def responses(self, event):
+    def process(self, event):
         if 'responses' not in event:
+            event.responses = []
             return
 
         converted = []

@@ -50,7 +50,7 @@ class Ircbot(irc.IRCClient):
         event.state = action
         if kicker: event.kicker = kicker
         if message: event.message = message
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
         self._message_event(u'message', user, channel, msg)

@@ -42,7 +42,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.who = event.sender.split('@')[0]
         event.state = show or 'available'
         event.channel = entity.full()
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def unavailableReceived(self, entity, statuses):
         event = Event(self.name, u'state')
@@ -51,7 +51,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.who = event.sender.split('@')[0]
         event.state = 'offline'
         event.channel = entity.full()
-        ibid.dispatcher.dispatch(event)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def subscribeReceived(self, entity):
         print "Accepting subscription request from " + entity.full()
