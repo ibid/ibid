@@ -61,6 +61,9 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(response)
 
     def onMessage(self, message):
+        if message.x and message.x.defaultUri == 'jabber:x:delay':
+            return
+
         event = Event(self.parent.name, u'message')
         event.message = unicode(message.body)
         event.sender = unicode(message['from'])
