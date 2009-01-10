@@ -12,12 +12,9 @@ SMTP source: Handle multiple queries in a single message
 Factoid authorisation
 Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts
-Cache identify
 Private attributes?
 Handle SQL errors and rollback transaction
 Single declarative_base()
-Redirect: Don't redirect complaints
-Permissions: Add remove
 Plugin testing script
 
 Plugins:

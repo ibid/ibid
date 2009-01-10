@@ -50,7 +50,7 @@ class RedirectCommand(Processor):
     @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
     @authorise(u'saydo')
     def redirect(self, event, channel, source, command):
-        event.redirect = channel
+        event.redirect_target = channel
         if source:
             event.redirect_source = source
         event.message = command
@@ -59,16 +59,19 @@ class Redirect(Processor):
     feature = 'redirect'
 
     processed = True
-    priority = 1700
+    priority = 940
 
     @handler
     def redirect(self, event):
-        if 'redirect' in event:
+        if 'redirect_target' in event:
+            responses = []
             for response in event.responses:
-                if response['target'] == event.channel:
-                    response['target'] = event.redirect
+                if isinstance(response, basestring):
+                    response = {'reply': response, 'target': event.redirect_target}
                     if 'redirect_source' in event:
                         response['source'] = event.redirect_source
+                responses.append(response)
+            event.responses = responses
 
 choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
 help['choose'] = 'Choose one of the given options.'
