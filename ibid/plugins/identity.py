@@ -43,8 +43,8 @@ class Accounts(Processor):
             identity.account_id = account.id
             session.save_or_update(identity)
             session.flush()
-            identify_cache.clear()
 
+        identify_cache.clear()
         session.close()
         event.addresponse(u'Done')
 
