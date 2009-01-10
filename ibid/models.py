@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey, Boolean
 from sqlalchemy.orm import relation, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -101,5 +101,27 @@ class Sighting(Base):
         self.saying = saying
         self.time = datetime.now()
         self.count = 0
+
+class Memo(Base):
+    __tablename__ = 'memos'
+
+    id = Column(Integer, primary_key=True)
+    frm = Column(Integer, ForeignKey('identities.id'))
+    to = Column(Integer, ForeignKey('identities.id'))
+    memo = Column(Unicode)
+    private = Column(Boolean)
+    delivered = Column(Boolean)
+    time = Column(DateTime)
+
+    def __init__(self, frm, to, memo, private=False):
+        self.frm = frm
+        self.to = to
+        self.memo = memo
+        self.private = private
+        self.delivered = False
+        self.time = datetime.now()
+
+Memo.sender = relation(Identity, primaryjoin=Memo.frm==Identity.id)
+Memo.recipient = relation(Identity, primaryjoin=Memo.to==Identity.id)
 
 # vi: set et sta sw=4 ts=4:

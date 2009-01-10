@@ -6,29 +6,8 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match
-from ibid.models import Identity
+from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
-
-Base = declarative_base()
-
-class Memo(Base):
-    __tablename__ = 'memos'
-
-    id = Column(Integer, primary_key=True)
-    frm = Column(Integer)
-    to = Column(Integer)
-    memo = Column(Unicode)
-    private = Column(Boolean)
-    delivered = Column(Boolean)
-    time = Column(DateTime)
-
-    def __init__(self, frm, to, memo, private=False):
-        self.frm = frm
-        self.to = to
-        self.memo = memo
-        self.private = private
-        self.delivered = False
-        self.time = datetime.now()
 
 class Tell(Processor):
 
@@ -59,7 +38,7 @@ class Deliver(Processor):
         session = ibid.databases.ibid()
         memos = session.query(Memo).filter_by(delivered=False).filter_by(to=event.identity).all()
         for memo in memos:
-            message = '%s told me to tell you %s %s ago' % (memo.frm, memo.memo, ago(datetime.now()-memo.time))
+            message = 'By the way, %s told me to tell you %s %s ago' % (memo.sender.identity, memo.memo, ago(datetime.now()-memo.time))
             if memo.private:
                 event.addresponse({'reply': message, 'target': event.sender_id})
             else:

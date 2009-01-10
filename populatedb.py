@@ -13,7 +13,7 @@ from ibid.models import Account, Identity, Permission, Credential
 
 config = FileConfig('ibid.ini')
 
-bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base'), ('ibid.plugins.memo', 'Base')]
+bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base')]
 metadatas = []
 engine = create_engine(config.databases['ibid']['uri'])
 
