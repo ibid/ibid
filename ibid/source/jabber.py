@@ -40,7 +40,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender = entity.full()
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
-        event.state = show or 'available'
+        event.state = show or u'available'
         event.channel = entity.full()
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
@@ -49,7 +49,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender = entity.full()
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
-        event.state = 'offline'
+        event.state = u'offline'
         event.channel = entity.full()
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
