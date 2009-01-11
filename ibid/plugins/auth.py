@@ -1,9 +1,10 @@
 import string
+from random import choice
+import re
 try:
     from hashlib import sha1
 except ImportError:
     from sha import new as sha1
-from random import choice
 
 from sqlalchemy.sql import func
 
@@ -15,6 +16,7 @@ from ibid.plugins.identity import Account
 help = {}
 
 chars = string.letters + string.digits
+permission_re = re.compile('^([+-]?)(\S+)$')
 
 def hash(password, salt=None):
     if salt:
@@ -22,6 +24,33 @@ def hash(password, salt=None):
     else:
         salt = ''.join([choice(chars) for i in xrange(8)])
     return unicode(salt + sha1(salt + password).hexdigest())
+
+def permission(name, account, source):
+    if account:
+        session = ibid.databases.ibid()
+        permission = session.query(Permission).filter_by(account_id=account).filter_by(name=name).first()
+        session.close()
+
+        if permission:
+            return permission.value
+
+    permissions = []
+    if 'permissions' in ibid.config.sources[source]:
+        permissions.extend(ibid.config.sources[source]['permissions'])
+    if 'permissions' in ibid.config.auth:
+        permissions.extend(ibid.config.auth['permissions'])
+
+    for permission in permissions:
+        match = permission_re.match(permission)
+        if match and match.group(2) == name :
+            if match.group(1) == '+':
+                return 'yes'
+            elif match.group(1) == '-':
+                return 'no'
+            else:
+                return 'auth'
+
+    return 'no'
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
@@ -115,6 +144,8 @@ class Permissions(Processor):
                 return
             account = session.query(Account).filter_by(id=event.account).first()
         else:
+            if not auth_responses(event, u'accounts'):
+                return
             account = session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is" % username)
