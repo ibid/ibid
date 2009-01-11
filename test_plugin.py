@@ -3,13 +3,19 @@
 from sys import argv, exit
 from traceback import print_exc
 
-import ibid
-from ibid.config import FileConfig
-from ibid.event import Event
-
 if len(argv) != 2:
     print 'Usage: test_plugin.py plugin'
     exit(1)
+
+import ibid
+import ibid.plugins
+from ibid.config import FileConfig
+from ibid.event import Event
+
+def auth_responses(event, permission):
+    return True
+
+ibid.plugins.auth_responses = auth_responses
 
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
@@ -22,6 +28,7 @@ while True:
     try:
         event = Event('test_plugin', 'message')
         event.who = event.sender = event.sender_id = event.channel = 'test_plugin'
+        event.account = event.identity = None
         event.addressed = True
         event.public = False
         event.message = raw_input('Query: ')

@@ -107,7 +107,7 @@ class Utils(Processor):
         session = ibid.databases.ibid()
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if fact:
-            new = FactoidName(escape_name(target), event.identity, fact.factoid_id)
+            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
             session.save_or_update(new)
             session.flush()
             session.close()
@@ -211,13 +211,13 @@ class Set(Processor):
                 next = max.factoid_id + 1
             else:
                 next = 1
-            fact = FactoidName(escape_name(name), event.identity, next)
+            fact = FactoidName(escape_name(unicode(name)), event.identity, next)
             session.save_or_update(fact)
             session.flush()
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
-        factoid = FactoidValue(value, event.identity, fact.factoid_id)
+        factoid = FactoidValue(unicode(value), event.identity, fact.factoid_id)
         session.save_or_update(factoid)
         session.flush()
         session.close()
