@@ -1,5 +1,4 @@
 from datetime import datetime
-from time import strftime
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
@@ -114,11 +113,13 @@ class Messages(Processor):
     message <number>"""
     feature = 'memo'
 
+    datetime_format = '%Y/%m/%d %H:%M:%S'
+
     @match(r'^my\s+messages$')
     def messages(self, event):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
-        event.addresponse(', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, strftime('%Y/%m/%d %H:%M:%S', memo.time.timetuple())) for memo in memos]))
+        event.addresponse(', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
         session.close()
 
     @match(r'message\s+(\d+)$')
@@ -126,7 +127,7 @@ class Messages(Processor):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
         memo = memos[int(number)]
-        event.addresponse(u"From %s on %s at %s: %s" % (memo.sender.identity, memo.sender.source, strftime('%Y/%m/%d %H:%M:%S', memo.time.timetuple()), memo.memo))
+        event.addresponse(u"From %s on %s at %s: %s" % (memo.sender.identity, memo.sender.source, memo.time.strftime(self.datetime_format), memo.memo))
         session.close()
 
 

@@ -1,6 +1,6 @@
 """Logs messages sent and received."""
 
-from time import time, localtime, strftime
+from time import time, localtime
 from os.path import dirname
 from os import makedirs
 

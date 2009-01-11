@@ -1,5 +1,4 @@
 from datetime import datetime
-from time import strftime
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
 from sqlalchemy.orm import relation
@@ -12,7 +11,10 @@ from ibid.models import Identity, Sighting, Account
 from ibid.plugins.identity import identify
 from ibid.utils import ago
 
+help = {'seen': 'Records when people were last seen.'}
+
 class See(Processor):
+    feature = 'seen'
 
     priority = 1500
 
@@ -41,6 +43,10 @@ class See(Processor):
         session.close()
 
 class Seen(Processor):
+    """seen <who>"""
+    feature = 'seen'
+
+    datetime_format = '%Y/%m/%d %H:%M:%S'
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):
@@ -86,7 +92,7 @@ class Seen(Processor):
             sighting = messages[0]
             delta = datetime.now() - sighting.time
             reply = u"%s was last seen %s ago in %s on %s" % (who, ago(delta), sighting.channel or 'private', sighting.identity.source)
-            reply = u'%s [%s]' % (reply, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
+            reply = u'%s [%s]' % (reply, sighting.time.strftime(self.datetime_format))
 
         if len(states) > 0:
             sighting = states[0]
@@ -94,7 +100,7 @@ class Seen(Processor):
                 reply = reply + u', and'
             else:
                 reply = who
-            reply = reply + u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, strftime('%Y/%m/%d %H:%M:%S', sighting.time.timetuple()))
+            reply = reply + u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, sighting.time.strftime(self.datetime_format))
 
         event.addresponse(reply)
         session.close()

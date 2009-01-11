@@ -8,15 +8,6 @@ from ibid.plugins import Processor, match
 
 help = {}
 
-class DateTime(Processor):
-    """(date|time)"""
-
-    @match(r'^(?:date|time)$')
-    def handler(self, event):
-        reply = time.strftime(u"It is %H:%M.%S on %a, %e %b %Y",time.localtime())
-        event.addresponse(reply)
-        return event
-
 help['fortune'] = 'Returns a random fortune.'
 class Fortune(Processor):
     """fortune"""

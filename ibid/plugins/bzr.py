@@ -1,5 +1,4 @@
 from cStringIO import StringIO
-from time import strftime, localtime
 from datetime import datetime
 
 from bzrlib.branch import Branch
@@ -14,15 +13,16 @@ help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
 
 class LogFormatter(log.LogFormatter):
 
-	def __init__(self, f, repository, branch, full):
+	def __init__(self, f, repository, branch, full, datetime_format):
 		log.LogFormatter.__init__(self, f)
 		self.branch = branch
 		self.full = full
 		self.repository = repository
+		self.datetime_format = datetime_format
 
 	def log_revision(self, revision):
 		if self.full:
-			when = localtime(revision.rev.timestamp)
+			when = datetime.fromtimestamp(revision.rev.timestamp)
 			delta = self.branch.repository.get_revision_delta(revision.rev.revision_id)
 			changes = []
 
@@ -35,7 +35,7 @@ class LogFormatter(log.LogFormatter):
 			if delta.renamed:
 				changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
-			commit = 'Commit %s by %s to %s on %s at %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), self.repository, strftime('%Y/%m/%d', when), strftime('%H:%M:%S', when), revision.rev.message.replace('\n', ' '), '; '.join(changes))
+			commit = 'Commit %s by %s to %s %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), self.repository, when.strftime(self.datetime_format), revision.rev.message.replace('\n', ' '), '; '.join(changes))
 		else:
 			commit = 'Commit %s by %s to %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.repository, ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2), revision.rev.get_summary().replace('\n', ' '))
 		self.to_file.write(commit)
@@ -44,6 +44,8 @@ class Bazaar(Processor):
 	"""last commit to <repo> | commit <revno> [full]
 	repositories"""
 	feature = 'bzr'
+
+	datetime_format = 'on %Y/%m/%d at %H:%M:%S'
 
 	def setup(self):
 		self.branches = {}
@@ -85,7 +87,7 @@ class Bazaar(Processor):
 			revno = last
 
 		f=StringIO();
-		log.show_log(branch, LogFormatter(f, repository, branch, full), start_revision=revno, end_revision=revno, limit=1)
+		log.show_log(branch, LogFormatter(f, repository, branch, full, self.datetime_format), start_revision=revno, end_revision=revno, limit=1)
 		f.seek(0)
 		commits = f.readlines()
 
