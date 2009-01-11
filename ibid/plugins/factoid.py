@@ -21,7 +21,7 @@ class FactoidName(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(256))
-    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id'))
+    factoid_id = Column(Integer, ForeignKey('factoid_values.factoid_id', use_alter=True, name='factoid_fk'))
     identity = Column(Integer)
     time = Column(DateTime)
 
@@ -62,18 +62,20 @@ verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
-def get_factoid(session, name, number, pattern):
+def get_factoid(session, name, number, pattern, all=False):
+    factoid = None
     query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).filter(FactoidName.factoid_id==FactoidValue.factoid_id)
     if pattern:
-        return query.filter(FactoidValue.value.op('REGEXP')(pattern)).all()
+        query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
     if number:
         try:
             factoid = query.order_by(FactoidValue.id)[int(number)]
         except IndexError:
             return
-        return factoid
+    if all:
+        return factoid and [factoid] or query.all()
     else:
-        return query.order_by(func.random()).first()
+        return factoid or query.order_by(func.random()).first()
 
 class Utils(Processor):
     """literal <name> [starting at <number>]
@@ -99,14 +101,29 @@ class Utils(Processor):
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
     @authorise(u'factoid')
     def forget(self, event, name, number, pattern):
-
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
-        if fact:
-            if session.query(FactoidName).filter_by(factoid_id=fact.factoid_id).count() == 1:
-                for factoid in fact.values:
-                    session.delete(factoid)
-            session.delete(fact)
+        factoids = get_factoid(session, name, number, pattern, True)
+        if factoids:
+            if (number or pattern):
+                if len(factoids) > 1:
+                    event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+                    return
+
+                if session.query(FactoidValue).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
+                    print "Last value, deleting names"
+                    for factoid in factoids:
+                        session.delete(factoid[0])
+
+                session.delete(factoids[0][1])
+
+            else:
+                if session.query(FactoidName).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
+                    print "Last name, deleting values"
+                    for factoid in factoids:
+                        session.delete(factoid[1])
+
+                session.delete(factoids[0][0])
+
             session.flush()
             session.close()
             event.addresponse(True)
@@ -135,6 +152,8 @@ class Get(Processor):
     verbs = verbs
     priority = 900
     interrogatives = ('what', 'wtf', 'where', 'when', 'who')
+    date_format = '%Y/%m/%d'
+    time_format = '%H:%M:%S'
 
     def setup(self):
         self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
@@ -143,14 +162,9 @@ class Get(Processor):
     def get(self, event, verb, name, number, pattern):
         session = ibid.databases.ibid()
         factoid = get_factoid(session, name, number, pattern)
+        session.close()
 
         if factoid:
-            if isinstance(factoid, list):
-                if len(factoid) > 1:
-                    event.addresponse(u'Pattern matches multiple factoids, please be more specific')
-                    return
-                factoid = factoid[0]
-
             (fact, value) = factoid
             reply = value.value
             pattern = re.escape(fact.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
@@ -171,8 +185,8 @@ class Get(Processor):
             reply = reply.replace('$hour', str(now[3]))
             reply = reply.replace('$minute', str(now[4]))
             reply = reply.replace('$second', str(now[5]))
-            reply = reply.replace('$date', strftime('%Y/%m/%d', now))
-            reply = reply.replace('$time', strftime('%H:%M:%S', now))
+            reply = reply.replace('$date', strftime(self.date_format, now))
+            reply = reply.replace('$time', strftime(self.time_format, now))
             reply = reply.replace('$dow', strftime('%A', now))
 
             (reply, count) = action_re.subn('', reply)
@@ -185,8 +199,6 @@ class Get(Processor):
                 else:
                     reply = '%s %s' % (fact.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
                     event.addresponse(reply)
-
-        session.close()
 
 class Set(Processor):
     """<name> (<verb>|=<verb>=) <value>"""
