@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from sqlalchemy import Table, MetaData
 from sqlalchemy.orm import mapper
-from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match
+from ibid.utils import ago
 
 class Ticket(object):
 	pass
@@ -20,4 +22,9 @@ class GetTicket(Processor):
 		session = ibid.databases.trac()
 		ticket = session.query(Ticket).get(int(number))
 
-		event.addresponse(u"Ticket %s (%s) reported by %s: %s" % (ticket.id, ticket.status, ticket.reporter, ticket.summary))
+		if ticket:
+			event.addresponse(u"Ticket %s (%s %s %s) reported by %s %s ago and assigned to %s: %s" % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary))
+		else:
+			event.addresponse(u"No such ticket")
+
+		session.close()
