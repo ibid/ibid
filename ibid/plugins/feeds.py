@@ -84,8 +84,8 @@ class Retrieve(Processor):
         feed = feedparser.parse(feed.url)
         event.addresponse(', '.join(['%s: "%s"' % (feed.entries.index(entry), entry.title) for entry in feed.entries[start:number+start]]))
 
-    @match(r'^article\s+((\d+)|/(.+?)/)\s+from\s+(.+?)$')
-    def article(self, event, choice, number, pattern, name):
+    @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
+    def article(self, event, number, pattern, name):
         session = ibid.databases.ibid()
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
         session.close()

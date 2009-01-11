@@ -44,6 +44,7 @@ class Strip(Processor):
 class Ignore(Processor):
 
     addressed = False
+    priority = -1500
 
     @handler
     def handle_ignore(self, event):
@@ -98,6 +99,8 @@ class Address(Processor):
 
 class Timestamp(Processor):
 
+    priority = -1900
+
     def process(self, event):
         event.time = time()
 
@@ -116,5 +119,22 @@ class Complain(Processor):
         else:
             event.addresponse(choice(self.complaints))
         return event
+
+class RateLimit(Processor):
+
+    priority = -1000
+    limit_time = 10
+    limit_messages = 5
+    messages = {}
+
+    @handler
+    def ratelimit(self, event):
+        if event.identity not in self.messages:
+            self.messages[event.identity] = [event.time]
+        else:
+            self.messages[event.identity].append(event.time)
+            self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
+            if len(self.messages[event.identity]) > self.limit_messages:
+                event.addresponse({'reply': u"Geez, give me some time to think!"})
 
 # vi: set et sta sw=4 ts=4:
