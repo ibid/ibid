@@ -54,15 +54,18 @@ class Auth(object):
 
     def authorise(self, event, name):
 
-        session = ibid.databases.ibid()
-        permission = session.query(Permission).filter_by(account_id=event.account).filter_by(name=name).first()
-        if permission:
-            if permission.value == 'no':
-                return False
-            elif permission.value == 'yes':
-                return True
-            elif permission.value == 'auth':
-                return self.authenticate(event)
+        if event.account:
+            session = ibid.databases.ibid()
+            permission = session.query(Permission).filter_by(account_id=event.account).filter_by(name=name).first()
+            session.close()
+
+            if permission:
+                if permission.value == 'no':
+                    return False
+                elif permission.value == 'yes':
+                    return True
+                elif permission.value == 'auth':
+                    return self.authenticate(event)
 
         permissions = []
         if 'permissions' in ibid.config.sources[event.source]:

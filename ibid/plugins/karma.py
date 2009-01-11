@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, handler, authorise
 
 help = {'karma': 'Keeps track of karma for people and things.'}
 
@@ -36,14 +36,19 @@ class Set(Processor):
     neutral = ('==',)
     reply = True
     public = True
+    ignore = ('foo',)
 
     def setup(self):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+(.+?)[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
+    @authorise(u'karma')
     def set(self, event, subject, adjust, reason):
         if self.public and not event.public:
             event.addresponse(u"Karma must be done in public")
+            return
+
+        if subject.lower() in self.ignore:
             return
 
         session = ibid.databases.ibid()

@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, handler, match
+from ibid.plugins import Processor, handler, match, authorise
 from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
 
@@ -19,6 +19,7 @@ class Tell(Processor):
     feature = 'memo'
 
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
+    @authorise(u'sendmemo')
     def tell(self, event, how, who, memo):
         session = ibid.databases.ibid()
         to = session.query(Identity).filter(func.lower(Identity.identity)==who.lower()).filter_by(source=event.source).first()
