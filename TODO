@@ -18,6 +18,8 @@ Tests for everything
 Factpacks
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
+Feeds: Caching.
+Factoid: Deleting values.
 
 Plugins:
 Babel

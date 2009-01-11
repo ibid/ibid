@@ -62,6 +62,19 @@ verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
+def get_factoid(session, name, number, pattern):
+    query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).filter(FactoidName.factoid_id==FactoidValue.factoid_id)
+    if pattern:
+        return query.filter(FactoidValue.value.op('REGEXP')(pattern)).all()
+    if number:
+        try:
+            factoid = query.order_by(FactoidValue.id)[int(number)]
+        except IndexError:
+            return
+        return factoid
+    else:
+        return query.order_by(func.random()).first()
+
 class Utils(Processor):
     """literal <name> [starting at <number>]
     forget <name>
@@ -83,9 +96,9 @@ class Utils(Processor):
 
         session.close()
 
-    @match(r'^forget\s+(.+)$')
+    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
     @authorise(u'factoid')
-    def forget(self, event, name):
+    def forget(self, event, name, number, pattern):
 
         session = ibid.databases.ibid()
         fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
@@ -124,23 +137,20 @@ class Get(Processor):
     interrogatives = ('what', 'wtf', 'where', 'when', 'who')
 
     def setup(self):
-        self.get_factoid.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
 
     @handler
-    def get_factoid(self, event, verb, name, number, pattern):
+    def get(self, event, verb, name, number, pattern):
         session = ibid.databases.ibid()
-        query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).filter(FactoidName.factoid_id==FactoidValue.factoid_id)
-        if pattern:
-            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
-        if number:
-            try:
-                factoid = query.order_by(FactoidValue.id)[int(number)]
-            except IndexError:
-                return
-        else:
-            factoid = query.first()
+        factoid = get_factoid(session, name, number, pattern)
 
         if factoid:
+            if isinstance(factoid, list):
+                if len(factoid) > 1:
+                    event.addresponse(u'Pattern matches multiple factoids, please be more specific')
+                    return
+                factoid = factoid[0]
+
             (fact, value) = factoid
             reply = value.value
             pattern = re.escape(fact.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
