@@ -135,6 +135,9 @@ class RateLimit(Processor):
             self.messages[event.identity].append(event.time)
             self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
-                event.addresponse({'reply': u"Geez, give me some time to think!"})
+                if event.public:
+                    event.addresponse({'reply': u"Geez, give me some time to think!"})
+                else:
+                    event.processed = True
 
 # vi: set et sta sw=4 ts=4:
