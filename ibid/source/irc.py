@@ -91,7 +91,7 @@ class Ircbot(irc.IRCClient):
         if 'action' in response and response['action']:
             self.me(response['target'].encode(encoding), response['reply'].encode(encoding))
         else:
-            self.msg(response['target'].encode(encoding), response['reply'].encode(encoding).replace('\n', ' ')[:400])
+            self.msg(response['target'].encode(encoding), response['reply'].encode(encoding).replace('\n', ' ')[:512])
 
     def join(self, channel):
         irc.IRCClient.join(self, channel.encode(encoding))
