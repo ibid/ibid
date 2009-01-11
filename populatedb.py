@@ -18,9 +18,12 @@ metadatas = []
 engine = create_engine(config.databases['ibid']['uri'])
 
 for module, model in bases:
-    __import__(module)
-    klass = eval('%s.%s' % (module, model))
-    klass.metadata.create_all(engine)
+    try:
+        __import__(module)
+        klass = eval('%s.%s' % (module, model))
+        klass.metadata.create_all(engine)
+    except ImportError, e:
+        print "Couldn't create tables for plugin %s because it requires the %s module" % (module, e.args[0].replace('No module named ', ''))
 
 for module, metadata in metadatas:
     __import__(module)
