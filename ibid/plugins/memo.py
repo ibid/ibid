@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
+from ibid.plugins.auth import permission
 from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
 
@@ -35,7 +36,11 @@ class Tell(Processor):
             event.addresponse(u"I don't know who %s is" % who)
             return
 
-        memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg'))
+        if permission(u'recvmemo', to.account and to.account.id or None, to.source) != 'yes':
+            event.addresponse(u'Just tell %s yourself' % who)
+            return
+
+        memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
         session.save_or_update(memo)
         session.flush()
         session.close()
