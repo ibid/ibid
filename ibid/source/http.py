@@ -11,9 +11,8 @@ class IbidRequest(resource.Resource):
 
 	def render_GET(self, request):
 		ibid.sources['http'].respond = self.respond
-		event = Event('http', 'message')
-		event.sender = 'http'
-		event.channel = 'http'
+		event = Event(u'http', u'message')
+		event.sender = event.channel = u'http'
 		event.addressed = True
 		event.public = False
 		event.who = event.sender
@@ -24,7 +23,7 @@ class IbidRequest(resource.Resource):
 
 	def respond(self, event, request):
 		for response in event.responses:
-			request.write(response['reply'].encode('latin-1'))
+			request.write(response['reply'].encode('utf-8'))
 		request.finish()
 
 class SourceFactory(IbidSourceFactory):
