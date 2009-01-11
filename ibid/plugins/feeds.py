@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 import feedparser
+from html2text import html2text_file
 
 import ibid
 from ibid.plugins import Processor, match, authorise
@@ -113,6 +114,14 @@ class Retrieve(Processor):
                 event.addresponse(u"Are you making up news again?")
                 return
 
-        event.addresponse(u'"%s" %s : %s' % (article.title, article.link, 'summary' in article and article.summary or article.content))
+        if 'summary' in article:
+            summary = article.summary
+        else:
+            if article.content[0].type in ('application/xhtml+xml', 'text/html'):
+                summary = html2text_file(article.content[0].value, None)
+            else:
+                summary = article.content[0].value
+
+        event.addresponse(u'"%s" %s : %s' % (article.title, article.link, summary))
 
 # vi: set et sta sw=4 ts=4:
