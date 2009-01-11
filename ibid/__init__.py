@@ -22,9 +22,9 @@ def setup(service=None):
     ibid.config.merge(FileConfig("local.ini"))
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()
+    ibid.reloader.reload_databases()
     ibid.reloader.load_processors()
     ibid.reloader.load_sources(service)
-    ibid.reloader.reload_databases()
     ibid.reloader.reload_auth()
 
 def reload_reloader():
