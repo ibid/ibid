@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses
+from ibid.plugins.identity import get_identities
 from ibid.models import Account
 
 help = {'factoids': 'Factoids are arbitrary pieces of information stored by a key.'}
@@ -111,11 +112,7 @@ class Forget(Processor):
         factoids = get_factoid(session, name, number, pattern, True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
-            if event.account:
-                account = session.query(Account).get(event.account)
-                identities = [identity.id for identity in account.identities]
-            else:
-                identities = (event.identity,)
+            identities = get_identities(event, session)
 
             if (number or pattern):
                 if len(factoids) > 1:
@@ -232,6 +229,9 @@ class Set(Processor):
         if fact:
             if correction:
                 values = session.query(FactoidValue).filter_by(factoid_id=fact.factoid_id).all()
+                identities = get_identities(event, session)
+                if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity not in identities, values)) > 0:
+                    return
                 for factoid in values:
                     session.delete(factoid)
                 session.flush()

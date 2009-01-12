@@ -258,4 +258,14 @@ def identify(source, user):
         return account
     return (account, identity)
 
+def get_identities(event, session=None):
+    if not session:
+        session = ibid.databases.ibid()
+
+    if event.account:
+        account = session.query(Account).get(event.account)
+        return [identity.id for identity in account.identities]
+    else:
+        return (event.identity,)
+
 # vi: set et sta sw=4 ts=4:
