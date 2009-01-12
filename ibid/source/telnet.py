@@ -42,15 +42,13 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
 
-    def setServiceParent(self, service=None):
-        port = 3000
-        if 'port' in ibid.config.sources[self.name]:
-            port = ibid.config.sources[self.name]['port']
+    port = 3000
 
+    def setServiceParent(self, service=None):
         if service:
-            return internet.TCPServer(port, self).setServiceParent(service)
+            return internet.TCPServer(self.port, self).setServiceParent(service)
         else:
-            reactor.listenTCP(port, self)
+            reactor.listenTCP(self.port, self)
 
     def connect(self):
         return self.setServiceParent(None)

@@ -117,33 +117,31 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
+    port = None
+    ssl = False
+    server = None
+
     def __init__(self, name):
-        client.DeferredClientFactory.__init__(self, JID(ibid.config.sources[name]['jid']), ibid.config.sources[name]['password'])
         IbidSourceFactory.__init__(self, name)
+        client.DeferredClientFactory.__init__(self, JID(self.jid), self.password)
         bot = JabberBot()
         self.addHandler(bot)
         bot.setHandlerParent(self)
 
     def setServiceParent(self, service):
-        port = None
-        server = ibid.config.sources[self.name]['server']
-
-        if 'port' in ibid.config.sources[self.name]:
-            port = ibid.config.sources[self.name]['port']
-
-        if 'ssl' in ibid.config.sources[self.name] and ibid.config.sources[self.name]['ssl']:
+        if self.ssl:
             sslctx = ssl.ClientContextFactory()
-            port = port or 5223
+            port = self.port or 5223
             if service:
-                internet.SSLClient(server, port, self, sslctx).setServiceParent(service)
+                internet.SSLClient(self.server, port, self, sslctx).setServiceParent(service)
             else:
-                reactor.connectSSL(server, port, self, sslctx)
+                reactor.connectSSL(self.server, port, self, sslctx)
         else:
-            port = port or 5222
+            port = self.port or 5222
             if service:
-                internet.TCPClient(server, port, self).setServiceParent(service)
+                internet.TCPClient(self.server, port, self).setServiceParent(service)
             else:
-                reactor.connectTCP(server, port, self)
+                reactor.connectTCP(self.server, port, self)
 
     def connect(self):
         return self.setServiceParent(None)

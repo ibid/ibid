@@ -28,13 +28,14 @@ class IbidRequest(resource.Resource):
 
 class SourceFactory(IbidSourceFactory):
 
+	port = 8080
+
 	def __init__(self, name):
 		IbidSourceFactory.__init__(self, name)
 		self.site = server.Site(IbidRequest())
 
 	def setServiceParent(self, service):
-            port = 8080
             if service:
-                return internet.TCPServer(port, self.site).setServiceParent(service)
+                return internet.TCPServer(self.port, self.site).setServiceParent(service)
             else:
-                reactor.listenTCP(port, self.site)
+                reactor.listenTCP(self.port, self.site)

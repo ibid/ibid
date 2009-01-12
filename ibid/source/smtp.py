@@ -82,6 +82,8 @@ class Message:
 
 class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
+    port = 10025
+
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.delivery = IbidDelivery(name)
@@ -93,11 +95,10 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     def setServiceParent(self, service):
         self.service = service
-        port = 10025
         if service:
-            internet.TCPServer(port, self).setServiceParent(service)
+            internet.TCPServer(self.port, self).setServiceParent(service)
         else:
-            reactor.listenTCP(port, self)
+            reactor.listenTCP(self.port, self)
 
     def respond(self, event):
         messages = {}

@@ -121,28 +121,26 @@ class Ircbot(irc.IRCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
+    port = 6667
+    ssl = False
+    server = None
+
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.auth = {}
 
     def setServiceParent(self, service):
-        port = 6667
-        server = ibid.config.sources[self.name]['server']
-
-        if 'port' in ibid.config.sources[self.name]:
-            port = ibid.config.sources[self.name]['port']
-
-        if 'ssl' in ibid.config.sources[self.name] and ibid.config.sources[self.name]['ssl']:
+        if self.ssl:
             sslctx = ssl.ClientContextFactory()
             if service:
-                internet.SSLClient(server, port, self, sslctx).setServiceParent(service)
+                internet.SSLClient(self.server, self.port, self, sslctx).setServiceParent(service)
             else:
-                reactor.connectSSL(server, port, self, sslctx)
+                reactor.connectSSL(self.server, self.port, self, sslctx)
         else:
             if service:
-                internet.TCPClient(server, port, self).setServiceParent(service)
+                internet.TCPClient(self.server, self.port, self).setServiceParent(service)
             else:
-                reactor.connectTCP(server, port, self)
+                reactor.connectTCP(self.server, self.port, self)
 
     def connect(self):
         return self.setServiceParent(None)

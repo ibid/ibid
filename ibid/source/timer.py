@@ -6,16 +6,14 @@ from ibid.source import IbidSourceFactory
 
 class SourceFactory(IbidSourceFactory):
 
+    step = 1
+
     def tick(self):
         event = Event(self.name, 'clock')
         ibid.dispatcher.dispatch(event)
 
     def setServiceParent(self, service):
-        step = 1
-        if 'step' in ibid.config.sources[self.name]:
-            step = ibid.config.sources[self.name]['step']
-
-        s = internet.TimerService(step, self.tick)
+        s = internet.TimerService(self.step, self.tick)
         if service is None:
             s.startService()
         else:
