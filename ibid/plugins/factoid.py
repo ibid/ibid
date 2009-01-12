@@ -10,7 +10,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise
+from ibid.plugins import Processor, match, handler, authorise, auth_responses
+from ibid.models import Account
 
 help = {'factoids': 'Factoids are arbitrary pieces of information stored by a key.'}
 
@@ -78,12 +79,8 @@ def get_factoid(session, name, number, pattern, all=False):
         return factoid or query.order_by(func.random()).first()
 
 class Utils(Processor):
-    """literal <name> [starting at <number>]
-    forget <name>
-    <name> is the same as <name>"""
+    """literal <name> [starting at <number>]"""
     feature = 'factoids'
-
-    permission = u'factoid'
 
     @match(r'^literal\s+(.+?)(?:\s+start(?:ing)?\s+(?:from\s+)?(\d+))?$')
     def literal(self, event, name, start):
@@ -100,28 +97,53 @@ class Utils(Processor):
 
         session.close()
 
+class Forget(Processor):
+    """forget <name>"""
+    feature = 'factoids'
+
+    permission = u'factoid'
+    permissions = (u'factoidadmin',)
+
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
     @authorise
     def forget(self, event, name, number, pattern):
         session = ibid.databases.ibid()
         factoids = get_factoid(session, name, number, pattern, True)
         if factoids:
+            factoidadmin = auth_responses(event, u'factoidadmin')
+            if event.account:
+                account = session.query(Account).get(event.account)
+                identities = [identity.id for identity in account.identities]
+            else:
+                identities = (event.identity,)
+
             if (number or pattern):
                 if len(factoids) > 1:
                     event.addresponse(u"Pattern matches multiple factoids, please be more specific")
                     return
 
+                if factoids[0][1].identity not in identities and not factoidadmin:
+                    return
+
                 if session.query(FactoidValue).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
                     print "Last value, deleting names"
-                    for factoid in factoids:
-                        session.delete(factoid[0])
+                    names = [factoid[0] for factoid in factoids]
+                    if len(filter(lambda x: x.identity not in identities, names)) > 0 and not factoidadmin:
+                        return
+                    for name in names:
+                        session.delete(name)
 
                 session.delete(factoids[0][1])
 
             else:
+                if factoids[0][0].identity not in identities and not factoidadmin:
+                    return
                 if session.query(FactoidName).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
                     print "Last name, deleting values"
-                    for factoid in factoids:
+                    values = [factoid[1] for factoid in factoids]
+                    if len(filter(lambda x: x.identity not in identities, values)) > 0 and not factoidadmin:
+                        return
+                    for value in values:
                         session.delete(factoid[1])
 
                 session.delete(factoids[0][0])
@@ -132,20 +154,6 @@ class Utils(Processor):
         else:
             event.addresponse(u"I didn't know about %s anyway" % name)
 
-    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
-    @authorise
-    def alias(self, event, target, source):
-
-        session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
-        if fact:
-            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
-            session.save_or_update(new)
-            session.flush()
-            session.close()
-            event.addresponse(True)
-        else:
-            event.addresponse(u"I don't know about %s" % name)
 
 class Get(Processor):
     """<factoid> [( #<number> | /<pattern>/ )]"""
@@ -203,7 +211,8 @@ class Get(Processor):
                     event.addresponse(reply)
 
 class Set(Processor):
-    """<name> (<verb>|=<verb>=) <value>"""
+    """<name> (<verb>|=<verb>=) <value>
+    <name> is the same as <name>"""
     feature = 'factoids'
 
     verbs = verbs
@@ -226,7 +235,6 @@ class Set(Processor):
                 for factoid in values:
                     session.delete(factoid)
                 session.flush()
-                #fact.factoid_id = factoid_id
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
@@ -247,5 +255,20 @@ class Set(Processor):
         session.flush()
         session.close()
         event.addresponse(True)
+
+    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
+    @authorise
+    def alias(self, event, target, source):
+
+        session = ibid.databases.ibid()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        if fact:
+            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
+            session.save_or_update(new)
+            session.flush()
+            session.close()
+            event.addresponse(True)
+        else:
+            event.addresponse(u"I don't know about %s" % name)
 
 # vi: set et sta sw=4 ts=4:
