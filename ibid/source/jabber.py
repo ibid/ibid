@@ -54,7 +54,6 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def subscribeReceived(self, entity):
-        print "Accepting subscription request from " + entity.full()
         response = xmppim.Presence(to=entity, type='subscribed')
         self.xmlstream.send(response)
         response = xmppim.Presence(to=entity, type='subscribe')
@@ -63,6 +62,11 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
     def onMessage(self, message):
         if message.x and message.x.defaultUri == 'jabber:x:delay':
             return
+
+        if 'accept_domains' in ibid.config.sources[self.name]:
+            if message['from'].split('/')[0].split('@')[1] not in ibid.config.sources[self.name]['accept_domains']:
+                print 'Ignoring message from %s' % message['from']
+                return
 
         event = Event(self.parent.name, u'message')
         event.message = unicode(message.body)
