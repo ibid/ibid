@@ -71,7 +71,7 @@ class Bazaar(Processor):
 
 		if not branch:
 			if len(self.branches) == 1:
-				branch = self.branches.values()[0]
+				(repository, branch) = self.branches.items()[0]
 			else:
 				(repository, branch) = sorted(self.branches.iteritems(), reverse=True, key=lambda (k,v): v.repository.get_revision(v.last_revision_info()[1]).timestamp)[0]
 
