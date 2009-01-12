@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
 from ibid.plugins.auth import permission
+from ibid.plugins.identity import get_identities
 from ibid.models import Identity, Account, Memo
 from ibid.utils import ago
 
@@ -51,11 +52,7 @@ class Tell(Processor):
         event.addresponse(True)
 
 def get_memos(session, event, delivered=False):
-    if event.account:
-        account = session.query(Account).get(event.account)
-        identities = [identity.id for identity in account.identities]
-    else:
-        identities = (event.identity,)
+    identities = get_identities(event, session)
     return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to.in_(identities)).order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
