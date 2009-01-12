@@ -29,7 +29,11 @@ class GetTicket(Processor):
         ticket = session.query(Ticket).get(int(number))
 
         if ticket:
-            event.addresponse(u"Ticket %s (%s %s %s) reported by %s %s ago assigned to %s: %s" % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary))
+            response = u"Ticket %s (%s %s %s) reported by %s %s ago assigned to %s: %s" % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary)
+            if event.source == 'http':
+                event.addresponse({'reply': response, 'source': self.source, 'target': self.channel})
+            else:
+                event.addresponse(response)
         else:
             event.addresponse(u"No such ticket")
 
