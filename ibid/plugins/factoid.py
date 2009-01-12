@@ -151,12 +151,12 @@ class Get(Processor):
 
     verbs = verbs
     priority = 900
-    interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's")
+    interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
     date_format = '%Y/%m/%d'
     time_format = '%H:%M:%S'
 
     def setup(self):
-        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(%s)\s+)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
 
     @handler
     def get(self, event, verb, name, number, pattern):
