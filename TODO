@@ -20,6 +20,8 @@ Base: Handle arbitrary bases.
 Memo: Delete old memos.
 Feeds: Caching.
 Factoid: Deleting values.
+HTTP: Make port configurable
+Respond to CTCP VERSION
 
 Plugins:
 Babel

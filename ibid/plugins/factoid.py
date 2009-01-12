@@ -151,7 +151,7 @@ class Get(Processor):
 
     verbs = verbs
     priority = 900
-    interrogatives = ('what', 'wtf', 'where', 'when', 'who')
+    interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's")
     date_format = '%Y/%m/%d'
     time_format = '%H:%M:%S'
 

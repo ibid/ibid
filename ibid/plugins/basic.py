@@ -6,18 +6,6 @@ from ibid.plugins import Processor, match, handler, authorise
 
 help = {}
 
-help['greet'] = 'Greets people when greeted.'
-class Greet(Processor):
-    feature = 'greet'
-
-    greetings = (u'Hi %s', u'Hey %s', u'Howzit %s')
-
-    @match(r'^(?:hi|hello|hey)$')
-    def greet(self, event):
-        """Usage: (hi|hello|hey)"""
-        event.addresponse({'reply': choice(self.greetings) % event.who})
-        return event
-
 help['saydo'] = 'Says or does stuff in a channel.'
 class SayDo(Processor):
     """(say|do) <channel> <text>"""
