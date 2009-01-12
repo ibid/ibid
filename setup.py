@@ -9,7 +9,7 @@ setup(
 	py_modules=['ibid'],
 	setup_requires=['setuptools_bzr'],
 	install_requires=[
-		'SQLAlchemy>=0.4.4',
+		'SQLAlchemy>=0.4.6',
 		'wokkel>=0.4',
 		'ConfigObj>=4.5.3',
 		'validate>=0.3.2',

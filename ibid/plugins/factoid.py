@@ -54,9 +54,6 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidValue.factoid_id])
-FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidName.factoid_id])
-
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
@@ -87,14 +84,9 @@ class Utils(Processor):
     def literal(self, event, name, start):
         start = start and int(start) or 0
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).options(eagerload('values')).filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
-        if fact:
-            values = []
-            count = 0
-            for factoid in fact.values:
-                values.append('%s: %s' % (count, factoid.value))
-                count = count + 1
-            event.addresponse(', '.join(values[start:]))
+        factoids = session.query(FactoidName).add_entity(FactoidValue).filter(func.lower(FactoidName.name)==escape_name(name).lower()).filter(FactoidName.factoid_id==FactoidValue.factoid_id).order_by(FactoidValue.id).all()
+        if factoids:
+            event.addresponse(', '.join([factoid[1].value for factoid in factoids[start:]]))
 
         session.close()
 
