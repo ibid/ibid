@@ -35,22 +35,33 @@ class GetTicket(Processor):
 
         session.close()
 
-    @match(r"^(open|my|\S+?)(?:'s)?\s+tickets$")
-    def list(self, event, what):
-        if what.lower() == 'my':
-            what = event.who
-
+    @match(r"^(?:(my|\S+?(?:'s))\s+)?(?:(open|closed|new|assigned)\s+)?tickets$")
+    def list(self, event, owner, status):
         session = ibid.databases.trac()
-        tickets = session.query(Ticket)
+        print owner
 
-        if what.lower() == 'open':
-            tickets = tickets.filter(Ticket.status.in_(('new', 'assigned')))
+        status = status or 'open'
+        if status.lower() == 'open':
+            statuses = ('new', 'assigned')
         else:
-            tickets = tickets.filter(func.lower(Ticket.owner)==what.lower())
+            statuses = (status.lower(),)
+        
+        query = session.query(Ticket).filter(Ticket.status.in_(statuses))
 
-        tickets = tickets.order_by(Ticket.id).all()
+        if owner:
+            if owner.lower() == 'my':
+                owner = event.who
+            else:
+                owner = owner.lower().replace("'s", '')
+            query = query.filter(func.lower(Ticket.owner)==(owner.lower()))
 
-        event.addresponse(', '.join(['%s: "%s"' % (ticket.id, ticket.summary) for ticket in tickets]))
+        tickets = query.order_by(Ticket.id).all()
+
+        if len(tickets) > 0:
+            event.addresponse(', '.join(['%s: "%s"' % (ticket.id, ticket.summary) for ticket in tickets]))
+        else:
+            event.addresponse(u"No tickets found")
+
         session.close()
 
 # vi: set et sta sw=4 ts=4:
