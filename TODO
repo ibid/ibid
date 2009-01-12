@@ -8,7 +8,6 @@ Improve NickServ authentication
 Better names for event.{sender,sender_id,who}
 Race condition where two identities are created if multiple messages received at the same time (usually from services/bots)
 SMTP source: Handle multiple queries in a single message
-Factoid authorisation
 Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts
 Accounts: Admin command to create an account and attach an identity?
@@ -19,7 +18,6 @@ Factpacks
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
 Feeds: Caching.
-Factoid: Deleting values.
 Respond to CTCP VERSION
 
 Plugins:

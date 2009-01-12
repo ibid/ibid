@@ -141,7 +141,7 @@ class Forget(Processor):
                     if len(filter(lambda x: x.identity not in identities, values)) > 0 and not factoidadmin:
                         return
                     for value in values:
-                        session.delete(factoid[1])
+                        session.delete(value)
 
                 session.delete(factoids[0][0])
 
