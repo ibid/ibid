@@ -8,8 +8,10 @@ class Admin(Processor):
 	load <source> source"""
 	feature = 'sources'
 
+	permission = u'sources'
+
 	@match(r'^connect\s+(?:to\s+)?(\S+)$')
-	@authorise('sources')
+	@authorise
 	def connect(self, event, source):
 
 		if ibid.sources[source.lower()].connect():
@@ -18,7 +20,7 @@ class Admin(Processor):
 			event.addresponse(u"I couldn't connect to %s" % source)
 
 	@match(r'^disconnect\s+(?:from\s+)?(\S+)$')
-	@authorise('sources')
+	@authorise
 	def disconnect(self, event, source):
 
 		if ibid.sources[source.lower()].disconnect():
@@ -27,7 +29,7 @@ class Admin(Processor):
 			event.addresponse(u"I couldn't disconnect from %s" % source)
 
 	@match(r'^(?:re)?load\s+(\S+)\s+source$')
-	@authorise('sources')
+	@authorise
 	def load(self, event, source):
 		if ibid.reloader.load_source(source, ibid.service):
 			event.addresponse(u"%s source loaded" % source)

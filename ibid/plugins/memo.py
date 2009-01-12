@@ -18,8 +18,10 @@ class Tell(Processor):
     """(tell|pm|privmsg|msg) <person> <message>"""
     feature = 'memo'
 
+    permission = u'sendmemo'
+
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
-    @authorise(u'sendmemo')
+    @authorise
     def tell(self, event, how, who, memo):
         session = ibid.databases.ibid()
         to = session.query(Identity).filter(func.lower(Identity.identity)==who.lower()).filter_by(source=event.source).first()

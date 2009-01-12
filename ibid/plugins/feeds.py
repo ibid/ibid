@@ -29,8 +29,10 @@ class Feed(Base):
 
 class Manage(Processor):
 
+    permission = u'feeds'
+
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
-    @authorise(u'feeds')
+    @authorise
     def add(self, event, url, name):
         session = ibid.databases.ibid()
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
@@ -52,7 +54,7 @@ class Manage(Processor):
         event.addresponse(', '.join([feed.name for feed in feeds]))
 
     @match(r'^remove\s+(.+?)\s+feed$')
-    @authorise(u'feeds')
+    @authorise
     def remove(self, event, name):
         session = ibid.databases.ibid()
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()

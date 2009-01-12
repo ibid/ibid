@@ -29,6 +29,7 @@ class IbidRequest(resource.Resource):
 class SourceFactory(IbidSourceFactory):
 
 	port = 8080
+	host = 'localhost'
 
 	def __init__(self, name):
 		IbidSourceFactory.__init__(self, name)

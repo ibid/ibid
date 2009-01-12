@@ -97,8 +97,10 @@ class Permissions(Processor):
     """(grant|revoke|remove) <permission> (to|from|on) <username> [when authed] | list permissions"""
     feature = 'auth'
 
+    permission = u'admin'
+
     @match(r'^(grant|revoke|remove)\s+(.+?)\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
-    @authorise('admin')
+    @authorise
     def grant(self, event, action, name, username, auth):
 
         session = ibid.databases.ibid()

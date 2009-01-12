@@ -31,6 +31,8 @@ class Set(Processor):
     """<subject> (++|--|==|ftw|ftl) [[reason]]"""
     feature = 'karma'
 
+    permission = u'karma'
+
     increase = ('++', 'ftw')
     decrease = ('--', 'ftl')
     neutral = ('==',)
@@ -42,7 +44,7 @@ class Set(Processor):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+(.+?)[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
-    @authorise(u'karma')
+    @authorise
     def set(self, event, subject, adjust, reason):
         if self.public and not event.public:
             event.addresponse(u"Karma must be done in public")

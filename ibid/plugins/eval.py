@@ -17,8 +17,10 @@ class Python(Processor):
 	"""py <code>"""
 	feature = 'eval'
 
+	permission = u'eval'
+
 	@match(r'^py(?:thon)?\s+(.+)$')
-	@authorise('eval')
+	@authorise
 	def eval(self, event, code):
 		try:
 			globals = {}
@@ -34,8 +36,10 @@ class Perl(Processor):
 	"""pl <code>"""
 	feature = 'eval'
 
+	permission = u'eval'
+
 	@match(r'^(?:perl|pl)\s+(.+)$')
-	@authorise('eval')
+	@authorise
 	def eval(self, event, code):
 		try:
 			result = perl.eval(code)
@@ -48,8 +52,10 @@ class Lua(Processor):
 	"""lua <code>"""
 	feature = 'eval'
 
+	permission = u'eval'
+
 	@match(r'^lua\s+(.+)$')
-	@authorise('eval')
+	@authorise
 	def eval(self, event, code):
 		try:
 			result = lua.eval(code)

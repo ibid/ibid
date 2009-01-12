@@ -34,9 +34,10 @@ class RedirectCommand(Processor):
     feature = 'redirect'
 
     priority = -1200
+    permission = u'saydo'
 
     @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
-    @authorise(u'saydo')
+    @authorise
     def redirect(self, event, channel, source, command):
         event.redirect_target = channel
         if source:

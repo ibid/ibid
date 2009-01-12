@@ -8,8 +8,10 @@ class Config(Processor):
     """reread config | set config <name> <value> | get config <name>"""
     feature = 'config'
 
+    permission = u'config'
+
     @match(r'^reread\s+config$')
-    @authorise('config')
+    @authorise
     def reload(self, event):
         try:
             ibid.config.reload()
@@ -19,7 +21,7 @@ class Config(Processor):
             event.addresponse(u"Error reloading configuration")
 
     @match(r'^set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
-    @authorise('config')
+    @authorise
     def set(self, event, key, value):
         print "Setting '%s' to '%s'" % (key, value)
         config = ibid.config

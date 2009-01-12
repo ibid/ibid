@@ -1,7 +1,7 @@
 from time import sleep
 
 import ibid
-from ibid.plugins import Processor, match, authorise
+from ibid.plugins import Processor, match
 
 class Delay(Processor):
 

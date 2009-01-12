@@ -83,6 +83,8 @@ class Utils(Processor):
     <name> is the same as <name>"""
     feature = 'factoids'
 
+    permission = u'factoid'
+
     @match(r'^literal\s+(.+?)(?:\s+start(?:ing)?\s+(?:from\s+)?(\d+))?$')
     def literal(self, event, name, start):
         start = start and int(start) or 0
@@ -99,7 +101,7 @@ class Utils(Processor):
         session.close()
 
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
-    @authorise(u'factoid')
+    @authorise
     def forget(self, event, name, number, pattern):
         session = ibid.databases.ibid()
         factoids = get_factoid(session, name, number, pattern, True)
@@ -131,7 +133,7 @@ class Utils(Processor):
             event.addresponse(u"I didn't know about %s anyway" % name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
-    @authorise(u'factoid')
+    @authorise
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
@@ -206,12 +208,13 @@ class Set(Processor):
 
     verbs = verbs
     priority = 910
+    permission = u'factoid'
     
     def setup(self):
         self.set_factoid.im_func.pattern = re.compile(r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs), re.I)
 
     @handler
-    @authorise(u'factoid')
+    @authorise
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
         verb = verb1 and verb1 or verb2
 

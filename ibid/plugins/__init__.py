@@ -47,7 +47,8 @@ class Processor(object):
                 if hasattr(method, 'pattern'):
                     match = method.pattern.search(event.message)
                     if match is not None:
-                        event = method(event, *match.groups()) or event
+                        if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
+                            event = method(event, *match.groups()) or event
                 else:
                     event = method(event) or event
 
@@ -75,12 +76,8 @@ def auth_responses(event, permission):
 
     return True
 
-def authorise(permission):
-    def wrap(function):
-        def new(self, event, *args):
-            if auth_responses(event, permission):
-                return function(self, event, *args)
-        return new
-    return wrap
+def authorise(function):
+    function.authorised = True
+    return function
 
 # vi: set et sta sw=4 ts=4:
