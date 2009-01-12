@@ -54,8 +54,8 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidValue.factoid_id], cascade='')
-FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidName.factoid_id], cascade='')
+FactoidName.values = relation(FactoidValue, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidValue.factoid_id])
+FactoidValue.names = relation(FactoidName, uselist=True, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidName.factoid_id])
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
@@ -151,6 +151,20 @@ class Forget(Processor):
         else:
             event.addresponse(u"I didn't know about %s anyway" % name)
 
+    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
+    @authorise
+    def alias(self, event, target, source):
+
+        session = ibid.databases.ibid()
+        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        if fact:
+            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
+            session.save_or_update(new)
+            session.flush()
+            session.close()
+            event.addresponse(True)
+        else:
+            event.addresponse(u"I don't know about %s" % name)
 
 class Get(Processor):
     """<factoid> [( #<number> | /<pattern>/ )]"""
@@ -255,20 +269,5 @@ class Set(Processor):
         session.flush()
         session.close()
         event.addresponse(True)
-
-    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
-    @authorise
-    def alias(self, event, target, source):
-
-        session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
-        if fact:
-            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
-            session.save_or_update(new)
-            session.flush()
-            session.close()
-            event.addresponse(True)
-        else:
-            event.addresponse(u"I don't know about %s" % name)
 
 # vi: set et sta sw=4 ts=4:
