@@ -155,12 +155,16 @@ class Permissions(Processor):
 
         event.addresponse(', '.join(['%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions]))
 
-    @match(r'^list\s+permissions')
+    @match(r'^list\s+permissions$')
     def list_permissions(self, event):
         permissions = []
         for processor in ibid.processors:
             if hasattr(processor, 'permission') and getattr(processor, 'permission') not in permissions:
                 permissions.append(getattr(processor, 'permission'))
+            if hasattr(processor, 'permissions'):
+                for permission in getattr(processor, 'permissions'):
+                    if permission not in permissions:
+                        permissions.append(permission)
 
         event.addresponse(', '.join(permissions))
 

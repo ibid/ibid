@@ -19,6 +19,7 @@ class Tell(Processor):
     feature = 'memo'
 
     permission = u'sendmemo'
+    permissions = (u'recvmemo',)
 
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
     @authorise
