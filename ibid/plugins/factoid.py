@@ -18,12 +18,18 @@ help = {'factoids': 'Factoids are arbitrary pieces of information stored by a ke
 
 Base = declarative_base()
 
+class Factoid(Base):
+    __tablename__ = 'factoids'
+
+    id = Column(Integer, primary_key=True)
+
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(256))
-    factoid_id = Column(Integer)
+    factoid_id = Column(Integer, ForeignKey(Factoid.id))
+    factoid = relation(Factoid, backref='names')
     identity = Column(Integer)
     time = Column(DateTime)
 
@@ -41,7 +47,8 @@ class FactoidValue(Base):
 
     id = Column(Integer, primary_key=True)
     value = Column(UnicodeText)
-    factoid_id = Column(Integer)
+    factoid_id = Column(Integer, ForeignKey(Factoid.id))
+    factoid = relation(Factoid, backref='values')
     identity = Column(Integer)
     time = Column(DateTime)
 
@@ -54,6 +61,9 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
+#FactoidName.values = relation(FactoidValue, primaryjoin=FactoidName.factoid_id==Factoid.id, secondary=Factoid.__table__, secondaryjoin=Factoid.id==FactoidValue.factoid_id)
+#FactoidValue.names = relation(FactoidName, primaryjoin=FactoidValue.factoid_id==Factoid.id, secondary=Factoid.__table__, secondaryjoin=Factoid.id==FactoidName.factoid_id)
+
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
@@ -63,7 +73,7 @@ def escape_name(name):
 
 def get_factoid(session, name, number, pattern, all=False):
     factoid = None
-    query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name).filter(FactoidName.factoid_id==FactoidValue.factoid_id)
+    query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
     if pattern:
         query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
     if number:
@@ -148,10 +158,11 @@ class Forget(Processor):
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
-        if fact:
-            new = FactoidName(escape_name(unicode(target)), event.identity, fact.factoid_id)
-            session.save_or_update(new)
+        fname = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        if fname:
+            newname = FactoidName(escape_name(unicode(target)), event.identity)
+            fname.factoid.names.append(newname)
+            session.save_or_update(fname.factoid)
             session.flush()
             session.close()
             event.addresponse(True)
@@ -231,32 +242,28 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        fact = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
-        if fact:
+        fname = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
+        if fname:
+            factoid = fname.factoid
             if correction:
-                values = session.query(FactoidValue).filter_by(factoid_id=fact.factoid_id).all()
                 identities = get_identities(event, session)
-                if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity not in identities, values)) > 0:
+                if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity not in identities, factoid.values)) > 0:
                     return
-                for factoid in values:
-                    session.delete(factoid)
+                for fvalue in factoid.values:
+                    session.delete(fvalue)
                 session.flush()
             elif not addition:
                 event.addresponse(u"I already know stuff about %s" % name)
                 return
         else:
-            max = session.query(FactoidName).order_by(desc(FactoidName.factoid_id)).first()
-            if max and max.factoid_id:
-                next = max.factoid_id + 1
-            else:
-                next = 1
-            fact = FactoidName(escape_name(unicode(name)), event.identity, next)
-            session.save_or_update(fact)
-            session.flush()
+            factoid = Factoid()
+            fname = FactoidName(escape_name(unicode(name)), event.identity)
+            factoid.names.append(fname)
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
-        factoid = FactoidValue(unicode(value), event.identity, fact.factoid_id)
+        fvalue = FactoidValue(unicode(value), event.identity)
+        factoid.values.append(fvalue)
         session.save_or_update(factoid)
         session.flush()
         session.close()
