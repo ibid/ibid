@@ -61,9 +61,6 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-#FactoidName.values = relation(FactoidValue, primaryjoin=FactoidName.factoid_id==Factoid.id, secondary=Factoid.__table__, secondaryjoin=Factoid.id==FactoidValue.factoid_id)
-#FactoidValue.names = relation(FactoidName, primaryjoin=FactoidValue.factoid_id==Factoid.id, secondary=Factoid.__table__, secondaryjoin=Factoid.id==FactoidName.factoid_id)
-
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
@@ -94,9 +91,9 @@ class Utils(Processor):
     def literal(self, event, name, start):
         start = start and int(start) or 0
         session = ibid.databases.ibid()
-        factoids = session.query(FactoidName).add_entity(FactoidValue).filter(func.lower(FactoidName.name)==escape_name(name).lower()).filter(FactoidName.factoid_id==FactoidValue.factoid_id).order_by(FactoidValue.id).all()
-        if factoids:
-            event.addresponse(', '.join([factoid[1].value for factoid in factoids[start:]]))
+        factoid = session.query(Factoid).options(eagerload('values')).filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
+        if factoid:
+            event.addresponse(', '.join(['%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
 
         session.close()
 
@@ -158,11 +155,11 @@ class Forget(Processor):
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
-        fname = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
-        if fname:
+        factoid = session.query(Factoid).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        if factoid:
             newname = FactoidName(escape_name(unicode(target)), event.identity)
-            fname.factoid.names.append(newname)
-            session.save_or_update(fname.factoid)
+            factoid.names.append(newname)
+            session.save_or_update(factoid)
             session.flush()
             session.close()
             event.addresponse(True)
@@ -242,9 +239,8 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        fname = session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
-        if fname:
-            factoid = fname.factoid
+        factoid = session.query(Factoid).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
+        if factoid:
             if correction:
                 identities = get_identities(event, session)
                 if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity not in identities, factoid.values)) > 0:
