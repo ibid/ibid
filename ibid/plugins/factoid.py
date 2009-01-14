@@ -22,6 +22,8 @@ class Factoid(Base):
     __tablename__ = 'factoids'
 
     id = Column(Integer, primary_key=True)
+    names = relation('FactoidName', cascade='all,delete')
+    values = relation('FactoidValue', cascade='all,delete')
 
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
@@ -29,7 +31,7 @@ class FactoidName(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(256))
     factoid_id = Column(Integer, ForeignKey(Factoid.id))
-    factoid = relation(Factoid, backref='names')
+    factoid = relation(Factoid)
     identity = Column(Integer)
     time = Column(DateTime)
 
@@ -48,7 +50,7 @@ class FactoidValue(Base):
     id = Column(Integer, primary_key=True)
     value = Column(UnicodeText)
     factoid_id = Column(Integer, ForeignKey(Factoid.id))
-    factoid = relation(Factoid, backref='values')
+    factoid = relation(Factoid)
     identity = Column(Integer)
     time = Column(DateTime)
 
@@ -112,6 +114,7 @@ class Forget(Processor):
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
+            factoid = factoids[0][0].factoid
 
             if (number or pattern):
                 if len(factoids) > 1:
@@ -121,28 +124,25 @@ class Forget(Processor):
                 if factoids[0][1].identity not in identities and not factoidadmin:
                     return
 
-                if session.query(FactoidValue).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
+                if len(factoid.values) == 1:
                     print "Last value, deleting names"
-                    names = [factoid[0] for factoid in factoids]
-                    if len(filter(lambda x: x.identity not in identities, names)) > 0 and not factoidadmin:
+                    if len(filter(lambda x: x.identity not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
-                    for name in names:
-                        session.delete(name)
-
-                session.delete(factoids[0][1])
+                    session.delete(factoid)
+                else:
+                    session.delete(factoids[0][1])
 
             else:
                 if factoids[0][0].identity not in identities and not factoidadmin:
                     return
-                if session.query(FactoidName).filter_by(factoid_id=factoids[0][0].factoid_id).count() == 1:
-                    print "Last name, deleting values"
-                    values = [factoid[1] for factoid in factoids]
-                    if len(filter(lambda x: x.identity not in identities, values)) > 0 and not factoidadmin:
-                        return
-                    for value in values:
-                        session.delete(value)
 
-                session.delete(factoids[0][0])
+                if len(factoid.names) == 1:
+                    print "Last name, deleting values"
+                    if len(filter(lambda x: x.identity not in identities, factoid.values)) > 0 and not factoidadmin:
+                        return
+                    session.delete(factoid)
+                else:
+                    session.delete(factoids[0][0])
 
             session.flush()
             session.close()
