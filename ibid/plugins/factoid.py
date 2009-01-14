@@ -25,6 +25,9 @@ class Factoid(Base):
     names = relation('FactoidName', cascade='all,delete')
     values = relation('FactoidValue', cascade='all,delete')
 
+    def __repr__(self):
+        return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
+
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
@@ -63,6 +66,9 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
+#FactoidValue.names = relation(FactoidName, primaryjoin=FactoidValue.factoid_id==FactoidName.factoid_id, foreign_keys=[FactoidName.factoid_id, FactoidValue.factoid_id])
+#FactoidName.values = relation(FactoidValue, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidName.factoid_id, FactoidValue.factoid_id])
+
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
@@ -72,7 +78,7 @@ def escape_name(name):
 
 def get_factoid(session, name, number, pattern, all=False):
     factoid = None
-    query = session.query(FactoidName).add_entity(FactoidValue).filter(":fact LIKE name ESCAPE '\\'").params(fact=name)
+    query = session.query(Factoid).add_entity(FactoidName).add_entity(FactoidValue).join('names').filter(":fact LIKE name ESCAPE '\\'").params(fact=name).join('values')
     if pattern:
         query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
     if number:
@@ -93,7 +99,7 @@ class Utils(Processor):
     def literal(self, event, name, start):
         start = start and int(start) or 0
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).options(eagerload('values')).filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
+        factoid = session.query(Factoid).options(eagerload('values')).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
         if factoid:
             event.addresponse(', '.join(['%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
 
@@ -114,14 +120,14 @@ class Forget(Processor):
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
-            factoid = factoids[0][0].factoid
+            factoid = factoids[0][0]
 
             if (number or pattern):
                 if len(factoids) > 1:
                     event.addresponse(u"Pattern matches multiple factoids, please be more specific")
                     return
 
-                if factoids[0][1].identity not in identities and not factoidadmin:
+                if factoids[0][2].identity not in identities and not factoidadmin:
                     return
 
                 if len(factoid.values) == 1:
@@ -130,10 +136,10 @@ class Forget(Processor):
                         return
                     session.delete(factoid)
                 else:
-                    session.delete(factoids[0][1])
+                    session.delete(factoids[0][2])
 
             else:
-                if factoids[0][0].identity not in identities and not factoidadmin:
+                if factoids[0][1].identity not in identities and not factoidadmin:
                     return
 
                 if len(factoid.names) == 1:
@@ -142,7 +148,7 @@ class Forget(Processor):
                         return
                     session.delete(factoid)
                 else:
-                    session.delete(factoids[0][0])
+                    session.delete(factoids[0][1])
 
             session.flush()
             session.close()
@@ -155,7 +161,7 @@ class Forget(Processor):
     def alias(self, event, target, source):
 
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        factoid = session.query(Factoid).join('names').filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
@@ -186,9 +192,9 @@ class Get(Processor):
         session.close()
 
         if factoid:
-            (fact, value) = factoid
-            reply = value.value
-            pattern = re.escape(fact.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
+            (factoid, fname, fvalue) = factoid
+            reply = fvalue.value
+            pattern = re.escape(fname.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
 
             position = 1
             for capture in re.match(pattern, name, re.I).groups():
@@ -218,7 +224,7 @@ class Get(Processor):
                 if count:
                     event.addresponse({'reply': reply})
                 else:
-                    reply = '%s %s' % (fact.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
+                    reply = '%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
                     event.addresponse(reply)
 
 class Set(Processor):
@@ -239,7 +245,7 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
+        factoid = session.query(Factoid).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if factoid:
             if correction:
                 identities = get_identities(event, session)
