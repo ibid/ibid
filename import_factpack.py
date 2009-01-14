@@ -4,7 +4,7 @@ from sys import argv, exit
 
 import ibid
 from ibid.config import FileConfig
-from ibid.plugins.factoid import FactoidName, FactoidValue
+from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 
 if len(argv) != 2:
     print 'Usage: import_factpack.py <factpack>'
@@ -19,20 +19,16 @@ locals = {}
 execfile(argv[1], {}, locals)
 
 session = ibid.databases.ibid()
-max = session.query(FactoidName).order_by(FactoidName.factoid_id.desc()).first()
-if max and max.factoid_id:
-    next = max.factoid_id + 1
-else:
-    next = 1
 
 for names, values in locals['facts']:
+    factoid = Factoid()
     for name in names:
-        factoid = FactoidName(unicode(name), None, next)
-        session.save(factoid)
+        fname = FactoidName(unicode(name), None)
+        factoid.names.append(fname)
     for value in values:
-        factoid = FactoidValue(unicode(value), None, next)
-        session.save(factoid)
-    next += 1
+        fvalue = FactoidValue(unicode(value), None)
+        factoid.values.append(fvalue)
+    session.save(factoid)
 
 session.flush()
 session.close()

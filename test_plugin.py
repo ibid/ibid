@@ -31,14 +31,14 @@ while True:
         event.account = event.identity = None
         event.addressed = True
         event.public = False
-        event.message = raw_input('Query: ')
+        event.message = unicode(raw_input('Query: '))
         for processor in ibid.processors:
             processor.process(event)
         for response in event.responses:
             if isinstance(response, dict):
                 response = response['reply']
             print 'Response: %s' % response
-        print event
+#        print event
     except Exception, e:
         print_exc()
 
