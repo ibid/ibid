@@ -42,4 +42,32 @@ class Nickometer(Processor):
         if wreasons:
             event.addresponse(', '.join(['%s (%s)' % reason for reason in reasons]))
 
+help['man'] = 'Retrieves information from manpages.'
+class Man(Processor):
+    """man [<section>] <page>"""
+    feature = 'man'
+
+    man = 'man'
+
+    @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
+    def handle_man(self, event, section, page):
+        command = [self.man, page]
+        if section:
+            command.insert(1, section)
+        man = Popen(command, stdout=PIPE, stderr=PIPE)
+        output, error = man.communicate()
+        code = man.wait()
+
+        if code != 0:
+            event.addresponse(u'Manpage not found')
+        else:
+            lines = output.splitlines()
+            index = lines.index('NAME')
+            if index:
+                event.addresponse(lines[index+1].strip())
+            index = lines.index('SYNOPSIS')
+            if index:
+                event.addresponse(lines[index+1].strip())
+        
+
 # vi: set et sta sw=4 ts=4:

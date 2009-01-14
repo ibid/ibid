@@ -157,8 +157,8 @@ class Forget(Processor):
         session = ibid.databases.ibid()
         factoid = session.query(Factoid).filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
-            newname = FactoidName(escape_name(unicode(target)), event.identity)
-            factoid.names.append(newname)
+            name = FactoidName(escape_name(unicode(target)), event.identity)
+            factoid.names.append(name)
             session.save_or_update(factoid)
             session.flush()
             session.close()

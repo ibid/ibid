@@ -81,6 +81,7 @@ class Identities(Processor):
                 currentidentity.account_id = account.id
                 session.save_or_update(currentidentity)
                 session.flush()
+                identify_cache.clear()
                 event.addresponse(u"I've created the account %s for you" % username)
 
         else:
