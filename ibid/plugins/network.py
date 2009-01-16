@@ -84,4 +84,25 @@ class Tracepath(Processor):
         else:
             event.addresponse(error.replace('\n', ' ').strip())
 
+help['ipcalc'] = 'IP address calculator'
+class IPCalc(Processor):
+    """ipcalc"""
+    feature = 'ipcalc'
+
+    ipcalc = 'ipcalc'
+
+    @match(r'^ipcalc\s+(.+)$')
+    def handle_ipcalc(self, event, parameter):
+        
+        ipcalc = Popen([self.ipcalc, parameter], stdout=PIPE, stderr=PIPE)
+        output, error = ipcalc.communicate()
+        code = ipcalc.wait()
+
+        if code == 0:
+            for line in output.splitlines():
+                if line:
+                    event.addresponse(line)
+        else:
+            event.addresponse(error.replace('\n', ' '))
+
 # vi: set et sta sw=4 ts=4:
