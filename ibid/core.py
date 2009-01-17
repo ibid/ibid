@@ -151,7 +151,7 @@ class Reloader(object):
 
         ibid.processors.sort(key=lambda x: x.priority)
 
-        self.log.info(u"Loaded %s plugin", name)
+        self.log.debug(u"Loaded %s plugin", name)
         return True
 
     def unload_processor(self, name):

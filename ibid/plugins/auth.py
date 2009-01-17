@@ -1,6 +1,7 @@
 import string
 from random import choice
 import re
+import logging
 try:
     from hashlib import sha1
 except ImportError:
@@ -15,8 +16,11 @@ from ibid.plugins.identity import Account
 
 help = {}
 
+log = logging.getLogger('plugins.auth')
+
 chars = string.letters + string.digits
 permission_re = re.compile('^([+-]?)(\S+)$')
+actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
 
 def hash(password, salt=None):
     if salt:
@@ -88,6 +92,7 @@ class AddAuth(Processor):
         credential = Credential(method, credential, source, account.id)
         session.save_or_update(credential)
         session.flush()
+        log.info(u"Added %s credential %s for account %s (%s) on %s by account %s", method, credential.credential, account.id, account.username, source, event.account)
         session.close()
 
         event.addresponse(u'Okay')
@@ -115,7 +120,7 @@ class Permissions(Processor):
             if permission:
                 session.delete(permission)
             else:
-                event.addresponse(u"%s doesn't have that permission anyway")
+                event.addresponse(u"%s doesn't have that permission anyway" % username)
                 return
 
         else:
@@ -129,10 +134,15 @@ class Permissions(Processor):
             else:
                 value = 'yes'
 
+            if permission.value == value:
+                event.addresponse(u"%s permission for %s is already %s" % (name, username, value))
+                return
+
             permission.value = value
             session.save_or_update(permission)
 
         session.flush()
+        log.info(u"%s %s permission for account %s (%s) by account %s", actions[action.lower()], name, account.id, account.username, event.account)
         session.close()
 
         event.addresponse(True)

@@ -1,3 +1,5 @@
+import logging
+
 from configobj import ConfigObj, Section
 from validate import Validator
 
@@ -31,6 +33,7 @@ def FileConfig(filename):
     configspec = ConfigObj('configspec.ini', list_values=False, encoding='utf-8')
     config = ConfigObj(filename, configspec=configspec, interpolation='Template', encoding='utf-8')
     config.validate(Validator())
+    logging.getLogger('core.config').info(u"Loaded configuration from %s", filename)
     return config
 
 # vi: set et sta sw=4 ts=4:

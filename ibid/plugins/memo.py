@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,6 +15,7 @@ from ibid.utils import ago
 help = {'memo': 'Keeps messages for people.'}
 
 memo_cache = {}
+log = logging.getLogger('plugins.memo')
 
 class Tell(Processor):
     """(tell|pm|privmsg|msg) <person> <message>"""
@@ -48,6 +50,7 @@ class Tell(Processor):
         session.flush()
         session.close()
         memo_cache.clear()
+        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender, memo.memo)
 
         event.addresponse(True)
 
@@ -78,6 +81,7 @@ class Deliver(Processor):
 
             memo.delivered = True
             session.save_or_update(memo)
+            log.info(u"Delivered memo %s to %s (%s)", memo.id, event.identity, event.sender)
 
         session.flush()
         session.close()
