@@ -5,9 +5,10 @@ import sys
 sys.path.append("./lib/wokkel.egg")
 sys.path.insert(0, './lib')
 
+import twisted.python.log
+
 import ibid.core
 from ibid.config import FileConfig
-from ibid.log import PythonExceptionLoggingObserver
 
 sources = {}
 config = {}
@@ -18,8 +19,25 @@ databases = None
 auth = None
 service = None
 
+def twisted_log(eventDict):
+    log = logging.getLogger('twisted')
+    if 'failure' in eventDict:
+        log.error(eventDict['failure'].getTrackback())
+    elif 'warning' in eventDict:
+        log.warning(eventDict['warning'])
+    else:
+        log.info(' '.join([str(m) for m in eventDict['message']]))
+
 def setup(service=None):
+    # Undo Twisted logging's redirection of stdout and stderr
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
     logging.basicConfig(level=logging.INFO)
+
+    # Get Twisted to log to Python logging
+    for observer in twisted.python.log.theLogPublisher.observers:
+        twisted.python.log.removeObserver(observer)
+    twisted.python.log.addObserver(twisted_log)
 
     service = service
     ibid.config = FileConfig("ibid.ini")
@@ -29,9 +47,6 @@ def setup(service=None):
         logging.getLogger('core').info(u'Loading log configuration from %s', ibid.config['logging'])
         logging.config.fileConfig(ibid.config['logging'])
 
-    observer = PythonExceptionLoggingObserver()
-    observer.start()
-     
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()
     ibid.reloader.reload_databases()
