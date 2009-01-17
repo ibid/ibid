@@ -2,6 +2,7 @@ from datetime import datetime
 from random import choice
 from time import localtime, strftime
 import re
+import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
 from sqlalchemy.orm import relation, mapper, eagerload
@@ -17,6 +18,7 @@ from ibid.models import Account
 help = {'factoids': 'Factoids are arbitrary pieces of information stored by a key.'}
 
 Base = declarative_base()
+log = logging.getLogger('plugins.factoid')
 
 class Factoid(Base):
     __tablename__ = 'factoids'
@@ -261,11 +263,13 @@ class Set(Processor):
             factoid = Factoid()
             fname = FactoidName(escape_name(unicode(name)), event.identity)
             factoid.names.append(fname)
+            log.info(u"Created factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
         fvalue = FactoidValue(unicode(value), event.identity)
         factoid.values.append(fvalue)
+        log.info(u"Added value '%s' to factoid %s by %s", fvalue.value, factoid.id, event.identity)
         session.save_or_update(factoid)
         session.flush()
         session.close()

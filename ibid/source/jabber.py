@@ -1,3 +1,5 @@
+import logging
+
 from wokkel import client, xmppim, subprotocols, compat
 from twisted.internet import reactor, protocol, ssl
 from twisted.words.protocols.jabber.jid import JID
@@ -24,6 +26,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.rooms = []
 
     def connectionInitialized(self):
+        self.parent.log.info(u"Connected")
         xmppim.MessageProtocol.connectionInitialized(self)
         xmppim.PresenceClientProtocol.connectionInitialized(self)
         xmppim.RosterClientProtocol.connectionInitialized(self)
@@ -42,6 +45,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.who = event.sender.split('@')[0]
         event.state = show or u'available'
         event.channel = entity.full()
+        self.parent.log.debug(u"Received available presence from %s (%s)", event.sender, event.state)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def unavailableReceived(self, entity, statuses):
@@ -51,6 +55,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.who = event.sender.split('@')[0]
         event.state = u'offline'
         event.channel = entity.full()
+        self.parent.log.debug(u"Received unavailable presence from %s", event.sender)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def subscribeReceived(self, entity):
@@ -58,14 +63,18 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(response)
         response = xmppim.Presence(to=entity, type='subscribe')
         self.xmlstream.send(response)
+        self.parent.log.info(u"Received and accepted subscription request from %s", entity.full())
 
     def onMessage(self, message):
+        self.parent.log.debug(u"Received %s message from %s: %s", message['type'], message['from'], message.body)
+
         if message.x and message.x.defaultUri == 'jabber:x:delay':
+            self.parent.log.debug(u"Ignoring delayed message")
             return
 
         if 'accept_domains' in ibid.config.sources[self.name]:
             if message['from'].split('/')[0].split('@')[1] not in ibid.config.sources[self.name]['accept_domains']:
-                print 'Ignoring message from %s' % message['from']
+                self.parent.log.info(u"Ignoring message because sender is not in accept_domains")
                 return
 
         event = Event(self.parent.name, u'message')
@@ -102,18 +111,21 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             message['type'] = 'chat'
         message.addElement('body', content=response['reply'])
         self.xmlstream.send(message)
+        self.parent.log.debug(u"Sent %s message to %s: %s", message['type'], message['to'], message.body)
 
     def join(self, room):
         jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
         presence = xmppim.AvailablePresence(to=jid)
         self.xmlstream.send(presence)
         self.rooms.append(room)
+        self.parent.log.info(u"Joining %s", room)
 
     def part(self, room):
         jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
         presence = xmppim.UnavailablePresence(to=jid)
         self.xmlstream.send(presence)
         self.rooms.remove(room)
+        self.parent.log.info(u"Leaving %s", room)
 
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
@@ -123,6 +135,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
+        self.log = logging.getLogger('source.%s' % name)
         client.DeferredClientFactory.__init__(self, JID(self.jid), self.password)
         bot = JabberBot()
         self.addHandler(bot)

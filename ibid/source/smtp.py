@@ -1,3 +1,4 @@
+import logging
 from StringIO import StringIO
 try:
     from email.utils import parseaddr
@@ -36,6 +37,7 @@ class Message:
     def __init__(self, name):
         self.lines = []
         self.name = name
+        self.log = logging.getLogger('source.%s' % name)
 
     def lineReceived(self, line):
         self.lines.append(line)
@@ -74,6 +76,7 @@ class Message:
         else:
             event.message = event.subject
 
+        self.log.debug(u"Received message from %s: %s", headers['from'], headers['subject'])
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
         return defer.succeed(None)
 
@@ -86,6 +89,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
+        self.log = logging.getLogger('source.%s' % name)
         self.delivery = IbidDelivery(name)
 
     def buildProtocol(self, addr):
@@ -131,5 +135,6 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += message
 
         smtp.sendmail(ibid.config.sources[self.name]['relayhost'], ibid.config.sources[self.name]['address'], response['to'], body)
+        self.log.debug(u"Sent email to %s: %s", response['to'], response['subject'])
 
 # vi: set et sta sw=4 ts=4:

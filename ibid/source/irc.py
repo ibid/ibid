@@ -1,6 +1,7 @@
 import re
 from fnmatch import fnmatch
 from time import sleep
+import logging
 
 from twisted.internet import reactor
 from twisted.words.protocols import irc
@@ -24,8 +25,10 @@ class Ircbot(irc.IRCClient):
         self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
+        self.factory.log.info(u"Connected")
 
     def connectionLost(self, reason):
+        self.factory.log.info(u"Disconnected (%s", reason)
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
@@ -33,6 +36,7 @@ class Ircbot(irc.IRCClient):
             self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'].encode(encoding))
         for channel in ibid.config.sources[self.factory.name]['channels']:
             self.join(channel.encode(encoding))
+        self.factory.log.info(u"Signed on")
 
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
@@ -53,9 +57,11 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
+        self.factory.log.debug(u"Received privmsg from %s in %s: %s", user, channel, msg)
         self._message_event(u'message', user, channel, msg)
 
     def noticed(self, user, channel, msg):
+        self.factory.log.debug(u"Received notice from %s in %s: %s", user, channel, msg)
         self._message_event(u'notice', user, channel, msg)
 
     def _message_event(self, msgtype, user, channel, msg):
@@ -72,15 +78,19 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
+        self.factory.log.debug(u"%s has joined %s", user, channel)
         self._state_event(user, channel, u'joined')
 
     def userLeft(self, user, channel):
+        self.factory.log.debug(u"%s has left %s", user, channel)
         self._state_event(user, channel, u'parted')
 
     def userQuit(self, user, channel):
+        self.factory.log.debug(u"%s has quit %s", user, channel)
         self._state_event(user, channel, u'quit')
 
     def userKicked(self, kickee, channel, kicker, message):
+        self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", kickee, channel, kicker, message)
         self._state_event(kickee, channel, u'kicked', kicker, message)
 
     def respond(self, event):
@@ -88,15 +98,20 @@ class Ircbot(irc.IRCClient):
             self.send(response)
 
     def send(self, response):
+        message = response['reply'].encode(encoding).replace('\n', ' ')[:490]
         if 'action' in response and response['action']:
-            self.me(response['target'].encode(encoding), response['reply'].encode(encoding))
+            self.me(response['target'].encode(encoding), message)
+            self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
-            self.msg(response['target'].encode(encoding), response['reply'].encode(encoding).replace('\n', ' ')[:512])
+            self.msg(response['target'].encode(encoding), message)
+            self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
 
     def join(self, channel):
+        self.factory.log.info(u"Joining %s", channel)
         irc.IRCClient.join(self, channel.encode(encoding))
 
     def part(self, channel):
+        self.factory.log.info(u"Leaving %s", channel)
         irc.IRCClient.part(self, channel.encode(encoding))
 
     def authenticate(self, nick, callback):
@@ -105,6 +120,7 @@ class Ircbot(irc.IRCClient):
 
     def do_auth_callback(self, nick, result):
         if nick in self.auth_callbacks:
+            self.factory.log.debug(u"Authentication result for %s: %s", nick, result)
             self.auth_callbacks[nick](nick, result)
             del self.auth_callbacks[nick]
 
@@ -128,6 +144,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.auth = {}
+        self.log = logging.getLogger('source.%s' % self.name)
 
     def setServiceParent(self, service):
         if self.ssl:

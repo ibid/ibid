@@ -1,4 +1,5 @@
 from traceback import print_exc
+import logging
 
 import sys
 sys.path.append("./lib/wokkel.egg")
@@ -17,6 +18,7 @@ auth = None
 service = None
 
 def setup(service=None):
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename='logs/ibid.log')
     service = service
     ibid.config = FileConfig("ibid.ini")
     ibid.config.merge(FileConfig("local.ini"))

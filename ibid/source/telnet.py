@@ -1,3 +1,5 @@
+import logging
+
 from twisted.internet import protocol, reactor
 from twisted.conch import telnet
 from twisted.application import internet
@@ -18,6 +20,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     def telnet_User(self, line):
         self.user = line.strip()
+        self.factory.log.info(u"Connection established with %s", self.user)
         return 'Query'
 
     def telnet_Query(self, line):
@@ -29,6 +32,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
         event.channel = event.sender
         event.addressed = True
         event.public = False
+        self.factory.log.debug(u"Received message from %s: %s", self.user, event.message)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
         return 'Query'
 
@@ -38,11 +42,17 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     def send(self, response):
         self.transport.write(response['reply'].encode(encoding) + '\n')
+        self.factory.log.debug(u"Sent message to %s: %s", self.user, response['reply'])
 
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
 
     port = 3000
+
+    def __init__(self, name, *args, **kwargs):
+        #protocol.ServerFactory.__init__(self, *args, **kwargs)
+        IbidSourceFactory.__init__(self, name)
+        self.log = logging.getLogger('source.%s' % name)
 
     def setServiceParent(self, service=None):
         if service:
