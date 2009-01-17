@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import SMTPHandler
 
 import sys
 sys.path.append("./lib/wokkel.egg")
@@ -19,6 +20,7 @@ log = logging.getLogger('core')
 
 def setup(service=None):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename='logs/ibid.log')
+
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(name)s %(levelname)s: %(message)s')
@@ -28,6 +30,12 @@ def setup(service=None):
     service = service
     ibid.config = FileConfig("ibid.ini")
     ibid.config.merge(FileConfig("local.ini"))
+
+    if 'email_errors' in ibid.config:
+        email = SMTPHandler('localhost', 'ibid@localhost', ibid.config['email_errors'], 'Error Report')
+        email.setLevel(logging.ERROR)
+        logging.getLogger('').addHandler(email)
+     
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()
     ibid.reloader.reload_databases()
