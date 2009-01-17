@@ -7,6 +7,7 @@ sys.path.insert(0, './lib')
 
 import ibid.core
 from ibid.config import FileConfig
+from ibid.log import PythonExceptionLoggingObserver
 
 sources = {}
 config = {}
@@ -26,6 +27,9 @@ def setup(service=None):
     formatter = logging.Formatter('%(name)s %(levelname)s: %(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
+
+    observer = PythonExceptionLoggingObserver()
+    observer.start()
 
     service = service
     ibid.config = FileConfig("ibid.ini")

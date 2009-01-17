@@ -12,7 +12,7 @@ class Log(Processor):
     addressed = False
     processed = True
     priority = 1900
-    log = 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.%(day)02d.log'
+    log = 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log'
     message_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(who)s> %(message)s'
     presence_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(who)s (%(sender)s) is now %(state)s'
 
