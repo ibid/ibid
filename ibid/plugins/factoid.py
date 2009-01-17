@@ -133,11 +133,12 @@ class Forget(Processor):
                     return
 
                 if len(factoid.values) == 1:
-                    print "Last value, deleting names"
                     if len(filter(lambda x: x.identity not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
+                    log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
                     session.delete(factoid)
                 else:
+                    log.info(u"Deleting value %s of factoid %s (%s) by %s/%s (%s)", factoids[0][2].id, factoid.id, factoids[0][2].value, event.account, event.identity, event.sender)
                     session.delete(factoids[0][2])
 
             else:
@@ -145,11 +146,12 @@ class Forget(Processor):
                     return
 
                 if len(factoid.names) == 1:
-                    print "Last name, deleting values"
                     if len(filter(lambda x: x.identity not in identities, factoid.values)) > 0 and not factoidadmin:
                         return
+                    log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
                     session.delete(factoid)
                 else:
+                    log.info(u"Deleting name %s of factoid %s (%s) by %s/%s (%s)", factoids[0][1].id, factoid.id, factoids[0][1].name, event.account, event.identity, event.sender)
                     session.delete(factoids[0][1])
 
             session.flush()
@@ -171,6 +173,7 @@ class Forget(Processor):
             session.flush()
             session.close()
             event.addresponse(True)
+            log.info(u"Added name '%s' to factoid %s by %s/%s (%s)", name.name, factoid.id, event.account, event.identity, event.sender)
         else:
             event.addresponse(u"I don't know about %s" % name)
 
@@ -269,7 +272,7 @@ class Set(Processor):
             value = '%s %s' % (verb, value)
         fvalue = FactoidValue(unicode(value), event.identity)
         factoid.values.append(fvalue)
-        log.info(u"Added value '%s' to factoid %s by %s", fvalue.value, factoid.id, event.identity)
+        log.info(u"Added value '%s' to factoid %s by %s/%s (%s)", fvalue.value, factoid.id, event.account, event.identity, event.sender)
         session.save_or_update(factoid)
         session.flush()
         session.close()

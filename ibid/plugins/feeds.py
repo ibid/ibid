@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,6 +12,8 @@ import ibid
 from ibid.plugins import Processor, match, authorise
 
 Base = declarative_base()
+
+log = logging.getLogger('plugins.feeds')
 
 class Feed(Base):
     __tablename__ = 'feeds'
@@ -44,6 +47,7 @@ class Manage(Processor):
             session.save(feed)
             session.flush()
             event.addresponse(True)
+            log.info(u"Added feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender, url)
 
         session.close()
 
@@ -63,6 +67,7 @@ class Manage(Processor):
             event.addresponse(u"I don't have the %s feed anyway" % name)
         else:
             session.delete(feed)
+            log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender, feed.url)
             session.flush()
             event.addresponse(True)
 

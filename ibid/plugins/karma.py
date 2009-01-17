@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,6 +12,8 @@ from ibid.plugins import Processor, match, handler, authorise
 help = {'karma': 'Keeps track of karma for people and things.'}
 
 Base = declarative_base()
+
+log = logging.getLogger('plugins.karma')
 
 class Karma(Base):
     __tablename__ = 'karma'
@@ -41,7 +44,7 @@ class Set(Processor):
     ignore = ('foo',)
 
     def setup(self):
-        self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+(.+?)[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
+        self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
     @authorise
@@ -64,15 +67,20 @@ class Set(Processor):
                 return
             karma.changes += 1
             karma.value += 1
+            change = 'Increased'
         elif adjust.lower() in self.decrease:
             karma.changes += 1
             karma.value -= 1
+            change = 'Decreased'
         else:
             karma.changes += 2
+            change = 'Increased and decreased'
 
         session.save_or_update(karma)
         session.flush()
         session.close()
+
+        log.info(u"%s karma for '%s' by %s/%s (%s) because: %s", change, subject, event.account, event.identity, event.sender, reason)
 
         if self.reply:
             event.addresponse(True)
