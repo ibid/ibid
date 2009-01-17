@@ -1,12 +1,19 @@
 """Administrative commands for IRC"""
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
+
+help = {"irc": "Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
 
 class Actions(Processor):
-    """Usage: (join|part|leave) <channel>"""
+    """(join|part|leave) [<channel> [on <source>]]
+    change nick to <nick> [on <source>]"""
+    feature = 'irc'
+
+    permission = 'sources'
 
     @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
+    @authorise
     def channel(self, event, action, channel, source):
         action = action.lower()
 
@@ -32,6 +39,7 @@ class Actions(Processor):
             event.addresponse(u"Parting %s" % channel)
 
     @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
+    @authorise
     def change_nick(self, event, nick, source):
 
         if not source:

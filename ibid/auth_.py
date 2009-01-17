@@ -10,10 +10,9 @@ from ibid.plugins.auth import hash, permission
 
 class Auth(object):
 
-    log = logging.getLogger('core.auth')
-
     def __init__(self):
         self.cache = {}
+        self.log = logging.getLogger('core.auth')
 
     def authenticate(self, event, credential=None):
 
