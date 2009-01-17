@@ -1,6 +1,7 @@
 from traceback import print_exc
 import inspect
 import re
+import logging
 
 from twisted.internet import reactor, threads
 from sqlalchemy import create_engine
@@ -11,6 +12,8 @@ import ibid.plugins
 import ibid.auth_
 
 class Dispatcher(object):
+
+    log = logging.getLogger('core.dispatcher')
 
     def _process(self, event):
         for processor in ibid.processors:
@@ -29,16 +32,21 @@ class Dispatcher(object):
             else:
                 if source in ibid.sources:
                     reactor.callFromThread(ibid.sources[source].send, response)
+                    self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
                 else:
-                    print u'Invalid source %s' % response['source']
+                    self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
 
         event.responses = filtered
+        self.log.debug(u"Returning event to %s source", event.source)
         return event
 
     def dispatch(self, event):
+        self.log.debug(u"Received event from %s source", event.source)
         return threads.deferToThread(self._process, event)
 
 class Reloader(object):
+
+    log = logging.getLogger('core.reloader')
 
     def run(self):
         self.reload_dispatcher()
@@ -51,9 +59,11 @@ class Reloader(object):
             reload(ibid.core)
             dispatcher = ibid.core.Dispatcher()
             ibid.dispatcher = dispatcher
+            self.log.info(u"Reloaded reloader")
             return True
-        except Exception:
+        except Exception, e:
             print_exc()
+            self.log.error(u"Failed to reload reloader: %s", e.message)
             return False
         
     def load_source(self, name, service=None):
@@ -66,10 +76,12 @@ class Reloader(object):
             moduleclass = eval(factory)
         except:
             print_exc()
+            self.log.warning(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
         ibid.sources[name.lower()] = moduleclass(name)
         ibid.sources[name.lower()].setServiceParent(service)
+        self.log.info(u"Loaded %s source %s", type, name)
         return True
 
     def load_sources(self, service=None):
@@ -84,6 +96,7 @@ class Reloader(object):
 
         ibid.sources[name].protocol.loseConnection()
         del ibid.sources[name]
+        self.log.info(u"Unloaded %s source", name)
 
     def reload_source(self, name):
         if name not in ibid.config['sources']:
@@ -115,9 +128,11 @@ class Reloader(object):
             reload(m)
         except Exception, e:
             if isinstance(e, ImportError):
-                print u"Couldn't load %s plugin because it requires module %s" % (name, e.args[0].replace('No module named ', ''))
+                error = u"Couldn't load %s plugin because it requires module %s" % (name, e.args[0].replace('No module named ', ''))
+                self.log.warning(error)
             else:
                 print_exc()
+                self.log.warning(u"Couldn't load %s plugin: %s", name, e.message)
             return False
 
         try:
@@ -129,12 +144,14 @@ class Reloader(object):
                 moduleclass = eval(classname)
                 ibid.processors.append(moduleclass(name))
                 
-        except Exception:
+        except Exception, e:
             print_exc()
+            self.log.warning(u"Couldn't instantiate %s: %s", classname, e.message)
             return False
 
         ibid.processors.sort(key=lambda x: x.priority)
 
+        self.log.info(u"Loaded %s plugin", name)
         return True
 
     def unload_processor(self, name):
@@ -144,6 +161,8 @@ class Reloader(object):
                 ibid.processors.remove(processor)
                 found = True
 
+        if found:
+            self.log.info(u"Unloaded %s plugin", name)
         return found
 
     def reload_databases(self):
@@ -152,13 +171,20 @@ class Reloader(object):
         return True
 
     def reload_auth(self):
-        reload(ibid.auth_)
-        ibid.auth = ibid.auth_.Auth()
-        return True
+        try:
+            reload(ibid.auth_)
+            ibid.auth = ibid.auth_.Auth()
+            self.log.info(u'Reloaded auth')
+            return True
+        except Exception, e:
+            self.log.error(u"Couldn't reload auth: %s", e.message)
+
+        return False
 
     def reload_config(self):
         for processor in ibid.processors:
             processor.load_config()
+        self.log.info(u"Notified all processors of config reload")
 
 def regexp(pattern, item):
     return re.search(pattern, item) and True or False
@@ -174,6 +200,7 @@ def sqlite_creator(database):
 class DatabaseManager(dict):
 
     def __init__(self):
+        self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
 
@@ -184,6 +211,7 @@ class DatabaseManager(dict):
         else:
             engine = create_engine(uri)
         self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+        self.log.info(u"Loaded %s database", name)
 
     def __getattr__(self, name):
         return self[name]
