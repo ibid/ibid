@@ -1,5 +1,5 @@
 import logging
-from logging.handlers import SMTPHandler
+import logging.config
 
 import sys
 sys.path.append("./lib/wokkel.egg")
@@ -17,28 +17,20 @@ reloader = None
 databases = None
 auth = None
 service = None
-log = logging.getLogger('core')
 
 def setup(service=None):
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename='logs/ibid.log')
-
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(name)s %(levelname)s: %(message)s')
-    console.setFormatter(formatter)
-    logging.getLogger('').addHandler(console)
-
-    observer = PythonExceptionLoggingObserver()
-    observer.start()
+    logging.basicConfig(level=logging.INFO)
 
     service = service
     ibid.config = FileConfig("ibid.ini")
     ibid.config.merge(FileConfig("local.ini"))
 
-    if 'email_errors' in ibid.config:
-        email = SMTPHandler('localhost', 'ibid@localhost', ibid.config['email_errors'], 'Error Report')
-        email.setLevel(logging.ERROR)
-        logging.getLogger('').addHandler(email)
+    if 'logging' in ibid.config:
+        logging.getLogger('core').info(u'Loading log configuration from %s', ibid.config['logging'])
+        logging.config.fileConfig(ibid.config['logging'])
+
+    observer = PythonExceptionLoggingObserver()
+    observer.start()
      
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()
@@ -54,7 +46,7 @@ def reload_reloader():
         ibid.reloader = new_reloader
         return True
     except:
-        log.exception(u"Exception occured while reloading Reloader")
+        logging.getLogger('core').exception(u"Exception occured while reloading Reloader")
         return False
 
 # vi: set et sta sw=4 ts=4:

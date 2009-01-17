@@ -12,7 +12,8 @@ import ibid.auth_
 
 class Dispatcher(object):
 
-    log = logging.getLogger('core.dispatcher')
+    def __init__(self):
+        self.log = logging.getLogger('core.dispatcher')
 
     def _process(self, event):
         for processor in ibid.processors:
@@ -45,7 +46,8 @@ class Dispatcher(object):
 
 class Reloader(object):
 
-    log = logging.getLogger('core.reloader')
+    def __init__(self):
+        self.log = logging.getLogger('core.reloader')
 
     def run(self):
         self.reload_dispatcher()
