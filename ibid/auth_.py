@@ -1,4 +1,3 @@
-from traceback import print_exc
 from time import time
 import logging
 
@@ -51,7 +50,7 @@ class Auth(object):
                     self.cache[event.sender] = time()
                     return True
             except:
-                print_exc()
+                self.log.exception(u"Exception occured in %s auth method", method)
 
         self.log.info(u"Authentication for %s/%s (%s) failed", event.account, event.identity, event.sender)
         return False

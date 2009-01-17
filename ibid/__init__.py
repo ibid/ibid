@@ -1,4 +1,3 @@
-from traceback import print_exc
 import logging
 
 import sys
@@ -16,6 +15,7 @@ reloader = None
 databases = None
 auth = None
 service = None
+log = logging.getLogger('core')
 
 def setup(service=None):
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename='logs/ibid.log')
@@ -42,7 +42,7 @@ def reload_reloader():
         ibid.reloader = new_reloader
         return True
     except:
-        print_exc()
+        log.exception(u"Exception occured while reloading Reloader")
         return False
 
 # vi: set et sta sw=4 ts=4:

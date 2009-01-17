@@ -1,4 +1,3 @@
-from traceback import print_exc
 import inspect
 import re
 import logging
@@ -20,7 +19,6 @@ class Dispatcher(object):
             try:
                 event = processor.process(event) or event
             except Exception:
-                print_exc()
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
 
         print event
@@ -63,7 +61,6 @@ class Reloader(object):
             self.log.info(u"Reloaded reloader")
             return True
         except Exception, e:
-            print_exc()
             self.log.error(u"Failed to reload reloader: %s", e.message)
             return False
         
@@ -76,7 +73,6 @@ class Reloader(object):
             __import__(module)
             moduleclass = eval(factory)
         except:
-            print_exc()
             self.log.exception(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
@@ -132,7 +128,6 @@ class Reloader(object):
                 error = u"Couldn't load %s plugin because it requires module %s" % (name, e.args[0].replace('No module named ', ''))
                 self.log.warning(error)
             else:
-                print_exc()
                 self.log.exception(u"Couldn't load %s plugin", name)
             return False
 
@@ -146,7 +141,6 @@ class Reloader(object):
                 ibid.processors.append(moduleclass(name))
                 
         except Exception, e:
-            print_exc()
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False
 
