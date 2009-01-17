@@ -8,8 +8,6 @@ import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-encoding = 'utf-8'
-
 class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     state = 'User'
@@ -41,7 +39,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
             self.send(response)
 
     def send(self, response):
-        self.transport.write(response['reply'].encode(encoding) + '\n')
+        self.transport.write(response['reply'].encode('utf-8') + '\n')
         self.factory.log.debug(u"Sent message to %s: %s", self.user, response['reply'])
 
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):

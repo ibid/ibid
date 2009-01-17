@@ -14,12 +14,10 @@ from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-encoding = 'utf-8'
-
 class Ircbot(irc.IRCClient):
 
     def connectionMade(self):
-        self.nickname = ibid.config.sources[self.factory.name]['nick'].encode(encoding)
+        self.nickname = ibid.config.sources[self.factory.name]['nick'].encode('utf-8')
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
         self.factory.send = self.send
@@ -33,9 +31,9 @@ class Ircbot(irc.IRCClient):
 
     def signedOn(self):
         if 'mode' in ibid.config.sources[self.factory.name]:
-            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'].encode(encoding))
+            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'].encode('utf-8'))
         for channel in ibid.config.sources[self.factory.name]['channels']:
-            self.join(channel.encode(encoding))
+            self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
 
     def _create_event(self, type, user, channel):
@@ -98,24 +96,24 @@ class Ircbot(irc.IRCClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].encode(encoding).replace('\n', ' ')[:490]
+        message = response['reply'].encode('utf-8').replace('\n', ' ')[:490]
         if 'action' in response and response['action']:
-            self.me(response['target'].encode(encoding), message)
+            self.me(response['target'].encode('utf-8'), message)
             self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
-            self.msg(response['target'].encode(encoding), message)
+            self.msg(response['target'].encode('utf-8'), message)
             self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
 
     def join(self, channel):
         self.factory.log.info(u"Joining %s", channel)
-        irc.IRCClient.join(self, channel.encode(encoding))
+        irc.IRCClient.join(self, channel.encode('utf-8'))
 
     def part(self, channel):
         self.factory.log.info(u"Leaving %s", channel)
-        irc.IRCClient.part(self, channel.encode(encoding))
+        irc.IRCClient.part(self, channel.encode('utf-8'))
 
     def authenticate(self, nick, callback):
-        self.sendLine('WHOIS %s' % nick.encode(encoding))
+        self.sendLine('WHOIS %s' % nick.encode('utf-8'))
         self.auth_callbacks[nick] = callback
 
     def do_auth_callback(self, nick, result):
