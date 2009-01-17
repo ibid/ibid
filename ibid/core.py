@@ -21,6 +21,7 @@ class Dispatcher(object):
                 event = processor.process(event) or event
             except Exception:
                 print_exc()
+                self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
 
         print event
 
@@ -76,7 +77,7 @@ class Reloader(object):
             moduleclass = eval(factory)
         except:
             print_exc()
-            self.log.warning(u"Couldn't import %s and instantiate %s", module, factory)
+            self.log.exception(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
         ibid.sources[name.lower()] = moduleclass(name)
@@ -132,7 +133,7 @@ class Reloader(object):
                 self.log.warning(error)
             else:
                 print_exc()
-                self.log.warning(u"Couldn't load %s plugin: %s", name, e.message)
+                self.log.exception(u"Couldn't load %s plugin", name)
             return False
 
         try:
@@ -146,7 +147,7 @@ class Reloader(object):
                 
         except Exception, e:
             print_exc()
-            self.log.warning(u"Couldn't instantiate %s: %s", classname, e.message)
+            self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False
 
         ibid.processors.sort(key=lambda x: x.priority)

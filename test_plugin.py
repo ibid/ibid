@@ -2,6 +2,7 @@
 
 from sys import argv, exit
 from traceback import print_exc
+import logging
 
 if len(argv) != 2:
     print 'Usage: test_plugin.py plugin'
@@ -17,6 +18,7 @@ def auth_responses(event, permission):
 
 ibid.plugins.auth_responses = auth_responses
 
+logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
