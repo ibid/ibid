@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 from subprocess import Popen, PIPE
+
+from setuptools import setup, find_packages
 
 def bzr_revision():
     bzr = Popen(('bzr', 'tags', '--sort', 'time'), stdout=PIPE)
@@ -11,9 +12,10 @@ def bzr_revision():
 
     lines = output.splitlines()
     if len(lines) == 0:
-        raise Exception(u"No Bazaar tags defined")
-
-    (tag, revision) = lines[-1].split()
+        tag = '0.0.0'
+        revision = '0'
+    else:
+        tag, revision = lines[-1].split()
 
     bzr = Popen(('bzr', 'log', '--line', '-c', '-1'), stdout=PIPE)
     output, error = bzr.communicate()
@@ -24,10 +26,13 @@ def bzr_revision():
 
     latest = output.split(':')[0]
 
-    if latest == revision:
-        return tag
-    else:
-        return '%s-bzr%s' % (tag, latest)
+    versionstring = latest == revision and tag or '%s-bzr%s' % (tag, latest)
+
+    f = open('ibid/.version', 'w')
+    f.write(versionstring)
+    f.close()
+
+    return versionstring
 
 setup(
     name='Ibid',

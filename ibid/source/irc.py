@@ -8,6 +8,7 @@ from twisted.words.protocols import irc
 from twisted.internet import protocol, ssl
 from twisted.application import internet
 from sqlalchemy import or_
+from pkg_resources import resource_exists, resource_string
 
 import ibid
 from ibid.models import Credential
@@ -15,6 +16,8 @@ from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
 class Ircbot(irc.IRCClient):
+
+    versionNum = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or ''
 
     def connectionMade(self):
         self.nickname = ibid.config.sources[self.factory.name]['nick'].encode('utf-8')
@@ -131,6 +134,14 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
             self.do_auth_callback(params[1], False)
+
+    def ctcpQuery_VERSION(self, user, channel, data):
+        nick = user.split("!")[0]
+        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % self.versionNum)])
+
+    def ctcpQuery_SOURCE(self, user, channel, data):
+        nick = user.split("!")[0]
+        self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
