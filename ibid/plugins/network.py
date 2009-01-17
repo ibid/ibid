@@ -86,7 +86,8 @@ class Tracepath(Processor):
 
 help['ipcalc'] = 'IP address calculator'
 class IPCalc(Processor):
-    """ipcalc"""
+    """ipcalc <network> <subnet>
+    ipcalc <address> - <address>"""
     feature = 'ipcalc'
 
     ipcalc = 'ipcalc'
@@ -94,7 +95,7 @@ class IPCalc(Processor):
     @match(r'^ipcalc\s+(.+)$')
     def handle_ipcalc(self, event, parameter):
         
-        ipcalc = Popen([self.ipcalc, parameter], stdout=PIPE, stderr=PIPE)
+        ipcalc = Popen([self.ipcalc, '-n', '-b', parameter], stdout=PIPE, stderr=PIPE)
         output, error = ipcalc.communicate()
         code = ipcalc.wait()
 

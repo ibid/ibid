@@ -17,9 +17,11 @@ Tests for everything
 Factpacks: Fixed high factoid_ids? Mark in database?
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
+Memo: Leaving memos for people without identities?
 Feeds: Caching.
 Respond to CTCP VERSION
 Nick changing command
+Specify config file on command line
 
 Plugins:
 Babel
@@ -30,11 +32,9 @@ HowFar
 LastFM
 Logs
 Lotto
-Morse
 RFC
 Events
 Summon
 SVN
 Twitter
 Weather
-IPCalc
