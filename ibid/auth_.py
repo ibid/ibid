@@ -1,5 +1,6 @@
 from traceback import print_exc
 from time import time
+import logging
 
 from twisted.internet import reactor
 from sqlalchemy import or_
@@ -10,13 +11,16 @@ from ibid.plugins.auth import hash, permission
 
 class Auth(object):
 
+    log = logging.getLogger('core.auth')
+
     def __init__(self):
         self.cache = {}
 
     def authenticate(self, event, credential=None):
 
-        if 'account' not in event:
-            return
+        if 'account' not in event or not event.account:
+            self.log.debug(u"Authentication for %s (%s) failed because identity doesn't have an account", event.identity, event.sender)
+            return False
 
         config = ibid.config.auth
         methods = []
@@ -27,6 +31,7 @@ class Auth(object):
         if event.sender in self.cache:
             timestamp = self.cache[event.sender]
             if time() - timestamp < ibid.config.auth['timeout']:
+                self.log.debug(u"Authenticated %s/%s (%s) from cache", event.account, event.identity, event.sender)
                 return True
             else:
                 del self.cache[event.sender]
@@ -37,20 +42,23 @@ class Auth(object):
             elif hasattr(self, method):
                 function = getattr(self, method)
             else:
-                print "Couldn't find auth method %s" % method
+                self.log.warning(u"Couldn't find authentication method %s", method)
                 continue
 
             try:
                 if function(event, credential):
+                    self.log.info(u"Authenticated %s/%s (%s) using %s", event.account, event.identity, event.sender, method)
                     self.cache[event.sender] = time()
                     return True
             except:
                 print_exc()
 
+        self.log.info(u"Authentication for %s/%s (%s) failed", event.account, event.identity, event.sender)
         return False
 
     def authorise(self, event, name):
         value = permission(name, event.account, event.source)
+        self.log.info(u"Checking %s permission for %s/%s (%s): %s", name, event.account, event.identity, event.sender, value)
 
         if value == 'yes':
             return True
