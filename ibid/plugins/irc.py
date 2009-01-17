@@ -7,7 +7,7 @@ class Actions(Processor):
     """Usage: (join|part|leave) <channel>"""
 
     @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
-    def join(self, event, action, channel, source):
+    def channel(self, event, action, channel, source):
         action = action.lower()
 
         if not source:
@@ -30,5 +30,18 @@ class Actions(Processor):
         else:
             source.part(channel)
             event.addresponse(u"Parting %s" % channel)
+
+    @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
+    def change_nick(self, event, nick, source):
+
+        if not source:
+            source = event.source
+        source = ibid.sources[source.lower()]
+
+        if ibid.config.sources[source.name]['type'] != 'irc':
+            event.addresponse(u"%s isn't an IRC source" % source)
+        else:
+            source.change_nick(nick)
+            event.addresponse(u'Changing nick to %s' % nick)
 
 # vi: set et sta sw=4 ts=4:
