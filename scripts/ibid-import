@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+
+from sys import argv, exit, stderr, stdout
+
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, or_, ForeignKey, Boolean, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
+
+from ibid.config import FileConfig
+from ibid.models import Identity, Sighting
+from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
+from ibid.plugins.karma import Karma
+
+Base = declarative_base()
+
+class KnabFactoid(Base):
+    __tablename__ = 'factoid'
+
+    fact = Column(String(250), primary_key=True)
+    value = Column(Text, primary_key=True)
+    verb = Column(String(20), primary_key=True)
+    who = Column(String(30))
+    flags = Column(Integer)
+    time = Column(DateTime)
+
+    def __repr__(self):
+        return u'<KnabFactoid %s %s %s>' % (self.fact, self.verb, self.value)
+
+class KnabSighting(Base):
+    __tablename__ = 'seen'
+
+    nick = Column(String(30), primary_key=True)
+    time = Column(DateTime)
+    channel = Column(String(30))
+    message = Column(Text)
+
+    def __repr__(self):
+        return u'<KnabSighting %s>' % self.nick
+
+class KnabKarma(Base):
+    __tablename__ = 'karma'
+
+    person = Column(String(100), primary_key=True)
+    karma = Column(Integer)
+    time = Column(DateTime)
+
+    def __repr__(self):
+        return u'<KnabKarma %s %s>' % (self.person, self.karma)
+
+def identify(session, user, source, create=True):
+    if not user:
+        return None
+    user = decode(user)
+    
+    identity = session.query(Identity).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+    if not identity:
+        identity = Identity(source, user)
+        session.save(identity)
+        session.flush()
+
+    return identity.id
+
+def decode(string):
+    try:
+        decoded = unicode(string, 'utf-8')
+    except UnicodeDecodeError, e:
+        decoded = unicode(string, 'iso-8859-15', errors='replace')
+        stderr.write('Decoded to %s\n' % decoded.encode('utf-8'))
+
+    return decoded
+
+def import_factoids(knab, ibid, source):
+    ibid.begin()
+
+    print
+    print u"Importing factoids"
+    position = 0
+    total = knab.query(KnabFactoid).count()
+    for kfactoid in knab.query(KnabFactoid).order_by(KnabFactoid.time.asc()).all():
+
+        if not kfactoid:
+            continue
+
+        kfactoid.fact = decode(kfactoid.fact)
+        kfactoid.verb = decode(kfactoid.verb)
+        kfactoid.value = decode(kfactoid.value)
+
+        #print '%s: %s' % (position, kfactoid)
+        if position % 100 == 0:
+            stdout.write('\r%s/%s' % (position, total))
+            stdout.flush()
+        position += 1
+
+        fname = ibid.query(FactoidName).filter(func.lower(FactoidName.name)==kfactoid.fact.lower()).first()
+        if not fname:
+            factoid = Factoid()
+            fname = FactoidName(kfactoid.fact, identify(ibid, kfactoid.who, source))
+            fname.time = kfactoid.time
+            factoid.names.append(fname)
+        else:
+            factoid = fname.factoid
+
+        value = kfactoid.value.strip().startswith('<reply>') or kfactoid.value.strip().startswith('<action>') and kfactoid.value or '%s %s' % (kfactoid.verb, kfactoid.value)
+        fvalue = FactoidValue(value, identify(ibid, kfactoid.who, source))
+        fvalue.time = kfactoid.time
+
+        factoid.values.append(fvalue)
+        ibid.save_or_update(factoid)
+
+    ibid.commit()
+    ibid.flush()
+
+def import_sightings(knab, ibid, source):
+    ibid.begin()
+
+    print
+    print u"Importing sightings"
+    position = 0
+    total = knab.query(KnabSighting).count()
+    for ksighting in knab.query(KnabSighting).order_by(KnabSighting.time.asc()).all():
+
+        if not ksighting:
+            continue
+
+        ksighting.channel = decode(ksighting.channel)
+        ksighting.message = decode(ksighting.message)
+
+        #print '%s: %s' % (position, ksighting)
+        if position % 100 == 0:
+            stdout.write('\r%s/%s' % (position, total))
+            stdout.flush()
+        position += 1
+
+        sighting = Sighting(identify(ibid, ksighting.nick, source), ksighting.channel, ksighting.message)
+        sighting.time = ksighting.time
+
+        ibid.save(sighting)
+
+    ibid.commit()
+    ibid.flush()
+
+def import_karma(knab, ibid, source):
+    ibid.begin()
+
+    print
+    print u"Importing karma"
+    position = 0
+    total = knab.query(KnabKarma).count()
+    for kkarma in knab.query(KnabKarma).order_by(KnabKarma.time.asc()).all():
+
+        kkarma.person = decode(kkarma.person)
+
+        #print '%s: %s' % (position, kkarma)
+        if position % 100 == 0:
+            stdout.write('\r%s/%s' % (position, total))
+            stdout.flush()
+        position += 1
+
+        karma = Karma(kkarma.person)
+        karma.value = kkarma.karma
+        karma.time = kkarma.time
+
+        ibid.save(karma)
+
+    ibid.commit()
+    ibid.flush()
+
+if __name__ == '__main__':
+    if len(argv) < 3:
+        print 'Usage: ibid-import <knab database> <source> [<ibid config>]'
+        exit(1)
+
+    knabengine = create_engine(argv[1], encoding='utf-8')
+    KnabSession = sessionmaker(bind=knabengine)
+    knab = KnabSession()
+
+    source = argv[2]
+
+    config = len(argv) > 3 and argv[3] or 'ibid.ini'
+    config = FileConfig(config)
+
+    ibidengine = create_engine(config.databases['ibid']['uri'])
+    IbidSession = sessionmaker(bind=ibidengine, transactional=False)
+    ibid = IbidSession()
+
+    import_karma(knab, ibid, source)
+    import_sightings(knab, ibid, source)
+    import_factoids(knab, ibid, source)
+
+    ibid.close()
+    knab.close()
+
+# vi: set et sta sw=4 ts=4:

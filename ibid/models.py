@@ -95,10 +95,10 @@ class Sighting(Base):
 
     identity = relation('Identity')
 
-    def __init__(self, identity_id=None, channel=None, saying=None):
+    def __init__(self, identity_id=None, channel=None, value=None):
         self.identity_id = identity_id
         self.channel = channel
-        self.saying = saying
+        self.value = value
         self.time = datetime.now()
         self.count = 0
 
