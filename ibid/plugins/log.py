@@ -1,7 +1,7 @@
 """Logs messages sent and received."""
 
 from time import time, localtime
-from os.path import dirname, join
+from os.path import dirname, join, expanduser
 from os import makedirs
 
 import ibid
@@ -27,7 +27,7 @@ class Log(Processor):
                                     'month': when[1],
                                     'day': when[2],
                                 }
-        filename = join(ibid.options['base'], filename)
+        filename = join(ibid.options['base'], expanduser(filename))
         if filename not in self.logs:
             try:
                 makedirs(dirname(filename))

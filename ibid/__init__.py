@@ -1,6 +1,6 @@
 import logging
 import logging.config
-from os.path import join, dirname
+from os.path import join, dirname, expanduser
 
 import sys
 sys.path.append('%s/../lib/wokkel.egg' % dirname(__file__))
@@ -51,7 +51,7 @@ def setup(opts, service=None):
 
     if 'logging' in ibid.config:
         logging.getLogger('core').info(u'Loading log configuration from %s', ibid.config['logging'])
-        logging.config.fileConfig(join(options['base'], ibid.config['logging']))
+        logging.config.fileConfig(join(options['base'], expanduser(ibid.config['logging'])))
 
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()
