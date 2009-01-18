@@ -49,9 +49,12 @@ setup(
         'SQLAlchemy>=0.4.6',
         'wokkel>=0.4',
         'ConfigObj>=4.5.3',
-        'validate>=0.3.2',
+        #'validate>=0.3.2',
     ],
     packages=find_packages(exclude=['lib']),
+    entry_points={
+        'trac.plugins': ['tracibid = tracibid.notifier'],
+    },
     scripts=['ibid.tac', 'ibid.py', 'populatedb.py', 'import_factpack.py'],
     include_package_data=True,
     #package_dir={'ibid': 'ibid'},

@@ -1,0 +1,4 @@
+include *.ini
+include ibid/configspec.ini
+include ibid/.version
+include twisted/plugins/ibid_plugin.py
