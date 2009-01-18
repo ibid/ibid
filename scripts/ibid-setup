@@ -17,17 +17,40 @@ from ibid.models import Account, Identity, Permission, Credential
 
 if exists('ibid.ini'):
     config = FileConfig('ibid.ini')
+    sname = None
 
 else:
     sample_config = resource_stream('ibid', 'config.ini')
     config = FileConfig(sample_config)
 
     botname = raw_input(u'What would you like to call your bot? ')
-    print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
-    database = raw_input(u'Database URL: ')
-
     config['botname'] = botname
-    config.databases['ibid']['uri'] = database or 'sqlite:///ibid.db'
+
+    print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
+    config.databases['ibid']['uri'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
+
+    print u"Please enter the details for the primary source. Press Enter for the default option."
+    source = {'nick': '$botname'}
+    sname = raw_input(u'Source name (e.g. freenode, atrum, jabber): ')
+    source['server'] = raw_input(u'Server: ')
+    port = raw_input(u'Port: ')
+    if port:
+        source['port'] = port
+    source['type'] = raw_input(u'Source type (irc or jabber): ')
+
+    if source['type'].lower() == 'irc':
+        source['channels'] = [c.strip() for c in raw_input(u'Default channels to join (comma separated): ').split(',')]
+        source['auth'] = ['hostmask', 'nickserv']
+    elif source['type'].lower() == 'jabber':
+        source['jid'] = raw_input(u'JID: ')
+        source['rooms'] = [r.strip() for r in raw_input(u'Default rooms to join (comma separated): ').split(',')]
+        source['auth'] = ['implicit']
+        source['ssl'] = raw_input(u'SSL (Y/N): ').lower() in ('y', 'yes', 'true')
+    else:
+        print 'Invalid source type'
+        exit(1)
+
+    config.sources[sname] = source
 
     config.write(open('ibid.ini', 'w'))
     if not exists('logging.ini'):
@@ -54,7 +77,7 @@ print u'Database tables created'
 
 print u'Please enter the details for you account. This account will be given full admin permissions.'
 identity = unicode(raw_input('Nick/JID: '))
-source = unicode(raw_input('Source name: '))
+source = sname or unicode(raw_input('Source name: '))
 pass1 = getpass('Password: ')
 pass2 = getpass('Confirm password: ')
 
