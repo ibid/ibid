@@ -1,9 +1,10 @@
 import logging
 import logging.config
+from os.path import join, dirname
 
 import sys
-sys.path.append("./lib/wokkel.egg")
-sys.path.insert(0, './lib')
+sys.path.append('%s/../lib/wokkel.egg' % dirname(__file__))
+sys.path.insert(0, '%s/../lib' % dirname(__file__))
 
 import twisted.python.log
 
@@ -18,6 +19,7 @@ reloader = None
 databases = None
 auth = None
 service = None
+options = {}
 
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')
@@ -28,7 +30,11 @@ def twisted_log(eventDict):
     else:
         log.debug(' '.join([str(m) for m in eventDict['message']]))
 
-def setup(options, service=None):
+def setup(opts, service=None):
+    for key, value in opts.items():
+        options[key] = value
+    options['base'] = dirname(options['config'])
+
     # Undo Twisted logging's redirection of stdout and stderr
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
@@ -41,11 +47,11 @@ def setup(options, service=None):
 
     service = service
     ibid.config = FileConfig(options['config'])
-    ibid.config.merge(FileConfig("local.ini"))
+    ibid.config.merge(FileConfig(join(options['base'], 'local.ini')))
 
     if 'logging' in ibid.config:
         logging.getLogger('core').info(u'Loading log configuration from %s', ibid.config['logging'])
-        logging.config.fileConfig(ibid.config['logging'])
+        logging.config.fileConfig(join(options['base'], ibid.config['logging']))
 
     ibid.reload_reloader()
     ibid.reloader.reload_dispatcher()

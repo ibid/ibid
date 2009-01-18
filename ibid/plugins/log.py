@@ -1,7 +1,7 @@
 """Logs messages sent and received."""
 
 from time import time, localtime
-from os.path import dirname
+from os.path import dirname, join
 from os import makedirs
 
 import ibid
@@ -15,10 +15,7 @@ class Log(Processor):
     log = 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log'
     message_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(who)s> %(message)s'
     presence_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(who)s (%(sender)s) is now %(state)s'
-
-    def __init__(self, name):
-        Processor.__init__(self, name)
-        self.logs = {}
+    logs = {}
 
     def get_logfile(self, source, channel, when):
         when = localtime(when)
@@ -30,6 +27,7 @@ class Log(Processor):
                                     'month': when[1],
                                     'day': when[2],
                                 }
+        filename = join(ibid.options['base'], filename)
         if filename not in self.logs:
             try:
                 makedirs(dirname(filename))
@@ -58,6 +56,7 @@ class Log(Processor):
                                                 'minute': when[4],
                                                 'second': when[5],
                                             } + '\n')
+        file.flush()
 
     def log_presence(self, file, source, channel, sender_id, sender, who, when, state):
         when = localtime(when)
@@ -74,6 +73,7 @@ class Log(Processor):
                                                 'minute': when[4],
                                                 'second': when[5],
                                             } + '\n')
+        file.flush()
 
     def process(self, event):
         if event.type == 'message':
