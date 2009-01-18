@@ -55,13 +55,8 @@ setup(
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
     },
-    scripts=['ibid.tac', 'ibid.py', 'populatedb.py', 'import_factpack.py'],
+    scripts=['scripts/ibid', 'scripts/ibid-setup', 'scripts/ibid-factpack'],
     include_package_data=True,
-    #package_dir={'ibid': 'ibid'},
-    package_data={
-        '': ['*.ini'],
-        'ibid': ['*.ini', '.version'],
-    },
     exclude_package_data={
         'lib': ['*'],
     }
