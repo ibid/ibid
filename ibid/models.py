@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey, Boolean, UnicodeText
+from sqlalchemy import Column, Integer, Unicode, DateTime, or_, ForeignKey, Boolean, UnicodeText, UniqueConstraint
 from sqlalchemy.orm import relation, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -8,6 +8,7 @@ Base = declarative_base()
 
 class Identity(Base):
     __tablename__ = 'identities'
+    __table_args__ = (UniqueConstraint('source', 'identity'), {})
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
@@ -24,6 +25,7 @@ class Identity(Base):
 
 class Attribute(Base):
     __tablename__ = 'account_attributes'
+    __table_args__ = (UniqueConstraint('account_id', 'name'), {})
     
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
@@ -54,6 +56,7 @@ class Credential(Base):
 
 class Permission(Base):
     __tablename__ = 'permissions'
+    __table_args__ = (UniqueConstraint('account_id', 'name'), {})
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
@@ -67,6 +70,8 @@ class Permission(Base):
 
 class Account(Base):
     __tablename__ = 'accounts'
+    __table_args__ = (UniqueConstraint('username'), {})
+
 
     id = Column(Integer, primary_key=True)
     username = Column(Unicode(32))
@@ -84,6 +89,7 @@ class Account(Base):
 
 class Sighting(Base):
     __tablename__ = 'seen'
+    __table_args__ = (UniqueConstraint('identity_id', 'type'), {})
 
     id = Column(Integer, primary_key=True)
     identity_id = Column(Integer, ForeignKey('identities.id'))
@@ -92,7 +98,6 @@ class Sighting(Base):
     value = Column(UnicodeText)
     time = Column(DateTime)
     count = Column(Integer)
-    unique = UniqueConstraint(identity_id, type)
 
     identity = relation('Identity')
 

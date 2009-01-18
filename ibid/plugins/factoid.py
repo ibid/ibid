@@ -4,7 +4,7 @@ from time import localtime, strftime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint
 from sqlalchemy.orm import relation, mapper, eagerload
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql import func
@@ -32,6 +32,7 @@ class Factoid(Base):
 
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
+    __table_args__ = (UniqueConstraint('name'), {})
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(256))

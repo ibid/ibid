@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -17,6 +17,8 @@ log = logging.getLogger('plugins.karma')
 
 class Karma(Base):
     __tablename__ = 'karma'
+    __table_args__ = (UniqueConstraint('subject'), {})
+
 
     id = Column(Integer, primary_key=True)
     subject = Column(Unicode(32))
