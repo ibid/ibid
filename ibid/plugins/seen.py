@@ -25,9 +25,7 @@ class See(Processor):
         session = ibid.databases.ibid()
         sighting = session.query(Sighting).filter_by(identity_id=event.identity).filter_by(type=event.type).first()
         if not sighting:
-            sighting = Sighting()
-            sighting.identity_id = event.identity
-            sighting.type = event.type
+            sighting = Sighting(event.identity, event.type)
 
         if 'channel' in event:
             sighting.channel = 'public' in event and event.public and event.channel or None

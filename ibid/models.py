@@ -92,11 +92,13 @@ class Sighting(Base):
     value = Column(UnicodeText)
     time = Column(DateTime)
     count = Column(Integer)
+    unique = UniqueConstraint(identity_id, type)
 
     identity = relation('Identity')
 
-    def __init__(self, identity_id=None, channel=None, value=None):
+    def __init__(self, identity_id=None, type='message', channel=None, value=None):
         self.identity_id = identity_id
+        self.type = type
         self.channel = channel
         self.value = value
         self.time = datetime.now()

@@ -62,6 +62,9 @@ def identify(session, user, source, create=True):
     return identity.id
 
 def decode(string):
+    if string is None:
+        return None
+
     try:
         decoded = unicode(string, 'utf-8')
     except UnicodeDecodeError, e:
@@ -101,7 +104,7 @@ def import_factoids(knab, ibid, source):
         else:
             factoid = fname.factoid
 
-        value = kfactoid.value.strip().startswith('<reply>') or kfactoid.value.strip().startswith('<action>') and kfactoid.value or '%s %s' % (kfactoid.verb, kfactoid.value)
+        value = kfactoid.value.strip().lower().startswith('<reply>') or kfactoid.value.strip().lower().startswith('<action>') and kfactoid.value or '%s %s' % (kfactoid.verb, kfactoid.value)
         fvalue = FactoidValue(value, identify(ibid, kfactoid.who, source))
         fvalue.time = kfactoid.time
 
@@ -171,7 +174,12 @@ if __name__ == '__main__':
         print 'Usage: ibid-import <knab database> <source> [<ibid config>]'
         exit(1)
 
-    knabengine = create_engine(argv[1], encoding='utf-8')
+    connect_args = {}
+    if argv[1].startswith('mysql:'):
+        connect_args['use_unicode'] = False
+        connect_args['charset'] = 'utf8'
+
+    knabengine = create_engine(argv[1], encoding='utf-8', connect_args=connect_args)
     KnabSession = sessionmaker(bind=knabengine)
     knab = KnabSession()
 
@@ -187,6 +195,9 @@ if __name__ == '__main__':
     import_karma(knab, ibid, source)
     import_sightings(knab, ibid, source)
     import_factoids(knab, ibid, source)
+
+    print
+    print 'Done'
 
     ibid.close()
     knab.close()

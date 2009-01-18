@@ -43,7 +43,7 @@ class Log(Processor):
 
     def log_message(self, file, source, channel, sender_id, sender, who, when, message):
         when = localtime(when)
-        file.write(self.message_format %    {   'source': source,
+        file.write((self.message_format %    {   'source': source,
                                                 'channel': channel,
                                                 'sender': sender,
                                                 'sender_id': sender_id,
@@ -55,12 +55,12 @@ class Log(Processor):
                                                 'hour': when[3],
                                                 'minute': when[4],
                                                 'second': when[5],
-                                            } + '\n')
+                                            }).encode('utf-8') + '\n')
         file.flush()
 
     def log_presence(self, file, source, channel, sender_id, sender, who, when, state):
         when = localtime(when)
-        file.write(self.presence_format %   {   'source': source,
+        file.write((self.presence_format %   {   'source': source,
                                                 'channel': channel,
                                                 'sender_id': sender_id,
                                                 'sender': sender,
@@ -72,7 +72,7 @@ class Log(Processor):
                                                 'hour': when[3],
                                                 'minute': when[4],
                                                 'second': when[5],
-                                            } + '\n')
+                                            }).encode('utf-8') + '\n')
         file.flush()
 
     def process(self, event):
