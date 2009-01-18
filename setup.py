@@ -40,6 +40,9 @@ setup(
     description='A modular, extensible IRC/IM bot',
     url='http://ibid.omnia.za.net/',
     keywords='bot irc jabber',
+    author='Ibid Developers',
+    author_email='ibid@omnia.za.net',
+    license='TBD',
     py_modules=['ibid'],
     setup_requires=['setuptools_bzr'],
     install_requires=[
@@ -49,10 +52,12 @@ setup(
         'validate>=0.3.2',
     ],
     packages=find_packages(exclude=['lib']),
-    scripts=['ibid.tac', 'ibid.py', 'populatedb.py'],
+    scripts=['ibid.tac', 'ibid.py', 'populatedb.py', 'import_factpack.py'],
     include_package_data=True,
+    #package_dir={'ibid': 'ibid'},
     package_data={
         '': ['*.ini'],
+        'ibid': ['*.ini', '.version'],
     },
     exclude_package_data={
         'lib': ['*'],

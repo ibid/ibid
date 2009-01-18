@@ -20,6 +20,7 @@ Memo: Leaving memos for people without identities?
 Feeds: Caching.
 Respond to CTCP VERSION
 Specify config file on command line
+setup.py: Exclude most of lib/, include ibid/.version
 
 Plugins:
 Babel

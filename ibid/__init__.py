@@ -26,7 +26,7 @@ def twisted_log(eventDict):
     elif 'warning' in eventDict:
         log.warning(eventDict['warning'])
     else:
-        log.info(' '.join([str(m) for m in eventDict['message']]))
+        log.debug(' '.join([str(m) for m in eventDict['message']]))
 
 def setup(service=None):
     # Undo Twisted logging's redirection of stdout and stderr
