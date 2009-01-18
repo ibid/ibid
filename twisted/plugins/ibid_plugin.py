@@ -7,7 +7,10 @@ from twisted.application.service import IServiceMaker, MultiService
 import ibid
 
 class Options(usage.Options):
-    optParameters = [['config', 'c', 'ibid.ini', 'Configuration file to use']]
+    optFlags = [['debug', 'd', 'Output debug messages']]
+
+    def parseArgs(self, config='ibid.ini'):
+        self['config'] = config
 
 class IbidServiceMaker(object):
     implements(IServiceMaker, IPlugin)
@@ -17,7 +20,7 @@ class IbidServiceMaker(object):
 
     def makeService(self, options):
         service = MultiService()
-        ibid.setup(service, options['config'])
+        ibid.setup(options, service)
         return service
 
 serviceMaker = IbidServiceMaker()

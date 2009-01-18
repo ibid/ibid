@@ -6,7 +6,7 @@ import ibid
 application = service.Application("Ibid")
 ibidService = service.MultiService()
 
-ibid.setup(ibidService)
+ibid.setup({'config': 'ibid.ini'}, ibidService)
 
 ibidService.setServiceParent(application)
 

@@ -28,7 +28,7 @@ def twisted_log(eventDict):
     else:
         log.debug(' '.join([str(m) for m in eventDict['message']]))
 
-def setup(service=None, configfile='ibid.ini'):
+def setup(options, service=None):
     # Undo Twisted logging's redirection of stdout and stderr
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
@@ -40,7 +40,7 @@ def setup(service=None, configfile='ibid.ini'):
     twisted.python.log.addObserver(twisted_log)
 
     service = service
-    ibid.config = FileConfig(configfile)
+    ibid.config = FileConfig(options['config'])
     ibid.config.merge(FileConfig("local.ini"))
 
     if 'logging' in ibid.config:
