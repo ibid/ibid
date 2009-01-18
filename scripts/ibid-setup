@@ -5,13 +5,33 @@ from sys import exit, stdin
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from getpass import getpass
+from os.path import exists
+from shutil import copyfileobj
+
+from pkg_resources import resource_stream
 
 import ibid.plugins
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
 from ibid.models import Account, Identity, Permission, Credential
 
-config = FileConfig('ibid.ini')
+if exists('ibid.ini'):
+    config = FileConfig('ibid.ini')
+
+else:
+    sample_config = resource_stream('ibid', 'config.ini')
+    config = FileConfig(sample_config)
+
+    botname = raw_input(u'What would you like to call your bot? ')
+    print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
+    database = raw_input(u'Database URL: ')
+
+    config['botname'] = botname
+    config.databases['ibid']['uri'] = database or 'sqlite:///ibid.db'
+
+    config.write(open('ibid.ini', 'w'))
+    if not exists('logging.ini'):
+        copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
 
 bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base'), ('ibid.plugins.karma', 'Base'), ('ibid.plugins.feeds', 'Base')]
 metadatas = []
@@ -32,9 +52,10 @@ for module, metadata in metadatas:
 
 print u'Database tables created'
 
-identity = unicode(raw_input('Enter your nick/JID: '))
-source = unicode(raw_input('Enter the source name: '))
-pass1 = getpass('Enter your password: ')
+print u'Please enter the details for you account. This account will be given full admin permissions.'
+identity = unicode(raw_input('Nick/JID: '))
+source = unicode(raw_input('Source name: '))
+pass1 = getpass('Password: ')
 pass2 = getpass('Confirm password: ')
 
 if pass1 != pass2:

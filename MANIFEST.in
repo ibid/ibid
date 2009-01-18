@@ -1,5 +1,7 @@
 include *.ini
 include ibid.tac
 include ibid/configspec.ini
+include ibid/config.ini
+include ibid/logging.ini
 include ibid/.version
 include twisted/plugins/ibid_plugin.py

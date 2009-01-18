@@ -18,7 +18,7 @@ Base: Handle arbitrary bases.
 Memo: Delete old memos.
 Memo: Leaving memos for people without identities?
 Feeds: Caching.
-setup.py: Exclude most of lib/, include ibid/.version
+setup.py: Exclude most of lib/
 Auto-load plugins?
 
 Plugins:
