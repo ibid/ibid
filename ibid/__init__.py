@@ -1,6 +1,6 @@
 import logging
 import logging.config
-from os.path import join, dirname, expanduser
+from os.path import join, dirname, expanduser, exists
 
 import sys
 sys.path.append('%s/../lib/wokkel.egg' % dirname(__file__))
@@ -31,6 +31,7 @@ def twisted_log(eventDict):
         log.debug(' '.join([str(m) for m in eventDict['message']]))
 
 def setup(opts, service=None):
+    service = service
     for key, value in opts.items():
         options[key] = value
     options['base'] = dirname(options['config'])
@@ -45,7 +46,9 @@ def setup(opts, service=None):
         twisted.python.log.removeObserver(observer)
     twisted.python.log.addObserver(twisted_log)
 
-    service = service
+    if not exists(options['config']):
+        raise IbidException('Cannot find configuration file %s' % options['config'])
+     
     ibid.config = FileConfig(options['config'])
     ibid.config.merge(FileConfig(join(options['base'], 'local.ini')))
 
@@ -69,5 +72,8 @@ def reload_reloader():
     except:
         logging.getLogger('core').exception(u"Exception occured while reloading Reloader")
         return False
+
+class IbidException(Exception):
+    pass
 
 # vi: set et sta sw=4 ts=4:
