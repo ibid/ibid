@@ -17,11 +17,9 @@ log = logging.getLogger('plugins.karma')
 
 class Karma(Base):
     __tablename__ = 'karma'
-    __table_args__ = (UniqueConstraint('subject'), {})
-
 
     id = Column(Integer, primary_key=True)
-    subject = Column(Unicode(32))
+    subject = Column(Unicode(32), unique=True)
     changes = Column(Integer)
     value = Column(Integer)
     time = Column(DateTime)

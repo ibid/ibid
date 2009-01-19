@@ -1,5 +1,6 @@
 from random import choice
 import re
+import logging
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
@@ -71,5 +72,22 @@ class Choose(Processor):
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
         event.addresponse('I choose %s' % choice(choose_re.split(choices)))
+
+class UnicodeWarning(Processor):
+
+    priority = 1950
+
+    def setup(self):
+        self.log = logging.getLogger('plugins.unicode')
+
+    def process(self, object):
+        if isinstance(object, dict):
+            for value in object.values():
+                self.process(value)
+        elif isinstance(object, list):
+            for value in object:
+                self.process(value)
+        elif isinstance(object, str):
+            self.log.warning(u"Found a non-unicode string: %s" % object)
 
 # vi: set et sta sw=4 ts=4:

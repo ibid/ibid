@@ -20,19 +20,21 @@ Memo: Leaving memos for people without identities?
 Feeds: Caching.
 setup.py: Exclude most of lib/
 Auto-load plugins?
+Unicode plugin
+Config object?
 
 Plugins:
+SVN
+Summon
+Events
+Logs
 Babel
 Divine (factoid?)
 Dvorak
 Exchange
 HowFar
 LastFM
-Logs
 Lotto
 RFC
-Events
-Summon
-SVN
 Twitter
 Weather

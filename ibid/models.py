@@ -70,11 +70,9 @@ class Permission(Base):
 
 class Account(Base):
     __tablename__ = 'accounts'
-    __table_args__ = (UniqueConstraint('username'), {})
-
 
     id = Column(Integer, primary_key=True)
-    username = Column(Unicode(32))
+    username = Column(Unicode(32), unique=True)
 
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)

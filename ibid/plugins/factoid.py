@@ -32,10 +32,9 @@ class Factoid(Base):
 
 class FactoidName(Base):
     __tablename__ = 'factoid_names'
-    __table_args__ = (UniqueConstraint('name'), {})
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode(256))
+    name = Column(Unicode(256), unique=True)
     factoid_id = Column(Integer, ForeignKey(Factoid.id))
     factoid = relation(Factoid)
     identity = Column(Integer)

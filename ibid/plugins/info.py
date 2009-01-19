@@ -37,10 +37,9 @@ class Nickometer(Processor):
     def handle_nickometer(self, event, nick, wreasons):
         nick = nick or event.who
         score, reasons = nickometer(str(nick))
-        print reasons
         event.addresponse(u"%s is %s%% lame" % (nick, score))
         if wreasons:
-            event.addresponse(', '.join(['%s (%s)' % reason for reason in reasons]))
+            event.addresponse(u', '.join(['%s (%s)' % reason for reason in reasons]))
 
 help['man'] = 'Retrieves information from manpages.'
 class Man(Processor):
