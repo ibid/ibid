@@ -42,10 +42,10 @@ class Ircbot(irc.IRCClient):
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
-        event.sender = unicode(user)
-        event.sender_id = unicode(nick)
-        event.who = unicode(nick)
-        event.channel = unicode(channel)
+        event.sender = unicode(user, 'utf-8', 'replace')
+        event.sender_id = unicode(nick, 'utf-8', 'replace')
+        event.who = event.sender_id
+        event.channel = unicode(channel, 'utf-8', 'replace')
         event.public = True
         event.source = self.factory.name
         return event
@@ -67,7 +67,7 @@ class Ircbot(irc.IRCClient):
 
     def _message_event(self, msgtype, user, channel, msg):
         event = self._create_event(msgtype, user, channel)
-        event.message = unicode(msg)
+        event.message = unicode(msg, 'utf-8', 'replace')
 
         if channel.lower() == self.nickname.lower():
             event.addressed = True

@@ -17,13 +17,13 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
         self.transport.write('Username: ')
 
     def telnet_User(self, line):
-        self.user = line.strip()
+        self.user = unicode(line.strip(), 'utf-8', 'replace')
         self.factory.log.info(u"Connection established with %s", self.user)
         return 'Query'
 
     def telnet_Query(self, line):
-        event = Event(self.factory.name, 'message')
-        event.message = line.strip()
+        event = Event(self.factory.name, u'message')
+        event.message = unicode(line.strip(), 'utf-8', 'replace')
         event.sender = self.user
         event.sender_id = self.user
         event.who = event.sender

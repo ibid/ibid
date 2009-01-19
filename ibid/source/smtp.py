@@ -40,7 +40,7 @@ class Message:
         self.log = logging.getLogger('source.%s' % name)
 
     def lineReceived(self, line):
-        self.lines.append(line)
+        self.lines.append(unicode(line, 'utf-8', 'replace'))
 
     def eomReceived(self):
         headers = {}

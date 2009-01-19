@@ -22,6 +22,7 @@ setup.py: Exclude most of lib/
 Auto-load plugins?
 Unicode plugin
 Config object?
+Use email.Parser to parse emails
 
 Plugins:
 SVN
