@@ -29,7 +29,7 @@ class Ircbot(irc.IRCClient):
         self.factory.log.info(u"Connected")
 
     def connectionLost(self, reason):
-        self.factory.log.info(u"Disconnected (%s", reason)
+        self.factory.log.info(u"Disconnected (%s)", reason)
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
@@ -53,21 +53,24 @@ class Ircbot(irc.IRCClient):
     def _state_event(self, user, channel, action, kicker=None, message=None):
         event = self._create_event(u'state', user, channel)
         event.state = action
-        if kicker: event.kicker = kicker
-        if message: event.message = message
+        if kicker:
+            event.kicker = unicode(kicker, 'utf-8', 'replace')
+            if message: event.message = unicode(message, 'utf-8', 'replace')
+            self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender_id, event.channel, event.kicker, event.message)
+        else:
+            self.factory.log.debug(u"%s has %s %s", user, action, channel)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
-        self.factory.log.debug(u"Received privmsg from %s in %s: %s", user, channel, msg)
         self._message_event(u'message', user, channel, msg)
 
     def noticed(self, user, channel, msg):
-        self.factory.log.debug(u"Received notice from %s in %s: %s", user, channel, msg)
         self._message_event(u'notice', user, channel, msg)
 
     def _message_event(self, msgtype, user, channel, msg):
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
+        self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
 
         if channel.lower() == self.nickname.lower():
             event.addressed = True
@@ -79,19 +82,15 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
-        self.factory.log.debug(u"%s has joined %s", user, channel)
         self._state_event(user, channel, u'joined')
 
     def userLeft(self, user, channel):
-        self.factory.log.debug(u"%s has left %s", user, channel)
         self._state_event(user, channel, u'parted')
 
     def userQuit(self, user, channel):
-        self.factory.log.debug(u"%s has quit %s", user, channel)
         self._state_event(user, channel, u'quit')
 
     def userKicked(self, kickee, channel, kicker, message):
-        self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", kickee, channel, kicker, message)
         self._state_event(kickee, channel, u'kicked', kicker, message)
 
     def respond(self, event):
@@ -99,12 +98,12 @@ class Ircbot(irc.IRCClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].encode('utf-8').replace('\n', ' ')[:490]
+        message = response['reply'].replace('\n', ' ')[:490]
         if 'action' in response and response['action']:
-            self.me(response['target'].encode('utf-8'), message)
+            self.me(response['target'].encode('utf-8'), message.encode('utf-8'))
             self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
-            self.msg(response['target'].encode('utf-8'), message)
+            self.msg(response['target'].encode('utf-8'), message.encode('utf-8'))
             self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
 
     def join(self, channel):
