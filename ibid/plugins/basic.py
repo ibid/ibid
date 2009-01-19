@@ -14,7 +14,7 @@ class SayDo(Processor):
 
     @match(r'^(say|do)\s+(\S+)\s+(.*)$')
     def saydo(self, event, action, where, what):
-        if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'saydo'):
+        if ibid.auth.authenticate(event) and ibid.auth.authorise(event, u'saydo'):
             if action.lower() == u"say":
                 reply = {'target': where, 'reply': what}
             else:
@@ -71,7 +71,7 @@ class Choose(Processor):
 
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse('I choose %s' % choice(choose_re.split(choices)))
+        event.addresponse(u'I choose %s' % choice(choose_re.split(choices)))
 
 class UnicodeWarning(Processor):
 

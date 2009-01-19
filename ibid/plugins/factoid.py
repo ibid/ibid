@@ -15,7 +15,7 @@ from ibid.plugins import Processor, match, handler, authorise, auth_responses
 from ibid.plugins.identity import get_identities
 from ibid.models import Account
 
-help = {'factoids': 'Factoids are arbitrary pieces of information stored by a key.'}
+help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
 
 Base = declarative_base()
 log = logging.getLogger('plugins.factoid')

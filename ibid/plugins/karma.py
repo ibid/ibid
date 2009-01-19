@@ -9,7 +9,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
 
-help = {'karma': 'Keeps track of karma for people and things.'}
+help = {'karma': u'Keeps track of karma for people and things.'}
 
 Base = declarative_base()
 
@@ -67,14 +67,14 @@ class Set(Processor):
                 return
             karma.changes += 1
             karma.value += 1
-            change = 'Increased'
+            change = u'Increased'
         elif adjust.lower() in self.decrease:
             karma.changes += 1
             karma.value -= 1
-            change = 'Decreased'
+            change = u'Decreased'
         else:
             karma.changes += 2
-            change = 'Increased and decreased'
+            change = u'Increased and decreased'
 
         session.save_or_update(karma)
         session.flush()

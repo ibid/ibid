@@ -8,7 +8,7 @@ from ibid.plugins import Processor, match
 
 help = {}
 
-help['fortune'] = 'Returns a random fortune.'
+help['fortune'] = u'Returns a random fortune.'
 class Fortune(Processor):
     """fortune"""
     feature = 'fortune'
@@ -28,7 +28,7 @@ class Fortune(Processor):
 
         return event
 
-help['nickometer'] = 'Calculates how lame a nick is.'
+help['nickometer'] = u'Calculates how lame a nick is.'
 class Nickometer(Processor):
     """nickometer [<nick>] [with reasons]"""
     feature = 'nickometer'
@@ -41,7 +41,7 @@ class Nickometer(Processor):
         if wreasons:
             event.addresponse(u', '.join(['%s (%s)' % reason for reason in reasons]))
 
-help['man'] = 'Retrieves information from manpages.'
+help['man'] = u'Retrieves information from manpages.'
 class Man(Processor):
     """man [<section>] <page>"""
     feature = 'man'
@@ -60,7 +60,7 @@ class Man(Processor):
         if code != 0:
             event.addresponse(u'Manpage not found')
         else:
-            lines = output.splitlines()
+            lines = [unicode(line, 'utf-8', errors='replace') for line in output.splitlines()]
             index = lines.index('NAME')
             if index:
                 event.addresponse(lines[index+1].strip())
