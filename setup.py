@@ -55,7 +55,7 @@ setup(
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
     },
-    scripts=['scripts/ibid', 'scripts/ibid-setup', 'scripts/ibid-factpack'],
+    scripts=['scripts/ibid', 'scripts/ibid-setup', 'scripts/ibid-factpack', 'scripts/ibid_pb'],
     include_package_data=True,
     exclude_package_data={
         'lib': ['*'],

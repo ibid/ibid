@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeTe
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
+from twisted.spread import pb
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses
@@ -174,7 +175,7 @@ class Forget(Processor):
         else:
             event.addresponse(u"I don't know about %s" % name)
 
-class Get(Processor):
+class Get(Processor, pb.Referenceable):
     """<factoid> [( #<number> | /<pattern>/ )]"""
     feature = 'factoids'
 
@@ -189,6 +190,11 @@ class Get(Processor):
 
     @handler
     def get(self, event, verb, name, number, pattern):
+        response = self.remote_get(name, event, number, pattern)
+        if response:
+            event.addresponse(response)
+
+    def remote_get(self, name, event={}, number=None, pattern=None):
         session = ibid.databases.ibid()
         factoid = get_factoid(session, name, number, pattern)
         session.close()
@@ -205,8 +211,10 @@ class Get(Processor):
                 reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
-            reply = reply.replace('$who', event.who)
-            reply = reply.replace('$channel', event.channel)
+            if 'who' in event:
+                reply = reply.replace('$who', event['who'])
+            if 'channel' in event:
+                reply = reply.replace('$channel', event['channel'])
             now = localtime()
             reply = reply.replace('$year', str(now[0]))
             reply = reply.replace('$month', str(now[1]))
@@ -220,14 +228,14 @@ class Get(Processor):
 
             (reply, count) = action_re.subn('', reply)
             if count:
-                event.addresponse({'action': True, 'reply': reply})
-            else:
-                (reply, count) = reply_re.subn('', reply)
-                if count:
-                    event.addresponse({'reply': reply})
-                else:
-                    reply = '%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
-                    event.addresponse(reply)
+                return {'action': True, 'reply': reply}
+
+            (reply, count) = reply_re.subn('', reply)
+            if count:
+                return {'reply': reply}
+
+            reply = '%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
+            return reply
 
 class Set(Processor):
     """<name> (<verb>|=<verb>=) <value>

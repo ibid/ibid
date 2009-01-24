@@ -11,8 +11,6 @@ import simplejson
 parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <parameters>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
 parser.add_option('-p', '--port', help='Port number of Ibid instance')
-params = OptionGroup(parser, u'Method Parameters', u'Method parameters must be specified in JSON. This means that strings must be surrounded with quotes, which usually means double quoting them in a shell')
-parser.add_option_group(params)
 
 parser.set_defaults(server='localhost', port=8789)
 options, args = parser.parse_args()
@@ -23,17 +21,36 @@ reactor.connectTCP(options.server, options.port, factory)
 d = factory.getRootObject()
 
 if command == 'message':
-	if len(args) < 2:
-		parser.error(u'Please specify a message to send.')
-	d.addCallback(lambda object: object.callRemote('message', ' '.join(args[1:])))
+    if len(args) < 2:
+        parser.error(u'Please specify a message to send.')
+    d.addCallback(lambda object: object.callRemote('message', ' '.join(args[1:])))
 
 elif command == 'plugin':
-	if len(args) < 4:
-		parser.error(u'Not enough arguments.')
-	d.addCallback(lambda root: root.callRemote('get_plugin', args[1], args[2]))
-	d.addCallback(lambda plugin: plugin.callRemote(args[3], *[simplejson.loads(arg) for arg in args[4:]]))
+    if len(args) < 4:
+        parser.error(u'Not enough arguments.')
+    d.addCallback(lambda root: root.callRemote('get_plugin', args[1], args[2]))
+    pargs = []
+    kwargs = {}
+    for arg in args[4:]:
+        key = None
+        if arg.find('=') != -1:
+            key, value = arg.split('=', 1)
+        else:
+            value = arg
 
-d.addCallback(lambda response: response)
+        try:
+            value = simplejson.loads(value)
+        except ValueError, e:
+            pass
+
+        if key:
+            kwargs[key] = value
+        else:
+            pargs.append(value)
+
+    d.addCallback(lambda plugin: plugin.callRemote(args[3], *pargs, **kwargs))
+
+d.addCallback(lambda response: simplejson.dumps(response))
 d.addErrback(lambda reason: 'Error: %s' % str(reason.value))
 d.addCallback(util.println)
 d.addCallback(lambda _: reactor.stop())
