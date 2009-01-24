@@ -3,7 +3,7 @@ from time import time
 from random import choice
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, handler
 
 help = {}
 

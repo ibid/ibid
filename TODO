@@ -6,6 +6,7 @@ Console source
 Improve NickServ authentication
 Better names for event.{sender,sender_id,who}
 Race condition where two identities are created if multiple messages received at the same time (usually from services/bots)
+    - Can't happen anymore due to unique constraint, but second message won't be handled properly because no identity will be attached
 SMTP source: Handle multiple queries in a single message
 Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts

@@ -1,19 +1,16 @@
 from datetime import datetime
-from random import choice
 from time import localtime, strftime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint
-from sqlalchemy.orm import relation, mapper, eagerload
-from sqlalchemy.sql.expression import desc
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
+from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses
 from ibid.plugins.identity import get_identities
-from ibid.models import Account
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
 
@@ -34,7 +31,7 @@ class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode(128), nullable=False, unique=True)
+    name = Column(Unicode(128), nullable=False)#, unique=True)
     factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)

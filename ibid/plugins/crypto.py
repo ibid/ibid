@@ -1,10 +1,8 @@
 from crypt import crypt
 import hashlib
 import base64
-import re
 
-import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match
 
 help = {}
 

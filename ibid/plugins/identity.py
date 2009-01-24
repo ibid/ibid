@@ -6,7 +6,7 @@ from sqlalchemy.orm import eagerload
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler, auth_responses
+from ibid.plugins import Processor, match, auth_responses
 from ibid.models import Account, Identity, Attribute
 
 help = {}

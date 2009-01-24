@@ -1,14 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey
-from sqlalchemy.orm import relation
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match
 from ibid.models import Identity, Sighting, Account
-from ibid.plugins.identity import identify
 from ibid.utils import ago
 
 help = {'seen': 'Records when people were last seen.'}

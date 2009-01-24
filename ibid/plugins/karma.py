@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, Unicode, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 

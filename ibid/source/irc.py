@@ -1,4 +1,3 @@
-import re
 from fnmatch import fnmatch
 from time import sleep
 import logging

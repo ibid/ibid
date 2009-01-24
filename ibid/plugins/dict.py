@@ -1,6 +1,5 @@
 from dictclient import Connection
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {'dict': 'Defines words and checks spellings.'}

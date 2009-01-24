@@ -2,7 +2,6 @@ import re
 from random import random, randint
 from subprocess import Popen, PIPE
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {}

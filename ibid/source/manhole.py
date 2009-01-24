@@ -1,7 +1,7 @@
 from twisted.internet import reactor
 from twisted.application import internet
 from twisted.manhole.telnet import ShellFactory
-import ibid
+
 from ibid.source import IbidSourceFactory
 
 class SourceFactory(ShellFactory, IbidSourceFactory):

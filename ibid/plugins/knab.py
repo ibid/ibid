@@ -1,6 +1,5 @@
 import perl
 
-import ibid
 from ibid.plugins import Processor, handler
 
 class Knab(Processor):

@@ -1,11 +1,10 @@
 from time import time
 import logging
 
-from twisted.internet import reactor
 from sqlalchemy import or_
 
 import ibid
-from ibid.models import Credential, Permission, Account
+from ibid.models import Credential
 from ibid.plugins.auth import hash, permission
 
 class Auth(object):

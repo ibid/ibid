@@ -11,7 +11,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
-from ibid.auth_ import Credential, Permission
+from ibid.models import Credential, Permission
 from ibid.plugins.identity import Account
 
 help = {}

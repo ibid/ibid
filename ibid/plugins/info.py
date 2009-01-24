@@ -1,9 +1,7 @@
-import time
 from subprocess import Popen, PIPE
 
 from nickometer import nickometer
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {}

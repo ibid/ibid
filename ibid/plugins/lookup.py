@@ -2,7 +2,6 @@ from urllib2 import urlopen
 
 from BeautifulSoup import BeautifulSoup
 
-import ibid
 from ibid.plugins import Processor, match
 
 class Bash(Processor):

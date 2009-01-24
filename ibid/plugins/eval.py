@@ -8,7 +8,6 @@ try:
 except ImportError:
 	pass
 
-import ibid
 from ibid.plugins import Processor, match, authorise
 
 help = {'eval': 'Evaluates Python, Perl and Lua code.'}

@@ -5,7 +5,7 @@ from os.path import dirname, join, expanduser
 from os import makedirs
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor
 
 class Log(Processor):
 

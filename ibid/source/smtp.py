@@ -1,5 +1,4 @@
 import logging
-from StringIO import StringIO
 from email import message_from_string
 from socket import gethostname
 from time import gmtime, strftime
@@ -10,7 +9,7 @@ except ImportError:
     from email.Utils import parseaddr
 
 from twisted.application import internet
-from twisted.internet import protocol, defer, reactor
+from twisted.internet import defer, reactor
 from twisted.mail import smtp
 from zope.interface import implements
 

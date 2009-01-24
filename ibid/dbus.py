@@ -1,4 +1,3 @@
-import dbus
 import dbus.service
 
 class DbusModule(dbus.service.Object):

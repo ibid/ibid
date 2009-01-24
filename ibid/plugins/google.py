@@ -2,7 +2,6 @@ from urllib import quote
 from urllib2 import urlopen, Request
 from BeautifulSoup import BeautifulSoup
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {'google': 'Retrieves results from Google and Google Calculator.'}

@@ -1,6 +1,6 @@
 import logging
 
-from configobj import ConfigObj, Section
+from configobj import ConfigObj
 from validate import Validator
 from pkg_resources import resource_stream
 

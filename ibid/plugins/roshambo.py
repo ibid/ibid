@@ -1,6 +1,5 @@
 from random import randint
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {}

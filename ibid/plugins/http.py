@@ -1,7 +1,6 @@
 from httplib2 import Http
 import re
 
-import ibid
 from ibid.plugins import Processor, match
 
 help = {}

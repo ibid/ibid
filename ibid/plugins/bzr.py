@@ -5,7 +5,6 @@ from bzrlib.branch import Branch
 from bzrlib import log
 from bzrlib.errors import InvalidRevisionNumber, NotBranchError
 
-import ibid
 from ibid.plugins import Processor, match
 from ibid.utils import ago
 

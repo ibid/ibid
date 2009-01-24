@@ -1,7 +1,7 @@
 import logging
 
-from wokkel import client, xmppim, subprotocols, compat
-from twisted.internet import reactor, protocol, ssl
+from wokkel import client, xmppim
+from twisted.internet import reactor, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
 from twisted.application import internet

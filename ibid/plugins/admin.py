@@ -1,5 +1,3 @@
-import os
-
 import ibid
 from ibid.plugins import Processor, match, authorise
 

@@ -2,9 +2,8 @@ from datetime import datetime
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
+from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
-from httplib2 import Http
 
 import ibid
 from ibid.plugins import Processor, match, handler

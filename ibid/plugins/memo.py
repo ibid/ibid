@@ -1,8 +1,6 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
