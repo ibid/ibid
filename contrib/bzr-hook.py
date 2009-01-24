@@ -22,7 +22,7 @@ def post_change_branch_tip(params):
         reactor.connectTCP(server, port, factory)
         d = factory.getRootObject()
         d.addCallback(lambda root: root.callRemote('get_plugin', 'bzr', 'Bazaar'))
-        d.addCallback(lambda bzr: bzr.callRemote('committed', repositories[repository], range(params.old_revno+1, params.new_revno+1)))
+        d.addCallback(lambda bzr: bzr.callRemote('committed', repositories[repository], params.old_revno+1, params.new_revno))
         d.addErrback(lambda reason: util.println(reason.value))
         d.addCallback(lambda _: reactor.stop())
         reactor.run()

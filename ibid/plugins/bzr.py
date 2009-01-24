@@ -60,8 +60,8 @@ class Bazaar(Processor, pb.Referenceable):
     def handle_repositories(self, event):
         event.addresponse(', '.join(self.branches.keys()))
 
-    def remote_committed(self, repository, revisions):
-        commits = self.get_commits(repository, revisions)
+    def remote_committed(self, repository, start, end=None):
+        commits = self.get_commits(repository, start, end)
         for commit in commits:
             ibid.dispatcher.send({'reply': commit, 'source': self.source, 'target': self.channel})
 
@@ -70,10 +70,8 @@ class Bazaar(Processor, pb.Referenceable):
     @match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
     def commit(self, event, revno, repository, full):
 
-        revisions = []
-        if revno:
-            revisions.append(int(revno))
-        commits = self.get_commits(repository, revisions, full)
+        revno = revno and int(revno) or None
+        commits = self.get_commits(repository, revno, full=full)
 
         for commit in commits:
             if commit:
@@ -82,7 +80,7 @@ class Bazaar(Processor, pb.Referenceable):
                 else:
                     event.addresponse(commit.strip())
 
-    def get_commits(self, repository, revisions, full=None):
+    def get_commits(self, repository, start, end=None, full=None):
         branch = None
         if repository:
             repository = repository.lower()
@@ -96,12 +94,11 @@ class Bazaar(Processor, pb.Referenceable):
             else:
                 (repository, branch) = sorted(self.branches.iteritems(), reverse=True, key=lambda (k,v): v.repository.get_revision(v.last_revision_info()[1]).timestamp)[0]
 
-        if not revisions:
-            last = branch.revision_id_to_revno(branch.last_revision())
-            revisions = (last,)
+        if not start:
+            start = branch.revision_id_to_revno(branch.last_revision())
 
         f=StringIO();
-        log.show_log(branch, LogFormatter(f, repository, branch, full, self.datetime_format), start_revision=revisions[0], end_revision=revisions[-1])
+        log.show_log(branch, LogFormatter(f, repository, branch, full, self.datetime_format), start_revision=start, end_revision=end or start)
         f.seek(0)
         commits = f.readlines()
         commits.reverse()
