@@ -31,16 +31,20 @@ class Dispatcher(object):
             if source == event.source.lower():
                 filtered.append(response)
             else:
-                if source in ibid.sources:
-                    reactor.callFromThread(ibid.sources[source].send, response)
-                    self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
-                else:
-                    self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
+                self.send(response)
 
         event.responses = filtered
         self.log.debug(u"Returning event to %s source", event.source)
         return event
 
+    def send(self, response):
+        source = response['source'].lower()
+        if source in ibid.sources:
+            reactor.callFromThread(ibid.sources[source].send, response)
+            self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
+        else:
+            self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
+        
     def dispatch(self, event):
         self.log.debug(u"Received event from %s source", event.source)
         return threads.deferToThread(self._process, event)

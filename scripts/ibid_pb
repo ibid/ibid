@@ -6,6 +6,7 @@ from optparse import OptionParser
 from twisted.spread import pb
 from twisted.internet import reactor
 from twisted.python import util
+import simplejson
 
 parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <params>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
@@ -29,7 +30,7 @@ elif command == 'plugin':
 		parser.print_help()
 		exit(1)
 	d.addCallback(lambda root: root.callRemote('get_plugin', args[1], args[2]))
-	d.addCallback(lambda plugin: plugin.callRemote(args[3], *args[4:]))
+	d.addCallback(lambda plugin: plugin.callRemote(args[3], *[simplejson.loads(arg) for arg in args[4:]]))
 
 d.addCallback(lambda response: response)
 d.addErrback(lambda reason: 'Error: %s' % str(reason.value))
