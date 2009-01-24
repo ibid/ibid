@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+from sys import argv, exit
+
+from twisted.spread import pb
+from twisted.internet import reactor
+from twisted.python import util
+
+server = 'localhost'
+port = 8789
+message = argv[1]
+
+factory = pb.PBClientFactory()
+reactor.connectTCP(server, port, factory)
+d = factory.getRootObject()
+d.addCallback(lambda object: object.callRemote('message', message))
+d.addCallback(lambda response: response)
+d.addErrback(lambda reason: 'Error: %s' % str(reason.value))
+d.addCallback(util.println)
+d.addCallback(lambda _: reactor.stop())
+reactor.run()
+
+# vi: set et sta sw=4 ts=4:
