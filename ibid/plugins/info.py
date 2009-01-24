@@ -1,13 +1,14 @@
 from subprocess import Popen, PIPE
 
 from nickometer import nickometer
+from twisted.spread import pb
 
 from ibid.plugins import Processor, match
 
 help = {}
 
 help['fortune'] = u'Returns a random fortune.'
-class Fortune(Processor):
+class Fortune(Processor, pb.Referenceable):
     """fortune"""
     feature = 'fortune'
 
@@ -15,16 +16,17 @@ class Fortune(Processor):
 
     @match(r'^fortune$')
     def handler(self, event):
+        event.addresponse(self.remote_fortune() or u"Couldn't execute fortune")
+
+    def remote_fortune(self):
         fortune = Popen(self.fortune, stdout=PIPE, stderr=PIPE)
         output, error = fortune.communicate()
         code = fortune.wait()
 
         if code == 0:
-            event.addresponse(output.strip())
+            return output.strip()
         else:
-            event.addresponse(u"Couldn't execute fortune")
-
-        return event
+            return None
 
 help['nickometer'] = u'Calculates how lame a nick is.'
 class Nickometer(Processor):

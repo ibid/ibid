@@ -8,12 +8,24 @@ from twisted.python import util
 
 server = 'localhost'
 port = 8789
-message = argv[1]
+#message = argv[1]
+message = None
+plugin = 'info'
+classname = 'Fortune'
+method = 'fortune'
+params = ()
 
 factory = pb.PBClientFactory()
 reactor.connectTCP(server, port, factory)
 d = factory.getRootObject()
-d.addCallback(lambda object: object.callRemote('message', message))
+
+if message:
+	d.addCallback(lambda object: object.callRemote('message', message))
+
+elif plugin:
+	d.addCallback(lambda root: root.callRemote('get_plugin', plugin, classname))
+	d.addCallback(lambda plugin: plugin.callRemote(method, *params))
+
 d.addCallback(lambda response: response)
 d.addErrback(lambda reason: 'Error: %s' % str(reason.value))
 d.addCallback(util.println)

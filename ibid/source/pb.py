@@ -22,6 +22,14 @@ class IbidRoot(pb.Root):
         event.message = unicode(message, 'utf-8', 'replace')
         return ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
+    def remote_get_plugin(self, plugin, classname):
+        __import__('ibid.plugins.%s' % plugin)
+        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
+        for processor in ibid.processors:
+            if isinstance(processor, klass) and processor.name == plugin:
+                return processor
+        return None
+
 class SourceFactory(IbidSourceFactory):
 
     port = 8789
