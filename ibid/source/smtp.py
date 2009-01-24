@@ -26,8 +26,7 @@ class IbidDelivery:
         self.name = name
 
     def receivedHeader(self, helo, origin, recipients):
-        #return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (helo[0], helo[1], gethostname(), str(recipients[0]), strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)', gmtime()))
-        return 'Received: by Ibid'
+        return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (helo[0], helo[1], gethostname(), str(recipients[0]), strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)', gmtime()))
 
     def validateFrom(self, helo, origin):
         return origin
