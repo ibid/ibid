@@ -74,8 +74,11 @@ class Plugin(resource.Resource):
         for processor in ibid.processors:
             if issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
                 if hasattr(processor, 'remote_%s' % method):
-                    result = getattr(processor, 'remote_%s' % method)(*args, **kwargs)
-                    return simplejson.dumps(result)
+                    try:
+                        result = getattr(processor, 'remote_%s' % method)(*args, **kwargs)
+                        return simplejson.dumps(result)
+                    except Exception, e:
+                        return simplejson.dumps({'exception': True, 'message': e.message})
 
         return "Not found"
 
