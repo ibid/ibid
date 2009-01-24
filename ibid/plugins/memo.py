@@ -48,9 +48,9 @@ class Tell(Processor):
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
         session.save_or_update(memo)
         session.flush()
+        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender, memo.memo)
         session.close()
         memo_cache.clear()
-        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender, memo.memo)
 
         event.addresponse(True)
 

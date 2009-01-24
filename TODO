@@ -17,10 +17,12 @@ Factpacks: Fixed high factoid_ids? Mark in database?
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
 Memo: Leaving memos for people without identities?
-Feeds: Caching.
+Feeds: Caching
+Feeds: Check URL when added
 setup.py: Exclude most of lib/
 Auto-load plugins?
 Config object?
+Presence event naming (joined/parted? online/offline?)
 
 Plugins:
 SVN

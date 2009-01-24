@@ -161,6 +161,9 @@ class Forget(Processor):
     @authorise
     def alias(self, event, target, source):
 
+        if target.lower() == source.lower():
+            return
+
         session = ibid.databases.ibid()
         factoid = session.query(Factoid).join('names').filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
