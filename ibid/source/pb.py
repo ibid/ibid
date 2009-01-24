@@ -1,3 +1,5 @@
+import logging
+
 from twisted.spread import pb
 from twisted.application import internet
 from twisted.internet import reactor
@@ -10,6 +12,7 @@ class IbidRoot(pb.Root):
 
     def __init__(self, name):
         self.name = name
+        self.log = logging.getLogger('sources.%s' % name)
 
     def respond(self, event):
         return [response['reply'] for response in event.responses]
@@ -20,13 +23,13 @@ class IbidRoot(pb.Root):
         event.addressed = True
         event.public = False
         event.message = unicode(message, 'utf-8', 'replace')
+        self.log.debug(u'message("%s")' % event.message)
         return ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def remote_get_plugin(self, plugin, classname):
-        __import__('ibid.plugins.%s' % plugin)
-        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
+        self.log.debug(u'get_plugin("%s", "%s")' % (plugin, classname))
         for processor in ibid.processors:
-            if isinstance(processor, klass) and processor.name == plugin:
+            if issubclass(processor, pb.Referenceable) and processor.name == plugin:
                 return processor
         return None
 

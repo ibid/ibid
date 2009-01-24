@@ -11,9 +11,10 @@ import simplejson
 parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <parameters>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
 parser.add_option('-p', '--port', help='Port number of Ibid instance')
-parser.set_defaults(server='localhost', port=8789, message=True, plugin=False)
 params = OptionGroup(parser, u'Method Parameters', u'Method parameters must be specified in JSON. This means that strings must be surrounded with quotes, which usually means double quoting them in a shell')
 parser.add_option_group(params)
+
+parser.set_defaults(server='localhost', port=8789)
 options, args = parser.parse_args()
 command = args[0].lower()
 

@@ -24,6 +24,7 @@ setup.py: Exclude most of lib/
 Auto-load plugins?
 Config object?
 Presence event naming (joined/parted? online/offline?)
+PB: Logging, identifying
 
 Plugins:
 SVN
