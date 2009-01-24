@@ -17,10 +17,10 @@ class URL(Base):
     __tablename__ = 'urls'
 
     id = Column(Integer, primary_key=True)
-    url = Column(UnicodeText)
-    channel = Column(Unicode(32))
-    identity = Column(Integer)
-    time = Column(DateTime)
+    url = Column(UnicodeText, nullable=False)
+    channel = Column(Unicode(32), nullable=False)
+    identity = Column(Integer, nullable=False)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, url, channel, identity):
         self.url = url

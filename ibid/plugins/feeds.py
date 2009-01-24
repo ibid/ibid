@@ -19,10 +19,10 @@ class Feed(Base):
     __tablename__ = 'feeds'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode(32))
-    url = Column(UnicodeText)
-    identity = Column(Integer)
-    time = Column(DateTime)
+    name = Column(Unicode(32), unique=True, nullable=False)
+    url = Column(UnicodeText, nullable=False)
+    identity = Column(Integer, nullable=False)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, name, url, identity):
         self.name = name

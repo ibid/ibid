@@ -58,7 +58,7 @@ else:
 
 bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base'), ('ibid.plugins.karma', 'Base'), ('ibid.plugins.feeds', 'Base')]
 metadatas = []
-engine = create_engine(config.databases['ibid']['uri'])
+engine = create_engine(config.databases['ibid']['uri'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
 
 for module, model in bases:
     try:

@@ -34,11 +34,11 @@ class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode(256), unique=True)
-    factoid_id = Column(Integer, ForeignKey(Factoid.id))
+    name = Column(Unicode(128), nullable=False, unique=True)
+    factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)
-    time = Column(DateTime)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, name, identity, factoid_id=None):
         self.name = name
@@ -53,11 +53,11 @@ class FactoidValue(Base):
     __tablename__ = 'factoid_values'
 
     id = Column(Integer, primary_key=True)
-    value = Column(UnicodeText)
-    factoid_id = Column(Integer, ForeignKey(Factoid.id))
+    value = Column(UnicodeText, nullable=False)
+    factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)
-    time = Column(DateTime)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
@@ -67,9 +67,6 @@ class FactoidValue(Base):
 
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
-
-#FactoidValue.names = relation(FactoidName, primaryjoin=FactoidValue.factoid_id==FactoidName.factoid_id, foreign_keys=[FactoidName.factoid_id, FactoidValue.factoid_id])
-#FactoidName.values = relation(FactoidValue, primaryjoin=FactoidName.factoid_id==FactoidValue.factoid_id, foreign_keys=[FactoidName.factoid_id, FactoidValue.factoid_id])
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')

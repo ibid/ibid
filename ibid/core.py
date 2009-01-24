@@ -205,9 +205,9 @@ class DatabaseManager(dict):
     def load(self, name):
         uri = ibid.config.databases[name]['uri']
         if uri.startswith('sqlite:///'):
-            engine = create_engine('sqlite:///', creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))), echo=False)
+            engine = create_engine('sqlite:///', creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))), encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
         else:
-            engine = create_engine(uri)
+            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True)
         self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
         self.log.info(u"Loaded %s database", name)
 

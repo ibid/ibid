@@ -12,8 +12,8 @@ class Identity(Base):
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    source = Column(Unicode(16))
-    identity = Column(Unicode(64))
+    source = Column(Unicode(16), nullable=False)
+    identity = Column(Unicode(64), nullable=False)
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -28,9 +28,9 @@ class Attribute(Base):
     __table_args__ = (UniqueConstraint('account_id', 'name'), {})
     
     id = Column(Integer, primary_key=True)
-    account_id = Column(Integer, ForeignKey('accounts.id'))
-    name = Column(Unicode(16))
-    value = Column(Unicode(64))
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    name = Column(Unicode(32), nullable=False)
+    value = Column(Unicode(128), nullable=False)
 
     def __init__(self, name, value):
         self.name = name
@@ -43,10 +43,10 @@ class Credential(Base):
     __tablename__ = 'credentials'
 
     id = Column(Integer, primary_key=True)
-    account_id = Column(Integer, ForeignKey('accounts.id'))
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     source = Column(Unicode(16))
-    method = Column(Unicode(16))
-    credential = Column(Unicode(256))
+    method = Column(Unicode(16), nullable=False)
+    credential = Column(Unicode(256), nullable=False)
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
@@ -59,9 +59,9 @@ class Permission(Base):
     __table_args__ = (UniqueConstraint('account_id', 'name'), {})
 
     id = Column(Integer, primary_key=True)
-    account_id = Column(Integer, ForeignKey('accounts.id'))
-    name = Column(Unicode(16))
-    value = Column(Unicode(4))
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    name = Column(Unicode(16), nullable=False)
+    value = Column(Unicode(4), nullable=False)
 
     def __init__(self, name=None, value=None, account_id=None):
         self.account_id = account_id
@@ -72,7 +72,7 @@ class Account(Base):
     __tablename__ = 'accounts'
 
     id = Column(Integer, primary_key=True)
-    username = Column(Unicode(32), unique=True)
+    username = Column(Unicode(32), unique=True, nullable=False)
 
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)
@@ -90,12 +90,12 @@ class Sighting(Base):
     __table_args__ = (UniqueConstraint('identity_id', 'type'), {})
 
     id = Column(Integer, primary_key=True)
-    identity_id = Column(Integer, ForeignKey('identities.id'))
-    type = Column(Unicode(8))
+    identity_id = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    type = Column(Unicode(8), nullable=False)
     channel = Column(Unicode(32))
     value = Column(UnicodeText)
-    time = Column(DateTime)
-    count = Column(Integer)
+    time = Column(DateTime, nullable=False)
+    count = Column(Integer, nullable=False)
 
     identity = relation('Identity')
 
@@ -111,12 +111,12 @@ class Memo(Base):
     __tablename__ = 'memos'
 
     id = Column(Integer, primary_key=True)
-    frm = Column(Integer, ForeignKey('identities.id'))
-    to = Column(Integer, ForeignKey('identities.id'))
-    memo = Column(UnicodeText)
-    private = Column(Boolean)
-    delivered = Column(Boolean)
-    time = Column(DateTime)
+    frm = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    to = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    memo = Column(UnicodeText, nullable=False)
+    private = Column(Boolean, nullable=False)
+    delivered = Column(Boolean, nullable=False)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, frm, to, memo, private=False):
         self.frm = frm

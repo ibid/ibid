@@ -19,10 +19,10 @@ class Karma(Base):
     __tablename__ = 'karma'
 
     id = Column(Integer, primary_key=True)
-    subject = Column(Unicode(32), unique=True)
-    changes = Column(Integer)
-    value = Column(Integer)
-    time = Column(DateTime)
+    subject = Column(Unicode(128), unique=True, nullable=False)
+    changes = Column(Integer, nullable=False)
+    value = Column(Integer, nullable=False)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, subject):
         self.subject = subject
