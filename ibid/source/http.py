@@ -5,10 +5,15 @@ from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb
 import simplejson
+from mako.template import Template
+from mako.lookup import TemplateLookup
+from pkg_resources import resource_string, resource_filename
 
 import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+
+templates = TemplateLookup(directories=[resource_filename('ibid.templates', '')], module_directory='/tmp/ibid-mako')
 
 class Index(resource.Resource):
 
@@ -16,6 +21,10 @@ class Index(resource.Resource):
         resource.Resource.__init__(self, *args, **kwargs)
         self.name = name
         self.log = logging.getLogger('source.%s' % name)
+        self.template = templates.get_template('index.html')
+
+    def render_GET(self, request):
+        return self.template.render()
 
 class Message(resource.Resource):
 
@@ -23,13 +32,20 @@ class Message(resource.Resource):
         resource.Resource.__init__(self, *args, **kwargs)
         self.name = name
         self.log = logging.getLogger('source.%s' % name)
+        self.form_template = templates.get_template('message_form.html')
 
     def render_GET(self, request):
+        if 'm' in request.args:
+            return self.render_POST(request)
+
+        return self.form_template.render()
+
+    def render_POST(self, request):
         event = Event(self.name, u'message')
-        event.who = event.sender_id = event.sender = event.channel = request.transport.getPeer().host
+        event.who = event.sender_id = event.sender = event.channel = unicode(request.transport.getPeer().host)
         event.addressed = True
         event.public = False
-        event.message = request.args['m'][0]
+        event.message = unicode(request.args['m'][0], 'utf-8', 'replace')
         self.log.debug(u"Received GET request from %s: %s", event.sender, event.message)
         ibid.dispatcher.dispatch(event).addCallback(self.respond, request)
         return server.NOT_DONE_YET
@@ -82,6 +98,9 @@ class Plugin(resource.Resource):
 
         return "Not found"
 
+    def render_POST(self, request):
+        return self.render_GET(request)
+
 class SourceFactory(IbidSourceFactory):
 
     port = 8080
@@ -90,6 +109,7 @@ class SourceFactory(IbidSourceFactory):
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         root = Index(self.name)
+        root.putChild('', Index(self.name))
         root.putChild('message', Message(name))
         root.putChild('plugin', Plugin(name))
         self.site = server.Site(root)
