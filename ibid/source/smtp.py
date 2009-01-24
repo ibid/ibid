@@ -1,5 +1,9 @@
 import logging
 from StringIO import StringIO
+from email import message_from_string
+from socket import gethostname
+from time import gmtime, strftime
+import re
 try:
     from email.utils import parseaddr
 except ImportError:
@@ -14,6 +18,8 @@ import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
+stripsig = re.compile(r'^-- $.*', re.M+re.S)
+
 class IbidDelivery:
     implements(smtp.IMessageDelivery)
 
@@ -21,6 +27,7 @@ class IbidDelivery:
         self.name = name
 
     def receivedHeader(self, helo, origin, recipients):
+        #return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (helo[0], helo[1], gethostname(), str(recipients[0]), strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)', gmtime()))
         return 'Received: by Ibid'
 
     def validateFrom(self, helo, origin):
@@ -40,43 +47,27 @@ class Message:
         self.log = logging.getLogger('source.%s' % name)
 
     def lineReceived(self, line):
-        self.lines.append(unicode(line, 'utf-8', 'replace'))
+        self.lines.append(line)
 
     def eomReceived(self):
-        headers = {}
-        message = []
-        inmessage = False
-        for line in self.lines:
-            if inmessage:
-                if line == '-- ':
-                    break
-                elif line != '':
-                    message.append(line)
-            else:
-                if line == '':
-                    inmessage = True
-                elif line.startswith('  '):
-                    headers[last] += line
-                else:
-                    (header, value) = line.split(':', 1)
-                    last = header.strip().lower()
-                    headers[last] = value.strip()
+        mail = message_from_string('\n'.join(self.lines))
 
-        event = Event(self.name, 'message')
-        (realname, email) = parseaddr(headers['from'])
-        event.sender = email
-        event.sender_id = email
-        event.who = realname != '' and realname or email
-        event.channel = event.sender
+        event = Event(self.name, u'message')
+        (realname, address) = parseaddr(mail['from'])
+        event.channel = event.sender = event.sender_id = unicode(address, 'utf-8', 'replace')
+        event.who = realname != '' and unicode(realname, 'utf-8', 'replace') or address
         event.public = False
         event.addressed = True
-        event.subject = headers['subject']
+        event.subject = unicode(mail['subject'], 'utf-8', 'replace')
+
+        message = mail.is_multipart() and mail.get_payload()[0] or mail.get_payload()
         if len(message) > 0:
-            event.message = ' '.join(message)
+            event.message = stripsig.sub('', message).strip().replace('\n', ' ')
         else:
             event.message = event.subject
+        event.message = unicode(event.message, 'utf-8', 'replace')
 
-        self.log.debug(u"Received message from %s: %s", headers['from'], headers['subject'])
+        self.log.debug(u"Received message from %s: %s", event.sender, event.message)
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
         return defer.succeed(None)
 
