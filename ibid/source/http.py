@@ -1,6 +1,6 @@
 import logging
 
-from twisted.web import server, resource, error
+from twisted.web import server, resource
 from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb

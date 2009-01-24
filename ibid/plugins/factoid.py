@@ -190,11 +190,11 @@ class Get(Processor, pb.Referenceable):
 
     @handler
     def get(self, event, verb, name, number, pattern):
-        response = self.remote_get(name, event, number, pattern)
+        response = self.remote_get(name, number, pattern, event)
         if response:
             event.addresponse(response)
 
-    def remote_get(self, name, event={}, number=None, pattern=None):
+    def remote_get(self, name, number=None, pattern=None, event={}):
         session = ibid.databases.ibid()
         factoid = get_factoid(session, name, number, pattern)
         session.close()
