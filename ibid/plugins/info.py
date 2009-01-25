@@ -1,14 +1,13 @@
 from subprocess import Popen, PIPE
 
 from nickometer import nickometer
-from twisted.spread import pb
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, RPC
 
 help = {}
 
 help['fortune'] = u'Returns a random fortune.'
-class Fortune(Processor, pb.Referenceable):
+class Fortune(Processor, RPC):
     """fortune"""
     feature = 'fortune'
 
