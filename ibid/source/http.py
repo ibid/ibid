@@ -1,6 +1,7 @@
 import logging
+from inspect import getargspec, ismethod
 
-from twisted.web import server, resource
+from twisted.web import server, resource, static
 from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb
@@ -62,12 +63,23 @@ class Plugin(resource.Resource):
         resource.Resource.__init__(self, *args, **kwargs)
         self.name = name
         self.log = logging.getLogger('source.%s' % name)
+        self.form = templates.get_template('plugin_form.html')
 
-    def render_GET(self, request):
+    def get_function(self, request):
         plugin = request.postpath[0]
         classname = request.postpath[1]
         method = request.postpath[2]
 
+        __import__('ibid.plugins.%s' % plugin)
+        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
+        for processor in ibid.processors:
+            if isinstance(processor, klass) and issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
+                if hasattr(processor, 'remote_%s' % method):
+                    return getattr(processor, 'remote_%s' % method)
+
+        return None
+
+    def render_POST(self, request):
         args = []
         for arg in request.postpath[3:]:
             try:
@@ -84,23 +96,31 @@ class Plugin(resource.Resource):
                 value = value[0]
             kwargs[key] = value
 
-        self.log.debug(u'plugins.%s.%s.%s(%s, %s)', plugin, classname, method, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
+        function = self.get_function(request)
+        if not function:
+            return "Not found"
 
-        __import__('ibid.plugins.%s' % plugin)
-        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
-        for processor in ibid.processors:
-            if isinstance(processor, klass) and issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
-                if hasattr(processor, 'remote_%s' % method):
-                    try:
-                        result = getattr(processor, 'remote_%s' % method)(*args, **kwargs)
-                        return simplejson.dumps(result)
-                    except Exception, e:
-                        return simplejson.dumps({'exception': True, 'message': e.message})
+        self.log.debug(u'%s(%s, %s)', function, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
 
-        return "Not found"
+        try:
+            result = function(*args, **kwargs)
+            return simplejson.dumps(result)
+        except Exception, e:
+            return simplejson.dumps({'exception': True, 'message': e.message})
 
-    def render_POST(self, request):
-        return self.render_GET(request)
+    def render_GET(self, request):
+        function = self.get_function(request)
+        if not function:
+            return "Not found"
+
+        args, varargs, varkw, defaults = getargspec(function)
+        if ismethod(function):
+            del args[0]
+
+        if len(args) == 0 or len(request.postpath) > 3 or len(request.args) > 0:
+            return self.render_POST(request)
+
+        return self.form.render(args=args).encode('utf-8')
 
 class SourceFactory(IbidSourceFactory):
 
@@ -113,6 +133,7 @@ class SourceFactory(IbidSourceFactory):
         root.putChild('', Index(self.name))
         root.putChild('message', Message(name))
         root.putChild('plugin', Plugin(name))
+        root.putChild('static', static.File(resource_filename('ibid', 'static')))
         self.site = server.Site(root)
 
     def setServiceParent(self, service):
