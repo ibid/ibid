@@ -26,14 +26,8 @@ class IbidRoot(pb.Root):
         self.log.debug(u'message("%s")' % event.message)
         return ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
-    def remote_get_plugin(self, plugin, classname):
-        self.log.debug(u'get_plugin("%s", "%s")' % (plugin, classname))
-        __import__('ibid.plugins.%s' % plugin)
-        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
-        for processor in ibid.processors:
-            if processor.name == plugin and isinstance(processor, klass) and issubclass(processor.__class__, pb.Referenceable):
-                return processor
-        return None
+    def remote_get_plugin(self, plugin):
+        return ibid.rpc[plugin]
 
 class SourceFactory(IbidSourceFactory):
 

@@ -26,12 +26,12 @@ if command == 'message':
     d.addCallback(lambda object: object.callRemote('message', ' '.join(args[1:])))
 
 elif command == 'plugin':
-    if len(args) < 4:
+    if len(args) < 3:
         parser.error(u'Not enough arguments.')
-    d.addCallback(lambda root: root.callRemote('get_plugin', args[1], args[2]))
+    d.addCallback(lambda root: root.callRemote('get_plugin', args[1]))
     pargs = []
     kwargs = {}
-    for arg in args[4:]:
+    for arg in args[3:]:
         key = None
         if arg.find('=') != -1:
             key, value = arg.split('=', 1)
@@ -48,7 +48,7 @@ elif command == 'plugin':
         else:
             pargs.append(value)
 
-    d.addCallback(lambda plugin: plugin.callRemote(args[3], *pargs, **kwargs))
+    d.addCallback(lambda plugin: plugin.callRemote(args[2], *pargs, **kwargs))
 
 d.addCallback(lambda response: simplejson.dumps(response))
 d.addErrback(lambda reason: 'Error: %s' % str(reason.value))
