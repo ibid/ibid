@@ -7,10 +7,9 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeTe
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
-from twisted.spread import pb
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise, auth_responses
+from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.plugins.identity import get_identities
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
@@ -175,7 +174,7 @@ class Forget(Processor):
         else:
             event.addresponse(u"I don't know about %s" % name)
 
-class Get(Processor, pb.Referenceable):
+class Get(Processor, RPC):
     """<factoid> [( #<number> | /<pattern>/ )]"""
     feature = 'factoids'
 
@@ -184,6 +183,10 @@ class Get(Processor, pb.Referenceable):
     interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
     date_format = '%Y/%m/%d'
     time_format = '%H:%M:%S'
+
+    def __init__(self, name):
+        super(Get, self).__init__(name)
+        RPC.__init__(self)
 
     def setup(self):
         self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)

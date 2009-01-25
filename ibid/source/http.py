@@ -67,21 +67,15 @@ class Plugin(resource.Resource):
 
     def get_function(self, request):
         plugin = request.postpath[0]
-        classname = request.postpath[1]
-        method = request.postpath[2]
+        method = request.postpath[1]
 
-        __import__('ibid.plugins.%s' % plugin)
-        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
-        for processor in ibid.processors:
-            if isinstance(processor, klass) and issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
-                if hasattr(processor, 'remote_%s' % method):
-                    return getattr(processor, 'remote_%s' % method)
+        return getattr(ibid.rpc[plugin], 'remote_%s' % method)
 
         return None
 
     def render_POST(self, request):
         args = []
-        for arg in request.postpath[3:]:
+        for arg in request.postpath[2:]:
             try:
                 arg = simplejson.loads(arg)
             except ValueError, e:
@@ -117,7 +111,7 @@ class Plugin(resource.Resource):
         if ismethod(function):
             del args[0]
 
-        if len(args) == 0 or len(request.postpath) > 3 or len(request.args) > 0:
+        if len(args) == 0 or len(request.postpath) > 2 or len(request.args) > 0:
             return self.render_POST(request)
 
         return self.form.render(args=args).encode('utf-8')
