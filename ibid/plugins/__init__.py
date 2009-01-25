@@ -83,15 +83,9 @@ def authorise(function):
     function.authorised = True
     return function
 
-class RPC(pb.Referenceable, xmlrpc.XMLRPC, soap.SOAPPublisher):
+class RPC(pb.Referenceable):
 
-    def __init__(self, name):
-        print "RPC instantiated with %s" % self.feature
-
-    def _getFunction(self, functionPath):
-        return getattr(self, 'remote_' % functionPath)
-
-    def lookupFunction(self, functionName):
-        return getattr(self, 'remote_' % functionName)
+    def __init__(self):
+        ibid.rpc[self.feature] = self
  
 # vi: set et sta sw=4 ts=4:

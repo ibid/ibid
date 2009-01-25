@@ -20,6 +20,7 @@ databases = None
 auth = None
 service = None
 options = {}
+rpc = {}
 
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')

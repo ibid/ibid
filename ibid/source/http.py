@@ -1,7 +1,7 @@
 import logging
 from inspect import getargspec, ismethod
 
-from twisted.web import server, resource, static
+from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb
@@ -122,6 +122,30 @@ class Plugin(resource.Resource):
 
         return self.form.render(args=args).encode('utf-8')
 
+class XMLRPC(xmlrpc.XMLRPC):
+
+    def _getFunction(self, functionPath):
+        if functionPath.find(self.separator) != -1:
+            plugin, functionPath = functionPath.split(self.separator, 1)
+            object = ibid.rpc[plugin]
+        else:
+            object = self
+
+        return getattr(object, 'remote_%s' % functionPath)
+
+class SOAP(soap.SOAPPublisher):
+
+    separator = '.'
+
+    def lookupFunction(self, functionName):
+        if functionName.find(self.separator) != -1:
+            plugin, functionName = functionName.split(self.separator, 1)
+            object = ibid.rpc[plugin]
+        else:
+            object = self
+
+        return getattr(object, 'remote_%s' % functionName)
+
 class SourceFactory(IbidSourceFactory):
 
     port = 8080
@@ -134,6 +158,8 @@ class SourceFactory(IbidSourceFactory):
         root.putChild('message', Message(name))
         root.putChild('plugin', Plugin(name))
         root.putChild('static', static.File(resource_filename('ibid', 'static')))
+        root.putChild('RPC2', XMLRPC())
+        root.putChild('SOAP', SOAP())
         self.site = server.Site(root)
 
     def setServiceParent(self, service):

@@ -2,6 +2,7 @@ from subprocess import Popen, PIPE
 
 from nickometer import nickometer
 
+import ibid
 from ibid.plugins import Processor, match, RPC
 
 help = {}
@@ -12,6 +13,10 @@ class Fortune(Processor, RPC):
     feature = 'fortune'
 
     fortune = 'fortune'
+
+    def __init__(self, name):
+        super(Fortune, self).__init__(name)
+        RPC.__init__(self)
 
     @match(r'^fortune$')
     def handler(self, event):
