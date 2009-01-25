@@ -5,15 +5,14 @@ from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb
 import simplejson
-from mako.template import Template
-from mako.lookup import TemplateLookup
 from pkg_resources import resource_string, resource_filename
+from jinja import Environment, PackageLoader
 
 import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
-templates = TemplateLookup(directories=[resource_filename('ibid.templates', '')], module_directory='/tmp/ibid-mako')
+templates = Environment(loader=PackageLoader('ibid', 'templates'))
 
 class Index(resource.Resource):
 
@@ -24,7 +23,7 @@ class Index(resource.Resource):
         self.template = templates.get_template('index.html')
 
     def render_GET(self, request):
-        return self.template.render()
+        return self.template.render().encode('utf-8')
 
 class Message(resource.Resource):
 
@@ -38,7 +37,7 @@ class Message(resource.Resource):
         if 'm' in request.args:
             return self.render_POST(request)
 
-        return self.form_template.render()
+        return self.form_template.render().encode('utf-8')
 
     def render_POST(self, request):
         event = Event(self.name, u'message')
@@ -87,8 +86,10 @@ class Plugin(resource.Resource):
 
         self.log.debug(u'plugins.%s.%s.%s(%s, %s)', plugin, classname, method, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
 
+        __import__('ibid.plugins.%s' % plugin)
+        klass = eval('ibid.plugins.%s.%s' % (plugin, classname))
         for processor in ibid.processors:
-            if issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
+            if isinstance(processor, klass) and issubclass(processor.__class__, pb.Referenceable) and processor.name == plugin:
                 if hasattr(processor, 'remote_%s' % method):
                     try:
                         result = getattr(processor, 'remote_%s' % method)(*args, **kwargs)

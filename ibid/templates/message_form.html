@@ -1,7 +1,9 @@
-<%inherit file="base.html"/>
-<%def name='title()'>Message</%def>
+{% extends "base.html" %}
+{% block title %}Message{% endblock %}
 
+{% block content %}
 <form action='/message' method='post'>
 <label>Message: <input name='m' id='m' /></label><br/>
 <input type='submit'>
 </form>
+{% endblock %}
