@@ -20,32 +20,32 @@ class Dict(Processor):
     @match(r'^define\s+(.+?)(?:\s+using\s+(.+))?$')
     def define(self, event, word, dictionary):
         definitions = self.connection.define(dictionary or '*', word)
-        event.addresponse(', '.join([d.getdefstr() for d in definitions]))
+        event.addresponse(u', '.join([d.getdefstr() for d in definitions]))
 
     @match(r'spell\s+(.+?)(?:\s+using\s+(.+))?$')
     def handle_spell(self, event, word, stratergy):
         suggestions = self.connection.match('*', stratergy or 'soundex', word)
-        event.addresponse(', '.join([d.getword() for d in suggestions]))
+        event.addresponse(u', '.join([d.getword() for d in suggestions]))
 
     @match(r'^dictionaries$')
     def handle_dictionaries(self, event):
-        event.addresponse(', '.join(self.dictionaries.keys()))
+        event.addresponse(u', '.join(self.dictionaries.keys()))
 
     @match(r'^strategies$')
     def handle_strategies(self, event):
-        event.addresponse(', '.join(self.strategies.keys()))
+        event.addresponse(u', '.join(self.strategies.keys()))
 
     @match(r'^dictionary\s+(.+?)$')
     def handle_dictionary(self, event, dictionary):
         if dictionary in self.dictionaries:
-            event.addresponse(self.dictionaries[dictionary])
+            event.addresponse(unicode(self.dictionaries[dictionary]))
         else:
             event.addresponse(u"I don't have that response")
 
     @match(r'^stratergy\s+(.+?)$')
     def handle_stratergy(self, event, stratergy):
         if stratergy in self.strategies:
-            event.addresponse(self.strategies[stratergy])
+            event.addresponse(unicode(self.strategies[stratergy]))
         else:
             event.addresponse(u"I don't have that response")
 
