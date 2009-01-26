@@ -25,7 +25,7 @@ Auto-load plugins?
 Config object?
 Presence event naming (joined/parted? online/offline?)
 PB: Logging, identifying
-HTTP URLs and PB plugin/class/method
+Introspection
 
 Plugins:
 SVN

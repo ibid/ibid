@@ -1,10 +1,13 @@
 import inspect
+from inspect import getargspec, ismethod
 import re
 
 from twisted.spread import pb
-from twisted.web import xmlrpc, soap
+from twisted.web import xmlrpc, soap, resource
+import simplejson
 
 import ibid
+from ibid.source.http import templates
 
 class Processor(object):
 
@@ -83,9 +86,59 @@ def authorise(function):
     function.authorised = True
     return function
 
-class RPC(pb.Referenceable):
+class RPC(pb.Referenceable, resource.Resource):
+    isLeaf = True
 
     def __init__(self):
         ibid.rpc[self.feature] = self
+        self.form = templates.get_template('plugin_form.html')
+
+    def get_function(self, request):
+        method = request.postpath[0]
+
+        return getattr(self, 'remote_%s' % method)
+
+        return None
+
+    def render_POST(self, request):
+        args = []
+        for arg in request.postpath[1:]:
+            try:
+                arg = simplejson.loads(arg)
+            except ValueError, e:
+                pass
+            args.append(arg)
+
+        kwargs = {}
+        for key, value in request.args.items():
+            try:
+                value = simplejson.loads(value[0])
+            except ValueError, e:
+                value = value[0]
+            kwargs[key] = value
+
+        function = self.get_function(request)
+        if not function:
+            return "Not found"
+
+        #self.log.debug(u'%s(%s, %s)', function, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
+
+        try:
+            result = function(*args, **kwargs)
+            return simplejson.dumps(result)
+        except Exception, e:
+            return simplejson.dumps({'exception': True, 'message': e.message})
+
+    def render_GET(self, request):
+        function = self.get_function(request)
+        if not function:
+            return "Not found"
+
+        args, varargs, varkw, defaults = getargspec(function)
+        del args[0]
+        if len(args) == 0 or len(request.postpath) > 1 or len(request.args) > 0:
+            return self.render_POST(request)
+
+        return self.form.render(args=args).encode('utf-8')
  
 # vi: set et sta sw=4 ts=4:

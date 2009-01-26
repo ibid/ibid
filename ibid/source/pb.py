@@ -27,6 +27,7 @@ class IbidRoot(pb.Root):
         return ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def remote_get_plugin(self, plugin):
+        self.log.debug(u'get_plugin("%s")' % plugin)
         return ibid.rpc[plugin]
 
 class SourceFactory(IbidSourceFactory):

@@ -1,11 +1,9 @@
 import logging
-from inspect import getargspec, ismethod
 
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
 from twisted.spread import pb
-import simplejson
 from pkg_resources import resource_string, resource_filename
 from jinja import Environment, PackageLoader
 
@@ -57,64 +55,14 @@ class Message(resource.Resource):
         self.log.debug(u"Responded to request from %s: %s", event.sender, output)
 
 class Plugin(resource.Resource):
-    isLeaf = True
 
     def __init__(self, name, *args, **kwargs):
         resource.Resource.__init__(self, *args, **kwargs)
         self.name = name
         self.log = logging.getLogger('source.%s' % name)
-        self.form = templates.get_template('plugin_form.html')
 
-    def get_function(self, request):
-        plugin = request.postpath[0]
-        method = request.postpath[1]
-
-        return getattr(ibid.rpc[plugin], 'remote_%s' % method)
-
-        return None
-
-    def render_POST(self, request):
-        args = []
-        for arg in request.postpath[2:]:
-            try:
-                arg = simplejson.loads(arg)
-            except ValueError, e:
-                pass
-            args.append(arg)
-
-        kwargs = {}
-        for key, value in request.args.items():
-            try:
-                value = simplejson.loads(value[0])
-            except ValueError, e:
-                value = value[0]
-            kwargs[key] = value
-
-        function = self.get_function(request)
-        if not function:
-            return "Not found"
-
-        self.log.debug(u'%s(%s, %s)', function, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
-
-        try:
-            result = function(*args, **kwargs)
-            return simplejson.dumps(result)
-        except Exception, e:
-            return simplejson.dumps({'exception': True, 'message': e.message})
-
-    def render_GET(self, request):
-        function = self.get_function(request)
-        if not function:
-            return "Not found"
-
-        args, varargs, varkw, defaults = getargspec(function)
-        if ismethod(function):
-            del args[0]
-
-        if len(args) == 0 or len(request.postpath) > 2 or len(request.args) > 0:
-            return self.render_POST(request)
-
-        return self.form.render(args=args).encode('utf-8')
+    def getChild(self, path, request):
+        return ibid.rpc[path]
 
 class XMLRPC(xmlrpc.XMLRPC):
 
@@ -147,10 +95,9 @@ class SourceFactory(IbidSourceFactory):
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
-        root = Index(self.name)
-        root.putChild('', Index(self.name))
+        root = Plugin(name)
+        root.putChild('', Index(name))
         root.putChild('message', Message(name))
-        root.putChild('plugin', Plugin(name))
         root.putChild('static', static.File(resource_filename('ibid', 'static')))
         root.putChild('RPC2', XMLRPC())
         root.putChild('SOAP', SOAP())
