@@ -78,8 +78,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
                 return
 
         event = Event(self.parent.name, u'message')
-        event.message = unicode(message.body, 'utf-8', 'replace')
-        event.sender = unicode(message['from'], 'utf-8', 'replace')
+        event.message = unicode(message.body)
+        event.sender = message['from']
 
         if message['type'] == 'groupchat':
             event.sender_id = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
