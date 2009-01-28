@@ -5,4 +5,10 @@
 <p>
 <a href='/message'>Message</a>
 </p>
+<h1>RPC Objects</h1>
+<ul>
+{% for object in rpc %}
+<li><a href=/{{object}}/>{{object}}</a></li>
+{% endfor %}
+</ul>
 {% endblock %}

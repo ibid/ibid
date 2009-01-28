@@ -1,5 +1,5 @@
 import inspect
-from inspect import getargspec, ismethod
+from inspect import getargspec
 import re
 
 from twisted.spread import pb
@@ -92,11 +92,13 @@ class RPC(pb.Referenceable, resource.Resource):
     def __init__(self):
         ibid.rpc[self.feature] = self
         self.form = templates.get_template('plugin_form.html')
+        self.list = templates.get_template('plugin_functions.html')
 
     def get_function(self, request):
         method = request.postpath[0]
 
-        return getattr(self, 'remote_%s' % method)
+        if hasattr(self, 'remote_%s' % method):
+            return getattr(self, 'remote_%s' % method)
 
         return None
 
@@ -132,7 +134,12 @@ class RPC(pb.Referenceable, resource.Resource):
     def render_GET(self, request):
         function = self.get_function(request)
         if not function:
-            return "Not found"
+            functions = []
+            for name, method in inspect.getmembers(self, inspect.ismethod):
+                if name.startswith('remote_'):
+                    functions.append(name.replace('remote_', '', 1))
+
+            return self.list.render(object=self.feature, functions=functions).encode('utf-8')
 
         args, varargs, varkw, defaults = getargspec(function)
         del args[0]

@@ -22,7 +22,7 @@ class Index(resource.Resource):
         self.template = templates.get_template('index.html')
 
     def render_GET(self, request):
-        return self.template.render().encode('utf-8')
+        return self.template.render(rpc=ibid.rpc.keys()).encode('utf-8')
 
 class Message(resource.Resource):
 
@@ -59,10 +59,9 @@ class Plugin(resource.Resource):
     def __init__(self, name, *args, **kwargs):
         resource.Resource.__init__(self, *args, **kwargs)
         self.name = name
-        self.log = logging.getLogger('source.%s' % name)
 
     def getChild(self, path, request):
-        return ibid.rpc[path]
+        return path in ibid.rpc and ibid.rpc[path] or None
 
 class XMLRPC(xmlrpc.XMLRPC):
 

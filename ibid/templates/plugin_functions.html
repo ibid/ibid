@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}RPC Functions{% endblock %}
+
+{% block content %}
+<h1>RPC Functions in {{object}}</h1>
+<ul>
+{% for function in functions %}
+<li><a href=/{{object}}/{{function}}>{{function}}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}
+
