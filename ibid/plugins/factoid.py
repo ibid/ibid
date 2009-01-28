@@ -31,7 +31,7 @@ class FactoidName(Base):
     __tablename__ = 'factoid_names'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode(128), nullable=False)#, unique=True)
+    name = Column(Unicode(128), nullable=False)
     factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)
