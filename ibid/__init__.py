@@ -25,7 +25,7 @@ rpc = {}
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')
     if 'failure' in eventDict:
-        log.error(eventDict['failure'].getTrackback())
+        log.error(eventDict.get('why') or 'Unhandled exception' + '\n' + str(eventDict['failure'].getTraceback()))
     elif 'warning' in eventDict:
         log.warning(eventDict['warning'])
     else:
