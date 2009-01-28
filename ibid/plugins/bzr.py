@@ -4,10 +4,9 @@ from datetime import datetime
 from bzrlib.branch import Branch
 from bzrlib import log
 from bzrlib.errors import InvalidRevisionNumber, NotBranchError
-from twisted.spread import pb
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, RPC
 from ibid.utils import ago
 
 help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
@@ -41,12 +40,16 @@ class LogFormatter(log.LogFormatter):
             commit = 'Commit %s by %s to %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.repository, ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2), revision.rev.get_summary().replace('\n', ' '))
         self.to_file.write(commit)
 
-class Bazaar(Processor, pb.Referenceable):
+class Bazaar(Processor, RPC):
     """last commit to <repo> | commit <revno> [full]
     repositories"""
     feature = 'bzr'
 
     datetime_format = 'on %Y/%m/%d at %H:%M:%S'
+
+    def __init__(self, name):
+        Processor.__init__(self, name)
+        RPC.__init__(self)
 
     def setup(self):
         self.branches = {}
