@@ -38,8 +38,7 @@ class BuildBot(Processor, RPC):
         d.addErrback(self.respond, event, False)
         event.processed = True
 
-    def respond(self, foo, event, result):
-        print foo
+    def respond(self, rpc_response, event, result):
         ibid.dispatcher.send({'reply': result and 'Okay' or u"buildbot doesn't want to build :-(", 'source': event.source, 'target': event.channel})
                     
 
