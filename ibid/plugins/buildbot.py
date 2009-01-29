@@ -1,11 +1,17 @@
+from twisted.spread import pb
+from twisted.internet import reactor
+from twisted.cred import credentials
+
 import ibid
-from ibid.plugins import Processor, RPC
+from ibid.plugins import Processor, match, RPC
 
 help = {}
 
 class BuildBot(Processor, RPC):
 
     feature = 'buildbot'
+    server = 'localhost'
+    port = 9989
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -14,5 +20,27 @@ class BuildBot(Processor, RPC):
     def remote_built(self, branch, revision, person, result):
         reply = u"Build %s of %s triggered by %s: %s" % (revision, branch, person, result)
         ibid.dispatcher.send({'reply': reply, 'source': self.source, 'target': self.channel})
+
+    @match(r'^build\s+(.+?)(?:\s+(?:revision|r)?\s*(\d+))?$')
+    def build(self, event, branch, revision):
+        change = {  'who': event.who,
+                    'branch': branch,
+                    'files': [None],
+                    'revision': revision or '-1',
+                    'comments': 'Rebuild',
+                }
+
+        buildbot = pb.PBClientFactory()
+        reactor.connectTCP(self.server, self.port, buildbot)
+        d = buildbot.login(credentials.UsernamePassword('change', 'changepw'))
+        d.addCallback(lambda root: root.callRemote('addChange', change))
+        d.addCallback(self.respond, event, True)
+        d.addErrback(self.respond, event, False)
+        event.processed = True
+
+    def respond(self, foo, event, result):
+        print foo
+        ibid.dispatcher.send({'reply': result and 'Okay' or u"buildbot doesn't want to build :-(", 'source': event.source, 'target': event.channel})
+                    
 
 # vi: set et sta sw=4 ts=4:
