@@ -1,33 +1,40 @@
+Decisions
+=========
+Presence event naming (joined/parted? online/offline?)
+Config object
+Auto-load plugins
+Memo: Leaving memos for people without identities
+Factpacks: Fixed high factoid_ids? Mark in database
+Private attributes
+Deleting factoids: confirmation?, marking as deleted
+Better meaning for "Ibid"
+Better names for event.{sender,sender_id,who}
+
+To Do
+=====
 Identity recognition for Jabber MUC
 Jabber vCard
 Refactor Reloader class
-Better meaning for "Ibid"
 Console source
 Improve NickServ authentication
-Better names for event.{sender,sender_id,who}
 Race condition where two identities are created if multiple messages received at the same time (usually from services/bots)
     - Can't happen anymore due to unique constraint, but second message won't be handled properly because no identity will be attached
 SMTP source: Handle multiple queries in a single message
-Deleting factoids: confirmation?, marking as deleted?
 Accounts: Modify/delete accounts
 Accounts: Admin command to create an account and attach an identity?
-Private attributes?
 Single declarative_base()
 Tests for everything
-Factpacks: Fixed high factoid_ids? Mark in database?
 Base: Handle arbitrary bases.
 Memo: Delete old memos.
-Memo: Leaving memos for people without identities?
 Feeds: Caching
 Feeds: Check URL when added
 setup.py: Exclude most of lib/
-Auto-load plugins?
-Config object?
-Presence event naming (joined/parted? online/offline?)
 PB: Logging, identifying
 Introspection
+Padding of MySQL import
 
-Plugins:
+Plugins
+=======
 SVN
 Summon
 Events
@@ -42,3 +49,4 @@ Lotto
 RFC
 Twitter
 Weather
+TCP port probing?
