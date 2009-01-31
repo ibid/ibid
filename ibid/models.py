@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, Boolean, UnicodeText, UniqueConstraint
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -14,6 +15,7 @@ class Identity(Base):
     account_id = Column(Integer, ForeignKey('accounts.id'))
     source = Column(Unicode(16), nullable=False)
     identity = Column(Unicode(64), nullable=False)
+    created = Column(DateTime, default=func.current_timestamp())
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -94,7 +96,7 @@ class Sighting(Base):
     type = Column(Unicode(8), nullable=False)
     channel = Column(Unicode(32))
     value = Column(UnicodeText)
-    time = Column(DateTime, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
     count = Column(Integer, nullable=False)
 
     identity = relation('Identity')
@@ -104,7 +106,6 @@ class Sighting(Base):
         self.type = type
         self.channel = channel
         self.value = value
-        self.time = datetime.now()
         self.count = 0
 
 class Memo(Base):
@@ -116,7 +117,7 @@ class Memo(Base):
     memo = Column(UnicodeText, nullable=False)
     private = Column(Boolean, nullable=False)
     delivered = Column(Boolean, nullable=False)
-    time = Column(DateTime, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, frm, to, memo, private=False):
         self.frm = frm
@@ -124,7 +125,6 @@ class Memo(Base):
         self.memo = memo
         self.private = private
         self.delivered = False
-        self.time = datetime.now()
 
 Memo.sender = relation(Identity, primaryjoin=Memo.frm==Identity.id)
 Memo.recipient = relation(Identity, primaryjoin=Memo.to==Identity.id)

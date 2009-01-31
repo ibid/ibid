@@ -21,6 +21,7 @@ class Factoid(Base):
     __tablename__ = 'factoids'
 
     id = Column(Integer, primary_key=True)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
     names = relation('FactoidName', cascade='all,delete')
     values = relation('FactoidValue', cascade='all,delete')
 
@@ -35,13 +36,12 @@ class FactoidName(Base):
     factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)
-    time = Column(DateTime, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, name, identity, factoid_id=None):
         self.name = name
         self.factoid_id = factoid_id
         self.identity = identity
-        self.time = datetime.now()
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
@@ -54,13 +54,12 @@ class FactoidValue(Base):
     factoid_id = Column(Integer, ForeignKey(Factoid.id), nullable=False)
     factoid = relation(Factoid)
     identity = Column(Integer)
-    time = Column(DateTime, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
         self.identity = identity
-        self.time = datetime.now()
 
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)

@@ -22,13 +22,12 @@ class Karma(Base):
     subject = Column(Unicode(128), unique=True, nullable=False)
     changes = Column(Integer, nullable=False)
     value = Column(Integer, nullable=False)
-    time = Column(DateTime, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, subject):
         self.subject = subject
         self.changes = 0
         self.value = 0
-        self.time = datetime.now()
 
 class Set(Processor):
     """<subject> (++|--|==|ftw|ftl) [[reason]]"""
