@@ -31,7 +31,7 @@ Feeds: Check URL when added
 setup.py: Exclude most of lib/
 PB: Logging, identifying
 Introspection
-Padding of MySQL import
+Memo table: s/frm/from/
 
 Plugins
 =======
