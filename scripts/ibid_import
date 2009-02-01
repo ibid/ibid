@@ -66,22 +66,23 @@ def decode(string):
     if string is None:
         return None
 
+    string = string.replace('\x00', '')
     try:
         decoded = unicode(string, 'utf-8')
     except UnicodeDecodeError, e:
         decoded = unicode(string, 'iso-8859-15', errors='replace')
-        stderr.write('Decoded to %s\n' % decoded.encode('utf-8'))
+        print >> stderr, 'Decoded to %s\n' % decoded
 
-    return decoded.replace('\x00', '')
+    return decoded
 
-def import_factoids(knab, Session, source):
-    ibid = Session()
+def import_factoids(knab, ibid, source):
+    ibid.begin()
 
     print
     print u"Importing factoids"
     position = 0
     total = knab.query(KnabFactoid).count()
-    for kfactoid in knab.query(KnabFactoid).order_by(KnabFactoid.time.asc()).all():
+    for index, kfactoid in enumerate(knab.query(KnabFactoid).order_by(KnabFactoid.time.asc()).all()):
 
         if not kfactoid:
             continue
@@ -90,12 +91,11 @@ def import_factoids(knab, Session, source):
         kfactoid.verb = decode(kfactoid.verb)
         kfactoid.value = decode(kfactoid.value)
 
-        if position % 100 == 0:
-            stdout.write('\r%s/%s' % (position, total))
+        if index % 100 == 0:
+            stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
-        position += 1
 
-        fname = ibid.query(FactoidName).filter(func.lower(FactoidName.name)==kfactoid.fact.lower()).first()
+        fname = ibid.query(FactoidName).filter(func.lower(FactoidName.name)==unicode(kfactoid.fact.lower())).first()
         if not fname:
             factoid = Factoid()
             fname = FactoidName(kfactoid.fact, identify(ibid, kfactoid.who, source, kfactoid.time))
@@ -107,7 +107,7 @@ def import_factoids(knab, Session, source):
         if kfactoid.value.strip().lower().startswith('<reply>') or kfactoid.value.strip().lower().startswith('<action>'):
             value = kfactoid.value
         else:
-            value = '%s %s' % (kfactoid.verb, kfactoid.value)
+            value = u'%s %s' % (kfactoid.verb, kfactoid.value)
 
         fvalue = FactoidValue(value, identify(ibid, kfactoid.who, source, kfactoid.time))
         fvalue.time = kfactoid.time
@@ -115,18 +115,16 @@ def import_factoids(knab, Session, source):
         factoid.values.append(fvalue)
         ibid.save_or_update(factoid)
 
-    ibid.flush()
-    ibid.clear()
-    ibid.close()
+    ibid.commit()
 
-def import_sightings(knab, Session, source):
-    ibid = Session()
+def import_sightings(knab, ibid, source):
+    ibid.begin()
 
     print
     print u"Importing sightings"
     position = 0
     total = knab.query(KnabSighting).count()
-    for ksighting in knab.query(KnabSighting).order_by(KnabSighting.time.asc()).all():
+    for index, ksighting in enumerate(knab.query(KnabSighting).order_by(KnabSighting.time.asc()).all()):
 
         if not ksighting:
             continue
@@ -134,35 +132,32 @@ def import_sightings(knab, Session, source):
         ksighting.channel = decode(ksighting.channel)
         ksighting.message = decode(ksighting.message)
 
-        if position % 100 == 0:
-            stdout.write('\r%s/%s' % (position, total))
+        if index % 100 == 0:
+            stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
-        position += 1
 
         sighting = Sighting(identify(ibid, ksighting.nick, source, ksighting.time), u'message', ksighting.channel, ksighting.message)
         sighting.time = ksighting.time
 
         ibid.save(sighting)
+        ibid.flush()
 
-    ibid.flush()
-    ibid.clear()
-    ibid.close()
+    ibid.commit()
 
-def import_karma(knab, Session, source):
-    ibid = Session()
+def import_karma(knab, ibid, source):
+    ibid.begin()
 
     print
     print u"Importing karma"
     position = 0
     total = knab.query(KnabKarma).count()
-    for kkarma in knab.query(KnabKarma).order_by(KnabKarma.time.asc()).all():
+    for index, kkarma in enumerate(knab.query(KnabKarma).order_by(KnabKarma.time.asc()).all()):
 
         kkarma.person = decode(kkarma.person)
 
-        if position % 100 == 0:
-            stdout.write('\r%s/%s' % (position, total))
+        if index % 100 == 0:
+            stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
-        position += 1
 
         karma = Karma(kkarma.person)
         karma.value = kkarma.karma
@@ -171,9 +166,7 @@ def import_karma(knab, Session, source):
 
         ibid.save(karma)
 
-    ibid.flush()
-    ibid.clear()
-    ibid.close()
+    ibid.commit()
 
 if __name__ == '__main__':
     if len(argv) < 3:
@@ -189,8 +182,9 @@ if __name__ == '__main__':
     config = len(argv) > 3 and argv[3] or 'ibid.ini'
     config = FileConfig(config)
 
-    ibidengine = create_engine(config.databases['ibid']['uri'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
-    ibid = sessionmaker(bind=ibidengine, transactional=False)
+    ibidengine = create_engine(config.databases['ibid']['uri'], encoding='utf-8')
+    IbidSession = sessionmaker(bind=ibidengine, transactional=False)
+    ibid = IbidSession()
 
     import_factoids(knab, ibid, source)
     import_sightings(knab, ibid, source)
