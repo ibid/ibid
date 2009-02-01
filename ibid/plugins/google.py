@@ -2,7 +2,7 @@ from urllib import quote
 from urllib2 import urlopen, Request
 from BeautifulSoup import BeautifulSoup
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, Option
 
 help = {'google': 'Retrieves results from Google and Google Calculator.'}
 
@@ -12,7 +12,7 @@ class Search(Processor):
     """google [for] <term>"""
     feature = 'google'
 
-    user_agent = user_agent
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
 
     @match(r'^google\s+(?:(za)\s+)?(?:for\s+)?(.+?)$')
     def search(self, event, country, query):
@@ -40,7 +40,7 @@ class Calc(Processor):
     """gcalc <expression>"""
     feature = 'google'
 
-    user_agent = user_agent
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
 
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
@@ -58,7 +58,7 @@ class Define(Processor):
     """gdefine <term>"""
     feature = 'google'
 
-    user_agent = user_agent
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
@@ -79,7 +79,8 @@ class Compare(Processor):
     """google cmp [for] <term> and <term>"""
     feature = 'google'
 
-    user_agent = user_agent
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
+
 
     def results(self, term):
         f = urlopen(Request('http://www.google.com/search?num=1&q=%s' % quote(term), headers={'user-agent': self.user_agent}))

@@ -5,16 +5,16 @@ from os.path import dirname, join, expanduser
 from os import makedirs
 
 import ibid
-from ibid.plugins import Processor
+from ibid.plugins import Processor, Option
 
 class Log(Processor):
 
     addressed = False
     processed = True
     priority = 1900
-    log = 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log'
-    message_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(who)s> %(message)s'
-    presence_format = '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(who)s (%(sender)s) is now %(state)s'
+    log = Option('log', 'Log file to log messages to. Can contain substitutions.', 'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log')
+    message_format = Option('message_format', 'Format string for messages', '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(who)s> %(message)s')
+    presence_format = Option('presence_format', 'Format string for presence events', '%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(who)s (%(sender)s) is now %(state)s')
     logs = {}
 
     def get_logfile(self, source, channel, when):

@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, Option
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -50,7 +50,7 @@ class Ping(Processor):
     """ping <host>"""
     feature = 'ping'
 
-    ping = 'ping'
+    ping = Option('ping', 'Path to ping executable', 'ping')
 
     @match(r'^ping\s+(\S+)$')
     def handle_ping(self, event, host):
@@ -69,7 +69,7 @@ class Tracepath(Processor):
     """tracepath <host>"""
     feature = 'tracepath'
 
-    tracepath = 'tracepath'
+    tracepath = Option('tracepath', 'Path to tracepath executable', 'tracepath')
 
     @match(r'^tracepath\s+(\S+)$')
     def handle_tracepath(self, event, host):
@@ -90,7 +90,7 @@ class IPCalc(Processor):
     ipcalc <address> - <address>"""
     feature = 'ipcalc'
 
-    ipcalc = 'ipcalc'
+    ipcalc = Option('ipcalc', 'Path to ipcalc executable', 'ipcalc')
 
     @match(r'^ipcalc\s+(.+)$')
     def handle_ipcalc(self, event, parameter):

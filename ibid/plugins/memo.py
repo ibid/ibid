@@ -4,7 +4,7 @@ import logging
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, handler, match, authorise
+from ibid.plugins import Processor, handler, match, authorise, Option
 from ibid.plugins.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Identity, Account, Memo
@@ -115,7 +115,7 @@ class Messages(Processor):
     message <number>"""
     feature = 'memo'
 
-    datetime_format = '%Y/%m/%d %H:%M:%S'
+    datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
 
     @match(r'^my\s+messages$')
     def messages(self, event):

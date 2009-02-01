@@ -3,7 +3,7 @@ from time import time
 from random import choice
 
 import ibid
-from ibid.plugins import Processor, handler
+from ibid.plugins import Processor, handler, Option
 
 help = {}
 
@@ -11,7 +11,7 @@ class Addressed(Processor):
 
     priority = -1500
     addressed = False
-    names = [ibid.config['botname']]
+    names = Option('names', 'Names to respond to', [ibid.config['botname']])
 
     def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I),
@@ -82,7 +82,7 @@ class Responses(Processor):
 class Address(Processor):
 
     processed = True
-    acknowledgements = (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir')
+    acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements', (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
 
     @handler
     def address(self, event):
@@ -109,8 +109,8 @@ class Complain(Processor):
     feature = 'complain'
 
     priority = 950
-    complaints = (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?')
-    notauthed = (u"You're not my bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me")
+    complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
+    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"You're not my bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
 
     @handler
     def complain(self, event):
@@ -123,8 +123,8 @@ class Complain(Processor):
 class RateLimit(Processor):
 
     priority = -1000
-    limit_time = 10
-    limit_messages = 5
+    limit_time = Option('limit_time', 'Time period over which to measure messages', 10, int)
+    limit_messages = Option('limit_messages', 'Number of messages to allow during the time period', 5, int)
     messages = {}
 
     @handler

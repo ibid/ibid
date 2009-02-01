@@ -9,7 +9,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
+from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC, Option
 from ibid.plugins.identity import get_identities
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
@@ -179,9 +179,9 @@ class Get(Processor, RPC):
 
     verbs = verbs
     priority = 900
-    interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
-    date_format = '%Y/%m/%d'
-    time_format = '%H:%M:%S'
+    interrogatives = Option('interrogatives', 'Question words to strip', ('what', 'wtf', 'where', 'when', 'who', "what's", "who's"))
+    date_format = Option('date_format', 'Format string for dates', '%Y/%m/%d')
+    time_format = Option('time_format', 'Format string for times', '%H:%M:%S')
 
     def __init__(self, name):
         super(Get, self).__init__(name)

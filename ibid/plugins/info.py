@@ -12,7 +12,7 @@ class Fortune(Processor, RPC):
     """fortune"""
     feature = 'fortune'
 
-    fortune = Option('fortune', 'fortune', 'Path of the fortune executable')
+    fortune = Option('fortune', 'Path of the fortune executable', 'fortune')
 
     def __init__(self, name):
         super(Fortune, self).__init__(name)
@@ -50,7 +50,7 @@ class Man(Processor):
     """man [<section>] <page>"""
     feature = 'man'
 
-    man = 'man'
+    man = Option('man', 'Path of the man executable', 'man')
 
     @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
     def handle_man(self, event, section, page):

@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, Option
 from ibid.models import Identity, Sighting, Account
 from ibid.utils import ago
 
@@ -40,7 +40,7 @@ class Seen(Processor):
     """seen <who>"""
     feature = 'seen'
 
-    datetime_format = '%Y/%m/%d %H:%M:%S'
+    datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):

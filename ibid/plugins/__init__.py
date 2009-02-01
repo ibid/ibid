@@ -10,20 +10,26 @@ from ibid.source.http import templates
 
 class Option(object):
 
-    def __init__(self, name, default=None, description=None):
+    def __init__(self, name, description, default=None, accessor=lambda x: x):
         self.name = name
         self.default = default
         self.description = description
+        self.accessor = accessor
 
     def __get__(self, instance, owner):
-        if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[self.plugin]:
-            return ibid.config.plugins[instance.name][self.name]
+        if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[instance.name]:
+            return self.accessor(ibid.config.plugins[instance.name][self.name])
         else:
             return self.default
+
+def boolean(string):
+    return string.strip().lower() in ('yes', 'true', 'on', '1', 'enable') and True or False
 
 class Processor(object):
 
     type = 'message'
+    #addressed = Option('addressed', True, 'Only process events if bot was addressed', boolean)
+    #processed = Option('processed', False, "Process events even if they've already been processed", boolean)
     addressed = True
     processed = False
     priority = 0
@@ -33,15 +39,6 @@ class Processor(object):
 
         if self.processed and self.priority == 0:
             self.priority = 1500
-
-        self.load_config()
-
-    def load_config(self):
-        if self.name in ibid.config.plugins:
-            config = ibid.config.plugins[self.name]
-
-            for name, value in config.items():
-                setattr(self, name, value)
 
         self.setup()
 

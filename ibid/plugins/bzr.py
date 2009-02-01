@@ -6,7 +6,7 @@ from bzrlib import log
 from bzrlib.errors import InvalidRevisionNumber, NotBranchError
 
 import ibid
-from ibid.plugins import Processor, match, RPC
+from ibid.plugins import Processor, match, RPC, Option
 from ibid.utils import ago
 
 help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
@@ -45,7 +45,8 @@ class Bazaar(Processor, RPC):
     repositories"""
     feature = 'bzr'
 
-    datetime_format = 'on %Y/%m/%d at %H:%M:%S'
+    datetime_format = Option('datetime_format', 'Format string for dates', 'on %Y/%m/%d at %H:%M:%S')
+    repositories = Option('repositories', 'Dict of repository names and URLs')
 
     def __init__(self, name):
         Processor.__init__(self, name)

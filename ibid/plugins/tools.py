@@ -2,7 +2,7 @@ import re
 from random import random, randint
 from subprocess import Popen, PIPE
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, Option
 
 help = {}
 
@@ -53,7 +53,8 @@ help['units'] = 'Converts values between various units.'
 class Units(Processor):
     """convert [<value>] <unit> to <unit>"""
     feature = 'units'
-    units = 'units'
+
+    units = Option('units', 'Path to units executable', 'units')
 
     @match(r'^convert\s+([0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
     def convert(self, event, value, frm, to):

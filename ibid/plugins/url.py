@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, handler, Option
 
 help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
 
@@ -67,7 +67,7 @@ class Lengthen(Processor):
     """<url>"""
     feature = 'url'
 
-    services = ('http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/', 'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/', 'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/')
+    services = Option('services', 'List of URL prefixes of URL shortening services', ('http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/', 'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/', 'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'))
 
     def setup(self):
         self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I)
@@ -85,5 +85,4 @@ class Lengthen(Processor):
         f.close()
         event.addresponse(u"No redirect")
                 
-
 # vi: set et sta sw=4 ts=4:
