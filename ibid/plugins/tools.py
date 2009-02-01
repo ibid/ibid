@@ -46,8 +46,9 @@ class Base(Processor):
         number = bases[to.lower()][1](number)
         event.addresponse(str(number))
 
-unit_names =    {   'fahrenheit': 'degF',
-                    'celsius': 'degC',
+unit_names =    {   'fahrenheit': 'tempF',
+                    'celsius': 'tempC',
+                    'celcius': 'tempC',
                 }
 help['units'] = 'Converts values between various units.'
 class Units(Processor):
@@ -59,11 +60,12 @@ class Units(Processor):
     @match(r'^convert\s+([0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
     def convert(self, event, value, frm, to):
         if frm.lower() in unit_names:
-            frm = unit_names[frm.lower()]
+            frm = "%s(%s)" % (unit_names[frm.lower()], value)
+        elif value:
+            frm = '%s %s' % (value, frm)
+
         if to in unit_names:
             to = unit_names[to.lower()]
-        if value:
-            frm = '%s %s' % (value, frm)
 
         units = Popen([self.units, '--verbose', frm, to], stdout=PIPE, stderr=PIPE)
         output, error = units.communicate()
