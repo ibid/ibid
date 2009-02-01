@@ -1,5 +1,4 @@
-import inspect
-from inspect import getargspec
+from inspect import getargspec, getmembers, ismethod, isclass
 import re
 
 from twisted.spread import pb
@@ -60,7 +59,7 @@ class Processor(object):
             return
 
         found = False
-        for name, method in inspect.getmembers(self, inspect.ismethod):
+        for name, method in getmembers(self, ismethod):
             if hasattr(method, 'handler'):
                 found = True
                 if hasattr(method, 'pattern'):
