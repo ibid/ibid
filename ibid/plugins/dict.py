@@ -10,7 +10,7 @@ class Dict(Processor):
     feature = 'dict'
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
-    port = Option('port', 'Dictionary server port number', 2628, int)
+    port = Option('port', 'Dictionary server port number', 2628, 'int')
 
     def setup(self):
         self.connection = Connection(self.server, self.port)

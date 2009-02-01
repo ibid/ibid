@@ -38,8 +38,8 @@ class Set(Processor):
     increase = Option('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
     decrease = Option('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
     neutral = Option('neutral', 'Suffixes which indicate neutral karma', ('==',))
-    reply = Option('reply', 'Acknowledge karma changes', False, boolean)
-    public = Option('public', 'Only allow karma changes in public', False, boolean)
+    reply = Option('reply', 'Acknowledge karma changes', False, 'bool')
+    public = Option('public', 'Only allow karma changes in public', True, 'bool')
     ignore = Option('ignore', 'Karma subjects to silently ignore', ())
 
     def setup(self):

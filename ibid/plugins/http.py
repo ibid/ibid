@@ -12,7 +12,7 @@ class HTTP(Processor):
 	"""(get|head) <url>"""
 	feature = 'get'
 
-	max_size = Option('max_size', 'Only request this many bytes', 500, int)
+	max_size = Option('max_size', 'Only request this many bytes', 500, 'int')
 
 	@match(r'^(get|head)\s+(.+)$')
 	def handler(self, event, action, url):

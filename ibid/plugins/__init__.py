@@ -10,20 +10,22 @@ from ibid.source.http import templates
 
 class Option(object):
 
-    def __init__(self, name, description, default=None, accessor=lambda x: x):
+    accessors = {'bool': 'as_bool', 'int': 'as_int', 'float': 'as_float', None: 'get'}
+
+    def __init__(self, name, description, default=None, type=None):
         self.name = name
         self.default = default
         self.description = description
-        self.accessor = accessor
+        if type not in self.accessors:
+            raise ValueError(u'Invalid type')
+        self.accessor = self.accessors[type]
 
     def __get__(self, instance, owner):
         if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[instance.name]:
-            return self.accessor(ibid.config.plugins[instance.name][self.name])
+            section = ibid.config.plugins[instance.name]
+            return getattr(section, self.accessor)(self.name)
         else:
             return self.default
-
-def boolean(string):
-    return string.strip().lower() in ('yes', 'true', 'on', '1', 'enable') and True or False
 
 class Processor(object):
 

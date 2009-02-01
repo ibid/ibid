@@ -12,7 +12,7 @@ class BuildBot(Processor, RPC):
     feature = 'buildbot'
 
     server = Option('server', 'Buildbot server hostname', 'localhost')
-    port = Option('port', 'Buildbot server port number', 9989, int)
+    port = Option('port', 'Buildbot server port number', 9989, 'int')
 
     def __init__(self, name):
         Processor.__init__(self, name)

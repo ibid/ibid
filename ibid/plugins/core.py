@@ -123,8 +123,8 @@ class Complain(Processor):
 class RateLimit(Processor):
 
     priority = -1000
-    limit_time = Option('limit_time', 'Time period over which to measure messages', 10, int)
-    limit_messages = Option('limit_messages', 'Number of messages to allow during the time period', 5, int)
+    limit_time = Option('limit_time', 'Time period over which to measure messages', 10, 'int')
+    limit_messages = Option('limit_messages', 'Number of messages to allow during the time period', 5, 'int')
     messages = {}
 
     @handler
