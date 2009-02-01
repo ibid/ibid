@@ -9,6 +9,19 @@ import simplejson
 import ibid
 from ibid.source.http import templates
 
+class Option(object):
+
+    def __init__(self, name, default=None, description=None):
+        self.name = name
+        self.default = default
+        self.description = description
+
+    def __get__(self, instance, owner):
+        if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[self.plugin]:
+            return ibid.config.plugins[instance.name][self.name]
+        else:
+            return self.default
+
 class Processor(object):
 
     type = 'message'

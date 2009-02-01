@@ -1,7 +1,5 @@
 Decisions
 =========
-Presence event naming (joined/parted? online/offline?)
-Config object
 Auto-load plugins
 Memo: Leaving memos for people without identities
 Factpacks: Fixed high factoid_ids? Mark in database
@@ -9,6 +7,7 @@ Private attributes
 Deleting factoids: confirmation?, marking as deleted
 Better meaning for "Ibid"
 Better names for event.{sender,sender_id,who}
+Database string limits
 
 To Do
 =====
@@ -32,6 +31,9 @@ setup.py: Exclude most of lib/
 PB: Logging, identifying
 Introspection
 Memo table: s/frm/from/
+Import: weißes fleisch
+Trac-like config system
+Presence event naming s/joined/online/, s/parted|quited/offline/
 
 Plugins
 =======
@@ -50,3 +52,4 @@ RFC
 Twitter
 Weather
 TCP port probing?
+Version?

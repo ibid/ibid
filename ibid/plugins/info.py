@@ -3,7 +3,7 @@ from subprocess import Popen, PIPE
 from nickometer import nickometer
 
 import ibid
-from ibid.plugins import Processor, match, RPC
+from ibid.plugins import Processor, match, RPC, Option
 
 help = {}
 
@@ -12,7 +12,7 @@ class Fortune(Processor, RPC):
     """fortune"""
     feature = 'fortune'
 
-    fortune = 'fortune'
+    fortune = Option('fortune', 'fortune', 'Path of the fortune executable')
 
     def __init__(self, name):
         super(Fortune, self).__init__(name)
