@@ -17,6 +17,7 @@ def auth_responses(event, permission):
     return True
 
 ibid.plugins.auth_responses = auth_responses
+ibid.options = {'base': '.'}
 
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
