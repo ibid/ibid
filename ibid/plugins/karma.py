@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise, Option, boolean
+from ibid.plugins import Processor, match, handler, authorise, Option, BoolOption
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 
@@ -38,8 +38,8 @@ class Set(Processor):
     increase = Option('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
     decrease = Option('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
     neutral = Option('neutral', 'Suffixes which indicate neutral karma', ('==',))
-    reply = Option('reply', 'Acknowledge karma changes', False, 'bool')
-    public = Option('public', 'Only allow karma changes in public', True, 'bool')
+    reply = BoolOption('reply', 'Acknowledge karma changes', False)
+    public = BoolOption('public', 'Only allow karma changes in public', True)
     ignore = Option('ignore', 'Karma subjects to silently ignore', ())
 
     def setup(self):

@@ -1,7 +1,7 @@
 from httplib2 import Http
 import re
 
-from ibid.plugins import Processor, match, Option
+from ibid.plugins import Processor, match, IntOption
 
 help = {}
 
@@ -12,7 +12,7 @@ class HTTP(Processor):
 	"""(get|head) <url>"""
 	feature = 'get'
 
-	max_size = Option('max_size', 'Only request this many bytes', 500, 'int')
+	max_size = IntOption('max_size', 'Only request this many bytes', 500)
 
 	@match(r'^(get|head)\s+(.+)$')
 	def handler(self, event, action, url):

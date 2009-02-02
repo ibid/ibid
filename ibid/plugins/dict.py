@@ -1,6 +1,6 @@
 from dictclient import Connection
 
-from ibid.plugins import Processor, match, Option
+from ibid.plugins import Processor, match, Option, IntOption
 
 help = {'dict': 'Defines words and checks spellings.'}
 
@@ -10,7 +10,7 @@ class Dict(Processor):
     feature = 'dict'
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
-    port = Option('port', 'Dictionary server port number', 2628, 'int')
+    port = IntOption('port', 'Dictionary server port number', 2628)
 
     def setup(self):
         self.connection = Connection(self.server, self.port)

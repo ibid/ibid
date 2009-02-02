@@ -3,7 +3,7 @@ from twisted.internet import reactor
 from twisted.cred import credentials
 
 import ibid
-from ibid.plugins import Processor, match, RPC, Option
+from ibid.plugins import Processor, match, RPC, Option, IntOption
 
 help = {}
 
@@ -12,7 +12,7 @@ class BuildBot(Processor, RPC):
     feature = 'buildbot'
 
     server = Option('server', 'Buildbot server hostname', 'localhost')
-    port = Option('port', 'Buildbot server port number', 9989, 'int')
+    port = IntOption('port', 'Buildbot server port number', 9989)
 
     def __init__(self, name):
         Processor.__init__(self, name)

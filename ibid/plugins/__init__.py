@@ -1,4 +1,5 @@
 from inspect import getargspec, getmembers, ismethod, isclass
+from copy import copy
 import re
 
 from twisted.spread import pb
@@ -9,16 +10,12 @@ import ibid
 from ibid.source.http import templates
 
 class Option(object):
+    accessor = 'get'
 
-    accessors = {'bool': 'as_bool', 'int': 'as_int', 'float': 'as_float', None: 'get'}
-
-    def __init__(self, name, description, default=None, type=None):
+    def __init__(self, name, description, default=None):
         self.name = name
         self.default = default
         self.description = description
-        if type not in self.accessors:
-            raise ValueError(u'Invalid type')
-        self.accessor = self.accessors[type]
 
     def __get__(self, instance, owner):
         if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[instance.name]:
@@ -27,21 +24,41 @@ class Option(object):
         else:
             return self.default
 
+class BoolOption(Option):
+    accessor = 'as_bool'
+
+class IntOption(Option):
+    accessor = 'as_int'
+
+class FloatOption(Option):
+    accessor = 'as_float'
+
+options = {
+    'addressed': BoolOption('addressed', u'Only process events if bot was addressed'),
+    'processed': BoolOption('processed', u"Process events even if they've already been processed"),
+    'priority': IntOption('priority', u'Processor priority'),
+}
+
 class Processor(object):
 
     type = 'message'
-    #addressed = Option('addressed', True, 'Only process events if bot was addressed', boolean)
-    #processed = Option('processed', False, "Process events even if they've already been processed", boolean)
     addressed = True
     processed = False
     priority = 0
 
+    def __new__(cls, *args):
+        if cls.processed and cls.priority == 0:
+            cls.priority = 1500
+
+        for name, option in options.items():
+            new = copy(option)
+            new.default = getattr(cls, name)
+            setattr(cls, name, new)
+
+        return super(Processor, cls).__new__(cls, *args)
+
     def __init__(self, name):
         self.name = name
-
-        if self.processed and self.priority == 0:
-            self.priority = 1500
-
         self.setup()
 
     def setup(self):

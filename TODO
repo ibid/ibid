@@ -4,7 +4,6 @@ Auto-load plugins
 Memo: Leaving memos for people without identities
 Factpacks: Fixed high factoid_ids? Mark in database
 Private attributes
-Deleting factoids: confirmation?, marking as deleted
 Better meaning for "Ibid"
 Better names for event.{sender,sender_id,who}
 Database string limits
@@ -34,6 +33,9 @@ Memo table: s/frm/from/
 Import: weißes fleisch
 Trac-like config system
 Presence event naming s/joined/online/, s/parted|quited/offline/
+irc: Track channel members
+Config in sources
+URL: Shorten/unshorten seen URLs
 
 Plugins
 =======
@@ -53,3 +55,4 @@ Twitter
 Weather
 TCP port probing?
 Version?
+IMDB
