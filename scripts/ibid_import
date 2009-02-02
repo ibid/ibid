@@ -11,6 +11,7 @@ from ibid.config import FileConfig
 from ibid.models import Identity, Sighting
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 from ibid.plugins.karma import Karma
+from ibid.plugins.url import URL
 
 Base = declarative_base()
 
@@ -47,6 +48,14 @@ class KnabKarma(Base):
 
     def __repr__(self):
         return u'<KnabKarma %s %s>' % (self.person, self.karma)
+
+class KnabURL(Base):
+    __tablename__ = 'urlgrab'
+
+    nick = Column(String(30))
+    channel = Column(String(30))
+    url = Column(String(250))
+    time = Column(DateTime, primary_key=True)
 
 def identify(session, user, source, created, create=True):
     if not user:
@@ -168,6 +177,29 @@ def import_karma(knab, ibid, source):
 
     ibid.commit()
 
+def import_urls(knab, ibid, source):
+    ibid.begin()
+
+    print
+    print u"Importing URLs"
+    position = 0
+    total = knab.query(KnabURL).count()
+    for index, kurl in enumerate(knab.query(KnabURL).order_by(KnabURL.time.asc()).all()):
+
+        kurl.channel = decode(kurl.channel)
+        kurl.url = decode(kurl.url)
+
+        if index % 100 == 0:
+            stdout.write('\r%s/%s' % (index, total))
+            stdout.flush()
+
+        url = URL(kurl.url, kurl.channel, identify(ibid, kurl.nick, source, kurl.time))
+        url.time = kurl.time
+
+        ibid.save(url)
+
+    ibid.commit()
+
 if __name__ == '__main__':
     if len(argv) < 3:
         print 'Usage: ibid-import <knab database> <source> [<ibid config>]'
@@ -187,6 +219,7 @@ if __name__ == '__main__':
     ibid = IbidSession()
 
     import_factoids(knab, ibid, source)
+    import_urls(knab, ibid, source)
     import_sightings(knab, ibid, source)
     import_karma(knab, ibid, source)
 
