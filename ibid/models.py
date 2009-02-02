@@ -108,6 +108,9 @@ class Sighting(Base):
         self.value = value
         self.count = 0
 
+    def __repr__(self):
+        return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
+
 class Memo(Base):
     __tablename__ = 'memos'
 

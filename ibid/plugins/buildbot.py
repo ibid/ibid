@@ -22,7 +22,7 @@ class BuildBot(Processor, RPC):
         reply = u"Build %s of %s triggered by %s: %s" % (revision, branch, person, result)
         ibid.dispatcher.send({'reply': reply, 'source': self.source, 'target': self.channel})
 
-    @match(r'^build\s+(.+?)(?:\s+(?:revision|r)?\s*(\d+))?$')
+    @match(r'^(?:re)?build\s+(.+?)(?:\s+(?:revision|r)?\s*(\d+))?$')
     def build(self, event, branch, revision):
         change = {  'who': event.who,
                     'branch': branch,

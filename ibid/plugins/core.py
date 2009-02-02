@@ -110,7 +110,7 @@ class Complain(Processor):
 
     priority = 950
     complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
-    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"You're not my bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
+    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
 
     @handler
     def complain(self, event):
