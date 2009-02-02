@@ -68,6 +68,9 @@ def identify(session, user, source, created, create=True):
         identity.created = created
         session.save(identity)
         session.flush()
+    elif identity.created > created:
+        identity.created = created
+        session.update(identity)
 
     return identity.id
 
