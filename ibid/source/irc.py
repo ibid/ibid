@@ -81,13 +81,13 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
-        self._state_event(user, channel, u'joined')
+        self._state_event(user, channel, u'online')
 
     def userLeft(self, user, channel):
-        self._state_event(user, channel, u'parted')
+        self._state_event(user, channel, u'offline')
 
     def userQuit(self, user, channel):
-        self._state_event(user, channel, u'quit')
+        self._state_event(user, channel, u'offline')
 
     def userKicked(self, kickee, channel, kicker, message):
         self._state_event(kickee, channel, u'kicked', kicker, message)

@@ -43,7 +43,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender = entity.full()
         event.sender_id = event.sender.split('/')[0]
         event.who = event.sender.split('@')[0]
-        event.state = show or u'available'
+        event.state = show or u'online'
         event.channel = entity.full()
         self.parent.log.debug(u"Received available presence from %s (%s)", event.sender, event.state)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
