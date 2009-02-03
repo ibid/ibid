@@ -38,7 +38,7 @@ class AptFile(Processor):
 
         if code == 0:
             if output:
-                event.addresponse(u', '.join(line.strip() for line in output.splitlines()))
+                event.addresponse(u', '.join(line.split(':')[0] for line in output.splitlines()))
             else:
                 event.addresponse(u'No packages found')
 
