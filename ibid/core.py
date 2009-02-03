@@ -72,7 +72,7 @@ class Reloader(object):
             return False
         
     def load_source(self, name, service=None):
-        type = ibid.config.sources[name]['type']
+        type = 'type' in ibid.config.sources[name] and ibid.config.sources[name]['type'] or name
 
         module = 'ibid.source.%s' % type
         factory = 'ibid.source.%s.SourceFactory' % type
