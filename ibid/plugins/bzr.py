@@ -47,6 +47,8 @@ class Bazaar(Processor, RPC):
 
     datetime_format = Option('datetime_format', 'Format string for dates', 'on %Y/%m/%d at %H:%M:%S')
     repositories = Option('repositories', 'Dict of repository names and URLs')
+    source = Option('source', 'Source to send commit notifications to')
+    channel = Option('channel', 'Channel to send commit notifications to')
 
     def __init__(self, name):
         Processor.__init__(self, name)

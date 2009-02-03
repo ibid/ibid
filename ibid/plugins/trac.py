@@ -24,6 +24,8 @@ class GetTicket(Processor, RPC):
     feature = 'trac'
 
     url = Option('url', 'URL of Trac instance')
+    source = Option('source', 'Source to send commit notifications to')
+    channel = Option('channel', 'Channel to send commit notifications to')
 
     def __init__(self, name):
         Processor.__init__(self, name)

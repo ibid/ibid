@@ -13,6 +13,8 @@ class BuildBot(Processor, RPC):
 
     server = Option('server', 'Buildbot server hostname', 'localhost')
     port = IntOption('port', 'Buildbot server port number', 9989)
+    source = Option('source', 'Source to send commit notifications to')
+    channel = Option('channel', 'Channel to send commit notifications to')
 
     def __init__(self, name):
         Processor.__init__(self, name)
