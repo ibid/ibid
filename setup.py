@@ -48,7 +48,7 @@ setup(
     install_requires=[
         'SQLAlchemy>=0.4.6',
         'wokkel>=0.4',
-        'ConfigObj>=4.5.3',
+        #'ConfigObj>=4.5.3',
         'jinja',
         #'validate>=0.3.2',
     ],
