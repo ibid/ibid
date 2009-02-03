@@ -31,11 +31,10 @@ PB: Logging, identifying
 Introspection
 Memo table: s/frm/from/
 Import: weißes fleisch
-Trac-like config system
-Presence event naming s/joined/online/, s/parted|quited/offline/
 irc: Track channel members
 Config in sources
 URL: Shorten/unshorten seen URLs
+die command
 
 Plugins
 =======

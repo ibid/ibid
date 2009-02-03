@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapper
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, RPC
+from ibid.plugins import Processor, match, RPC, Option
 from ibid.utils import ago
 
 help = {'trac': 'Retrieves tickets from a Trac database.'}
@@ -23,6 +23,8 @@ class GetTicket(Processor, RPC):
     (open|my|<who>'s) tickets"""
     feature = 'trac'
 
+    url = Option('url', 'URL of Trac instance')
+
     def __init__(self, name):
         Processor.__init__(self, name)
         RPC.__init__(self)
@@ -31,7 +33,7 @@ class GetTicket(Processor, RPC):
         session = ibid.databases.trac()
         ticket = session.query(Ticket).get(id)
         session.close()
-        return ticket and u"Ticket %s (%s %s %s) reported by %s %s ago assigned to %s: %s" % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary) or None
+        return ticket and u'Ticket %s (%s %s %s) reported by %s %s ago assigned to %s: "%s" %sticket/%s' % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary, self.url, ticket.id) or None
 
     def remote_newticket(self, id):
         ticket = self.get_ticket(id)
@@ -47,10 +49,6 @@ class GetTicket(Processor, RPC):
 
         if ticket:
             event.addresponse(ticket)
-            if event.source == 'http':
-                event.addresponse({'reply': response, 'source': self.source, 'target': self.channel})
-            else:
-                event.addresponse(response)
         else:
             event.addresponse(u"No such ticket")
 
