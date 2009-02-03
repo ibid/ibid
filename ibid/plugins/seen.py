@@ -3,7 +3,8 @@ from datetime import datetime
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, Option
+from ibid.plugins import Processor, match
+from ibid.config import Option
 from ibid.models import Identity, Sighting, Account
 from ibid.utils import ago
 

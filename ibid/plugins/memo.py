@@ -4,7 +4,8 @@ import logging
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, handler, match, authorise, Option
+from ibid.plugins import Processor, handler, match, authorise
+from ibid.config import Option
 from ibid.plugins.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Identity, Account, Memo

@@ -9,7 +9,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC, Option
+from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
+from ibid.config import Option
 from ibid.plugins.identity import get_identities
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}

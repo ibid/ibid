@@ -6,7 +6,8 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
-from ibid.plugins import Processor, match, handler, Option
+from ibid.plugins import Processor, match, handler
+from ibid.config import Option
 
 help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
 

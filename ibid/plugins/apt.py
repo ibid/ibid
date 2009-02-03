@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 
-from ibid.plugins import Processor, match, Option
+from ibid.plugins import Processor, match
+from ibid.config import Option
 
 help = {}
 

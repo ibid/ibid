@@ -36,6 +36,7 @@ Config in sources
 URL: Shorten/unshorten seen URLs
 die command
 Buildbot: Access build information
+apt syntax
 
 Plugins
 =======

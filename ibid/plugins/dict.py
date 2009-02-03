@@ -1,6 +1,7 @@
 from dictclient import Connection
 
-from ibid.plugins import Processor, match, Option, IntOption
+from ibid.plugins import Processor, match
+from ibid.config import Option, IntOption
 
 help = {'dict': 'Defines words and checks spellings.'}
 

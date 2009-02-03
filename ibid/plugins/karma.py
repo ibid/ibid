@@ -7,7 +7,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise, Option, BoolOption
+from ibid.plugins import Processor, match, handler, authorise
+from ibid.config import Option, BoolOption
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 

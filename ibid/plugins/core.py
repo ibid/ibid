@@ -3,7 +3,8 @@ from time import time
 from random import choice
 
 import ibid
-from ibid.plugins import Processor, handler, Option, IntOption
+from ibid.plugins import Processor, handler
+from ibid.config import Option, IntOption
 
 help = {}
 

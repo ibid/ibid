@@ -5,7 +5,8 @@ from sqlalchemy.orm import mapper
 from sqlalchemy.sql import func
 
 import ibid
-from ibid.plugins import Processor, match, RPC, Option
+from ibid.plugins import Processor, match, RPC
+from ibid.config import Option
 from ibid.utils import ago
 
 help = {'trac': 'Retrieves tickets from a Trac database.'}

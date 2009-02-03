@@ -6,7 +6,8 @@ from bzrlib import log
 from bzrlib.errors import InvalidRevisionNumber, NotBranchError
 
 import ibid
-from ibid.plugins import Processor, match, RPC, Option
+from ibid.plugins import Processor, match, RPC
+from ibid.config import Option
 from ibid.utils import ago
 
 help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}

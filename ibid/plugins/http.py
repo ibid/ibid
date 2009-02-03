@@ -1,7 +1,8 @@
 from httplib2 import Http
 import re
 
-from ibid.plugins import Processor, match, IntOption
+from ibid.plugins import Processor, match
+from ibid.config import IntOption
 
 help = {}
 
