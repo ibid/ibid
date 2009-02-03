@@ -6,6 +6,7 @@ from twisted.internet import reactor
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.config import IntOption
 from ibid.event import Event
 
 class IbidRoot(pb.Root):
@@ -32,7 +33,7 @@ class IbidRoot(pb.Root):
 
 class SourceFactory(IbidSourceFactory):
 
-    port = 8789
+    port = IntOption('port', 'Port number to listen on', 8789)
 
     def setServiceParent(self, service):
         root = pb.PBServerFactory(IbidRoot(self.name))

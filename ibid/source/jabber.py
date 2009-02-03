@@ -7,6 +7,7 @@ from twisted.words.xish import domish
 from twisted.application import internet
 
 import ibid
+from ibid.config import Option, IntOption, BoolOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
@@ -34,9 +35,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.name = self.parent.name
         self.parent.send = self.send
         self.parent.proto = self
-        if 'rooms' in ibid.config.sources[self.name]:
-            for room in ibid.config.sources[self.name]['rooms']:
-                self.join(room)
+        for room in self.parent.rooms:
+            self.join(room)
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
         event = Event(self.name, u'state')
@@ -72,8 +72,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             self.parent.log.debug(u"Ignoring delayed message")
             return
 
-        if 'accept_domains' in ibid.config.sources[self.name]:
-            if message['from'].split('/')[0].split('@')[1] not in ibid.config.sources[self.name]['accept_domains']:
+        if self.parent.accept_domains:
+            if message['from'].split('/')[0].split('@')[1] not in self.parent.accept_domains:
                 self.parent.log.info(u"Ignoring message because sender is not in accept_domains")
                 return
 
@@ -83,7 +83,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
         if message['type'] == 'groupchat':
             event.sender_id = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
-            if event.sender_id == ibid.config.sources[self.name]['nick']:
+            if event.sender_id == self.parent.nick:
                 return
             event.who = event.sender_id
             event.channel = message['from'].split('/')[0]
@@ -114,14 +114,14 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.parent.log.debug(u"Sent %s message to %s: %s", message['type'], message['to'], message.body)
 
     def join(self, room):
-        jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
+        jid = JID('%s/%s' % (room, self.parent.nick))
         presence = xmppim.AvailablePresence(to=jid)
         self.xmlstream.send(presence)
         self.rooms.append(room)
         self.parent.log.info(u"Joining %s", room)
 
     def part(self, room):
-        jid = JID('%s/%s' % (room, ibid.config.sources[self.name]['nick']))
+        jid = JID('%s/%s' % (room, self.parent.nick))
         presence = xmppim.UnavailablePresence(to=jid)
         self.xmlstream.send(presence)
         self.rooms.remove(room)
@@ -129,9 +129,14 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
-    port = None
-    ssl = False
-    server = None
+    port = IntOption('port', 'Server port number')
+    ssl = BoolOption('ssl', 'Usel SSL', False)
+    server = Option('server', 'Server hostname')
+    jid = Option('jid', 'Jabber ID')
+    password = Option('password', 'Jabber password')
+    nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
+    rooms = Option('rooms', 'Chatrooms to autojoin', [])
+    accept_domains = Option('accept_domains', 'Only accept messages from these domains')
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)

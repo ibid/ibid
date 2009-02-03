@@ -5,6 +5,8 @@ from validate import Validator
 from pkg_resources import resource_stream
 
 import ibid
+from ibid.plugins import Processor
+from ibid.source import IbidSourceFactory
 
 def monkeypatch(self, name):
     if self.has_key(name):
@@ -30,8 +32,15 @@ class Option(object):
         self.description = description
 
     def __get__(self, instance, owner):
-        if instance.name in ibid.config.plugins and self.name in ibid.config.plugins[instance.name]:
-            section = ibid.config.plugins[instance.name]
+        if issubclass(owner, Processor):
+            config = ibid.config.plugins
+        elif issubclass(owner, IbidSourceFactory):
+            config = ibid.config.sources
+        else:
+            raise AttributeError
+
+        if instance.name in config and self.name in config[instance.name]:
+            section = config[instance.name]
             return getattr(section, self.accessor)(self.name)
         else:
             return self.default

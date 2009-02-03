@@ -10,6 +10,7 @@ from sqlalchemy import or_
 from pkg_resources import resource_exists, resource_string
 
 import ibid
+from ibid.config import Option, IntOption, BoolOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
@@ -19,7 +20,7 @@ class Ircbot(irc.IRCClient):
     versionNum = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or ''
 
     def connectionMade(self):
-        self.nickname = ibid.config.sources[self.factory.name]['nick'].encode('utf-8')
+        self.nickname = self.factory.nick.encode('utf-8')
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
         self.factory.send = self.send
@@ -32,9 +33,9 @@ class Ircbot(irc.IRCClient):
         irc.IRCClient.connectionLost(self, reason)
 
     def signedOn(self):
-        if 'mode' in ibid.config.sources[self.factory.name]:
-            self.mode(self.nickname, True, ibid.config.sources[self.factory.name]['mode'].encode('utf-8'))
-        for channel in ibid.config.sources[self.factory.name]['channels']:
+        if self.factory.modes:
+            self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
+        for channel in self.factory.channels:
             self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
 
@@ -144,9 +145,12 @@ class Ircbot(irc.IRCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
-    port = 6667
-    ssl = False
-    server = None
+    port = IntOption('port', 'Server port number', 6667)
+    ssl = BoolOption('ssl', 'Use SSL', False)
+    server = Option('server', 'Server hostname')
+    nick = Option('nick', 'IRC nick', ibid.config['botname'])
+    modes = Option('modes', 'User modes to set')
+    channels = Option('channels', 'Channels to autojoin', [])
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)

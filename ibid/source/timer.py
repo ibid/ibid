@@ -1,12 +1,13 @@
 from twisted.application import internet
 
 import ibid
+from ibid.config import IntOption
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
 
 class SourceFactory(IbidSourceFactory):
 
-    step = 1
+    step = IntOption('step', 'Timer interval in seconds', 1)
 
     def tick(self):
         event = Event(self.name, 'clock')

@@ -7,14 +7,6 @@ from twisted.web import xmlrpc, soap, resource
 import simplejson
 
 import ibid
-from ibid.config import BoolOption, IntOption
-from ibid.source.http import templates
-
-options = {
-    'addressed': BoolOption('addressed', u'Only process events if bot was addressed'),
-    'processed': BoolOption('processed', u"Process events even if they've already been processed"),
-    'priority': IntOption('priority', u'Processor priority'),
-}
 
 class Processor(object):
 
@@ -68,6 +60,14 @@ class Processor(object):
 
         return event
 
+# This is a bit yucky, but necessary since ibid.config imports Processor
+from ibid.config import BoolOption, IntOption
+options = {
+    'addressed': BoolOption('addressed', u'Only process events if bot was addressed'),
+    'processed': BoolOption('processed', u"Process events even if they've already been processed"),
+    'priority': IntOption('priority', u'Processor priority'),
+}
+
 def handler(function):
     function.handler = True
     return function
@@ -90,6 +90,8 @@ def auth_responses(event, permission):
 def authorise(function):
     function.authorised = True
     return function
+
+from ibid.source.http import templates
 
 class RPC(pb.Referenceable, resource.Resource):
     isLeaf = True

@@ -15,6 +15,7 @@ from zope.interface import implements
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.config import Option, IntOption
 from ibid.event import Event
 
 stripsig = re.compile(r'^-- $.*', re.M+re.S)
@@ -22,8 +23,8 @@ stripsig = re.compile(r'^-- $.*', re.M+re.S)
 class IbidDelivery:
     implements(smtp.IMessageDelivery)
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, factory):
+        self.factory = factory
 
     def receivedHeader(self, helo, origin, recipients):
         return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (helo[0], helo[1], gethostname(), str(recipients[0]), strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)', gmtime()))
@@ -32,7 +33,7 @@ class IbidDelivery:
         return origin
 
     def validateTo(self, user):
-        if str(user) == ibid.config.sources[self.name]['address']:
+        if str(user) == self.factory.address:
             return lambda: Message(self.name)
         raise smtp.SMTPBadRcpt(user)
 
@@ -74,12 +75,14 @@ class Message:
 
 class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
-    port = 10025
+    port = IntOption('port', 'Port number to listen on', 10025)
+    address = Option('address', 'Email address to accept messages for and send from', 'ibid@localhost')
+    relayhost = Option('relayhost', 'SMTP server to relay outgoing messages to')
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % name)
-        self.delivery = IbidDelivery(name)
+        self.delivery = IbidDelivery(self)
 
     def buildProtocol(self, addr):
         p = smtp.SMTPFactory.buildProtocol(self, addr)
@@ -123,7 +126,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += '\n'
         body += message
 
-        smtp.sendmail(ibid.config.sources[self.name]['relayhost'], ibid.config.sources[self.name]['address'], response['to'], body)
+        smtp.sendmail(self.relayhost, self.address, response['to'], body)
         self.log.debug(u"Sent email to %s: %s", response['to'], response['subject'])
 
 # vi: set et sta sw=4 ts=4:

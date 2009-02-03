@@ -10,6 +10,7 @@ from jinja import Environment, PackageLoader
 import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+from ibid.config import Option, IntOption
 
 templates = Environment(loader=PackageLoader('ibid', 'templates'))
 
@@ -89,8 +90,8 @@ class SOAP(soap.SOAPPublisher):
 
 class SourceFactory(IbidSourceFactory):
 
-    port = 8080
-    host = 'localhost'
+    port = IntOption('port', 'Port number to listen on', 8080)
+    hostname = Option('hostname', 'Hostname to advertise', 'localhost')
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
