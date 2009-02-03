@@ -11,7 +11,7 @@ class Aptitude(Processor):
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
 
-    @match(r'^(?:apt|aptitude|apt-get)\s+(?:search\s+)?(.+)$')
+    @match(r'^(?:apt|aptitude|apt-get)\s+(?:search\s+)(.+)$')
     def search(self, event, term):
         apt = Popen([self.aptitude, 'search', '-F', '%p', term], stdout=PIPE, stderr=PIPE)
         output, error = apt.communicate()
@@ -22,6 +22,25 @@ class Aptitude(Processor):
                 event.addresponse(u', '.join(line.strip() for line in output.splitlines()))
             else:
                 event.addresponse(u'No packages found')
+
+    @match(r'(?:apt|aptitude|apt-get)\s+(?:show\s+)(.+)$')
+    def show(self, event, package):
+        apt = Popen([self.aptitude, 'show', package], stdout=PIPE, stderr=PIPE)
+        output, error = apt.communicate()
+        code = apt.wait()
+
+        if code == 0:
+            description = None
+            for line in output.splitlines():
+                if not description:
+                    if line.startswith('Description:'):
+                        description = u'%s:' % line.replace('Description:', '', 1).strip()
+                else:
+                    description += ' ' + line.strip()
+            if output:
+                event.addresponse(description)
+            else:
+                event.addresponse(u'No such package')
     
 help['apt-file'] = u'Searches for packages containing the specified file'
 class AptFile(Processor):
