@@ -44,7 +44,7 @@ class Calc(Processor):
         except Exception, e:
             return
 
-        if isinstance(result, int) or isinstance(result, long) or isinstance(result, float) or isinstance(result, complex):
+        if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
 
 # vi: set et sta sw=4 ts=4:
