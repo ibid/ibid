@@ -126,6 +126,7 @@ def import_factoids(knab, ibid, source):
 
         factoid.values.append(fvalue)
         ibid.save_or_update(factoid)
+        ibid.flush()
 
     ibid.commit()
 
