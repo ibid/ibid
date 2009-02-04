@@ -115,7 +115,7 @@ class Memo(Base):
     __tablename__ = 'memos'
 
     id = Column(Integer, primary_key=True)
-    frm = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    frm = Column('from', Integer, ForeignKey('identities.id'), nullable=False)
     to = Column(Integer, ForeignKey('identities.id'), nullable=False)
     memo = Column(UnicodeText, nullable=False)
     private = Column(Boolean, nullable=False)
