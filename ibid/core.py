@@ -8,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 import ibid
-import ibid.plugins
 import ibid.auth_
 
 class Dispatcher(object):

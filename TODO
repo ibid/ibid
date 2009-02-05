@@ -29,13 +29,13 @@ Feeds: Check URL when added
 setup.py: Exclude most of lib/
 PB: Logging, identifying
 Introspection
-Memo table: s/frm/from/
 Import: weißes fleisch
 irc: Track channel members
 URL: Shorten/unshorten seen URLs
 die command
 Buildbot: Access build information
 apt syntax
+Twitter source?
 
 Plugins
 =======
