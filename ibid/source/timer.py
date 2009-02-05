@@ -14,10 +14,14 @@ class SourceFactory(IbidSourceFactory):
         ibid.dispatcher.dispatch(event)
 
     def setServiceParent(self, service):
-        s = internet.TimerService(self.step, self.tick)
+        self.s = internet.TimerService(self.step, self.tick)
         if service is None:
-            s.startService()
+            self.s.startService()
         else:
-            s.setServiceParent(service)
+            self.s.setServiceParent(service)
+
+    def disconnect(self):
+        self.s.stopService()
+        return True
 
 # vi: set et sta sw=4 ts=4:
