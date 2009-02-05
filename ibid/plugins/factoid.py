@@ -178,11 +178,12 @@ class Search(Processor):
     """(search|scan) for <pattern>"""
     feature = 'factoids'
 
-    limit = IntOption('search_limit', u'Maximum number of results to return', 10)
+    limit = IntOption('search_limit', u'Maximum number of results to return', 50)
+    default = IntOption('search_default', u'Default number of results to return', 10)
 
     @match(r'^(search|scan)\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
     def search(self, event, type, limit, pattern, start):
-        limit = limit and min(int(limit), self.limit) or self.limit
+        limit = limit and min(int(limit), self.limit) or self.default
         start = start and int(start) or 0
 
         session = ibid.databases.ibid()
