@@ -13,6 +13,7 @@ class Addressed(Processor):
     priority = -1500
     addressed = False
     names = Option('names', 'Names to respond to', [ibid.config['botname']])
+    verbs = Option('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I),
@@ -23,11 +24,16 @@ class Addressed(Processor):
     def handle_addressed(self, event):
         if 'addressed' not in event:
             event.addressed = False
+
         for pattern in self.patterns:
             matches = pattern.search(event.message)
             if matches:
+                new_message = pattern.sub('', event.message)
+                if not matches.group(2) and new_message.lower().startswith(self.verbs):
+                    return
+
                 event.addressed = matches.group(1)
-                event.message = pattern.sub('', event.message)
+                event.message = new_message
                 return event
 
 class Strip(Processor):
