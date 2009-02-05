@@ -132,7 +132,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     port = IntOption('port', 'Server port number')
     ssl = BoolOption('ssl', 'Usel SSL', False)
     server = Option('server', 'Server hostname')
-    jid = Option('jid', 'Jabber ID')
+    jid_str = Option('jid', 'Jabber ID')
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
     rooms = Option('rooms', 'Chatrooms to autojoin', [])
@@ -141,7 +141,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % name)
-        client.DeferredClientFactory.__init__(self, JID(self.jid), self.password)
+        client.DeferredClientFactory.__init__(self, JID(self.jid_str), self.password)
         bot = JabberBot()
         self.addHandler(bot)
         bot.setHandlerParent(self)
