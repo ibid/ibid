@@ -174,6 +174,30 @@ class Forget(Processor):
         else:
             event.addresponse(u"I don't know about %s" % name)
 
+class Search(Processor):
+    """(search|scan) for <pattern>"""
+    feature = 'factoids'
+
+    @match(r'^search\s+(?:for\s+)?(.+?)$')
+    def search(self, event, pattern):
+        session = ibid.databases.ibid()
+        names = session.query(FactoidName).filter(FactoidName.name.op('REGEXP')(pattern)).all()
+
+        if names:
+            event.addresponse(u', '.join(fname.name for fname in names))
+        else:
+            event.addresponse(u"I couldn't find anything with that name")
+
+    @match(r'^scan\s+(?:for\s+)?(.+?)$')
+    def scan(self, event, pattern):
+        session = ibid.databases.ibid()
+        values = session.query(FactoidValue).filter(FactoidValue.value.op('REGEXP')(pattern)).all()
+
+        if values:
+            event.addresponse(u', '.join(fvalue.value for fvalue in values))
+        else:
+            event.addresponse(u"I couldn't find anything with that name")
+
 class Get(Processor, RPC):
     """<factoid> [( #<number> | /<pattern>/ )]"""
     feature = 'factoids'
