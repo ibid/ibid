@@ -11,6 +11,8 @@ from html2text import html2text_file
 import ibid
 from ibid.plugins import Processor, match, authorise
 
+help = {'feeds': u'Displays articles from RSS and Atom feeds'}
+
 Base = declarative_base()
 
 log = logging.getLogger('plugins.feeds')
@@ -31,6 +33,10 @@ class Feed(Base):
         self.time = datetime.now()
 
 class Manage(Processor):
+    """add feed <url> as <name>
+    list feeds
+    remove <name> feed"""
+    feature = 'feeds'
 
     permission = u'feeds'
 
@@ -55,7 +61,10 @@ class Manage(Processor):
     def list(self, event):
         session = ibid.databases.ibid()
         feeds = session.query(Feed).all()
-        event.addresponse(', '.join([feed.name for feed in feeds]))
+        if feeds:
+            event.addresponse(u', '.join([feed.name for feed in feeds]))
+        else:
+            event.addresponse(u"I don't know about any feeds")
 
     @match(r'^remove\s+(.+?)\s+feed$')
     @authorise
@@ -74,6 +83,9 @@ class Manage(Processor):
         session.close()
 
 class Retrieve(Processor):
+    """(latest|last) [ <count> ] articles from <name> [ starting [(at|from)] <number> ]
+    article ( <number> | /<pattern>/ ) from <name>"""
+    feature = 'feeds'
 
     @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?articles\s+from\s+(.+?)(?:\s+start(?:ing)?\s+(?:at\s+|from\s+)?(\d+))?$')
     def list(self, event, number, name, start):
@@ -89,7 +101,11 @@ class Retrieve(Processor):
             return
 
         feed = feedparser.parse(feed.url)
-        event.addresponse(', '.join(['%s: "%s"' % (feed.entries.index(entry), entry.title) for entry in feed.entries[start:number+start]]))
+        if not feed.entries:
+            event.addresponse(u"I can't access that feed")
+            return
+
+        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), entry.title) for entry in feed.entries[start:number+start]]))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
@@ -102,6 +118,9 @@ class Retrieve(Processor):
             return
 
         feed = feedparser.parse(feed.url)
+        if not feed.entries:
+            event.addresponse(u"I can't access that feed")
+            return
         article = None
 
         if number:
@@ -111,7 +130,7 @@ class Retrieve(Processor):
             article = feed.entries[int(number)]
 
         else:
-            pattern = re.compile(pattern)
+            pattern = re.compile(pattern, re.I)
             for entry in feed.entries:
                 if pattern.search(entry.title):
                     article = entry
