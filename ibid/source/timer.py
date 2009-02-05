@@ -10,7 +10,7 @@ class SourceFactory(IbidSourceFactory):
     step = IntOption('step', 'Timer interval in seconds', 1)
 
     def tick(self):
-        event = Event(self.name, 'clock')
+        event = Event(self.name, u'clock')
         ibid.dispatcher.dispatch(event)
 
     def setServiceParent(self, service):
