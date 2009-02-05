@@ -18,7 +18,7 @@ class SayDo(Processor):
     @authorise
     def saydo(self, event, action, where, what):
         reply = {'target': where, 'reply': what}
-        if action.lower() == u"say":
+        if action.lower() == u"do":
             reply['action'] = True
 
         event.addresponse(reply)
