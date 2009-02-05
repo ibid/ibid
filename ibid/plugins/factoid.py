@@ -180,30 +180,22 @@ class Search(Processor):
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 10)
 
-    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
-    def search(self, event, limit, pattern, start):
+    @match(r'^(search|scan)\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    def search(self, event, type, limit, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.limit
         start = start and int(start) or 0
 
         session = ibid.databases.ibid()
         count = session.query(FactoidValue.factoid_id, func.count(u'*').label('count')).group_by(FactoidValue.factoid_id).subquery()
-        matches = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id)).filter(FactoidName.name.op('REGEXP')(pattern))[start:start+limit]
+        query = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id))
+        if type.lower() == u'search':
+            query = query.filter(FactoidName.name.op('REGEXP')(pattern))
+        else:
+            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        matches = query[start:start+limit]
 
         if matches:
             event.addresponse(u'; '.join('%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
-        else:
-            event.addresponse(u"I couldn't find anything with that name")
-
-    @match(r'^scan\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:from\s+)?(\d+)?$')
-    def scan(self, event, limit, pattern, start):
-        limit = limit and min(int(limit), self.limit) or self.limit
-        start = start and int(start) or 0
-
-        session = ibid.databases.ibid()
-        values = session.query(FactoidValue).filter(FactoidValue.value.op('REGEXP')(pattern)).all()[start:start+limit]
-
-        if values:
-            event.addresponse(u', '.join(fvalue.value for fvalue in values))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
