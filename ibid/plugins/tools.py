@@ -58,7 +58,7 @@ class Units(Processor):
 
     units = Option('units', 'Path to units executable', 'units')
 
-    @match(r'^convert\s+([0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
+    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
     def convert(self, event, value, frm, to):
         if frm.lower() in unit_names:
             frm = "%s(%s)" % (unit_names[frm.lower()], value)
@@ -68,7 +68,7 @@ class Units(Processor):
         if to in unit_names:
             to = unit_names[to.lower()]
 
-        units = Popen([self.units, '--verbose', frm, to], stdout=PIPE, stderr=PIPE)
+        units = Popen([self.units, '--verbose', '--', frm, to], stdout=PIPE, stderr=PIPE)
         output, error = units.communicate()
         code = units.wait()
 
