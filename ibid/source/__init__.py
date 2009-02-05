@@ -3,9 +3,10 @@ from ibid.config import Option
 
 class IbidSourceFactory(object):
 
+    type = Option('type', 'Source type')
+
     def __init__(self, name):
         self.name = name
-        self.type = Option('type', 'Source type', name)
 
     def setServiceParent(self, service):
         raise NotImplementedError
