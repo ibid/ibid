@@ -186,10 +186,11 @@ class Search(Processor):
         start = start and int(start) or 0
 
         session = ibid.databases.ibid()
-        names = session.query(FactoidName).filter(FactoidName.name.op('REGEXP')(pattern))[start:start+limit]
+        count = session.query(FactoidValue.factoid_id, func.count(u'*').label('count')).group_by(FactoidValue.factoid_id).subquery()
+        matches = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id)).filter(FactoidName.name.op('REGEXP')(pattern))[start:start+limit]
 
-        if names:
-            event.addresponse(u', '.join(fname.name for fname in names))
+        if matches:
+            event.addresponse(u'; '.join('%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
