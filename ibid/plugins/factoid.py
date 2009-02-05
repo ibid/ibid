@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
@@ -178,20 +178,28 @@ class Search(Processor):
     """(search|scan) for <pattern>"""
     feature = 'factoids'
 
-    @match(r'^search\s+(?:for\s+)?(.+?)$')
-    def search(self, event, pattern):
+    limit = IntOption('search_limit', u'Maximum number of results to return', 10)
+
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    def search(self, event, limit, pattern, start):
+        limit = limit and min(int(limit), self.limit) or self.limit
+        start = start and int(start) or 0
+
         session = ibid.databases.ibid()
-        names = session.query(FactoidName).filter(FactoidName.name.op('REGEXP')(pattern)).all()
+        names = session.query(FactoidName).filter(FactoidName.name.op('REGEXP')(pattern))[start:start+limit]
 
         if names:
             event.addresponse(u', '.join(fname.name for fname in names))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
-    @match(r'^scan\s+(?:for\s+)?(.+?)$')
-    def scan(self, event, pattern):
+    @match(r'^scan\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:from\s+)?(\d+)?$')
+    def scan(self, event, limit, pattern, start):
+        limit = limit and min(int(limit), self.limit) or self.limit
+        start = start and int(start) or 0
+
         session = ibid.databases.ibid()
-        values = session.query(FactoidValue).filter(FactoidValue.value.op('REGEXP')(pattern)).all()
+        values = session.query(FactoidValue).filter(FactoidValue.value.op('REGEXP')(pattern)).all()[start:start+limit]
 
         if values:
             event.addresponse(u', '.join(fvalue.value for fvalue in values))
