@@ -48,7 +48,7 @@ class Info(Processor):
             if source.type == 'irc':
                 reply += ' (irc://%s)' % source.server
             elif source.type == 'jabber':
-                reply += ' (xmpp://%s)' % source.jid.split('/')[0]
+                reply += ' (xmpp://%s)' % source.jid.full().split('/')[0]
             elif source.type == 'smtp':
                 reply += ' (mailto:%s)' % source.address
             elif source.type == 'http':
