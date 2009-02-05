@@ -116,7 +116,7 @@ class Forget(Processor):
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
-            factoid = factoids[0][0]
+            factoid = session.query(Factoid).get(factoids[0][0].id)
 
             if (number or pattern):
                 if len(factoids) > 1:
@@ -126,7 +126,7 @@ class Forget(Processor):
                 if factoids[0][2].identity not in identities and not factoidadmin:
                     return
 
-                if len(factoid.values) == 1:
+                if session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
@@ -139,7 +139,7 @@ class Forget(Processor):
                 if factoids[0][1].identity not in identities and not factoidadmin:
                     return
 
-                if len(factoid.names) == 1:
+                if session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity not in identities, factoid.values)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
