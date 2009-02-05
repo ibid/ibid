@@ -1,18 +1,15 @@
 from twisted.spread import pb
 from twisted.internet import reactor
 from twisted.cred import credentials
-from .. buildbot.interfaces import IStatusReceiver
-from zope.interface import implements
 
 import ibid
 from ibid.plugins import Processor, match, RPC
 from ibid.config import Option, IntOption
 
-help = {}
+help = {'buildbot': u'Displays buildbot build results and triggers builds.'}
 
 class BuildBot(Processor, RPC):
-    implements(IStatusReceiver)
-
+    """rebuild <branch> [ (revision|r) <number> ]"""
     feature = 'buildbot'
 
     server = Option('server', 'Buildbot server hostname', 'localhost')
