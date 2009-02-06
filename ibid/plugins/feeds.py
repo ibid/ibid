@@ -141,7 +141,7 @@ class Retrieve(Processor):
                 return
 
         if 'summary' in article:
-            summary = article.summary
+            summary = html2text_file(article.summary, None)
         else:
             if article.content[0].type in ('application/xhtml+xml', 'text/html'):
                 summary = html2text_file(article.content[0].value, None)
