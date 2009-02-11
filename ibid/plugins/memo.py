@@ -72,7 +72,7 @@ class Deliver(Processor):
         memos = get_memos(session, event)
 
         for memo in memos:
-            message = 'By the way, %s on %s told me to tell you %s %s ago' % (memo.sender.identity, memo.sender.source, memo.memo, ago(datetime.now()-memo.time))
+            message = '%s: By the way, %s on %s told me to tell you %s %s ago' % (event.who, memo.sender.identity, memo.sender.source, memo.memo, ago(datetime.now()-memo.time))
             if memo.private:
                 event.addresponse({'reply': message, 'target': event.sender_id})
             else:
