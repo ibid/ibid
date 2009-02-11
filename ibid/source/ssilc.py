@@ -18,12 +18,11 @@ class SilcBot(silc.SilcClient):
         self.factory = factory
 
     def _create_event(self, type, user, channel):
-        nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
-        event.sender = unicode(user, 'utf-8', 'replace')
-        event.sender_id = unicode(nick, 'utf-8', 'replace')
+        event.sender = unicode("%s@%s" % (user.username, user.hostname), 'utf-8', 'replace')
+        event.sender_id = unicode(user.nickname, 'utf-8', 'replace')
         event.who = event.sender_id
-        event.channel = unicode(channel, 'utf-8', 'replace')
+        event.channel = unicode(channel.channel_name, 'utf-8', 'replace')
         event.public = True
         event.source = self.factory.name
         return event
