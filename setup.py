@@ -17,7 +17,7 @@ def bzr_revision():
     else:
         tag, revision = lines[-1].split()
 
-    bzr = Popen(('bzr', 'log', '--line', '-c', '-1'), stdout=PIPE)
+    bzr = Popen(('bzr', 'log', '--line', '-r', '-1'), stdout=PIPE)
     output, error = bzr.communicate()
     code = bzr.wait()
 
@@ -48,8 +48,12 @@ setup(
     install_requires=[
         'SQLAlchemy>=0.4.6',
         'wokkel>=0.4',
-        #'ConfigObj>=4.5.3',
         'jinja',
+        'SOAPpy',
+        'simplejson',
+        'MySQLdb', #?
+        'pysqlite2', #?
+        #'ConfigObj>=4.5.3',
         #'validate>=0.3.2',
     ],
     packages=find_packages(exclude=['lib']),
