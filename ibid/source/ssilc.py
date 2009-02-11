@@ -13,6 +13,10 @@ from ibid.source import IbidSourceFactory
 import logging
 
 class SilcBot(silc.SilcClient):
+    def __init__(self, keys, nick, ident, name, factory):
+        silc.SilcClient.__init__(self, keys, nick, ident, name)
+        self.factory = factory
+
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
@@ -65,32 +69,33 @@ class SilcBot(silc.SilcClient):
     # catch responses to commands
 
     def channel_message(self, sender, channel, flags, message):
-        print message
         self._message_event(u'message', sender, channel, message)
 
     def private_message(self, sender, flags, message):
-        print message
         self._message_event(u'message', sender, sender, message)
 
     def running(self):
-        print "* Running"
         self.connect_to_server("reaper.org")
 
     def connected(self):
-        print "* Connected"
-        self.command_call("JOIN ibid")
+        for chan in self.factory.channels:
+            self.command_call("JOIN %s" % chan)
 
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
-        print "* Joined channel %s" % name
         self.send_channel_message(channel, "Hello!")
 
 class SourceFactory(IbidSourceFactory):
+    server = Option('server', 'Server hostname')
+    nick = Option('nick', 'Nick', ibid.config['botname'])
+    channels = Option('channels', 'Channels to autojoin', [])
+    name = Option('name', 'Real Name')
+
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.auth = {}
         self.log = logging.getLogger('source.%s' % self.name)
         keys = silc.create_key_pair("silc.pub", "silc.prv", passphrase = "")
-        self.client = SilcBot(keys, "ibidot", "ibidbot", "Ibid Bot")
+        self.client = SilcBot(keys, nick, nick, name, self)
     
     def tick(self):
         self.client.run_one()
