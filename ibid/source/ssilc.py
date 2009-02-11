@@ -9,11 +9,13 @@ from twisted.internet import task
 import ibid
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
+from ibid.config import Option, IntOption, BoolOption
 
 import logging
 
 class SilcBot(silc.SilcClient):
     def __init__(self, keys, nick, ident, name, factory):
+        self.nick = nick
         silc.SilcClient.__init__(self, keys, nick, ident, name)
         self.factory = factory
 
@@ -43,7 +45,7 @@ class SilcBot(silc.SilcClient):
         event.message = unicode(msg, 'utf-8', 'replace')
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
 
-        if channel.lower() == self.nickname.lower():
+        if channel.channel_name.lower() == self.nick.lower():
             event.addressed = True
             event.public = False
             event.channel = event.who
@@ -87,14 +89,14 @@ class SourceFactory(IbidSourceFactory):
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'Nick', ibid.config['botname'])
     channels = Option('channels', 'Channels to autojoin', [])
-    name = Option('name', 'Real Name')
+    realname = Option('realname', 'Real Name', ibid.config['botname'])
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.auth = {}
         self.log = logging.getLogger('source.%s' % self.name)
         keys = silc.create_key_pair("silc.pub", "silc.prv", passphrase = "")
-        self.client = SilcBot(keys, nick, nick, name, self)
+        self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
     
     def tick(self):
         self.client.run_one()
