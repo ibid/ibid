@@ -27,7 +27,7 @@ else:
     config['botname'] = botname
 
     print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
-    config.databases['ibid']['uri'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
+    config.databases['ibid'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
 
     print u"Please enter the details for the primary source. Press Enter for the default option."
     source = {'nick': '$botname'}
@@ -58,7 +58,7 @@ else:
 
 bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base'), ('ibid.plugins.karma', 'Base'), ('ibid.plugins.feeds', 'Base')]
 metadatas = []
-engine = create_engine(config.databases['ibid']['uri'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
+engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
 
 for module, model in bases:
     try:
