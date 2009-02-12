@@ -71,10 +71,10 @@ class SilcBot(silc.SilcClient):
 
         if response['target'] in self.users:
             target = self.users[response['target']]
-            self.send_private_message(target, message)
+            self.send_private_message(target, message, flags='action' in response and response['action'] and 4 or 0)
         elif response['target'] in self.channels:
             target = self.channels[response['target']]
-            self.send_channel_message(target, message)
+            self.send_channel_message(target, message, flags='action' in response and response['action'] and 4 or 0)
         else:
             self.factory.log.debug(u"Unknown target: %s" % response['target'])
             return
