@@ -22,6 +22,10 @@ class SilcBot(SilcClient):
         self.channels = {}
         self.users = {}
 
+        self.factory.join = self.join
+        self.factory.part = self.part
+        self.factory.send = self.send
+
     def _create_event(self, type, user, channel):
         event = Event(self.factory.name, type)
         event.sender = unicode("%s@%s" % (user.username, user.hostname), 'utf-8', 'replace')
@@ -131,12 +135,6 @@ class SourceFactory(IbidSourceFactory):
         else:
             keys = load_key_pair(pub, prv, passphrase='')
         self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
-
-    def join(self, channel):
-        return self.client.join(channel)
-
-    def part(self, channel):
-        return self.client.part(channel)
 
     def run_one(self):
         self.client.run_one()
