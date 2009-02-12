@@ -1,10 +1,10 @@
-import silc
-
 import os
 import time
+from os.path import join, exists
 
 from twisted.application import internet
 from twisted.internet import task
+import silc
 
 import ibid
 from ibid.event import Event
@@ -14,6 +14,9 @@ from ibid.config import Option, IntOption, BoolOption
 import logging
 
 class SilcBot(silc.SilcClient):
+
+    channels = {}
+
     def __init__(self, keys, nick, ident, name, factory):
         self.nick = nick
         silc.SilcClient.__init__(self, keys, nick, ident, name)
@@ -59,13 +62,17 @@ class SilcBot(silc.SilcClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ')[:490]
+        message = response['reply'].replace('\n', ' ')
+        channel = self.channels[response['target']]
         if 'action' in response and response['action']:
-            self.send_channel_message(response['target'].encode('utf-8'), message.encode('utf-8'))
+            self.send_channel_message(channel, message.encode('utf-8'))
             self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
-            self.send_channel_message(response['target'].encode('utf-8'), message.encode('utf-8'))
+            self.send_channel_message(channel, message.encode('utf-8'))
             self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
+
+    def join(self, channel):
+        self.command_call('JOIN %s' % channel)
 
     # catch responses to commands
 
@@ -76,13 +83,14 @@ class SilcBot(silc.SilcClient):
         self._message_event(u'message', sender, sender, message)
 
     def running(self):
-        self.connect_to_server("reaper.org")
+        self.connect_to_server(self.factory.server)
 
     def connected(self):
-        for chan in self.factory.channels:
-            self.command_call("JOIN %s" % chan)
+        for channel in self.factory.channels:
+            self.join(channel)
 
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
+        self.channels[name] = channel
         self.send_channel_message(channel, "Hello!")
 
 class SourceFactory(IbidSourceFactory):
@@ -90,12 +98,19 @@ class SourceFactory(IbidSourceFactory):
     nick = Option('nick', 'Nick', ibid.config['botname'])
     channels = Option('channels', 'Channels to autojoin', [])
     realname = Option('realname', 'Real Name', ibid.config['botname'])
+    public_key = Option('public_key', 'Filename of public key', 'silc.pub')
+    private_key = Option('private_key', 'Filename of private key', 'silc.prv')
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.auth = {}
         self.log = logging.getLogger('source.%s' % self.name)
-        keys = silc.create_key_pair("silc.pub", "silc.prv", passphrase = "")
+        pub = join(ibid.options['base'], self.public_key)
+        prv = join(ibid.options['base'], self.private_key)
+        if not exists(pub) and not exists(prv):
+            keys = silc.create_key_pair(pub, prv, passphrase='')
+        else:
+            keys = silc.load_key_pair(pub, prv, passphrase='')
         self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
     
     def tick(self):
