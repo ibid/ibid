@@ -4,7 +4,7 @@ from os.path import join, exists
 
 from twisted.application import internet
 from twisted.internet import task
-import silc
+from .. silc import SilcClient, create_key_pair, load_key_pair
 
 import ibid
 from ibid.event import Event
@@ -13,14 +13,14 @@ from ibid.config import Option, IntOption, BoolOption
 
 import logging
 
-class SilcBot(silc.SilcClient):
+class SilcBot(SilcClient):
 
     channels = {}
     users = {}
 
     def __init__(self, keys, nick, ident, name, factory):
         self.nick = nick
-        silc.SilcClient.__init__(self, keys, nick, ident, name)
+        SilcClient.__init__(self, keys, nick, ident, name)
         self.factory = factory
 
     def _create_event(self, type, user, channel):
@@ -117,9 +117,9 @@ class SourceFactory(IbidSourceFactory):
         pub = join(ibid.options['base'], self.public_key)
         prv = join(ibid.options['base'], self.private_key)
         if not exists(pub) and not exists(prv):
-            keys = silc.create_key_pair(pub, prv, passphrase='')
+            keys = create_key_pair(pub, prv, passphrase='')
         else:
-            keys = silc.load_key_pair(pub, prv, passphrase='')
+            keys = load_key_pair(pub, prv, passphrase='')
         self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
 
     def run_one(self):
