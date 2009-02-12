@@ -156,15 +156,14 @@ class Reloader(object):
         return True
 
     def unload_processor(self, name):
-        found = False
         for processor in ibid.processors:
             if processor.name == name:
                 ibid.processors.remove(processor)
-                found = True
+        else:
+            return False
 
-        if found:
-            self.log.info(u"Unloaded %s plugin", name)
-        return found
+        self.log.info(u"Unloaded %s plugin", name)
+        return True
 
     def reload_databases(self):
         reload(ibid.core)
