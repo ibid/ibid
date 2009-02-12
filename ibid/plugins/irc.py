@@ -19,16 +19,15 @@ class Actions(Processor):
 
         if not source:
             source = event.source
-        source = source.lower()
         if not channel:
             if action == 'join':
                 return
             channel = event.channel
 
-        source = ibid.sources[source]
+        source = ibid.sources[source.lower()]
 
-        if ibid.config.sources[source.name]['type'] != 'irc' and ibid.config.sources[source.name]['type'] != 'jabber':
-            event.addresponse(u"%s isn't an IRC or Jabber source" % source.name)
+        if not hasattr(source, 'join'):
+            event.addresponse(u"%s cannot join/part channels" % (source.name,))
             return
 
         if action == 'join':
@@ -46,8 +45,8 @@ class Actions(Processor):
             source = event.source
         source = ibid.sources[source.lower()]
 
-        if ibid.config.sources[source.name]['type'] != 'irc':
-            event.addresponse(u"%s isn't an IRC source" % source)
+        if not hasattr(source, 'change_nick'):
+            event.addresponse(u"%s cannot change nicks" % source)
         else:
             source.change_nick(nick)
             event.addresponse(u'Changing nick to %s' % nick)
