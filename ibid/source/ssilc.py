@@ -16,6 +16,7 @@ import logging
 class SilcBot(silc.SilcClient):
 
     channels = {}
+    users = {}
 
     def __init__(self, keys, nick, ident, name, factory):
         self.nick = nick
@@ -31,6 +32,10 @@ class SilcBot(silc.SilcClient):
         event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender
         event.public = True
         event.source = self.factory.name
+
+        if event.sender not in self.users:
+            self.users[event.sender] = user
+
         return event
 
     def _state_event(self, user, channel, action, kicker=None, message=None):
@@ -49,10 +54,9 @@ class SilcBot(silc.SilcClient):
         event.message = unicode(msg, 'utf-8', 'replace')
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
 
-        if event.channel == self.nick.lower():
+        if not channel:
             event.addressed = True
             event.public = False
-            event.channel = event.who
         else:
             event.public = True
 
@@ -63,14 +67,19 @@ class SilcBot(silc.SilcClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ')
-        channel = self.channels[response['target']]
-        if 'action' in response and response['action']:
-            self.send_channel_message(channel, message.encode('utf-8'))
-            self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
+        message = response['reply'].replace('\n', ' ').encode('utf-8')
+
+        if response['target'] in self.users:
+            target = self.users[response['target']]
+            self.send_private_message(target, message)
+        elif response['target'] in self.channels:
+            target = self.channels[response['target']]
+            self.send_channel_message(target, message)
         else:
-            self.send_channel_message(channel, message.encode('utf-8'))
-            self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
+            self.factory.log.debug(u"Unknown target: %s" % response['target'])
+            return
+
+        self.factory.log.debug(u"Sent message to %s: %s", response['target'], message)
 
     def join(self, channel):
         self.command_call('JOIN %s' % channel)
