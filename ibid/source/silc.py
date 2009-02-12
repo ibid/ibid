@@ -45,11 +45,11 @@ class SilcBot(SilcClient):
         event = self._create_event(u'state', user, channel)
         event.state = action
         if kicker:
-            event.kicker = unicode(kicker, 'utf-8', 'replace')
+            event.kicker = unicode(self._to_hex(kicker.user_id), 'utf-8', 'replace')
             if message: event.message = unicode(message, 'utf-8', 'replace')
             self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender_id, event.channel, event.kicker, event.message)
         else:
-            self.factory.log.debug(u"%s has %s %s", user, action, channel)
+            self.factory.log.debug(u"%s has %s %s", event.sender, action, event.channel)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def _message_event(self, msgtype, user, channel, msg):
@@ -104,6 +104,21 @@ class SilcBot(SilcClient):
 
     def private_message(self, sender, flags, message):
         self._message_event(u'message', sender, None, message)
+
+    def notify_join(self, user, channel):
+        self._state_event(user, channel, u'online')
+
+    def notify_leave(self, user, channel):
+        self._state_event(user, channel, u'offline')
+
+    def notify_signoff(self, user, channel):
+        self._state_event(user, channel, u'offline')
+
+    def notify_kicked(self, user, message, kicker, channel):
+        self._state_event(user, channel, u'kicked', kicker, message)
+
+    def notify_killed(self, user, message, kicker, channel):
+        self._state_event(user, channel, u'killed', kicker, message)
 
     def running(self):
         self.connect_to_server(self.factory.server)
