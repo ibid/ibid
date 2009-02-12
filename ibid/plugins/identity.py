@@ -69,6 +69,7 @@ class Identities(Processor):
     def identity(self, event, username, identity, source):
         session = ibid.databases.ibid()
         admin = False
+        identity = identity.replace(' ', '')
 
         if username.upper() == 'I':
             if event.account:
