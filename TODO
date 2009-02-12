@@ -36,6 +36,13 @@ die command
 Buildbot: Access build information
 apt syntax
 Twitter source?
+Factoids: modify
+RPC authentication
+Web interfaces
+Ignoring verbs
+Changing passwords
+Check auth when modifying authn tokens
+Fix google
 
 Plugins
 =======

@@ -26,6 +26,7 @@ class Python(Processor):
 			exec('import os', globals)
 			exec('import sys', globals)
 			exec('import re', globals)
+			exec('import time', globals)
 			result = str(eval(code, globals, {}))
 		except Exception, e:
 			result = str(e)
