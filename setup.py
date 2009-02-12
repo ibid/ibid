@@ -51,8 +51,8 @@ setup(
         'jinja',
         'SOAPpy',
         'simplejson',
-        'MySQLdb', #?
-        'pysqlite2', #?
+        #'MySQLdb', #?
+        #'pysqlite2', #?
         #'ConfigObj>=4.5.3',
         #'validate>=0.3.2',
     ],
