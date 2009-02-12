@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 import ibid
-import ibid.auth_
+import auth
 
 class Dispatcher(object):
 
@@ -172,8 +172,8 @@ class Reloader(object):
 
     def reload_auth(self):
         try:
-            reload(ibid.auth_)
-            ibid.auth = ibid.auth_.Auth()
+            reload(auth)
+            ibid.auth = auth.Auth()
             self.log.info(u'Reloaded auth')
             return True
         except Exception, e:
