@@ -82,6 +82,15 @@ class SilcBot(SilcClient):
 
     def join(self, channel):
         self.command_call('JOIN %s' % channel)
+        return True
+
+    def part(self, channel):
+        if channel not in self.channels:
+            return False
+
+        self.command_call('LEAVE %s' % channel)
+        del self.channels[channel]
+        return True
 
     def _to_hex(self, string):
         return u''.join(hex(ord(c)).replace('0x', '').zfill(2) for c in string)
@@ -122,6 +131,12 @@ class SourceFactory(IbidSourceFactory):
         else:
             keys = load_key_pair(pub, prv, passphrase='')
         self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
+
+    def join(self, channel):
+        return self.client.join(channel)
+
+    def part(self, channel):
+        return self.client.part(channel)
 
     def run_one(self):
         self.client.run_one()
