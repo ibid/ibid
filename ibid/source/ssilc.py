@@ -25,9 +25,10 @@ class SilcBot(silc.SilcClient):
     def _create_event(self, type, user, channel):
         event = Event(self.factory.name, type)
         event.sender = unicode("%s@%s" % (user.username, user.hostname), 'utf-8', 'replace')
-        event.sender_id = unicode(user.nickname, 'utf-8', 'replace')
-        event.who = event.sender_id
-        event.channel = unicode(channel.channel_name, 'utf-8', 'replace')
+        event.who = unicode(user.nickname, 'utf-8', 'replace')
+        event.sender = self._to_hex(user.user_id)
+        event.sender_id = self._to_hex(user.fingerprint)
+        event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender
         event.public = True
         event.source = self.factory.name
         return event
@@ -48,7 +49,7 @@ class SilcBot(silc.SilcClient):
         event.message = unicode(msg, 'utf-8', 'replace')
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
 
-        if channel.channel_name.lower() == self.nick.lower():
+        if event.channel == self.nick.lower():
             event.addressed = True
             event.public = False
             event.channel = event.who
@@ -74,13 +75,14 @@ class SilcBot(silc.SilcClient):
     def join(self, channel):
         self.command_call('JOIN %s' % channel)
 
-    # catch responses to commands
+    def _to_hex(self, string):
+        return u''.join(hex(ord(c)).replace('0x', '').zfill(2) for c in string)
 
     def channel_message(self, sender, channel, flags, message):
         self._message_event(u'message', sender, channel, message)
 
     def private_message(self, sender, flags, message):
-        self._message_event(u'message', sender, sender, message)
+        self._message_event(u'message', sender, None, message)
 
     def running(self):
         self.connect_to_server(self.factory.server)
@@ -91,7 +93,6 @@ class SilcBot(silc.SilcClient):
 
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
         self.channels[name] = channel
-        self.send_channel_message(channel, "Hello!")
 
 class SourceFactory(IbidSourceFactory):
     server = Option('server', 'Server hostname')
@@ -103,7 +104,6 @@ class SourceFactory(IbidSourceFactory):
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
-        self.auth = {}
         self.log = logging.getLogger('source.%s' % self.name)
         pub = join(ibid.options['base'], self.public_key)
         prv = join(ibid.options['base'], self.private_key)
@@ -112,16 +112,15 @@ class SourceFactory(IbidSourceFactory):
         else:
             keys = silc.load_key_pair(pub, prv, passphrase='')
         self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
-    
-    def tick(self):
-        self.client.run_one()
 
+    def run_one(self):
+        self.client.run_one()
+    
     def setServiceParent(self, service):
-        s = internet.TimerService(0.2, self.tick)
+        s = internet.TimerService(0.2, self.run_one)
         if service is None:
             s.startService()
         else:
             s.setServiceParent(service)
 
 # vi: set et sta sw=4 ts=4:
-
