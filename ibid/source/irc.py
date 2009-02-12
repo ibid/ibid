@@ -145,6 +145,7 @@ class Ircbot(irc.IRCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
+    auth = ('hostmask', 'nickserv')
     port = IntOption('port', 'Server port number', 6667)
     ssl = BoolOption('ssl', 'Use SSL', False)
     server = Option('server', 'Server hostname')
@@ -154,7 +155,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
-        self.auth = {}
+        self._auth = {}
         self.log = logging.getLogger('source.%s' % self.name)
 
     def setServiceParent(self, service):
@@ -195,18 +196,18 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
                 return True
 
     def _irc_auth_callback(self, nick, result):
-        self.auth[nick] = result
+        self._auth[nick] = result
 
     def auth_nickserv(self, event, credential):
         reactor.callFromThread(self.proto.authenticate, event.who, self._irc_auth_callback)
         for i in xrange(150):
-            if event.who in self.auth:
+            if event.who in self._auth:
                 break
             sleep(0.1)
 
-        if event.who in self.auth:
-            result = self.auth[event.who]
-            del self.auth[event.who]
+        if event.who in self._auth:
+            result = self._auth[event.who]
+            del self._auth[event.who]
             return result
 
 # vi: set et sta sw=4 ts=4:

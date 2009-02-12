@@ -32,6 +32,9 @@ class Option(object):
         __import__('ibid.source')
 
     def __get__(self, instance, owner):
+        if instance is None:
+            return self.default
+
         if issubclass(owner, ibid.plugins.Processor):
             config = ibid.config.plugins
         elif issubclass(owner, ibid.source.IbidSourceFactory):

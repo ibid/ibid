@@ -21,8 +21,7 @@ class Auth(object):
 
         config = ibid.config.auth
         methods = []
-        if 'auth' in ibid.config.sources[event.source]:
-            methods.extend(ibid.config.sources[event.source]['auth'])
+        methods.extend(ibid.sources[event.source.lower()].auth)
         methods.extend(config['methods'])
 
         if event.sender in self.cache:

@@ -15,13 +15,12 @@ import logging
 
 class SilcBot(SilcClient):
 
-    channels = {}
-    users = {}
-
     def __init__(self, keys, nick, ident, name, factory):
         self.nick = nick
         SilcClient.__init__(self, keys, nick, ident, name)
         self.factory = factory
+        self.channels = {}
+        self.users = {}
 
     def _create_event(self, type, user, channel):
         event = Event(self.factory.name, type)
@@ -104,6 +103,8 @@ class SilcBot(SilcClient):
         self.channels[name] = channel
 
 class SourceFactory(IbidSourceFactory):
+
+    auth = ('implicit',)
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'Nick', ibid.config['botname'])
     channels = Option('channels', 'Channels to autojoin', [])

@@ -1,9 +1,20 @@
+from copy import copy
+
 import ibid
-from ibid.config import Option
 
 class IbidSourceFactory(object):
 
-    type = Option('type', 'Source type')
+    type = None
+    auth = ()
+
+    def __new__(cls, *args):
+        for name, option in options.items():
+            new = copy(option)
+            default = getattr(cls, name)
+            new.default = default
+            setattr(cls, name, new)
+
+        return super(IbidSourceFactory, cls).__new__(cls, *args)
 
     def __init__(self, name):
         self.name = name
@@ -17,4 +28,9 @@ class IbidSourceFactory(object):
     def disconnect(self):
         raise NotImplementedError
 
+from ibid.config import Option
+options = {
+    'type': Option('type', 'Source type'),
+    'auth': Option('auth', 'Authentication methods to allow'),
+}
 # vi: set et sta sw=4 ts=4:
