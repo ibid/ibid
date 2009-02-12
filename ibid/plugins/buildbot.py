@@ -43,10 +43,10 @@ class BuildBot(Processor, RPC):
 
     @match(r'^(?:re)?build\s+(.+?)(?:\s+(?:revision|r)?\s*(\d+))?$')
     def build(self, event, branch, revision):
-        change = {  'who': event.who,
-                    'branch': branch,
+        change = {  'who': str(event.who),
+                    'branch': str(branch),
                     'files': [None],
-                    'revision': revision or '-1',
+                    'revision': revision and str(revision) or '-1',
                     'comments': 'Rebuild',
                 }
 
