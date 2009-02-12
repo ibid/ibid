@@ -84,6 +84,8 @@ class Set(Processor):
 
         if self.reply:
             event.addresponse(True)
+        else:
+            event.processed = True
 
 class Get(Processor):
     """karma for <subject>
