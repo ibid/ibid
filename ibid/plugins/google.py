@@ -21,16 +21,17 @@ class Search(Processor):
         if country:
             url = url + '&meta=cr%%3Dcountry%s' % country.upper()
 
+        print self.user_agent
         f = urlopen(Request(url, headers={'user-agent': self.user_agent}))
         soup = BeautifulSoup(f.read())
         f.close()
 
         results = []
-        paras = soup.findAll('p')[:10]
-        for para in paras:
+        items = soup.findAll('li')[:10]
+        for item in items:
             try:
-                url = para.a['href']
-                title = ''.join([e.string for e in para.a.contents])
+                url = item.a['href']
+                title = ''.join([e.string for e in item.a.contents])
                 results.append('"%s" %s' % (title, url))
             except Exception:
                 pass
