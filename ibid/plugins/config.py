@@ -13,6 +13,7 @@ class Config(Processor):
     """reread config | set config <name> <value> | get config <name>"""
     feature = 'config'
 
+    priority = -10
     permission = u'config'
 
     @match(r'^reread\s+config$')
