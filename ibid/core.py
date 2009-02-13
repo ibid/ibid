@@ -187,7 +187,7 @@ class Reloader(object):
 
     def reload_config(self):
         for processor in ibid.processors:
-            processor.load_config()
+            processor.setup()
         self.log.info(u"Notified all processors of config reload")
 
 def regexp(pattern, item):
