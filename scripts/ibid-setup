@@ -11,9 +11,10 @@ from shutil import copyfileobj
 from pkg_resources import resource_stream
 
 import ibid.plugins
+from ibid.plugins import feeds, url, factoid, karma, memo, seen
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
-from ibid.models import Account, Identity, Permission, Credential
+from ibid.models import Account, Identity, Permission, Credential, metadata
 
 if exists('ibid.ini'):
     config = FileConfig('ibid.ini')
@@ -56,22 +57,8 @@ else:
     if not exists('logging.ini'):
         copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
 
-bases = [('ibid.models', 'Base'), ('ibid.plugins.factoid', 'Base'), ('ibid.plugins.url', 'Base'), ('ibid.plugins.karma', 'Base'), ('ibid.plugins.feeds', 'Base')]
-metadatas = []
 engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
-
-for module, model in bases:
-    try:
-        __import__(module)
-        klass = eval('%s.%s' % (module, model))
-        klass.metadata.create_all(engine)
-    except ImportError, e:
-        print "Couldn't create tables for plugin %s because it requires the %s module" % (module, e.args[0].replace('No module named ', ''))
-
-for module, metadata in metadatas:
-    __import__(module)
-    klass = eval('%s.%s' % (module, metadata))
-    klass.create_all(engine)
+metadata.create_all(engine)
 
 print u'Database tables created'
 
