@@ -1,11 +1,48 @@
 from time import time
 import logging
+try:
+    from hashlib import sha1
+except ImportError:
+    from sha import new as sha1
 
 from sqlalchemy import or_
 
 import ibid
 from ibid.models import Credential
-from ibid.plugins.auth import hash, permission
+
+def hash(password, salt=None):
+    if salt:
+        salt = salt[:8]
+    else:
+        salt = ''.join([choice(chars) for i in xrange(8)])
+    return unicode(salt + sha1(salt + password).hexdigest())
+
+def permission(name, account, source):
+    if account:
+        session = ibid.databases.ibid()
+        permission = session.query(Permission).filter_by(account_id=account).filter_by(name=name).first()
+        session.close()
+
+        if permission:
+            return permission.value
+
+    permissions = []
+    permissions.extend(ibid.sources[source.lower()].permissions)
+    if 'permissions' in ibid.config.auth:
+        permissions.extend(ibid.config.auth['permissions'])
+    print permissions
+
+    for permission in permissions:
+        match = permission_re.match(permission)
+        if match and match.group(2) == name :
+            if match.group(1) == '+':
+                return 'yes'
+            elif match.group(1) == '-':
+                return 'no'
+            else:
+                return 'auth'
+
+    return 'no'
 
 class Auth(object):
 

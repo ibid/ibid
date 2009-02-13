@@ -2,17 +2,13 @@ import string
 from random import choice
 import re
 import logging
-try:
-    from hashlib import sha1
-except ImportError:
-    from sha import new as sha1
 
 from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
-from ibid.models import Credential, Permission
-from ibid.plugins.identity import Account
+from ibid.models import Credential, Permission, Account
+from ibid.auth import hash, permission
 
 help = {}
 
@@ -21,40 +17,6 @@ log = logging.getLogger('plugins.auth')
 chars = string.letters + string.digits
 permission_re = re.compile('^([+-]?)(\S+)$')
 actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
-
-def hash(password, salt=None):
-    if salt:
-        salt = salt[:8]
-    else:
-        salt = ''.join([choice(chars) for i in xrange(8)])
-    return unicode(salt + sha1(salt + password).hexdigest())
-
-def permission(name, account, source):
-    if account:
-        session = ibid.databases.ibid()
-        permission = session.query(Permission).filter_by(account_id=account).filter_by(name=name).first()
-        session.close()
-
-        if permission:
-            return permission.value
-
-    permissions = []
-    permissions.extend(ibid.sources[source.lower()].permissions)
-    if 'permissions' in ibid.config.auth:
-        permissions.extend(ibid.config.auth['permissions'])
-    print permissions
-
-    for permission in permissions:
-        match = permission_re.match(permission)
-        if match and match.group(2) == name :
-            if match.group(1) == '+':
-                return 'yes'
-            elif match.group(1) == '-':
-                return 'no'
-            else:
-                return 'auth'
-
-    return 'no'
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
