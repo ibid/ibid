@@ -118,7 +118,7 @@ class SilcBot(SilcClient):
         self._state_event(user, channel, u'killed', kicker, message)
 
     def running(self):
-        self.connect_to_server(self.factory.server)
+        self.connect_to_server(self.factory.server, self.factory.port)
 
     def connected(self):
         for channel in self.factory.channels:
@@ -131,6 +131,7 @@ class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
     server = Option('server', 'Server hostname')
+    port = IntOption('port', 'Server port number', 706)
     nick = Option('nick', 'Nick', ibid.config['botname'])
     channels = Option('channels', 'Channels to autojoin', [])
     realname = Option('realname', 'Real Name', ibid.config['botname'])
