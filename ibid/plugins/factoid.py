@@ -1,5 +1,5 @@
 from datetime import datetime
-from time import localtime, strftime
+from time import localtime, strftime, time
 import re
 import logging
 
@@ -254,6 +254,7 @@ class Get(Processor, RPC):
             reply = reply.replace('$date', strftime(self.date_format, now))
             reply = reply.replace('$time', strftime(self.time_format, now))
             reply = reply.replace('$dow', strftime('%A', now))
+            reply = reply.replace('$unixtime', str(time()))
 
             (reply, count) = action_re.subn('', reply)
             if count:
