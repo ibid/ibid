@@ -10,7 +10,7 @@ Base = declarative_base(metadata=metadata)
 
 class Identity(Base):
     __tablename__ = 'identities'
-    __table_args__ = (UniqueConstraint('source', 'identity'), {})
+    __table_args__ = (UniqueConstraint('source', 'identity'), {'useexisting': True})
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
@@ -28,7 +28,7 @@ class Identity(Base):
 
 class Attribute(Base):
     __tablename__ = 'account_attributes'
-    __table_args__ = (UniqueConstraint('account_id', 'name'), {})
+    __table_args__ = (UniqueConstraint('account_id', 'name'), {'useexisting': True})
     
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
@@ -44,6 +44,7 @@ class Attribute(Base):
 
 class Credential(Base):
     __tablename__ = 'credentials'
+    __table_args__ = ({'useexisting': True})
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
@@ -59,7 +60,7 @@ class Credential(Base):
 
 class Permission(Base):
     __tablename__ = 'permissions'
-    __table_args__ = (UniqueConstraint('account_id', 'name'), {})
+    __table_args__ = (UniqueConstraint('account_id', 'name'), {'useexisting': True})
 
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
@@ -73,6 +74,7 @@ class Permission(Base):
 
 class Account(Base):
     __tablename__ = 'accounts'
+    __table_args__ = ({'useexisting': True})
 
     id = Column(Integer, primary_key=True)
     username = Column(Unicode(32), unique=True, nullable=False)

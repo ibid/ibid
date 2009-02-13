@@ -3,47 +3,29 @@ from time import localtime, strftime, time
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table
-from sqlalchemy.orm import relation, eagerload, mapper
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
+from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
-from ibid.models import metadata
+from ibid.models import Base
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
 
 log = logging.getLogger('plugins.factoid')
 
-factoids_table = Table('factoids', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    useexisting=True)
+class FactoidName(Base):
+    __tablename__ = 'factoid_names'
+    __table_args__ = ({'useexisting': True})
 
-factoid_names_table = Table('factoid_names', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id')),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    useexisting=True)
-
-factoid_values_table = Table('factoid_values', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('value', UnicodeText, nullable=False),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id')),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    useexisting=True)
-
-class Factoid(object):
-
-    def __repr__(self):
-        return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
-
-class FactoidName(object):
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(128), nullable=False)
+    factoid_id = Column(Integer, ForeignKey('factoids.id'), nullable=False)
+    identity = Column(Integer, ForeignKey('identities.id'))
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, name, identity, factoid_id=None):
         self.name = name
@@ -53,7 +35,15 @@ class FactoidName(object):
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
-class FactoidValue(object):
+class FactoidValue(Base):
+    __tablename__ = 'factoid_values'
+    __table_args__ = ({'useexisting': True})
+
+    id = Column(Integer, primary_key=True)
+    value = Column(UnicodeText, nullable=False)
+    factoid_id = Column(Integer, ForeignKey('factoids.id'), nullable=False)
+    identity = Column(Integer, ForeignKey('identities.id'))
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
@@ -63,12 +53,17 @@ class FactoidValue(object):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-mapper(FactoidName, factoid_names_table)
-mapper(FactoidValue, factoid_values_table)
-mapper(Factoid, factoids_table, properties={
-    'names': relation(FactoidName, cascade='all,delete', backref='factoid'),
-    'values': relation(FactoidValue, cascade='all,delete', backref='factoid'),
-})
+class Factoid(Base):
+    __tablename__ = 'factoids'
+    __table_args__ = ({'useexisting': True})
+
+    id = Column(Integer, primary_key=True)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+    names = relation(FactoidName, cascade='all,delete', backref='factoid')
+    values = relation(FactoidValue, cascade='all,delete', backref='factoid')
+
+    def __repr__(self):
+        return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
