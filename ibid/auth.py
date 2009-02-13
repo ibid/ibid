@@ -8,7 +8,7 @@ except ImportError:
 from sqlalchemy import or_
 
 import ibid
-from ibid.models import Credential
+from ibid.models import Credential, Permission
 
 def hash(password, salt=None):
     if salt:

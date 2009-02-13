@@ -20,7 +20,6 @@ setup.py: Exclude most of lib/
 PB: Logging, identifying
 Introspection
 Import: weißes fleisch
-die command
 Buildbot: Access build information
 apt syntax
 Factoids: modify

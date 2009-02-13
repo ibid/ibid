@@ -1,5 +1,10 @@
+from random import choice
+
+from twisted.internet import reactor
+
 import ibid
 from ibid.plugins import Processor, match, authorise
+from ibid.config import Option
 
 help = {}
 
@@ -54,5 +59,17 @@ class LoadModules(Processor):
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         event.addresponse(result and u'%s unloaded' % plugin or u"Couldn't unload %s" % plugin)
+
+help['die'] = u'Terminates the bot'
+class Die(Processor):
+    """die"""
+    feature = 'die'
+
+    permission = u'admin'
+
+    @match(r'^die$')
+    @authorise
+    def die(self, event):
+        reactor.stop()
 
 # vi: set et sta sw=4 ts=4:
