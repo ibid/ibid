@@ -3,7 +3,6 @@ from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 
 import ibid
 from ibid.plugins import Processor, match, handler

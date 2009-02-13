@@ -1,6 +1,3 @@
-import string
-from random import choice
-import re
 import logging
 
 from sqlalchemy.sql import func
@@ -14,8 +11,6 @@ help = {}
 
 log = logging.getLogger('plugins.auth')
 
-chars = string.letters + string.digits
-permission_re = re.compile('^([+-]?)(\S+)$')
 actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
 
 help['auth'] = 'Adds and removes authentication credentials and permissions'

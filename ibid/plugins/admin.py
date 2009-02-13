@@ -1,10 +1,7 @@
-from random import choice
-
 from twisted.internet import reactor
 
 import ibid
 from ibid.plugins import Processor, match, authorise
-from ibid.config import Option
 
 help = {}
 

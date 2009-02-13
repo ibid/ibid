@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, Boolean, UnicodeText, UniqueConstraint, MetaData
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 

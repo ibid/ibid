@@ -1,15 +1,12 @@
-import os
-import time
 from os.path import join, exists
 
 from twisted.application import internet
-from twisted.internet import task
 from .. silc import SilcClient, create_key_pair, load_key_pair
 
 import ibid
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
-from ibid.config import Option, IntOption, BoolOption
+from ibid.config import Option, IntOption
 
 import logging
 

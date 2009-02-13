@@ -1,5 +1,8 @@
 from time import time
+from random import choice
+import string
 import logging
+import re
 try:
     from hashlib import sha1
 except ImportError:
@@ -9,6 +12,9 @@ from sqlalchemy import or_
 
 import ibid
 from ibid.models import Credential, Permission
+
+chars = string.letters + string.digits
+permission_re = re.compile('^([+-]?)(\S+)$')
 
 def hash(password, salt=None):
     if salt:

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from bzrlib.branch import Branch
 from bzrlib import log
-from bzrlib.errors import InvalidRevisionNumber, NotBranchError
+from bzrlib.errors import NotBranchError
 
 import ibid
 from ibid.plugins import Processor, match, RPC

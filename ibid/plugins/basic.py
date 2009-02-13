@@ -2,7 +2,6 @@ from random import choice
 import re
 import logging
 
-import ibid
 from ibid.plugins import Processor, match, handler, authorise
 
 help = {}

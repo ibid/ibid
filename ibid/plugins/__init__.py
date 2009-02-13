@@ -1,9 +1,9 @@
-from inspect import getargspec, getmembers, ismethod, isclass
+from inspect import getargspec, getmembers, ismethod
 from copy import copy
 import re
 
 from twisted.spread import pb
-from twisted.web import xmlrpc, soap, resource
+from twisted.web import resource
 import simplejson
 
 import ibid

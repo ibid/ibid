@@ -3,8 +3,7 @@ import logging
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
-from twisted.spread import pb
-from pkg_resources import resource_string, resource_filename
+from pkg_resources import resource_filename
 from jinja import Environment, PackageLoader
 
 import ibid

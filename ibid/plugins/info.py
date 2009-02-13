@@ -2,7 +2,6 @@ from subprocess import Popen, PIPE
 
 from nickometer import nickometer
 
-import ibid
 from ibid.plugins import Processor, match, RPC
 from ibid.config import Option
 

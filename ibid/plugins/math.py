@@ -1,5 +1,3 @@
-import math
-from math import *
 from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
