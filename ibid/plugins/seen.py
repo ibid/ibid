@@ -1,29 +1,30 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, Boolean, UnicodeText, UniqueConstraint, Table
-from sqlalchemy.orm import mapper, relation
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, Boolean, UnicodeText, UniqueConstraint, MetaData
+from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.models import Identity, Account, metadata
+from ibid.models import Base, Identity, Account
 from ibid.utils import ago
 
 help = {'seen': 'Records when people were last seen.'}
 
-sightings_table = Table('seen', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('type', Unicode(8), nullable=False),
-    Column('channel', Unicode(32)),
-    Column('value', UnicodeText),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('count', Integer, nullable=False),
-    UniqueConstraint('identity_id', 'type'),
-    useexisting=True)
+class Sighting(Base):
+    __tablename__ = 'seen'
+    __table_args__ = (UniqueConstraint('identity_id', 'type'), {'useexisting': True})
 
-class Sighting(object):
+    id = Column(Integer, primary_key=True)
+    identity_id = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    type = Column(Unicode(8), nullable=False)
+    channel = Column(Unicode(32))
+    value = Column(UnicodeText)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+    count = Column(Integer, nullable=False)
+
+    identity = relation('Identity')
 
     def __init__(self, identity_id=None, type='message', channel=None, value=None):
         self.identity_id = identity_id
@@ -34,10 +35,6 @@ class Sighting(object):
 
     def __repr__(self):
         return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
-
-mapper(Sighting, sightings_table, properties={
-    'identity': relation(Identity)
-})
 
 class See(Processor):
     feature = 'seen'

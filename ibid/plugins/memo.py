@@ -1,8 +1,8 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, Boolean
-from sqlalchemy.orm import relation, mapper
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, Boolean, UnicodeText
+from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 import ibid
@@ -10,7 +10,7 @@ from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import Option
 from ibid.plugins.auth import permission
 from ibid.plugins.identity import get_identities
-from ibid.models import Identity, Account, metadata
+from ibid.models import Base, Identity, Account
 from ibid.utils import ago
 
 help = {'memo': 'Keeps messages for people.'}
@@ -18,17 +18,17 @@ help = {'memo': 'Keeps messages for people.'}
 memo_cache = {}
 log = logging.getLogger('plugins.memo')
 
-memos_table = Table('memos', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('from', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('to', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('memo', UnicodeText, nullable=False),
-    Column('private', Boolean, nullable=False),
-    Column('delivered', Boolean, nullable=False),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    useexisting=True)
+class Memo(Base):
+    __tablename__ = 'memos'
+    __table_args__ = ({'useexisting': True})
 
-class Memo(object):
+    id = Column(Integer, primary_key=True)
+    frm = Column('from', Integer, ForeignKey('identities.id'), nullable=False)
+    to = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    memo = Column(UnicodeText, nullable=False)
+    private = Column(Boolean, nullable=False)
+    delivered = Column(Boolean, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     def __init__(self, frm, to, memo, private=False):
         self.frm = frm
@@ -37,11 +37,8 @@ class Memo(object):
         self.private = private
         self.delivered = False
 
-mapper(Memo, memos_table, properties={
-    'frm': memos_table.c['from'],
-    'sender': relation(Identity, primaryjoin=memos_table.c['from']==Identity.id),
-    'recipient': relation(Identity, primaryjoin=memos_table.c.to==Identity.id),
-})
+Memo.sender = relation(Identity, primaryjoin=Memo.frm==Identity.id)
+Memo.recipient = relation(Identity, primaryjoin=Memo.to==Identity.id)
 
 class Tell(Processor):
     """(tell|pm|privmsg|msg) <person> <message>"""

@@ -2,37 +2,34 @@ import re
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, Table, ForeignKey
-from sqlalchemy.orm import mapper, relation
+from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey
 from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
 
 import ibid
 from ibid.plugins import Processor, match, authorise
-from ibid.models import metadata
+from ibid.models import Base
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
 log = logging.getLogger('plugins.feeds')
 
-feeds_table = Table('feeds', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('name', Unicode(32), unique=True, nullable=False),
-    Column('url', UnicodeText, nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('time', DateTime, nullable=False),
-    useexisting=True)
+class Feed(Base):
+    __tablename__ = 'feeds'
+    __table_args__ = ({'useexisting': True})
 
-class Feed(object):
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(32), unique=True, nullable=False)
+    url = Column(UnicodeText, nullable=False)
+    identity = Column(Integer, ForeignKey('identities.id'), nullable=False)
+    time = Column(DateTime, nullable=False)
 
     def __init__(self, name, url, identity):
         self.name = name
         self.url = url
         self.identity = identity
         self.time = datetime.now()
-
-mapper(Feed, feeds_table)
 
 class Manage(Processor):
     """add feed <url> as <name>
