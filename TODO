@@ -37,7 +37,6 @@ Factoids: modify
 RPC authentication
 Changing passwords
 Check auth when modifying authn tokens
-Fix google
 
 Plugins
 =======

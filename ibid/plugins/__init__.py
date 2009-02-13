@@ -142,7 +142,7 @@ class RPC(pb.Referenceable, resource.Resource):
         function = self.get_function(request)
         if not function:
             functions = []
-            for name, method in inspect.getmembers(self, inspect.ismethod):
+            for name, method in getmembers(self, ismethod):
                 if name.startswith('remote_'):
                     functions.append(name.replace('remote_', '', 1))
 
