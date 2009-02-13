@@ -2,33 +2,35 @@ from datetime import datetime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Unicode, DateTime, Table
+from sqlalchemy.orm import mapper
 from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
 from ibid.config import Option, BoolOption
+from ibid.models import metadata
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 
-Base = declarative_base()
-
 log = logging.getLogger('plugins.karma')
 
-class Karma(Base):
-    __tablename__ = 'karma'
+karma_table = Table('karma', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('subject', Unicode(128), unique=True, nullable=False),
+    Column('changes', Integer, nullable=False),
+    Column('value', Integer, nullable=False),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
-    id = Column(Integer, primary_key=True)
-    subject = Column(Unicode(128), unique=True, nullable=False)
-    changes = Column(Integer, nullable=False)
-    value = Column(Integer, nullable=False)
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+class Karma(object):
 
     def __init__(self, subject):
         self.subject = subject
         self.changes = 0
         self.value = 0
+
+mapper(Karma, karma_table)
 
 class Set(Processor):
     """<subject> (++|--|==|ftw|ftl) [[reason]]"""

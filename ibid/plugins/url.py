@@ -2,31 +2,33 @@ from datetime import datetime
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, Table, ForeignKey
+from sqlalchemy.orm import mapper, relation
 
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
+from ibid.models import metadata
 
 help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
 
-Base = declarative_base()
+urls_table = Table('urls', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('url', UnicodeText, nullable=False),
+    Column('channel', Unicode(32), nullable=False),
+    Column('identity', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('time', DateTime, nullable=False),
+    useexisting=True)
 
-class URL(Base):
-    __tablename__ = 'urls'
-
-    id = Column(Integer, primary_key=True)
-    url = Column(UnicodeText, nullable=False)
-    channel = Column(Unicode(32), nullable=False)
-    identity = Column(Integer, nullable=False)
-    time = Column(DateTime, nullable=False)
+class URL(object):
 
     def __init__(self, url, channel, identity):
         self.url = url
         self.channel = channel
         self.identity = identity
         self.time = datetime.now()
+
+mapper(URL, urls_table)
 
 class Grab(Processor):
 
