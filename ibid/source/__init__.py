@@ -25,7 +25,7 @@ class IbidSourceFactory(object):
         raise NotImplementedError
 
     def connect(self):
-        raise NotImplementedError
+        return self.setServiceParent(None)
 
     def disconnect(self):
         raise NotImplementedError

@@ -127,6 +127,12 @@ class SilcBot(SilcClient):
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
         self.channels[name] = channel
 
+    def disconnect(self):
+        self.command_call('QUIT')
+
+    def disconnected(self, message):
+       self.factory.s.stopService()
+
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
@@ -153,10 +159,14 @@ class SourceFactory(IbidSourceFactory):
         self.client.run_one()
     
     def setServiceParent(self, service):
-        s = internet.TimerService(0.2, self.run_one)
+        self.s = internet.TimerService(0.2, self.run_one)
         if service is None:
-            s.startService()
+            self.s.startService()
         else:
-            s.setServiceParent(service)
+            self.s.setServiceParent(service)
+
+    def disconnect(self):
+        self.client.disconnect()
+        return True
 
 # vi: set et sta sw=4 ts=4:
