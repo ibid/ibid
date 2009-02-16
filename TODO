@@ -25,6 +25,7 @@ apt syntax
 Factoids: modify
 Changing passwords
 Check auth when modifying authn tokens
+Source connect/disconnect/reload
 
 Plugins
 =======

@@ -18,7 +18,7 @@ class Aptitude(Processor):
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0:
+        if code == 0 and output:
             if output:
                 event.addresponse(u', '.join(line.strip() for line in output.splitlines()))
             else:
@@ -30,15 +30,18 @@ class Aptitude(Processor):
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0:
+        if code == 0 and output:
+            print output
             description = None
             for line in output.splitlines():
                 if not description:
                     if line.startswith('Description:'):
                         description = u'%s:' % line.replace('Description:', '', 1).strip()
+                    elif line.startswith('Provided by:'):
+                        description = u'Virtual package provided by %s' % line.replace('Provided by:', '', 1).strip()
                 else:
                     description += ' ' + line.strip()
-            if output:
+            if description:
                 event.addresponse(description)
             else:
                 event.addresponse(u'No such package')
@@ -56,7 +59,7 @@ class AptFile(Processor):
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0:
+        if code == 0 and output:
             if output:
                 event.addresponse(u', '.join(line.split(':')[0] for line in output.splitlines()))
             else:
