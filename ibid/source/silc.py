@@ -169,4 +169,7 @@ class SourceFactory(IbidSourceFactory):
         self.client.disconnect()
         return True
 
+    def url(self):
+        return u'silc://%s@%s:%s' % (self.nick, self.server, self.port)
+
 # vi: set et sta sw=4 ts=4:

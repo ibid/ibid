@@ -96,6 +96,9 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         else:
             reactor.listenTCP(self.port, self)
 
+    def url(self):
+        return u'mailto:%s' % (self.address,)
+
     def respond(self, event):
         messages = {}
         for response in event.responses:

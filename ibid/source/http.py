@@ -90,7 +90,7 @@ class SOAP(soap.SOAPPublisher):
 class SourceFactory(IbidSourceFactory):
 
     port = IntOption('port', 'Port number to listen on', 8080)
-    hostname = Option('hostname', 'Hostname to advertise', 'localhost')
+    myurl = Option('url', 'URL to advertise')
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
@@ -107,5 +107,8 @@ class SourceFactory(IbidSourceFactory):
                 return internet.TCPServer(self.port, self.site).setServiceParent(service)
             else:
                 reactor.listenTCP(self.port, self.site)
+
+    def url(self):
+        return self.myurl
 
 # vi: set et sta sw=4 ts=4:

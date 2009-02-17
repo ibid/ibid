@@ -30,6 +30,9 @@ class IbidSourceFactory(object):
     def disconnect(self):
         raise NotImplementedError
 
+    def url(self):
+        return None
+
 from ibid.config import Option
 options = {
     'auth': Option('auth', 'Authentication methods to allow'),

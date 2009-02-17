@@ -189,6 +189,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def change_nick(self, nick):
         return self.proto.setNick(nick.encode('utf-8'))
 
+    def url(self):
+        return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
+
     def auth_hostmask(self, event, credential = None):
         session = ibid.databases.ibid()
         for credential in session.query(Credential).filter_by(method=u'hostmask').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():

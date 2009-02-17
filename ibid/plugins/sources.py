@@ -42,20 +42,11 @@ class Info(Processor):
 
     @match(r'^sources$')
     def list(self, event):
-        reply = u''
+        sources = []
         for name, source in ibid.sources.items():
-            reply += source.name
-            if source.type == 'irc':
-                reply += ' (irc://%s)' % source.server
-            elif source.type == 'jabber':
-                reply += ' (xmpp://%s)' % source.jid.full().split('/')[0]
-            elif source.type == 'smtp':
-                reply += ' (mailto:%s)' % source.address
-            elif source.type == 'http':
-                reply += ' (http://%s:%s)' % (source.hostname, source.port)
-            reply += ', '
-        reply = reply[:-2]
-        event.addresponse(reply)
+            url = source.url()
+            sources.append(url and '%s (%s)' % (name, url) or name)
+        event.addresponse(u', '.join(sources))
 
     @match(r'^list\s+configured\s+sources$')
     def listall(self, event):

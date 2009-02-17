@@ -176,4 +176,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def part(self, room):
         return self.proto.part(room)
 
+    def url(self):
+        return u'xmpp://%s' % (self.jid_str,)
+
 # vi: set et sta sw=4 ts=4:
