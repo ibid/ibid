@@ -15,7 +15,7 @@ class Coffee(Processor):
     pot = None
 
     time = IntOption('coffee_time', u'Brewing time in seconds', 240)
-    cups = IntOption('coffee_cpus', u'Maximum number of cups', 4)
+    cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
     
     @match(r'^coffee\s+on$')
     def coffee_on(self, event):
