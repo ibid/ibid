@@ -1,3 +1,4 @@
+from string import maketrans
 from time import sleep
 
 from pkg_resources import resource_exists, resource_string
@@ -7,7 +8,7 @@ from ibid.config import IntOption
 
 help = {}
 
-help['coffee'] = u'Times coffee brewing and reserves cups for people'
+help['coffee'] = u"Times coffee brewing and reserves cups for people"
 class Coffee(Processor):
     """coffee (on|please)"""
     feature = 'coffee'
@@ -54,5 +55,30 @@ class Version(Processor):
     @match(r'^version$')
     def show_version(self, event):
         event.addresponse(version and u"I am version %s" % version or u"I don't know what version I am :-(")
+
+help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
+class Dvorak(Processor):
+    """(aoeu|asdf) <text>"""
+    
+    # List of characters on each keyboard layout
+    dvormap = """',.pyfgcrl/=aoeuidhtns\-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]\{}|"""
+    qwermap = """qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?\-=\_+|"""
+    
+    # Typed by a QWERTY typist on a Dvorak-mapped keyboard
+    typed_on_dvorak = maketrans(dvormap, qwermap)
+    # Typed by a Dvorak typist on a QWERTY-mapped keyboard
+    typed_on_qwerty = maketrans(qwermap, dvormap)
+    
+    @match(r'asdf\s+(.+)')
+    def convert_from_qwerty(self, event, text):
+        event.addresponse(text.translate(self.typed_on_qwerty))
+        
+        return event
+    
+    @match(r'aoeu\s+(.+)')
+    def convert_from_dvorak(self, event, text):
+        event.addresponse(text.translate(self.typed_on_dvorak))
+        
+        return event
 
 # vi: set et sta sw=4 ts=4:
