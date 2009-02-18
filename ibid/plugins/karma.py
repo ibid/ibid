@@ -1,7 +1,7 @@
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime
+from sqlalchemy import Column, Integer, Unicode, DateTime, Table
 from sqlalchemy.sql import func
 
 import ibid
@@ -14,14 +14,13 @@ help = {'karma': u'Keeps track of karma for people and things.'}
 log = logging.getLogger('plugins.karma')
 
 class Karma(Base):
-    __tablename__ = 'karma'
-    __table_args__ = ({'useexisting': True})
-
-    id = Column(Integer, primary_key=True)
-    subject = Column(Unicode(128), unique=True, nullable=False)
-    changes = Column(Integer, nullable=False)
-    value = Column(Integer, nullable=False)
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+    __table__ = Table('karma', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('subject', Unicode(128), unique=True, nullable=False),
+    Column('changes', Integer, nullable=False),
+    Column('value', Integer, nullable=False),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
     def __init__(self, subject):
         self.subject = subject

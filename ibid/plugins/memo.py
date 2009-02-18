@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeText
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeText, Table
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
@@ -19,26 +19,25 @@ memo_cache = {}
 log = logging.getLogger('plugins.memo')
 
 class Memo(Base):
-    __tablename__ = 'memos'
-    __table_args__ = ({'useexisting': True})
+    __table__ = Table('memos', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('from_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('to_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('memo', UnicodeText, nullable=False),
+    Column('private', Boolean, nullable=False),
+    Column('delivered', Boolean, nullable=False),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
-    id = Column(Integer, primary_key=True)
-    frm = Column('from', Integer, ForeignKey('identities.id'), nullable=False)
-    to = Column(Integer, ForeignKey('identities.id'), nullable=False)
-    memo = Column(UnicodeText, nullable=False)
-    private = Column(Boolean, nullable=False)
-    delivered = Column(Boolean, nullable=False)
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
-
-    def __init__(self, frm, to, memo, private=False):
-        self.frm = frm
-        self.to = to
+    def __init__(self, from_id, to_id, memo, private=False):
+        self.from_id = from_id
+        self.to_id = to_id
         self.memo = memo
         self.private = private
         self.delivered = False
 
-Memo.sender = relation(Identity, primaryjoin=Memo.frm==Identity.id)
-Memo.recipient = relation(Identity, primaryjoin=Memo.to==Identity.id)
+Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
+Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)
 
 class Tell(Processor):
     """(tell|pm|privmsg|msg) <person> <message>"""
@@ -79,7 +78,7 @@ class Tell(Processor):
 
 def get_memos(session, event, delivered=False):
     identities = get_identities(event, session)
-    return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to.in_(identities)).order_by(Memo.time.asc()).all()
+    return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to_id.in_(identities)).order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
     feature = 'memo'

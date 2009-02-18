@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
@@ -13,16 +13,16 @@ from ibid.utils import ago
 help = {'seen': 'Records when people were last seen.'}
 
 class Sighting(Base):
-    __tablename__ = 'seen'
-    __table_args__ = (UniqueConstraint('identity_id', 'type'), {'useexisting': True})
-
-    id = Column(Integer, primary_key=True)
-    identity_id = Column(Integer, ForeignKey('identities.id'), nullable=False)
-    type = Column(Unicode(8), nullable=False)
-    channel = Column(Unicode(32))
-    value = Column(UnicodeText)
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
-    count = Column(Integer, nullable=False)
+    __table__ = Table('seen', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('type', Unicode(8), nullable=False),
+    Column('channel', Unicode(32)),
+    Column('value', UnicodeText),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('count', Integer, nullable=False),
+    UniqueConstraint('identity_id', 'type'),
+    useexisting=True)
 
     identity = relation('Identity')
 

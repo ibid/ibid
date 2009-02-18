@@ -2,7 +2,7 @@ from time import localtime, strftime, time
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
@@ -17,14 +17,13 @@ help = {'factoids': u'Factoids are arbitrary pieces of information stored by a k
 log = logging.getLogger('plugins.factoid')
 
 class FactoidName(Base):
-    __tablename__ = 'factoid_names'
-    __table_args__ = ({'useexisting': True})
-
-    id = Column(Integer, primary_key=True)
-    name = Column(Unicode(128), nullable=False)
-    factoid_id = Column(Integer, ForeignKey('factoids.id'), nullable=False)
-    identity = Column(Integer, ForeignKey('identities.id'))
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+    __table__ = Table('factoid_names', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', Unicode(128), nullable=False),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
+    Column('identity', Integer, ForeignKey('identities.id')),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
     def __init__(self, name, identity, factoid_id=None):
         self.name = name
@@ -35,14 +34,13 @@ class FactoidName(Base):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
 class FactoidValue(Base):
-    __tablename__ = 'factoid_values'
-    __table_args__ = ({'useexisting': True})
-
-    id = Column(Integer, primary_key=True)
-    value = Column(UnicodeText, nullable=False)
-    factoid_id = Column(Integer, ForeignKey('factoids.id'), nullable=False)
-    identity = Column(Integer, ForeignKey('identities.id'))
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
+    __table__ = Table('factoid_values', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('value', UnicodeText, nullable=False),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
+    Column('identity', Integer, ForeignKey('identities.id')),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
     def __init__(self, value, identity, factoid_id=None):
         self.value = value
@@ -53,11 +51,11 @@ class FactoidValue(Base):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
 class Factoid(Base):
-    __tablename__ = 'factoids'
-    __table_args__ = ({'useexisting': True})
+    __table__ = Table('factoids', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    useexisting=True)
 
-    id = Column(Integer, primary_key=True)
-    time = Column(DateTime, nullable=False, default=func.current_timestamp())
     names = relation(FactoidName, cascade='all,delete', backref='factoid')
     values = relation(FactoidValue, cascade='all,delete', backref='factoid')
 

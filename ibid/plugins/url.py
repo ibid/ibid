@@ -2,7 +2,7 @@ from datetime import datetime
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey
+from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -12,14 +12,13 @@ from ibid.models import Base
 help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
 
 class URL(Base):
-    __tablename__ = 'urls'
-    __table_args__ = ({'useexisting': True})
-
-    id = Column(Integer, primary_key=True)
-    url = Column(UnicodeText, nullable=False)
-    channel = Column(Unicode(32), nullable=False)
-    identity = Column(Integer, ForeignKey('identities.id'), nullable=False)
-    time = Column(DateTime, nullable=False)
+    __table__ = Table('urls', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('url', UnicodeText, nullable=False),
+    Column('channel', Unicode(32), nullable=False),
+    Column('identity', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('time', DateTime, nullable=False),
+    useexisting=True)
 
     def __init__(self, url, channel, identity):
         self.url = url
