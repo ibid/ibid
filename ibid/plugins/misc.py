@@ -1,4 +1,3 @@
-from string import maketrans
 from time import sleep
 
 from pkg_resources import resource_exists, resource_string
@@ -61,13 +60,13 @@ class Dvorak(Processor):
     """(aoeu|asdf) <text>"""
     
     # List of characters on each keyboard layout
-    dvormap = """',.pyfgcrl/=aoeuidhtns\-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]\{}|"""
-    qwermap = """qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?\-=\_+|"""
+    dvormap = u"""',.pyfgcrl/=aoeuidhtns\-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]\{}|"""
+    qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?\-=\_+|"""
     
     # Typed by a QWERTY typist on a Dvorak-mapped keyboard
-    typed_on_dvorak = maketrans(dvormap, qwermap)
+    typed_on_dvorak = dict(zip(map(ord, dvormap), qwermap))
     # Typed by a Dvorak typist on a QWERTY-mapped keyboard
-    typed_on_qwerty = maketrans(qwermap, dvormap)
+    typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
     
     @match(r'asdf\s+(.+)')
     def convert_from_qwerty(self, event, text):
