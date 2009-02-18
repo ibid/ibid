@@ -6,7 +6,7 @@ from bzrlib import log
 from bzrlib.errors import NotBranchError
 
 import ibid
-from ibid.plugins import Processor, match, RPC
+from ibid.plugins import Processor, match, RPC, handler
 from ibid.config import Option
 from ibid.utils import ago
 
@@ -50,6 +50,7 @@ class Bazaar(Processor, RPC):
     repositories = Option('repositories', 'Dict of repository names and URLs')
     source = Option('source', 'Source to send commit notifications to')
     channel = Option('channel', 'Channel to send commit notifications to')
+    launchpad_branches = Option('launchpad_branches', 'Branch paths in Launchpad mapped to names')
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -107,5 +108,14 @@ class Bazaar(Processor, RPC):
         commits = f.readlines()
         commits.reverse()
         return commits
+
+    @handler
+    def launchpad(self, event):
+        if ibid.sources[event.source.lower()].type != 'smtp' or 'X-Launchpad-Branch' not in event.headers:
+            return
+
+        event.processed = True
+        if event.headers['X-Launchpad-Branch'] in self.launchpad_branches:
+            self.remote_committed(self.launchpad_branches[event.headers['X-Launchpad-Branch']], int(event.headers['X-Launchpad-Branch-Revision-Number']))
 
 # vi: set et sta sw=4 ts=4:
