@@ -12,53 +12,16 @@ To Do
 =====
 Race condition where two identities are created if multiple messages received at the same time (usually from services/bots)
     - Can't happen anymore due to unique constraint, but second message won't be handled properly because no identity will be attached
-Accounts: Modify/delete accounts
 Accounts: Admin command to create an account and attach an identity?
-Base: Handle arbitrary bases.
-Memo: Delete old memos.
 setup.py: Exclude most of lib/
 PB: Logging, identifying
-Introspection
 Import: weißes fleisch
-Buildbot: Access build information
 apt syntax
-Factoids: modify
-Changing passwords
-Check auth when modifying authn tokens
 Source connect/disconnect/reload
-
-Plugins
-=======
-SVN
-Summon
-Events
-Logs
-Babel
-Divine (factoid?)
-Exchange
-HowFar
-LastFM
-Lotto
-RFC
-Twitter
-Weather
-TCP port probing?
-Version?
-IMDB
 
 Future
 ======
-Web interfaces
-Twitter source?
-URL: Shorten/unshorten seen URLs
-irc: Track channel members
-Identity recognition for Jabber MUC
-Jabber vCard
 Improve NickServ authentication
 Tests for everything
 Console source
 Refactor Reloader class
-SMTP source: Handle multiple queries in a single message
-RPC authentication
-Feeds: Check URL when added
-Feeds: Caching

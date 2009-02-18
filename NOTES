@@ -5,17 +5,11 @@ general
 - could a Processor dynamically alter priority?  of itself, or another class?  if so, would it ever want to?  "learning"?
 - the patch on ConfigObj only does one level of list interpolation.  Does ConfigObj support multi-level nested lists?
 
-auth
-====
-- is auth_ called auth_ because ibid.auth was already taken?  not cool
-
 plugins
 =======
 - process() is still a bit biased towards type=message?
 - how about having a lambda decorator like @match(pattern) to allow other types of matching?
 - reload config is a good example of somewhere that error reporting should occur
-  -- how about an "admin" source?  that mails exceptions or logs them to syslog or something?
-    -- not a source.  Sounds like proper logging needs to be set up, actually.  Future Jonathan:  add python.logging like you said you would.
 - load/reload is a good example of the reloader not being generic enough... I think?
 - is ignore strong enough?  it just sets processed to true - postprocessors won't ignore this.  is that bad?
 - applause to Michael for the Responses processor: that's clever
