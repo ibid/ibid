@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from sys import exit, stdin
+from sys import exit, stderr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from getpass import getpass
@@ -9,12 +9,17 @@ from os.path import exists
 from shutil import copyfileobj
 
 from pkg_resources import resource_stream
+from twisted.python.modules import getModule
 
-import ibid.plugins
-from ibid.plugins import feeds, url, factoid, karma, memo, seen
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
 from ibid.models import Account, Identity, Permission, Credential, metadata
+
+for module in getModule('ibid.plugins').iterModules():
+    try:
+        __import__(module.name)
+    except Exception, e:
+        print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), e.message)
 
 if exists('ibid.ini'):
     config = FileConfig('ibid.ini')
