@@ -2,10 +2,9 @@ import sys
 from traceback import print_exc
 
 import ibid
-from ibid.module import Module
-from ibid.decorators import *
+from ibid.plugins import Processor
 
-class Proxy(Module):
+class Proxy(Processor):
 
     def __init__(self, name):
         Module.__init__(self, name)
