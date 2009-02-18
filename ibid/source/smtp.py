@@ -34,7 +34,7 @@ class IbidDelivery:
 
     def validateTo(self, user):
         if str(user) == self.factory.address:
-            return lambda: Message(self.name)
+            return lambda: Message(self.factory.name)
         raise smtp.SMTPBadRcpt(user)
 
 class Message:
@@ -58,6 +58,7 @@ class Message:
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
+        event.headers = dict(mail.items())
 
         message = mail.is_multipart() and mail.get_payload()[0] or mail.get_payload()
         if len(message) > 0:
