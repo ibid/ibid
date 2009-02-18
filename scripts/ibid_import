@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 
 from ibid.config import FileConfig
-from ibid.models import Identity, Sighting
+from ibid.models import Identity
+from ibid.plugins.seen import Sighting
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 from ibid.plugins.karma import Karma
 from ibid.plugins.url import URL
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     config = len(argv) > 3 and argv[3] or 'ibid.ini'
     config = FileConfig(config)
 
-    ibidengine = create_engine(config.databases['ibid']['uri'], encoding='utf-8')
+    ibidengine = create_engine(config.databases['ibid'], encoding='utf-8')
     IbidSession = sessionmaker(bind=ibidengine, transactional=False)
     ibid = IbidSession()
 
