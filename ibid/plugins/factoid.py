@@ -21,14 +21,14 @@ class FactoidName(Base):
     Column('id', Integer, primary_key=True),
     Column('name', Unicode(128), nullable=False),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id')),
+    Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
-    def __init__(self, name, identity, factoid_id=None):
+    def __init__(self, name, identity_id, factoid_id=None):
         self.name = name
         self.factoid_id = factoid_id
-        self.identity = identity
+        self.identity_id = identity_id
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
@@ -38,14 +38,14 @@ class FactoidValue(Base):
     Column('id', Integer, primary_key=True),
     Column('value', UnicodeText, nullable=False),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id')),
+    Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
-    def __init__(self, value, identity, factoid_id=None):
+    def __init__(self, value, identity_id, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
-        self.identity = identity
+        self.identity_id = identity_id
 
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
@@ -120,11 +120,11 @@ class Forget(Processor):
                     event.addresponse(u"Pattern matches multiple factoids, please be more specific")
                     return
 
-                if factoids[0][2].identity not in identities and not factoidadmin:
+                if factoids[0][2].identity_id not in identities and not factoidadmin:
                     return
 
                 if session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
-                    if len(filter(lambda x: x.identity not in identities, factoid.names)) > 0 and not factoidadmin:
+                    if len(filter(lambda x: x.identity_id not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
                     session.delete(factoid)
@@ -133,11 +133,11 @@ class Forget(Processor):
                     session.delete(factoids[0][2])
 
             else:
-                if factoids[0][1].identity not in identities and not factoidadmin:
+                if factoids[0][1].identity_id not in identities and not factoidadmin:
                     return
 
                 if session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
-                    if len(filter(lambda x: x.identity not in identities, factoid.values)) > 0 and not factoidadmin:
+                    if len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender)
                     session.delete(factoid)
@@ -286,7 +286,7 @@ class Set(Processor):
         if factoid:
             if correction:
                 identities = get_identities(event, session)
-                if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity not in identities, factoid.values)) > 0:
+                if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0:
                     return
                 for fvalue in factoid.values:
                     session.delete(fvalue)

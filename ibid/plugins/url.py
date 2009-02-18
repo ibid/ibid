@@ -16,14 +16,14 @@ class URL(Base):
     Column('id', Integer, primary_key=True),
     Column('url', UnicodeText, nullable=False),
     Column('channel', Unicode(32), nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
-    def __init__(self, url, channel, identity):
+    def __init__(self, url, channel, identity_id):
         self.url = url
         self.channel = channel
-        self.identity = identity
+        self.identity_id = identity_id
         self.time = datetime.now()
 
 class Grab(Processor):

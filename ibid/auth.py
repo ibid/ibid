@@ -36,7 +36,6 @@ def permission(name, account, source):
     permissions.extend(ibid.sources[source.lower()].permissions)
     if 'permissions' in ibid.config.auth:
         permissions.extend(ibid.config.auth['permissions'])
-    print permissions
 
     for permission in permissions:
         match = permission_re.match(permission)

@@ -20,15 +20,15 @@ class Feed(Base):
     Column('id', Integer, primary_key=True),
     Column('name', Unicode(32), unique=True, nullable=False),
     Column('url', UnicodeText, nullable=False),
-    Column('identity', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
 
-    def __init__(self, name, url, identity):
+    def __init__(self, name, url, identity_id):
         self.name = name
         self.url = url
-        self.identity = identity
+        self.identity_id = identity_id
         self.time = datetime.now()
 
 class Manage(Processor):

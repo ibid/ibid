@@ -78,7 +78,7 @@ account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)
 
-for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config', u'saydo'):
+for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config', u'saydo', u'factoid', u'factoidadmin', u'karma'):
     perm = Permission(permission, u'auth')
     account.permissions.append(perm)
 
