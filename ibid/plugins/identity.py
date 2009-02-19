@@ -229,11 +229,7 @@ class Describe(Processor):
                 event.addresponse(u"I don't know who %s is" % username)
                 return
 
-        event.addresponse(str(account))
-        for identity in account.identities:
-            event.addresponse(str(identity))
-        for attribute in account.attributes:
-            event.addresponse(str(attribute))
+        event.addresponse(u'%s is %s' % (account.username, ', '.join('%s on %s' % (identity.identity, identity.source) for identity in account.identities)))
         session.close()
 
 class Identify(Processor):
