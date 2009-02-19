@@ -77,4 +77,10 @@ def reload_reloader():
 class IbidException(Exception):
     pass
 
+class AuthException(IbidException):
+    pass
+
+class SourceException(IbidException):
+    pass
+
 # vi: set et sta sw=4 ts=4:
