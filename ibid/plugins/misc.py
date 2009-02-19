@@ -60,8 +60,8 @@ class Dvorak(Processor):
     """(aoeu|asdf) <text>"""
     
     # List of characters on each keyboard layout
-    dvormap = u"""',.pyfgcrl/=aoeuidhtns\-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]\{}|"""
-    qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?\-=\_+|"""
+    dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
+    qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?-=_+|"""
     
     # Typed by a QWERTY typist on a Dvorak-mapped keyboard
     typed_on_dvorak = dict(zip(map(ord, dvormap), qwermap))
