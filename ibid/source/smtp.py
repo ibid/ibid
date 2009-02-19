@@ -58,7 +58,7 @@ class Message:
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
-        event.headers = dict(mail.items())
+        event.headers = dict((i[0], unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
 
         message = mail.is_multipart() and mail.get_payload()[0] or mail.get_payload()
         if len(message) > 0:
