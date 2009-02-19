@@ -5,7 +5,7 @@ from pinder import Campfire
 from twisted.application import internet
 
 import ibid
-from ibid import AuthException
+from ibid import AuthException, SourceException
 from ibid.event import Event
 from ibid.config import Option
 from ibid.source import IbidSourceFactory

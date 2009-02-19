@@ -219,9 +219,10 @@ class Describe(Processor):
         session = ibid.databases.ibid()
         if username.upper() == 'I':
             if not event.account:
-                event.addresponse(u"I don't know who you are")
+                identity = session.query(Identity).get(event.identity)
+                event.addresponse(u"%s on %s" % (identity.identity, identity.source))
                 return
-            account = session.query(Account).filter_by(id=event.account).first()
+            account = session.query(Account).get(event.account)
 
         else:
             account = session.query(Account).filter_by(username=username).first()
