@@ -33,7 +33,7 @@ class IbidDelivery:
         return origin
 
     def validateTo(self, user):
-        if str(user) == self.factory.address:
+        if str(user) == self.factory.address or str(user) in self.factory.accept:
             return lambda: Message(self.factory.name)
         raise smtp.SMTPBadRcpt(user)
 
@@ -78,6 +78,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     port = IntOption('port', 'Port number to listen on', 10025)
     address = Option('address', 'Email address to accept messages for and send from', 'ibid@localhost')
+    accept = Option('accept', 'Email addresses to accept messages for', [])
     relayhost = Option('relayhost', 'SMTP server to relay outgoing messages to')
 
     def __init__(self, name):
