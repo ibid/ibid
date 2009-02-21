@@ -33,4 +33,21 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
 
+class FMyLife(Processor):
+
+    def remote_get(self, id):
+        f = urlopen('http://www.fmylife.com/' + str(id))
+        soup = BeautifulSoup(f.read())
+        f.close()
+
+        return soup.find('div', id='wrapper').div.p.contents[0]
+
+    @match(r'^fml\s+(\d+)$')
+    def fml(self, event, id):
+        event.addresponse(self.remote_get(int(id)))
+
+    @match(r'^http://www.fmylife.com/\S+/(\d+)$')
+    def url(self, event, id):
+        event.addresponse(self.remote_get(int(id)))
+
 # vi: set et sta sw=4 ts=4:

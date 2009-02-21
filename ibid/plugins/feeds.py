@@ -104,7 +104,7 @@ class Retrieve(Processor):
             event.addresponse(u"I can't access that feed")
             return
 
-        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None)) for entry in feed.entries[start:number+start]]))
+        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title.strip(), None)) for entry in feed.entries[start:number+start]]))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
