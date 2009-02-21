@@ -1,4 +1,5 @@
-from urllib2 import urlopen
+from urllib2 import urlopen, Request
+from urllib import urlencode
 from time import time
 from datetime import datetime
 from simplejson import loads
@@ -92,5 +93,18 @@ class Twitter(Processor):
     @match(r'^https?://(?:www\.)?identi.ca/notice/(\d+)$')
     def identica(self, event, id):
         event.addresponse(self.remote_update('identi.ca', int(id)))
+
+class Currency(Processor):
+
+    @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
+    def exchange(self, event, amount, frm, to):
+        data = {'Amount': amount, 'From': frm, 'To': to}
+        headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
+        request = Request('http://www.xe.com/ucc/convert.cgi', urlencode(data), headers)
+        f = urlopen(request)
+        soup = BeautifulSoup(f.read())
+        f.close()
+
+        event.addresponse(soup.findAll('span', attrs={'class': 'XEsmall'})[1].contents[0])
 
 # vi: set et sta sw=4 ts=4:
