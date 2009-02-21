@@ -29,7 +29,7 @@ class Addressed(Processor):
             matches = pattern.search(event.message)
             if matches:
                 new_message = pattern.sub('', event.message)
-                if not matches.group(2) and new_message.lower().startswith(self.verbs):
+                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(self.verbs):
                     return
 
                 event.addressed = matches.group(1)
