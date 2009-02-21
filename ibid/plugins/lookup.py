@@ -1,5 +1,5 @@
 from urllib2 import urlopen, Request
-from urllib import urlencode
+from urllib import urlencode, quote
 from time import time
 from datetime import datetime
 from simplejson import loads
@@ -10,7 +10,7 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago
+from ibid.utils import ago, decode_htmlentities
 
 class Bash(Processor):
 
@@ -137,5 +137,59 @@ class Currency(Processor):
             event.addresponse(u', '.join(results))
         else:
             event.addresponse(u'No currencies found')
+
+class Weather(Processor):
+
+    defaults = {    'ct': 'Cape Town, South Africa',
+                    'jhb': 'Johannesburg, South Africa',
+                    'joburg': 'Johannesburg, South Africa',
+               }
+    places = Option('places', 'Alternate names for places', defaults)
+    labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
+    whitespace = re.compile('\s+')
+
+    def _text(self, string):
+        if not isinstance(string, basestring):
+            string = ''.join(string.findAll(text=True))
+        string = self.whitespace.sub(' ', string).strip()
+        return decode_htmlentities(string)
+
+    def _get_page(self, place):
+        if place.lower() in self.places:
+            place = self.places[place.lower()]
+
+        f = urlopen('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
+        soup = BeautifulSoup(f.read())
+        f.close()
+
+        return soup
+
+    def remote_weather(self, place):
+        soup = self._get_page(place)
+        tds = soup.table.table.findAll('td')
+
+        values = {'place': tds[0].findAll('b')[1].string, 'time': tds[0].findAll('b')[0].string}
+        for index, td in enumerate(tds[2::2]):
+            values[self.labels[index]] = self._text(td)
+
+        return u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s' % values
+
+    def remote_forecast(self, place):
+        soup = self._get_page(place)
+        forecasts = []
+        for td in soup.findAll('table')[2].findAll('td', align='left'):
+            day = td.b.string
+            forecast = td.contents[2]
+            forecasts.append('%s: %s' % (day, self._text(forecast)))
+
+        return forecasts
+
+    @match(r'^weather\s+(?:(?:for|at|in)\s+)?(.+)$')
+    def weather(self, event, place):
+        event.addresponse(self.remote_weather(place))
+
+    @match(r'^forecast\s+(?:for\s+)?(.+)$')
+    def forecast(self, event, place):
+        event.addresponse(u', '.join(self.remote_forecast(place)))
 
 # vi: set et sta sw=4 ts=4:
