@@ -10,6 +10,10 @@ class Help(Processor):
 	feature = 'help'
 
 	@match(r'^help$')
+	def intro(self, event):
+		event.addresponse(u'Use "features" to get a list of available features. "help <feature>" will give a description of the feature, and "usage <feature>" will describe how to use it.')
+
+	@match(r'^features$')
 	def features(self, event):
 		features = []
 
