@@ -58,6 +58,7 @@ class Version(Processor):
 help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
 class Dvorak(Processor):
     """(aoeu|asdf) <text>"""
+    feature = 'dvorak'
     
     # List of characters on each keyboard layout
     dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
@@ -71,13 +72,9 @@ class Dvorak(Processor):
     @match(r'asdf\s+(.+)')
     def convert_from_qwerty(self, event, text):
         event.addresponse(text.translate(self.typed_on_qwerty))
-        
-        return event
     
     @match(r'aoeu\s+(.+)')
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
-        
-        return event
 
 # vi: set et sta sw=4 ts=4:
