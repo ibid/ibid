@@ -40,14 +40,11 @@ class FMyLife(Processor):
         soup = BeautifulSoup(f.read())
         f.close()
 
-        return soup.find('div', id='wrapper').div.p.contents[0]
+        quote = soup.find('div', id='wrapper').div.p
+        return quote and quote.contents[0] or None
 
-    @match(r'^fml\s+(\d+)$')
+    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+)$')
     def fml(self, event, id):
-        event.addresponse(self.remote_get(int(id)))
-
-    @match(r'^http://www.fmylife.com/\S+/(\d+)$')
-    def url(self, event, id):
-        event.addresponse(self.remote_get(int(id)))
+        event.addresponse(self.remote_get(int(id)) or u"No such quote")
 
 # vi: set et sta sw=4 ts=4:
