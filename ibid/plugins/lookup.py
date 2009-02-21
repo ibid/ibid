@@ -96,15 +96,46 @@ class Twitter(Processor):
 
 class Currency(Processor):
 
+    headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
+    currencies = []
+
+    def _load_currencies(self):
+        request = Request('http://www.xe.com/iso4217.php', '', self.headers)
+        f = urlopen(request)
+        soup = BeautifulSoup(f.read())
+        f.close()
+
+        self.currencies = []
+        for tr in soup.find('table', attrs={'class': 'tbl_main'}).table.findAll('tr'):
+            code, place = tr.findAll('td')
+            place = ''.join(place.findAll(text=True))
+            place, name = place.find(',') != -1 and place.split(',', 1) or place.split(' ', 1)
+            self.currencies.append((code.string, place.strip(), name.strip()))
+
     @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
     def exchange(self, event, amount, frm, to):
         data = {'Amount': amount, 'From': frm, 'To': to}
-        headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
-        request = Request('http://www.xe.com/ucc/convert.cgi', urlencode(data), headers)
+        request = Request('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers)
         f = urlopen(request)
         soup = BeautifulSoup(f.read())
         f.close()
 
         event.addresponse(soup.findAll('span', attrs={'class': 'XEsmall'})[1].contents[0])
+
+    @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
+    def currency(self, event, place):
+        if not self.currencies:
+            self._load_currencies()
+
+        search = re.compile(place, re.I)
+        results = []
+        for code, place, name in self.currencies:
+            if search.search(place):
+                results.append('%s uses %s (%s)' % (place, name, code))
+
+        if results:
+            event.addresponse(u', '.join(results))
+        else:
+            event.addresponse(u'No currencies found')
 
 # vi: set et sta sw=4 ts=4:
