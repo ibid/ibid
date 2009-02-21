@@ -104,7 +104,7 @@ class Retrieve(Processor):
             event.addresponse(u"I can't access that feed")
             return
 
-        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title.strip(), None)) for entry in feed.entries[start:number+start]]))
+        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in feed.entries[start:number+start]]))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
@@ -147,6 +147,6 @@ class Retrieve(Processor):
             else:
                 summary = article.content[0].value
 
-        event.addresponse(u'"%s" %s : %s' % (article.title, article.link, summary))
+        event.addresponse(u'"%s" %s : %s' % (html2text_file(article.title, None).strip(), article.link, summary))
 
 # vi: set et sta sw=4 ts=4:
