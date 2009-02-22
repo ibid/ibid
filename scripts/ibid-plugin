@@ -8,10 +8,13 @@ if len(argv) != 2:
     print 'Usage: %s plugin' % (argv[0], )
     exit(1)
 
+import os
 import ibid
 import ibid.plugins
 from ibid.config import FileConfig
 from ibid.event import Event
+from ibid.models import Identity
+
 
 def auth_responses(event, permission):
     return True
@@ -27,11 +30,24 @@ ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 ibid.reloader.load_processor(argv[1])
 
+username = unicode(os.getenv('USER'))
+if not username:
+    username = u'test_plugin'
+session = ibid.databases.ibid()
+identity = session.query(Identity).filter_by(identity=username).first()
+if not identity:
+    identity = Identity(u'test_plugin',username)
+    session.add(identity)
+    session.flush()
+    identity = session.query(Identity).filter_by(identity=username).first()
+identity_id = identity.id
+
 while True:
     try:
         event = Event('test_plugin', 'message')
         event.who = event.sender = event.sender_id = event.channel = 'test_plugin'
-        event.account = event.identity = None
+        event.identity = identity_id
+        event.account =  None
         event.addressed = True
         event.public = False
         event.message = unicode(raw_input('Query: '))
