@@ -23,13 +23,25 @@ class Feed(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
-
+    
+    feed = None
+    entries = None
 
     def __init__(self, name, url, identity_id):
         self.name = name
         self.url = url
         self.identity_id = identity_id
         self.time = datetime.now()
+
+    def is_valid(self):
+        self.update()
+        if self.feed['version']:
+            return True
+        return False
+
+    def update(self):
+        self.feed = feedparser.parse(self.url)
+        self.entries = self.feed['entries']
 
 class Manage(Processor):
     """add feed <url> as <name>
@@ -49,10 +61,14 @@ class Manage(Processor):
             event.addresponse(u"I already have the %s feed" % name)
         else:
             feed = Feed(unicode(name), unicode(url), event.identity)
+
+        if feed.is_valid():
             session.save(feed)
             session.flush()
             event.addresponse(True)
-            log.info(u"Added feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender, url)
+            log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender, url, len(feed.entries))
+        else:
+            event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed" % (name,url))
 
         session.close()
 
@@ -99,7 +115,7 @@ class Retrieve(Processor):
             event.addresponse(u"I don't know about the %s feed" % name)
             return
 
-        feed = feedparser.parse(feed.url)
+        feed.update()
         if not feed.entries:
             event.addresponse(u"I can't access that feed")
             return
@@ -116,7 +132,7 @@ class Retrieve(Processor):
             event.addresponse(u"I don't know about the %s feed" % name)
             return
 
-        feed = feedparser.parse(feed.url)
+        feed.update() 
         if not feed.entries:
             event.addresponse(u"I can't access that feed")
             return
