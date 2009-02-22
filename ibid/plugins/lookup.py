@@ -12,6 +12,8 @@ from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import ago, decode_htmlentities
 
+help = {}
+
 class Bash(Processor):
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
@@ -36,6 +38,44 @@ class LastFm(Processor):
             event.addresponse(u"No such user")
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
+
+help['lotto'] = u"Gets the latest lotto results from the South African National Lottery"
+class Lotto(Processor):
+    """lotto"""
+    feature = 'lotto'
+    
+    errors = {
+      'open': 'Something went wrong getting to the Lotto site',
+      'balls': 'I expected to get %s balls, but found %s. They were: %s',
+    }
+    
+    za_url = 'http://www.nationallottery.co.za/'
+    za_re = re.compile(r'images/balls/ball_(\d+).gif')
+    za_text = 'Latest lotto results for South Africa, Lotto: '
+    
+    @match(r'lotto(\s+for\s+south\s+africa)?')
+    def za(self, event, za):
+        try:
+            f = urlopen(self.za_url)
+        except Exception, e:
+            return event.addresponse(self.errors['open'])
+        
+        s = "".join(f)
+        f.close()
+        
+        r = self.za_text
+        
+        balls = self.za_re.findall(s)
+        
+        if len(balls) != 14:
+            return event.addresponse(self.errors['balls'] % \
+                     (14, len(balls), ", ".join(balls)))
+        
+        r += " ".join(balls[:6])
+        r += " (Bonus: %s), Lotto Plus: " % (balls[6], )
+        r += " ".join(balls[7:13])
+        r += " (Bonus: %s)" % (balls[13], )
+        event.addresponse(r)
 
 class FMyLife(Processor):
 
