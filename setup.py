@@ -52,6 +52,8 @@ setup(
         'wokkel>=0.4',
         'jinja',
         'html2text',
+        #'pinder',
+        #'pysilc',
         #'SOAPpy',
         'simplejson',
         #'MySQLdb', #?

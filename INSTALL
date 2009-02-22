@@ -1,4 +1,31 @@
-apt-get install python-soappy python-twisted python-configobj python-sqllite2 python-feedparser python-httplib2 python-beautifulsoup python-dictclient python-imdbpy python-dns
-virtualenv ibid
-source ibid/bin/activate
-setup.py install
+Installation Instructions for Debian/Ubuntu Systems:
+
+Add the Ibid PPA to your APT sources:
+# echo deb http://ppa.launchpad.net/ibid-dev/ppa/ubuntu `lsb_release -c | cut -f2` main > /etc/apt/sources.list.d/ibid
+
+Install required modules:
+# apt-get install python-virtualenv python-soappy python-twisted \
+   python-configobj python-sqllite2 python-feedparser \
+   python-httplib2 python-beautifulsoup python-dictclient \
+   python-imdbpy python-dns pysilc python-pinder
+
+Switch to the user ibid will be running as.
+Set up a virtual Python environment
+(this will create a directory called ibid):
+$ virtualenv ibid
+$ source ibid/bin/activate
+
+Change directory to where you extracted Ibid.
+
+Set up any dependancies:
+$ ./setup.py install
+
+Set up your bot:
+$ ibid-setup
+$ mkdir logs
+
+Run your bot:
+$ ibid
+
+Other things we recommend:
+* Install a dictd on localhost for the dict plugin
