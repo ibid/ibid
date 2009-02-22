@@ -51,7 +51,8 @@ setup(
         'SQLAlchemy>=0.4.6',
         'wokkel>=0.4',
         'jinja',
-        'SOAPpy',
+        'html2text',
+        #'SOAPpy',
         'simplejson',
         #'MySQLdb', #?
         #'pysqlite2', #?
