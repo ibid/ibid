@@ -188,19 +188,33 @@ class Weather(Processor):
     labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
     whitespace = re.compile('\s+')
 
+    class WeatherException(Exception):
+        pass
+
+    class TooManyPlacesException(WeatherException):
+        pass
+
     def _text(self, string):
         if not isinstance(string, basestring):
             string = ''.join(string.findAll(text=True))
-        string = self.whitespace.sub(' ', string).strip()
-        return decode_htmlentities(string)
+        return self.whitespace.sub(' ', string).strip()
 
     def _get_page(self, place):
         if place.lower() in self.places:
             place = self.places[place.lower()]
 
         f = urlopen('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
-        soup = BeautifulSoup(f.read())
+        soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
         f.close()
+
+        if soup.body.center and soup.body.center.b.string == 'Search not found:':
+            raise Weather.WeatherException(u'City not found')
+
+        if soup.table.tr.th and soup.table.tr.th.string == 'Place: Temperature':
+            places = []
+            for td in soup.table.findAll('td'):
+                places.append(td.find('a', href=re.compile('.*html$')).string)
+            raise Weather.TooManyPlacesException(places)
 
         return soup
 
@@ -212,11 +226,12 @@ class Weather(Processor):
         for index, td in enumerate(tds[2::2]):
             values[self.labels[index]] = self._text(td)
 
-        return u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s' % values
+        return values
 
     def remote_forecast(self, place):
         soup = self._get_page(place)
         forecasts = []
+
         for td in soup.findAll('table')[2].findAll('td', align='left'):
             day = td.b.string
             forecast = td.contents[2]
@@ -226,10 +241,21 @@ class Weather(Processor):
 
     @match(r'^weather\s+(?:(?:for|at|in)\s+)?(.+)$')
     def weather(self, event, place):
-        event.addresponse(self.remote_weather(place))
+        try:
+            values = self.remote_weather(place)
+            event.addresponse(u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s' % values)
+        except Weather.TooManyPlacesException, e:
+            event.addresponse(u'Too many places match %s: %s' % (place, '; '.join(e.message)))
+        except Weather.WeatherException, e:
+            event.addresponse(e.message)
 
     @match(r'^forecast\s+(?:for\s+)?(.+)$')
     def forecast(self, event, place):
-        event.addresponse(u', '.join(self.remote_forecast(place)))
+        try:
+            event.addresponse(u', '.join(self.remote_forecast(place)))
+        except Weather.TooManyPlacesException, e:
+            event.addresponse(u'Too many places match %s: %s' % (place, '; '.join(e.message)))
+        except Weather.WeatherException, e:
+            event.addresponse(e.message)
 
 # vi: set et sta sw=4 ts=4:
