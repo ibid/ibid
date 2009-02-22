@@ -7,7 +7,7 @@ from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 
 if len(argv) != 2:
-    print 'Usage: import_factpack.py <factpack>'
+    print 'Usage: %s <factpack>' % (argv[0], )
     exit(1)
 
 ibid.config = FileConfig("ibid.ini")

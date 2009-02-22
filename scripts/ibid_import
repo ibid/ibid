@@ -206,7 +206,7 @@ def import_urls(knab, ibid, source):
 
 if __name__ == '__main__':
     if len(argv) < 3:
-        print 'Usage: ibid-import <knab database> <source> [<ibid config>]'
+        print 'Usage: %s <knab database> <source> [<ibid config>]' % (argv[0], )
         exit(1)
 
     knabengine = create_engine(argv[1])
