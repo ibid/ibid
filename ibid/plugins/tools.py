@@ -47,10 +47,7 @@ class Base(Processor):
         number = bases[to.lower()][1](number)
         event.addresponse(str(number))
 
-unit_names =    {   'fahrenheit': 'tempF',
-                    'celsius': 'tempC',
-                    'celcius': 'tempC',
-                }
+
 help['units'] = 'Converts values between various units.'
 class Units(Processor):
     """convert [<value>] <unit> to <unit>"""
@@ -58,23 +55,51 @@ class Units(Processor):
 
     units = Option('units', 'Path to units executable', 'units')
 
-    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+?)\s+(?:to\s+)?(.+?)$')
-    def convert(self, event, value, frm, to):
-        if frm.lower() in unit_names:
-            frm = "%s(%s)" % (unit_names[frm.lower()], value)
-        elif value:
-            frm = '%s %s' % (value, frm)
+    temp_scale_names = {
+        'fahrenheit': 'tempF',
+        'f': 'tempF',
+        'celsius': 'tempC',
+        'celcius': 'tempC',
+        'c': 'tempC',
+        'kelvin': 'tempK',
+        'k': 'tempK',
+        'rankine': 'tempR',
+        'r': 'tempR',
+    }
 
-        if to in unit_names:
-            to = unit_names[to.lower()]
+    def format_temperature(self, unit):
+        "Return the unit, and convert to 'tempX' format if a known temperature scale"
+
+        lunit = unit.lower()
+        if lunit in self.temp_scale_names:
+            unit = self.temp_scale_names[lunit]
+        elif lunit.startswith("deg") and " " in lunit and lunit.split(None, 1)[1] in self.temp_scale_names:
+            unit = self.temp_scale_names[lunit.split(None, 1)[1]]
+        return unit
+
+    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+)\s+to\s+(.+)$')
+    def convert(self, event, value, frm, to):
+        frm = self.format_temperature(frm)
+        to = self.format_temperature(to)
+
+        if value is not None:
+            if frm in ("tempC", "tempF", "tempK"):
+                frm = "%s(%s)" % (frm, value)
+            else:
+                frm = '%s %s' % (value, frm)
 
         units = Popen([self.units, '--verbose', '--', frm, to], stdout=PIPE, stderr=PIPE)
         output, error = units.communicate()
         code = units.wait()
 
+        result = output.splitlines()[0].strip()
+
         if code == 0:
-            event.addresponse(output.splitlines()[0].strip())
+            event.addresponse(result)
         elif code == 1:
-            event.addresponse(u"Those units weren't comperable.")
+            if result == "conformability error":
+                event.addresponse(u"I don't think %s can be converted to %s." % (frm, to))
+            else:
+                event.addresponse(u"I can't do that: %s" % result)
 
 # vi: set et sta sw=4 ts=4:
