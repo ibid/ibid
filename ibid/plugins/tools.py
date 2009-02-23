@@ -74,5 +74,7 @@ class Units(Processor):
 
         if code == 0:
             event.addresponse(output.splitlines()[0].strip())
+        elif code == 1:
+            event.addresponse(u"Those units weren't comperable.")
 
 # vi: set et sta sw=4 ts=4:
