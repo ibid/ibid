@@ -56,6 +56,8 @@ class Calc(Processor):
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
     """<number> [base <number>] (in|to) base <number>"""
+    """ascii <text> (in|to) (hex|dec|oct|bin)"""
+
     feature = "base"
     
     named_bases = {
@@ -115,5 +117,62 @@ class BaseConvert(Processor):
             base = self.base_names[base_to]
 
         event.addresponse(u"That'd be about %s in %s." % (self.in_base(number, base_to), base))
+
+    @match(r"^ascii\s+(.+)\s+(?:in|to)\s+(hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)$")
+    def ascii_decode(self, event, text, base_to):
+        base_to = self.named_bases[base_to[:3]]
+
+        if len(text) > 2 and text[0] == text[-1] and text[0] in ("'", '"'):
+            text = text[1:-1]
+        
+        output = u""
+        for char in text:
+            code_point = ord(char)
+            if code_point > 255:
+                output += u"U%i " % code_point
+            else:
+                output += self.in_base(code_point, base_to) + u" "
+        
+        output = output.strip()
+
+        event.addresponse(u"We're looking at %s" % output)
+
+    @match(r"^([0-9a-fA-F\s]+\s+hex(?:adecimal)?|[0-9\s]+\s+dec(?:imal)?|[0-7\s]+\s+oct(?:al)?|[01\s]+\s+bin(?:ary)?)\s+(?:in|to)\s+ascii$")
+    def ascii_encode(self, event, source):
+        base_from = self.named_bases[source.split()[-1]]
+        text = u" ".join(source.split()[:-1])
+
+        output = u""
+        buf = u""
+
+        def process_buf(buf):
+            char = int(buf, base_from)
+            if char > 255:
+                raise ValueError(u"I only deal with Basic ASCII. You don't get ascii characters bigger than 127, %i is." % char)
+            elif char < 32:
+                return u" %s " % "NUL SOH STX EOT ENQ ACK BEL BS HT LF VT FF SO SI DLE DC1 DC2 DC2 DC4 NAK SYN ETB CAN EM SUB ESC FS GS RS US".split()[char]
+            elif char == 127:
+                return u" DEL "
+            return chr(char)
+
+        for char in text:
+            if char == u" ":
+                if len(buf) > 0:
+                    output += process_buf(buf)
+                    buf = u""
+                else:
+                    output += u" "
+            else:
+                buf += char
+                if (len(buf) == 2 and base_from == 16) or (len(buf) == 3 and base_from == 8) or (len(buf) == 8 and base_from == 2):
+                    output += process_buf(buf)
+                    buf = u""
+
+        if len(buf) > 0:
+            output += process_buf(buf)
+        
+        output = output.strip()
+
+        event.addresponse(u"That says '%s'" % output)
 
 # vi: set et sta sw=4 ts=4:
