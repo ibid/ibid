@@ -8,24 +8,23 @@ from .. imdb import IMDb, IMDbDataAccessError, IMDbError
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 
-import logging
-
 help = {'imdb': 'Looks up movies on IMDB.com.'}
 
 class IMDB(Processor):
     "imdb [search] [character|company|episode|movie|person] <terms> [result <index>]"
     feature = 'imdb'
 
+    name_keys = {
+            "character": "long imdb name",
+            "company": "long imdb name",
+            "episode": "long imdb title",
+            "movie": "long imdb title",
+            "person": "name",
+    }
+
     def setup(self):
+        # adultSearch = 1 is the default, but we expose this parameter for bot-owners to tweak.
         self.imdb = IMDb(accessSystem='http', adultSearch=1)
-        self.log = logging.getLogger("module.imdb")
-        self.name_keys = {
-                "character": "long imdb name",
-                "company": "long imdb name",
-                "episode": "long imdb title",
-                "movie": "long imdb title",
-                "person": "name",
-        }
 
     @match(r'^imdb(?:\s+search)?(?:\s+(character|company|episode|movie|person))?\s+(.+?)(?:\s+result\s+(\d+))?$')
     def search(self, event, search_type, terms, index):
@@ -49,22 +48,19 @@ class IMDB(Processor):
                     self.imdb.update(result)
 
         except IMDbDataAccessError, e:
-            event.addresponse(u"Error: %s" % e[0]["errmsg"])
+            event.addresponse(u"IMDb doesn't like me today. It said '%s'" % e[0]["errmsg"])
+            raise
 
         except IMDbError, e:
-            event.addresponse(u"Something must be wrong with IMDB today")
+            event.addresponse(u"IMDb must be having a bad day (or you are asking it silly things)")
             raise
 
         if result is not None:
-            try:
-                event.addresponse(u"Found " + getattr(self, "display_" + search_type)(result))
-            except Exception, e:
-                event.addresponse(u"Whoops, the IMDB module has a bug. Admin! Help!")
-                raise
+            event.addresponse(u"Found " + getattr(self, "display_" + search_type)(result))
             return
 
         if len(results) == 0:
-            event.addresponse(u"Sorry, couldn't find anything by that name")
+            event.addresponse(u"Sorry, couldn't find that. You sure you know how to spell?")
         else:
             results = [x[self.name_keys[search_type]] for x in results]
             results = enumerate(results)
@@ -120,7 +116,7 @@ class IMDB(Processor):
         return desc
 
     def display_person(self, person):
-        # Bleh: normally in bio
+        # Qute a few fields are normally repeated in the bio, so we won't bother including them.
         #desc = u"%s: %s, Born " % (person.personID, person["name"])
         #if person["birth name"] != person["name"]:
         #    desc += u"%s " % person["birth name"]
