@@ -116,7 +116,7 @@ class Identities(Processor):
             self.tokens[token] = (account.id, identity, source)
             response = {'reply': u'Please send me this message from %s on %s: %s' % (identity, source, token)}
             if event.public:
-                response['target'] = event['sender_id']
+                response['target'] = event.sender['id']
             event.addresponse(response)
             log.info(u"Sent token %s to %s/%s (%s)", token, event.account, event.identity, event.sender['connection'])
 

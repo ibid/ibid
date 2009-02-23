@@ -45,7 +45,7 @@ identity_id = identity.id
 while True:
     try:
         event = Event('test_plugin', 'message')
-        event.who = event.sender = event.sender_id = event.channel = 'test_plugin'
+        event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
         event.identity = identity_id
         event.account =  None
         event.addressed = True
@@ -57,7 +57,7 @@ while True:
             if isinstance(response, dict):
                 response = response['reply']
             print 'Response: %s' % response
-#        print event
+        #print event
     except Exception, e:
         print_exc()
 
