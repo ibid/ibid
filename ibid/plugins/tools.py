@@ -67,6 +67,8 @@ class Units(Processor):
         'r': 'tempR',
     }
 
+    temp_function_names = set(temp_scale_names.values())
+
     def format_temperature(self, unit):
         "Return the unit, and convert to 'tempX' format if a known temperature scale"
 
@@ -79,11 +81,16 @@ class Units(Processor):
 
     @match(r'^convert\s+(-?[0-9.]+)?\s*(.+)\s+to\s+(.+)$')
     def convert(self, event, value, frm, to):
-        frm = self.format_temperature(frm)
-        to = self.format_temperature(to)
+
+        # We have to special-case temperatures because GNU units uses function notation
+        # for direct temperatuer conversions
+        if self.format_temperature(frm) in self.temp_function_names \
+                and self.format_temperature(to) in self.temp_function_names:
+            frm = self.format_temperature(frm)
+            to = self.format_temperature(to)
 
         if value is not None:
-            if frm in ("tempC", "tempF", "tempK"):
+            if frm in self.temp_function_names:
                 frm = "%s(%s)" % (frm, value)
             else:
                 frm = '%s %s' % (value, frm)
