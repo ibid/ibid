@@ -29,3 +29,4 @@ $ ibid
 
 Other things we recommend:
 * Install a dictd on localhost for the dict plugin
+* Install bc (debian/ubuntu package "bc") for "bc" calculations
