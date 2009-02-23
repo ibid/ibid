@@ -83,7 +83,7 @@ class Units(Processor):
     def convert(self, event, value, frm, to):
 
         # We have to special-case temperatures because GNU units uses function notation
-        # for direct temperatuer conversions
+        # for direct temperature conversions
         if self.format_temperature(frm) in self.temp_function_names \
                 and self.format_temperature(to) in self.temp_function_names:
             frm = self.format_temperature(frm)
@@ -106,6 +106,8 @@ class Units(Processor):
         elif code == 1:
             if result == "conformability error":
                 event.addresponse(u"I don't think %s can be converted to %s." % (frm, to))
+            elif result.startswith("conformability error"):
+                event.addresponse(u"I don't think %s can be converted to %s: %s" % (frm, to, result.split(":", 1)[1]))
             else:
                 event.addresponse(u"I can't do that: %s" % result)
 
