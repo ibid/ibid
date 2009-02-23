@@ -20,7 +20,7 @@ class BC(Processor):
         code = bc.wait()
 
         if code == 0:
-            event.addresponse(output)
+            event.addresponse(output.strip())
 
 help['calc'] = 'Returns the anwser to mathematical expressions'
 class Calc(Processor):
