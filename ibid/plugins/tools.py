@@ -30,24 +30,6 @@ class Random(Processor):
             end = end and int(end) or 0
             event.addresponse(str(randint(min(begin,end), max(begin,end))))
 
-bases = {   'bin': (lambda x: int(x, 2), lambda x: "".join(map(lambda y:str((x>>y)&1), range(8-1, -1, -1)))),
-            'hex': (lambda x: int(x, 6), hex),
-            'oct': (lambda x: int(x, 8), oct),
-            'dec': (lambda x: int(x, 10), lambda x: x),
-            'ascii': (ord, chr),
-        }
-help['base'] = 'Converts between numeric bases as well as ASCII.'
-class Base(Processor):
-    """convert <num> from <base> to <base>"""
-    feature = 'base'
-
-    @match(r'^convert\s+(\S+)\s+(?:from\s+)?(%s)\s+(?:to\s+)?(%s)$' % ('|'.join(bases.keys()), '|'.join(bases.keys())))
-    def base(self, event, number, frm, to):
-        number = bases[frm.lower()][0](number)
-        number = bases[to.lower()][1](number)
-        event.addresponse(str(number))
-
-
 help['units'] = 'Converts values between various units.'
 class Units(Processor):
     """convert [<value>] <unit> to <unit>"""

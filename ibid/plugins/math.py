@@ -89,26 +89,20 @@ class BaseConvert(Processor):
 
     # Ain't I a pretty regex?
     @match(r"^([0-9a-zA-Z+/]+)(?:\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?))?\s+in\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)\s*$")
-    def decimal_to_base(self, event, number, base_from, base_to):
+    def base_conversion(self, event, number, base_from, base_to):
+        if base_from is None:
+            base_from = 10
+        elif base_from[:3] in self.named_bases:
+            base_from = self.named_bases[base_from[:3]]
+        elif base_from.startswith(u"base"):
+            base_from = int(base_from.split()[-1])
 
-        try:
-            if base_from is None:
-                base_from = 10
-            elif base_from[:3] in self.named_bases:
-                base_from = self.named_bases[base_from[:3]]
-            elif base_from.startswith(u"base"):
-                base_from = int(base_from.split()[-1])
-
-            if base_to is None:
-                base_to = 10
-            elif base_to[:3] in self.named_bases:
-                base_to = self.named_bases[base_to[:3]]
-            elif base_to.startswith(u"base"):
-                base_to = int(base_to.split()[-1])
-
-        except ValueError, e:
-            event.addresponse(u"Sorry, that base made no sense.")
-            return
+        if base_to is None:
+            base_to = 10
+        elif base_to[:3] in self.named_bases:
+            base_to = self.named_bases[base_to[:3]]
+        elif base_to.startswith(u"base"):
+            base_to = int(base_to.split()[-1])
         
         if base_from < 2 or base_from > 36 or base_to < 2 or base_to > 36:
             event.addresponse(u"Sorry, valid bases are between 2 and 36, inclusive.")
@@ -120,6 +114,6 @@ class BaseConvert(Processor):
         if base_to in self.base_names:
             base = self.base_names[base_to]
 
-        event.addresponse(u"That'd be about %s in %s" % (self.in_base(number, base_to), base))
+        event.addresponse(u"That'd be about %s in %s." % (self.in_base(number, base_to), base))
 
 # vi: set et sta sw=4 ts=4:
