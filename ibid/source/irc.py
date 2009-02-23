@@ -42,9 +42,9 @@ class Ircbot(irc.IRCClient):
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
-        event.sender = unicode(user, 'utf-8', 'replace')
-        event.sender_id = unicode(nick, 'utf-8', 'replace')
-        event.who = event.sender_id
+        event.sender['connection'] = unicode(user, 'utf-8', 'replace')
+        event.sender['id'] = unicode(nick, 'utf-8', 'replace')
+        event.sender['nick'] = event.sender['id']
         event.channel = unicode(channel, 'utf-8', 'replace')
         event.public = True
         event.source = self.factory.name
@@ -56,7 +56,7 @@ class Ircbot(irc.IRCClient):
         if kicker:
             event.kicker = unicode(kicker, 'utf-8', 'replace')
             if message: event.message = unicode(message, 'utf-8', 'replace')
-            self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender_id, event.channel, event.kicker, event.message)
+            self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
         else:
             self.factory.log.debug(u"%s has %s %s", user, action, channel)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
@@ -70,12 +70,12 @@ class Ircbot(irc.IRCClient):
     def _message_event(self, msgtype, user, channel, msg):
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
-        self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
+        self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
 
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = event.who
+            event.channel = event.sender['nick']
         else:
             event.public = True
 
@@ -195,22 +195,22 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def auth_hostmask(self, event, credential = None):
         session = ibid.databases.ibid()
         for credential in session.query(Credential).filter_by(method=u'hostmask').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
-            if fnmatch(event.sender, credential.credential):
+            if fnmatch(event.sender['connection'], credential.credential):
                 return True
 
     def _irc_auth_callback(self, nick, result):
         self._auth[nick] = result
 
     def auth_nickserv(self, event, credential):
-        reactor.callFromThread(self.proto.authenticate, event.who, self._irc_auth_callback)
+        reactor.callFromThread(self.proto.authenticate, event.sender['nick'], self._irc_auth_callback)
         for i in xrange(150):
-            if event.who in self._auth:
+            if event.sender['nick'] in self._auth:
                 break
             sleep(0.1)
 
-        if event.who in self._auth:
-            result = self._auth[event.who]
-            del self._auth[event.who]
+        if event.sender['nick'] in self._auth:
+            result = self._auth[event.sender['nick']]
+            del self._auth[event.sender['nick']]
             return result
 
 # vi: set et sta sw=4 ts=4:

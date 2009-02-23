@@ -70,7 +70,7 @@ class GetTicket(Processor, RPC):
 
         if owner:
             if owner.lower() == 'my':
-                owner = event.who
+                owner = event.sender['nick']
             else:
                 owner = owner.lower().replace("'s", '')
             query = query.filter(func.lower(Ticket.owner)==(owner.lower()))

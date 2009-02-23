@@ -39,7 +39,7 @@ class Nickometer(Processor):
     
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
     def handle_nickometer(self, event, nick, wreasons):
-        nick = nick or event.who
+        nick = nick or event.sender['nick']
         score, reasons = nickometer(str(nick))
         event.addresponse(u"%s is %s%% lame" % (nick, score))
         if wreasons:

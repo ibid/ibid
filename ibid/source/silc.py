@@ -25,16 +25,16 @@ class SilcBot(SilcClient):
 
     def _create_event(self, type, user, channel):
         event = Event(self.factory.name, type)
-        event.sender = unicode("%s@%s" % (user.username, user.hostname), 'utf-8', 'replace')
-        event.who = unicode(user.nickname, 'utf-8', 'replace')
-        event.sender = self._to_hex(user.user_id)
-        event.sender_id = self._to_hex(user.fingerprint)
-        event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender
+        event.sender['connection'] = unicode("%s@%s" % (user.username, user.hostname), 'utf-8', 'replace')
+        event.sender['nick'] = unicode(user.nickname, 'utf-8', 'replace')
+        event.sender['connection'] = self._to_hex(user.user_id)
+        event.sender['id'] = self._to_hex(user.fingerprint)
+        event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender['connection']
         event.public = True
         event.source = self.factory.name
 
-        if event.sender not in self.users:
-            self.users[event.sender] = user
+        if event.sender['connection'] not in self.users:
+            self.users[event.sender['connection']] = user
 
         return event
 
@@ -44,15 +44,15 @@ class SilcBot(SilcClient):
         if kicker:
             event.kicker = unicode(self._to_hex(kicker.user_id), 'utf-8', 'replace')
             if message: event.message = unicode(message, 'utf-8', 'replace')
-            self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender_id, event.channel, event.kicker, event.message)
+            self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
         else:
-            self.factory.log.debug(u"%s has %s %s", event.sender, action, event.channel)
+            self.factory.log.debug(u"%s has %s %s", event.sender['connection'], action, event.channel)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def _message_event(self, msgtype, user, channel, msg):
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
-        self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender_id, event.channel, event.message)
+        self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
 
         if not channel:
             event.addressed = True

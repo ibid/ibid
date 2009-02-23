@@ -24,7 +24,7 @@ class Coffee(Processor):
             event.addresponse(u"There's already a pot on")
             return event
         
-        self.pot = [event.who]
+        self.pot = [event.sender['nick']]
         sleep(self.time)
         event.addresponse(u"Coffee's ready for %s!" % u', '.join(self.pot))
         self.pot = None
@@ -39,7 +39,7 @@ class Coffee(Processor):
             event.addresponse(u"Sorry, there aren't any more cups left")
 
         else:
-            self.pot.append(event.who)
+            self.pot.append(event.sender['nick'])
             event.addresponse(True)
 
         return event

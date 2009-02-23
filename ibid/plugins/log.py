@@ -78,10 +78,10 @@ class Log(Processor):
 
     def process(self, event):
         if event.type == 'message':
-            self.log_message(self.get_logfile(event.source, event.channel, event.time), event.source, event.channel, event.sender_id, event.sender, event.who, event.time, event.message_raw)
+            self.log_message(self.get_logfile(event.source, event.channel, event.time), event.source, event.channel, event.sender['id'], event.sender['connection'], event.sender['nick'], event.time, event.message_raw)
 
         elif event.type == 'state':
-            self.log_presence(self.get_logfile(event.source, event.channel, time()), event.source, event.channel, event.sender_id, event.sender, event.who, time(), event.state)
+            self.log_presence(self.get_logfile(event.source, event.channel, time()), event.source, event.channel, event.sender['id'], event.sender['connection'], event.sender['nick'], time(), event.state)
 
         for response in event.responses:
             if 'reply' in response and isinstance(response['reply'], basestring):

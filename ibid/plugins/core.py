@@ -56,7 +56,7 @@ class Ignore(Processor):
     @handler
     def handle_ignore(self, event):
         for who in ibid.config.plugins[self.name]['ignore']:
-            if event.who == who:
+            if event.sender['nick'] == who:
                 event.processed = True
 
         return event
@@ -98,7 +98,7 @@ class Address(Processor):
             if isinstance(response, bool):
                 response = choice(self.acknowledgements)
             if isinstance(response, basestring) and event.public:
-                addressed.append('%s: %s' % (event.who, response))
+                addressed.append('%s: %s' % (event.sender['nick'], response))
             else:
                 addressed.append(response)
 
