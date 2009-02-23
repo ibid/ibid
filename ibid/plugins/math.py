@@ -55,7 +55,7 @@ class Calc(Processor):
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
-    """<number> [base <number>] in base <number>"""
+    """<number> [base <number>] (in|to) base <number>"""
     feature = "base"
     
     named_bases = {
@@ -88,7 +88,7 @@ class BaseConvert(Processor):
         return self.in_base(num // base, base).lstrip("0") + numerals[num % base]
 
     # Ain't I a pretty regex?
-    @match(r"^([0-9a-zA-Z+/]+)(?:\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?))?\s+in\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)\s*$")
+    @match(r"^([0-9a-zA-Z+/]+)(?:\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?))?\s+(?:in|to)\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)\s*$")
     def base_conversion(self, event, number, base_from, base_to):
         if base_from is None:
             base_from = 10
