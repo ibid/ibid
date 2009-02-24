@@ -44,7 +44,7 @@ setup(
     keywords='bot irc jabber',
     author='Ibid Developers',
     author_email='ibid@omnia.za.net',
-    license='TBD',
+    license='MIT',
     py_modules=['ibid'],
     setup_requires=['setuptools_bzr'],
     install_requires=[
