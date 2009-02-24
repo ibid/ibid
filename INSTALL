@@ -28,5 +28,6 @@ Run your bot:
 $ ibid
 
 Other things we recommend:
-* Install a dictd on localhost for the dict plugin
-* Install GNU units for the unit conversion plugin (debian/ubuntu package "units")
+* Install a dictd on localhost for the dict plugin (debian/ubuntu package "dictd")
+* Install GNU units for the unit conversion plugin ("units")
+* Install bc for "bc" calculations ("bc")
