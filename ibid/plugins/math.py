@@ -29,11 +29,14 @@ class Calc(Processor):
 
     priority = 500
 
+    extras = ('abs', 'pow', 'divmod', 'round', 'min', 'max')
+
     # Create a safe dict to pass to eval() as locals
     safe = {}
     exec('from math import *', safe)
     del safe['__builtins__']
-    safe['abs'] = abs
+    for function in extras:
+        safe[function] = eval(function)
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
@@ -42,7 +45,7 @@ class Calc(Processor):
         except Exception, e:
             return
 
-        if isinstance(result, (int, long, float, complex)):
+        if isinstance(result, (int, long, float, complex, tuple)):
             event.addresponse(unicode(result))
 
 # vi: set et sta sw=4 ts=4:
