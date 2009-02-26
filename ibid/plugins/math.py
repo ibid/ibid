@@ -30,6 +30,7 @@ class Calc(Processor):
     priority = 500
 
     extras = ('abs', 'pow', 'round', 'min', 'max')
+    banned = ('for', 'yield', 'lambda')
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
@@ -40,6 +41,10 @@ class Calc(Processor):
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
+        for term in self.banned:
+            if expression.find(term) != -1:
+                return
+
         try:
             result = eval(expression, {'__builtins__': None}, self.safe)
         except Exception, e:
