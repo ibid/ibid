@@ -83,11 +83,24 @@ class BaseConvert(Processor):
             36: u"hexatridecimal",
     }
 
-    def in_base(self, num, base, numerals="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    numerals = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+    values = {}
+    for value, numeral in enumerate(numerals):
+        values[numeral] = value
+
+    def in_base(self, num, base):
         "Recursive base-display formatter"
         if num == 0:
             return "0"
-        return self.in_base(num // base, base).lstrip("0") + numerals[num % base]
+        return self.in_base(num // base, base).lstrip("0") + self.numerals[num % base]
+
+    def from_base(self, num, base):
+        "Return a base-n number in decimal - int(x, n) only goes up to 36"
+        decimal = 0
+        for digit in num:
+            decimal *= base
+            decimal += self.values[digit]
+        return decimal
 
     # Ain't I a pretty regex?
     @match(r"^([0-9a-zA-Z+/]+)(?:\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?))?\s+(?:in|to)\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)\s*$")
@@ -106,11 +119,11 @@ class BaseConvert(Processor):
         elif base_to.startswith(u"base"):
             base_to = int(base_to.split()[-1])
         
-        if base_from < 2 or base_from > 36 or base_to < 2 or base_to > 36:
-            event.addresponse(u"Sorry, valid bases are between 2 and 36, inclusive.")
+        if base_from < 2 or base_from > 64 or base_to < 2 or base_to > 64:
+            event.addresponse(u"Sorry, valid bases are between 2 and 64, inclusive.")
             return
             
-        number = int(number, base_from)
+        number = self.from_base(number, base_from)
         
         base = u"base %i" % base_to
         if base_to in self.base_names:
