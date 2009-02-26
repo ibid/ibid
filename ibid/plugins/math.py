@@ -42,7 +42,7 @@ class Calc(Processor):
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
         for term in self.banned:
-            if expression.find(term) != -1:
+            if term in expression:
                 return
 
         try:
