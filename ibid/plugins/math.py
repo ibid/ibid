@@ -29,14 +29,22 @@ class Calc(Processor):
 
     priority = 500
 
+    extras = ('abs', 'pow', 'round', 'min', 'max')
+    banned = ('for', 'yield', 'lambda')
+
     # Create a safe dict to pass to eval() as locals
     safe = {}
     exec('from math import *', safe)
     del safe['__builtins__']
-    safe['abs'] = abs
+    for function in extras:
+        safe[function] = eval(function)
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
+        for term in self.banned:
+            if term in expression:
+                return
+
         try:
             result = eval(expression, {'__builtins__': None}, self.safe)
         except Exception, e:
