@@ -29,7 +29,7 @@ class Calc(Processor):
 
     priority = 500
 
-    extras = ('abs', 'pow', 'divmod', 'round', 'min', 'max')
+    extras = ('abs', 'pow', 'round', 'min', 'max')
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
@@ -45,7 +45,7 @@ class Calc(Processor):
         except Exception, e:
             return
 
-        if isinstance(result, (int, long, float, complex, tuple)):
+        if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
 
 # vi: set et sta sw=4 ts=4:
