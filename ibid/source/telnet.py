@@ -24,10 +24,10 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
     def telnet_Query(self, line):
         event = Event(self.factory.name, u'message')
         event.message = unicode(line.strip(), 'utf-8', 'replace')
-        event.sender = self.user
-        event.sender_id = self.user
-        event.who = event.sender
-        event.channel = event.sender
+        event.sender['connection'] = self.user
+        event.sender['id'] = self.user
+        event.sender['nick'] = event.sender['connection']
+        event.channel = event.sender['connection']
         event.addressed = True
         event.public = False
         self.factory.log.debug(u"Received message from %s: %s", self.user, event.message)

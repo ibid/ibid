@@ -40,11 +40,11 @@ class Message(resource.Resource):
 
     def render_POST(self, request):
         event = Event(self.name, u'message')
-        event.who = event.sender_id = event.sender = event.channel = unicode(request.transport.getPeer().host)
+        event.sender['nick'] = event.sender['id'] = event.sender['connection'] = event.channel = unicode(request.transport.getPeer().host)
         event.addressed = True
         event.public = False
         event.message = unicode(request.args['m'][0], 'utf-8', 'replace')
-        self.log.debug(u"Received GET request from %s: %s", event.sender, event.message)
+        self.log.debug(u"Received GET request from %s: %s", event.sender['connection'], event.message)
         ibid.dispatcher.dispatch(event).addCallback(self.respond, request)
         return server.NOT_DONE_YET
 
@@ -52,7 +52,7 @@ class Message(resource.Resource):
         output = '\n'.join([response['reply'].encode('utf-8') for response in event.responses])
         request.write(output)
         request.finish()
-        self.log.debug(u"Responded to request from %s: %s", event.sender, output)
+        self.log.debug(u"Responded to request from %s: %s", event.sender['connection'], output)
 
 class Plugin(resource.Resource):
 

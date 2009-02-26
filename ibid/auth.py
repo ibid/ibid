@@ -58,7 +58,7 @@ class Auth(object):
     def authenticate(self, event, credential=None):
 
         if 'account' not in event or not event.account:
-            self.log.debug(u"Authentication for %s (%s) failed because identity doesn't have an account", event.identity, event.sender)
+            self.log.debug(u"Authentication for %s (%s) failed because identity doesn't have an account", event.identity, event.sender['connection'])
             return False
 
         config = ibid.config.auth
@@ -66,13 +66,13 @@ class Auth(object):
         methods.extend(ibid.sources[event.source.lower()].auth)
         methods.extend(config['methods'])
 
-        if event.sender in self.cache:
-            timestamp = self.cache[event.sender]
+        if event.sender['connection'] in self.cache:
+            timestamp = self.cache[event.sender['connection']]
             if time() - timestamp < ibid.config.auth['timeout']:
-                self.log.debug(u"Authenticated %s/%s (%s) from cache", event.account, event.identity, event.sender)
+                self.log.debug(u"Authenticated %s/%s (%s) from cache", event.account, event.identity, event.sender['connection'])
                 return True
             else:
-                del self.cache[event.sender]
+                del self.cache[event.sender['connection']]
 
         for method in methods:
             if hasattr(ibid.sources[event.source.lower()], 'auth_%s' % method):
@@ -85,18 +85,18 @@ class Auth(object):
 
             try:
                 if function(event, credential):
-                    self.log.info(u"Authenticated %s/%s (%s) using %s", event.account, event.identity, event.sender, method)
-                    self.cache[event.sender] = time()
+                    self.log.info(u"Authenticated %s/%s (%s) using %s", event.account, event.identity, event.sender['connection'], method)
+                    self.cache[event.sender['connection']] = time()
                     return True
             except:
                 self.log.exception(u"Exception occured in %s auth method", method)
 
-        self.log.info(u"Authentication for %s/%s (%s) failed", event.account, event.identity, event.sender)
+        self.log.info(u"Authentication for %s/%s (%s) failed", event.account, event.identity, event.sender['connection'])
         return False
 
     def authorise(self, event, name):
         value = permission(name, event.account, event.source)
-        self.log.info(u"Checking %s permission for %s/%s (%s): %s", name, event.account, event.identity, event.sender, value)
+        self.log.info(u"Checking %s permission for %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], value)
 
         if value == 'yes':
             return True

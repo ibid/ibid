@@ -40,7 +40,7 @@ class Accounts(Processor):
         account = Account(username)
         session.save_or_update(account)
         session.flush()
-        log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender)
+        log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
 
         if not admin:
             identity = session.query(Identity).filter_by(id=event.identity).first()
@@ -75,7 +75,7 @@ class Identities(Processor):
             if event.account:
                 account = session.query(Account).filter_by(id=event.account).first()
             else:
-                username = event.sender_id
+                username = event.sender['id']
                 account = session.query(Account).filter_by(username=username).first()
                 if account:
                     event.addresponse(u"I tried to create the account %s for you, but it already exists. Please use 'create account <name>'." % username)
@@ -89,7 +89,7 @@ class Identities(Processor):
                 session.flush()
                 identify_cache.clear()
                 event.addresponse(u"I've created the account %s for you" % username)
-                log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender)
+                log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)", currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
 
         else:
@@ -116,9 +116,9 @@ class Identities(Processor):
             self.tokens[token] = (account.id, identity, source)
             response = {'reply': u'Please send me this message from %s on %s: %s' % (identity, source, token)}
             if event.public:
-                response['target'] = event['sender_id']
+                response['target'] = event.sender['id']
             event.addresponse(response)
-            log.info(u"Sent token %s to %s/%s (%s)", token, event.account, event.identity, event.sender)
+            log.info(u"Sent token %s to %s/%s (%s)", token, event.account, event.identity, event.sender['connection'])
 
         else:
             if not ident:
@@ -128,14 +128,14 @@ class Identities(Processor):
             session.flush()
             identify_cache.clear()
             event.addresponse(True)
-            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)", ident.id, ident.identity, ident.source, account.id, account.username, event.account, event.identity, event.sender)
+            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)", ident.id, ident.identity, ident.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
 
     @match(r'^(\S{16})$')
     def token(self, event, token):
         if token in self.tokens:
             session = ibid.databases.ibid()
             (account_id, user, source) = self.tokens[token]
-            if event.source.lower() != source.lower() or event.sender_id.lower() != user.lower():
+            if event.source.lower() != source.lower() or event.sender['id'].lower() != user.lower():
                 event.addresponse(u'You need to send me this token from %s on %s' % (user, source))
                 return
 
@@ -150,7 +150,7 @@ class Identities(Processor):
 
             del self.tokens[token]
             event.addresponse(u'Identity added')
-            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s", identity.id, identity.identity, identity.source, account_id, event.account, event.identity, event.sender, token)
+            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s", identity.id, identity.identity, identity.source, account_id, event.account, event.identity, event.sender['connection'], token)
 
     @match(r'^remove\s+identity\s+(.+?)\s+on\s+(\S+)(?:\s+from\s+(\S+))?$')
     def remove(self, event, user, source, username):
@@ -175,7 +175,7 @@ class Identities(Processor):
             session.flush()
             identify_cache.clear()
             event.addresponse(True)
-            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)", identity.id, identity.identity, identity.source, account.id, account.username, event.account, event.identity, event.sender)
+            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)", identity.id, identity.identity, identity.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
 
         session.close()
 
@@ -210,7 +210,7 @@ class Attributes(Processor):
         session.flush()
         session.close()
         event.addresponse(u'Done')
-        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender)
+        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender['connection'])
 
 class Describe(Processor):
 
@@ -238,15 +238,15 @@ class Identify(Processor):
     priority = -1600
 
     def process(self, event):
-        if 'sender_id' in event:
-            if (event.source, event.sender) in identify_cache:
-                (event.identity, event.account) = identify_cache[(event.source, event.sender)]
+        if event.sender:
+            if (event.source, event.sender['connection']) in identify_cache:
+                (event.identity, event.account) = identify_cache[(event.source, event.sender['connection'])]
                 return
 
             session = ibid.databases.ibid()
-            identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender_id.lower()).first()
+            identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender['id'].lower()).first()
             if not identity:
-                identity = Identity(event.source, event.sender_id)
+                identity = Identity(event.source, event.sender['id'])
                 session.save_or_update(identity)
                 session.flush()
                 log.info(u"Created identity %s for %s on %s", identity.id, identity.identity, identity.source)
@@ -256,7 +256,7 @@ class Identify(Processor):
                 event.account = identity.account.id
             else:
                 event.account = None
-            identify_cache[(event.source, event.sender)] = (event.identity, event.account)
+            identify_cache[(event.source, event.sender['connection'])] = (event.identity, event.account)
 
             session.close()
 

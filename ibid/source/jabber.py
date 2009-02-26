@@ -40,22 +40,22 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
         event = Event(self.name, u'state')
-        event.sender = entity.full()
-        event.sender_id = event.sender.split('/')[0]
-        event.who = event.sender.split('@')[0]
+        event.sender['connection'] = entity.full()
+        event.sender['id'] = event.sender['connection'].split('/')[0]
+        event.sender['nick'] = event.sender['connection'].split('@')[0]
         event.state = show or u'online'
         event.channel = entity.full()
-        self.parent.log.debug(u"Received available presence from %s (%s)", event.sender, event.state)
+        self.parent.log.debug(u"Received available presence from %s (%s)", event.sender['connection'], event.state)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def unavailableReceived(self, entity, statuses):
         event = Event(self.name, u'state')
-        event.sender = entity.full()
-        event.sender_id = event.sender.split('/')[0]
-        event.who = event.sender.split('@')[0]
+        event.sender['connection'] = entity.full()
+        event.sender['id'] = event.sender['connection'].split('/')[0]
+        event.sender['nick'] = event.sender['connection'].split('@')[0]
         event.state = u'offline'
         event.channel = entity.full()
-        self.parent.log.debug(u"Received unavailable presence from %s", event.sender)
+        self.parent.log.debug(u"Received unavailable presence from %s", event.sender['connection'])
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def subscribeReceived(self, entity):
@@ -79,19 +79,19 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
         event = Event(self.parent.name, u'message')
         event.message = unicode(message.body)
-        event.sender = message['from']
+        event.sender['connection'] = message['from']
 
         if message['type'] == 'groupchat':
-            event.sender_id = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
-            if event.sender_id == self.parent.nick:
+            event.sender['id'] = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
+            if event.sender['id'] == self.parent.nick:
                 return
-            event.who = event.sender_id
+            event.sender['nick'] = event.sender['id']
             event.channel = message['from'].split('/')[0]
             event.public = True
         else:
-            event.sender_id = event.sender.split('/')[0]
-            event.who = event.sender.split('@')[0]
-            event.channel = event.sender
+            event.sender['id'] = event.sender['connection'].split('/')[0]
+            event.sender['nick'] = event.sender['connection'].split('@')[0]
+            event.channel = event.sender['connection']
             event.public = False
             event.addressed = True
 

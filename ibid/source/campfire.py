@@ -35,8 +35,8 @@ class CampfireBot(Campfire):
 
     def _create_message(self, message, room):
         event = Event(self.factory.name, u'message')
-        event.sender = event.sender_id = unicode(message['user_id'], 'utf-8', 'replace')
-        event.who = unicode(message['username'], 'utf-8', 'replace')
+        event.sender['connection'] = event.sender['id'] = unicode(message['user_id'], 'utf-8', 'replace')
+        event.sender['nick'] = unicode(message['username'], 'utf-8', 'replace')
         event.message = unicode(message['message'], 'utf-8', 'replace')
         event.channel = room
         event.public = True

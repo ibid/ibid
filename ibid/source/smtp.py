@@ -53,8 +53,8 @@ class Message:
 
         event = Event(self.name, u'message')
         (realname, address) = parseaddr(mail['from'])
-        event.channel = event.sender = event.sender_id = unicode(address, 'utf-8', 'replace')
-        event.who = realname != '' and unicode(realname, 'utf-8', 'replace') or address
+        event.channel = event.sender['connection'] = event.sender['id'] = unicode(address, 'utf-8', 'replace')
+        event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or address
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
@@ -67,7 +67,7 @@ class Message:
             event.message = event.subject
         event.message = unicode(event.message, 'utf-8', 'replace')
 
-        self.log.debug(u"Received message from %s: %s", event.sender, event.message)
+        self.log.debug(u"Received message from %s: %s", event.sender['connection'], event.message)
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
         return defer.succeed(None)
 

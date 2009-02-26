@@ -5,6 +5,7 @@ class Event(dict):
         self.source = source
         self.type = type
         self.responses = []
+        self.sender = {}
         self.processed = False
 
     def __getattr__(self, name):

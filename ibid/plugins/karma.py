@@ -59,7 +59,7 @@ class Set(Processor):
             karma = Karma(subject)
 
         if adjust.lower() in self.increase:
-            if subject.lower() == event.who.lower():
+            if subject.lower() == event.sender['nick'].lower():
                 event.addresponse(u"You can't karma yourself!")
                 return
             karma.changes += 1
@@ -77,7 +77,7 @@ class Set(Processor):
         session.flush()
         session.close()
 
-        log.info(u"%s karma for '%s' by %s/%s (%s) because: %s", change, subject, event.account, event.identity, event.sender, reason)
+        log.info(u"%s karma for '%s' by %s/%s (%s) because: %s", change, subject, event.account, event.identity, event.sender['connection'], reason)
 
         if self.reply:
             event.addresponse(True)

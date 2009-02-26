@@ -66,7 +66,7 @@ class Manage(Processor):
             session.save(feed)
             session.flush()
             event.addresponse(True)
-            log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender, url, len(feed.entries))
+            log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
         else:
             event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed" % (name,url))
 
@@ -91,7 +91,7 @@ class Manage(Processor):
             event.addresponse(u"I don't have the %s feed anyway" % name)
         else:
             session.delete(feed)
-            log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender, feed.url)
+            log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
             session.flush()
             event.addresponse(True)
 

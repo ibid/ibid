@@ -20,7 +20,7 @@ class IbidRoot(pb.Root):
 
     def remote_message(self, message):
         event = Event(self.name, u'message')
-        event.sender = event.sender_id = event.who = event.channel = self.name
+        event.sender['connection'] = event.sender['id'] = event.sender['nick'] = event.channel = self.name
         event.addressed = True
         event.public = False
         event.message = unicode(message, 'utf-8', 'replace')

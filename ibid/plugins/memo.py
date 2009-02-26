@@ -70,7 +70,7 @@ class Tell(Processor):
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
         session.save_or_update(memo)
         session.flush()
-        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender, memo.memo)
+        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         session.close()
         memo_cache.clear()
 
@@ -95,15 +95,15 @@ class Deliver(Processor):
         memos = get_memos(session, event)
 
         for memo in memos:
-            message = '%s: By the way, %s on %s told me to tell you %s %s ago' % (event.who, memo.sender.identity, memo.sender.source, memo.memo, ago(datetime.now()-memo.time))
+            message = '%s: By the way, %s on %s told me to tell you %s %s ago' % (event.sender['nick'], memo.sender.identity, memo.sender.source, memo.memo, ago(datetime.now()-memo.time))
             if memo.private:
-                event.addresponse({'reply': message, 'target': event.sender_id})
+                event.addresponse({'reply': message, 'target': event.sender['id']})
             else:
                 event.addresponse(message)
 
             memo.delivered = True
             session.save_or_update(memo)
-            log.info(u"Delivered memo %s to %s (%s)", memo.id, event.identity, event.sender)
+            log.info(u"Delivered memo %s to %s (%s)", memo.id, event.identity, event.sender['connection'])
 
         session.flush()
         session.close()
@@ -128,7 +128,7 @@ class Notify(Processor):
         memos = get_memos(session, event)
 
         if len(memos) > 0:
-            event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender_id})
+            event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
             memo_cache[event.identity] = None
 
