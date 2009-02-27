@@ -1,6 +1,7 @@
+import re
 from subprocess import Popen, PIPE
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 
 help = {}
@@ -102,8 +103,17 @@ class BaseConvert(Processor):
             decimal += self.values[digit]
         return decimal
 
-    # Ain't I a pretty regex?
-    @match(r"^([0-9a-zA-Z+/]+)(?:\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?))?\s+(?:in|to)\s+(base\s+\d+|hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)\s*$")
+    def setup(self):
+        bases = []
+        for abbr, base in self.named_bases.iteritems():
+            bases.append(r"%s(?:%s)?" % (abbr, self.base_names[base][3:]))
+        bases = "|".join(bases)
+        self.base_conversion.im_func.pattern = re.compile(
+            r"^(?:convert\s+)?([0-9a-zA-Z+/]+)\s+(?:(?:from\s+)?(base\s+\d+|%s)\s+)?(?:in|to)\s+(base\s+\d+|%s)\s*$" % (bases, bases), re.I)
+        self.ascii_decode.im_func.pattern = re.compile(
+            r"^(?:convert\s+)?ascii\s+(.+)\s+(?:in|to)\s+(base\s+\d+|%s)$" % bases, re.I)
+
+    @handler
     def base_conversion(self, event, number, base_from, base_to):
         if base_from is None:
             base_from = 10
@@ -129,11 +139,14 @@ class BaseConvert(Processor):
         if base_to in self.base_names:
             base = self.base_names[base_to]
 
-        event.addresponse(u"That'd be about %s in %s." % (self.in_base(number, base_to), base))
+        event.addresponse(u"That is %s in %s." % (self.in_base(number, base_to), base))
 
-    @match(r"^ascii\s+(.+)\s+(?:in|to)\s+(hex(?:adecimal)?|dec(?:imal)?|oct(?:al)?|bin(?:ary)?)$")
+    @handler
     def ascii_decode(self, event, text, base_to):
-        base_to = self.named_bases[base_to[:3]]
+        if base_to[:3] in self.named_bases:
+            base_to = self.named_bases[base_to[:3]]
+        elif base_to.startswith(u"base"):
+            base_to = int(base_to.split()[-1])
 
         if len(text) > 2 and text[0] == text[-1] and text[0] in ("'", '"'):
             text = text[1:-1]
@@ -148,12 +161,19 @@ class BaseConvert(Processor):
         
         output = output.strip()
 
-        event.addresponse(u"We're looking at %s" % output)
+        event.addresponse(u"That is %s." % output)
 
-    @match(r"^([0-9a-fA-F\s]+\s+hex(?:adecimal)?|[0-9\s]+\s+dec(?:imal)?|[0-7\s]+\s+oct(?:al)?|[01\s]+\s+bin(?:ary)?)\s+(?:in|to)\s+ascii$")
+    @match(r"^(?:convert\s+)?([0-9a-fA-F\s]+\s+hex(?:adecimal)?|[0-7\s]+\s+oct(?:al)?|[01\s]+\s+bin(?:ary)?|[0-9\s]+(?:\s+dec(?:imal)?)?)\s+(?:in|to)\s+ascii$")
     def ascii_encode(self, event, source):
-        base_from = self.named_bases[source.split()[-1]]
-        text = u" ".join(source.split()[:-1])
+        source = source.strip().split()
+        base_from = source[-1]
+        text = u""
+        if base_from in self.named_bases:
+            base_from = self.named_bases[base_from]
+            text = u" ".join(source[:-1])
+        else:
+            base_from = 10
+            text = u" ".join(source)
 
         output = u""
         buf = u""
@@ -186,6 +206,6 @@ class BaseConvert(Processor):
         
         output = output.strip()
 
-        event.addresponse(u"That says '%s'" % output)
+        event.addresponse(u'That is "%s".' % output)
 
 # vi: set et sta sw=4 ts=4:
