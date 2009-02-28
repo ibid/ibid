@@ -71,20 +71,23 @@ class BaseConvert(Processor):
     }
 
     base_names = {
-            2: u"binary",
-            3: u"ternary",
-            4: u"quaternary",
-            6: u"senary",
-            8: u"octal",
-            9: u"nonary",
-            10: u"decimal",
-            12: u"duodecimal",
-            16: u"hexadecimal",
-            20: u"vigesimal",
-            30: u"trigesimal",
-            32: u"duotrigesimal",
-            36: u"hexatridecimal",
+            2: "binary",
+            3: "ternary",
+            4: "quaternary",
+            6: "senary",
+            8: "octal",
+            9: "nonary",
+            10: "decimal",
+            12: "duodecimal",
+            16: "hexadecimal",
+            20: "vigesimal",
+            30: "trigesimal",
+            32: "duotrigesimal",
+            36: "hexatridecimal",
     }
+    base_values = {}
+    for value, name in base_names.iteritems():
+        base_values[name] = value
 
     numerals = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
     values = {}
@@ -117,8 +120,10 @@ class BaseConvert(Processor):
 
         if base is None:
             base = 10
-        elif base[:3] in self.abbr_named_bases:
-            base = self.abbr_named_bases[base[:3]]
+        elif len(base) == 3 and base in self.abbr_named_bases:
+            base = self.abbr_named_bases[base]
+        elif base in self.base_values:
+            base = self.base_values[base]
         elif base.startswith(u"base"):
             base = int(base.split()[-1])
         else:
@@ -140,9 +145,13 @@ class BaseConvert(Processor):
 
     def setup(self):
         bases = []
-        for abbr, base in self.abbr_named_bases.iteritems():
-            bases.append(r"%s(?:%s)?" % (abbr, self.base_names[base][3:]))
+        for number, name in self.base_names.iteritems():
+            if name[:3] in self.abbr_named_bases and self.abbr_named_bases[name[:3]] == number:
+                bases.append(r"%s(?:%s)?" % (name[:3], name[3:]))
+            else:
+                bases.append(name)
         bases = "|".join(bases)
+
         self.base_conversion.im_func.pattern = re.compile(
             r"^(?:convert\s+)?([0-9a-zA-Z+/]+)\s+(?:(?:(?:from|in)\s+)?(base\s+\d+|%s)\s+)?(?:in|to|into)\s+(base\s+\d+|%s)\s*$"
             % (bases, bases), re.I)
