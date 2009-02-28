@@ -144,14 +144,14 @@ class BaseConvert(Processor):
             bases.append(r"%s(?:%s)?" % (abbr, self.base_names[base][3:]))
         bases = "|".join(bases)
         self.base_conversion.im_func.pattern = re.compile(
-            r"^(?:convert\s+)?([0-9a-zA-Z+/]+)\s+(?:(?:(?:from|in)\s+)?(base\s+\d+|%s)\s+)?(?:in|to)\s+(base\s+\d+|%s)\s*$"
+            r"^(?:convert\s+)?([0-9a-zA-Z+/]+)\s+(?:(?:(?:from|in)\s+)?(base\s+\d+|%s)\s+)?(?:in|to|into)\s+(base\s+\d+|%s)\s*$"
             % (bases, bases), re.I)
 
         self.ascii_decode.im_func.pattern = re.compile(
-            r"^(?:convert\s+)?ascii\s+(.+?)(?:(?:\s+(?:in|to))?\s+(base\s+\d+|%s))?$" % bases, re.I)
+            r"^(?:convert\s+)?ascii\s+(.+?)(?:(?:\s+(?:in|to|into))?\s+(base\s+\d+|%s))?$" % bases, re.I)
     
         self.ascii_encode.im_func.pattern = re.compile(
-            r"^(?:convert\s+)?([0-9a-zA-Z+/\s]+?)(?:\s+(base\s+\d+|%s))?\s+(?:in|to)\s+ascii$" % bases, re.I)
+            r"^(?:convert\s+)?([0-9a-zA-Z+/\s]+?)(?:\s+(?:(?:from|in)\s+)?(base\s+\d+|%s))?\s+(?:in|to|into)\s+ascii$" % bases, re.I)
 
     @handler
     def base_conversion(self, event, number, base_from, base_to):

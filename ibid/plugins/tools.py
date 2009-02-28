@@ -62,7 +62,7 @@ class Units(Processor):
             unit = self.temp_scale_names[lunit.split(None, 1)[1]]
         return unit
 
-    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+)\s+to\s+(.+)$')
+    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+)\s+(?:in)?to\s+(.+)$')
     def convert(self, event, value, frm, to):
 
         # We have to special-case temperatures because GNU units uses function notation
