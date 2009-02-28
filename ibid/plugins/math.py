@@ -57,9 +57,9 @@ class Calc(Processor):
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
-    """[convert] <number> [(from|in) base <number>] (in|to) base <number>
-    [convert] ascii <text> (in|to) (hex|dec|oct|bin|base <number>)
-    [convert] <sequence> (hex|dec|oct|bin) (in|to) ascii"""
+    """[convert] <number> [from base <number>] to base <number>
+    [convert] ascii <text> to base <number>
+    [convert] <sequence> from base <number> to ascii"""
 
     feature = "base"
     
