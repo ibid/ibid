@@ -1,5 +1,8 @@
 from htmlentitydefs import name2codepoint
+import os.path
 import re
+import time
+import urllib2
 
 def ago(delta, units=None):
 	parts = []
@@ -28,3 +31,31 @@ def substitute_entity(match):
 def decode_htmlentities(string):
     entity_re = re.compile("&(#?)(\d{1,5}|\w{1,8});")
     return entity_re.subn(substitute_entity, string)[0]
+
+def cacheable_download(url, cachefile):
+	"Download url to cachefile if it's modified since cachefile"
+
+	exists = os.path.isfile(cachefile)
+
+	req = urllib2.Request(url)
+
+	if exists:
+		modified = os.path.getmtime(cachefile)
+		modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
+		req.add_header("If-Modified-Since", modified)
+
+	try:
+		connection = urllib2.urlopen(req)
+	except urllib2.HTTPError, e:
+		if e.code == 304 and exists:
+			return
+		else:
+			raise
+	
+	outfile = file(cachefile, "wb")
+	buf = "x"
+	while len(buf) > 0:
+		buf = connection.read(1024)
+		outfile.write(buf)
+	
+	outfile.close()
