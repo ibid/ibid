@@ -110,7 +110,7 @@ class BaseConvert(Processor):
         for digit in num:
             decimal *= base
             if self.values[digit] >= base:
-                raise ValueError("'%s' is not a valid digit in base %i" % (digit, base))
+                raise ValueError("'%s' is not a valid digit in %s" % (digit, self._base_name(base)))
             decimal += self.values[digit]
 
         return decimal
@@ -133,7 +133,7 @@ class BaseConvert(Processor):
 
         return base
 
-    def _name_base(self, base):
+    def _base_name(self, base):
         "Shows off the bot's smartypants heritage by naming bases"
 
         base_name = u"base %i" % base
@@ -180,7 +180,7 @@ class BaseConvert(Processor):
             return
         
         event.addresponse(u"That is %s in %s." %
-                (self._in_base(number, base_to), self._name_base(base_to)))
+                (self._in_base(number, base_to), self._base_name(base_to)))
 
     @handler
     def ascii_decode(self, event, text, base_to):
@@ -201,7 +201,7 @@ class BaseConvert(Processor):
         
         output = output.strip()
 
-        event.addresponse(u"That is %s in %s." % (output, self._name_base(base_to)))
+        event.addresponse(u"That is %s in %s." % (output, self._base_name(base_to)))
 
         if base_to == 64 and [True for plugin in ibid.processors if plugin.feature == "base64"]:
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature.')
