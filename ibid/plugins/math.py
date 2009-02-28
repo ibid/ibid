@@ -234,5 +234,7 @@ class BaseConvert(Processor):
             return
         
         event.addresponse(u'That is "%s".' % output)
+        if base_from == 64 and [True for plugin in ibid.processors if plugin.feature == "base64"]:
+            event.addresponse(u'If you want a base64 encoding, use the "base64" feature.')
 
 # vi: set et sta sw=4 ts=4:
