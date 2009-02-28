@@ -34,6 +34,7 @@ help['units'] = 'Converts values between various units.'
 class Units(Processor):
     """convert [<value>] <unit> to <unit>"""
     feature = 'units'
+    priority = 10
 
     units = Option('units', 'Path to units executable', 'units')
 
