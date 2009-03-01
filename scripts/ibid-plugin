@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sqlalchemy
 from sys import argv, exit
 
 try:
@@ -41,11 +42,14 @@ for plugin in plugins:
 
 username = unicode(os.getenv('USER'))
 if not username:
-    username = u'test_plugin'
+    username = u'tester'
 session = ibid.databases.ibid()
-identity = session.query(Identity).filter_by(identity=username).first()
+try:
+    identity = session.query(Identity).filter_by(identity=username).first()
+except sqlalchemy.exc.ArgumentError:
+    identity = None
 if not identity:
-    identity = Identity(u'test_plugin',username)
+    identity = Identity(u'test_source',username)
     session.add(identity)
     session.flush()
     identity = session.query(Identity).filter_by(identity=username).first()
@@ -54,12 +58,12 @@ identity_id = identity.id
 try:
     encoding = os.getenv("LANG").split(".")[1]
 except:
-    encoding = None
+    encoding = "ascii"
 
 log = logging.getLogger('scripts.ibid-plugin')
 
 while True:
-    event = Event(u'test_plugin', u'message')
+    event = Event(u'test_source', u'message')
     event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
     event.identity = identity_id
     event.account =  None
