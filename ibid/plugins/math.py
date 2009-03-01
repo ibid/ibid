@@ -53,6 +53,10 @@ class Calc(Processor):
         except ArithmeticError, e:
             event.addresponse(u"I can't do that: %s" % e.message)
             return
+        except ValueError, e:
+            if e.message == "math domain error":
+                event.addresponse(u"I can't do that: %s" % e.message)
+                return
         except Exception, e:
             return
 
