@@ -17,6 +17,9 @@ class HTTP(Processor):
 
 	@match(r'^(get|head)\s+(.+)$')
 	def handler(self, event, action, url):
+		if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
+			url = "http://" + url
+
 		http = Http()
 		headers={}
 		if action.lower() == 'get':
