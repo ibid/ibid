@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
-from sys import argv, exit
-from traceback import print_exc
 import logging
+import os
+from sys import argv, exit
 
-if len(argv) != 2:
-    print 'Usage: %s plugin' % (argv[0], )
+try:
+    import readline
+except ImportError:
+    pass
+
+if len(argv) < 2:
+    print 'Usage: %s plugin[s]' % (argv[0], )
     exit(1)
 
-import os
 import ibid
 import ibid.plugins
 from ibid.config import FileConfig
@@ -28,7 +32,8 @@ ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
-ibid.reloader.load_processor(argv[1])
+for plugin in argv[1:]:
+    ibid.reloader.load_processor(plugin)
 
 username = unicode(os.getenv('USER'))
 if not username:
@@ -42,23 +47,38 @@ if not identity:
     identity = session.query(Identity).filter_by(identity=username).first()
 identity_id = identity.id
 
+try:
+    encoding = os.getenv("LANG").split(".")[1]
+except:
+    encoding = None
+
+log = logging.getLogger('scripts.ibid-plugin')
+
 while True:
+    event = Event(u'test_plugin', u'message')
+    event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
+    event.identity = identity_id
+    event.account =  None
+    event.addressed = True
+    event.public = False
+    event.channel = u"testchan"
+
     try:
-        event = Event('test_plugin', 'message')
-        event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
-        event.identity = identity_id
-        event.account =  None
-        event.addressed = True
-        event.public = False
-        event.message = unicode(raw_input('Query: '))
-        for processor in ibid.processors:
-            processor.process(event)
-        for response in event.responses:
-            if isinstance(response, dict):
-                response = response['reply']
-            print 'Response: %s' % response
-        #print event
-    except Exception, e:
-        print_exc()
+        event.message = unicode(raw_input('Query: '), encoding)
+    except KeyboardInterrupt:
+        break
+
+    for processor in ibid.processors:
+        try:
+            event = processor.process(event) or event
+        except Exception:
+            log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+
+    for response in event.responses:
+        if isinstance(response, dict):
+            response = response['reply']
+        print 'Response: %s' % response
+
+print "\nExiting"
 
 # vi: set et sta sw=4 ts=4:
