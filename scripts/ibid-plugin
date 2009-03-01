@@ -32,7 +32,11 @@ ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
-for plugin in argv[1:]:
+
+plugins = argv[1:]
+if len(argv[1:]) == 1 and argv[1] == "--all":
+    plugins = ibid.config.get("load")
+for plugin in plugins:
     ibid.reloader.load_processor(plugin)
 
 username = unicode(os.getenv('USER'))
