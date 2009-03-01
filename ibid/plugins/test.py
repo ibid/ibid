@@ -9,7 +9,6 @@ class Delay(Processor):
     def handler(self, event, delay):
         sleep(float(delay))
         event.addresponse('Done')
-        return event
 
 class Authorise(Processor):
 

@@ -34,7 +34,6 @@ class Addressed(Processor):
 
                 event.addressed = matches.group(1)
                 event.message = new_message
-                return event
 
 class Strip(Processor):
 
@@ -59,8 +58,6 @@ class Ignore(Processor):
             if event.sender['nick'] == who:
                 event.processed = True
 
-        return event
-
 class Responses(Processor):
 
     priority = 1600
@@ -83,8 +80,6 @@ class Responses(Processor):
             converted.append(response)
 
         event.responses = converted
-        return event
-
 
 class Address(Processor):
 
@@ -125,7 +120,6 @@ class Complain(Processor):
             event.addresponse(choice(self.notauthed))
         else:
             event.addresponse(choice(self.complaints))
-        return event
 
 class RateLimit(Processor):
 

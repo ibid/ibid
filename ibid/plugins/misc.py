@@ -22,13 +22,11 @@ class Coffee(Processor):
         # Hi ... race condition.
         if self.pot:
             event.addresponse(u"There's already a pot on")
-            return event
         
         self.pot = [event.sender['nick']]
         sleep(self.time)
         event.addresponse(u"Coffee's ready for %s!" % u', '.join(self.pot))
         self.pot = None
-        return event
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
@@ -41,8 +39,6 @@ class Coffee(Processor):
         else:
             self.pot.append(event.sender['nick'])
             event.addresponse(True)
-
-        return event
 
 version = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or None
 

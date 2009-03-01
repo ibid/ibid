@@ -58,7 +58,8 @@ class Lotto(Processor):
         try:
             f = urlopen(self.za_url)
         except Exception, e:
-            return event.addresponse(self.errors['open'])
+            event.addresponse(self.errors['open'])
+            return
         
         s = "".join(f)
         f.close()
@@ -68,8 +69,9 @@ class Lotto(Processor):
         balls = self.za_re.findall(s)
         
         if len(balls) != 14:
-            return event.addresponse(self.errors['balls'] % \
-                     (14, len(balls), ", ".join(balls)))
+            event.addresponse(self.errors['balls'] % \
+                (14, len(balls), ", ".join(balls)))
+            return
         
         r += " ".join(balls[:6])
         r += " (Bonus: %s), Lotto Plus: " % (balls[6], )
