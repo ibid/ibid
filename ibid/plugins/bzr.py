@@ -111,7 +111,9 @@ class Bazaar(Processor, RPC):
 
     @handler
     def launchpad(self, event):
-        if ibid.sources[event.source.lower()].type != 'smtp' or 'X-Launchpad-Branch' not in event.headers:
+        if event.source.lower() not in ibid.sources \
+                or ibid.sources[event.source.lower()].type != 'smtp' \
+                or 'X-Launchpad-Branch' not in event.headers:
             return
 
         event.processed = True
