@@ -4,6 +4,7 @@ from nickometer import nickometer
 
 from ibid.plugins import Processor, match, RPC
 from ibid.config import Option
+from ibid.utils import file_in_path
 
 help = {}
 
@@ -17,6 +18,10 @@ class Fortune(Processor, RPC):
     def __init__(self, name):
         super(Fortune, self).__init__(name)
         RPC.__init__(self)
+
+    def setup(self):
+        if not file_in_path(self.fortune):
+            raise Exception("Cannot locate fortune executeable")
 
     @match(r'^fortune$')
     def handler(self, event):
@@ -51,6 +56,10 @@ class Man(Processor):
     feature = 'man'
 
     man = Option('man', 'Path of the man executable', 'man')
+
+    def setup(self):
+        if not file_in_path(self.man):
+            raise Exception("Cannot locate man executeable")
 
     @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
     def handle_man(self, event, section, page):

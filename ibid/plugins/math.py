@@ -2,6 +2,7 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import file_in_path
 
 help = {}
 
@@ -12,6 +13,10 @@ class BC(Processor):
     feature = 'bc'
 
     bc = Option('bc', 'Path to bc executable', 'bc')
+
+    def setup(self):
+        if not file_in_path(self.bc):
+            raise Exception("Cannot locate bc executeable")
 
     @match(r'^bc\s+(.+)$')
     def calculate(self, event, expression):

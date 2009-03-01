@@ -2,6 +2,7 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import file_in_path
 
 help = {}
 
@@ -11,6 +12,10 @@ class Aptitude(Processor):
     feature = 'aptitude'
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
+
+    def setup(self):
+        if not file_in_path(self.aptitude):
+            raise Exception("Cannot locate aptitude executeable")
 
     @match(r'^(?:apt|aptitude|apt-get)\s+(?:search\s+)(.+)$')
     def search(self, event, term):
@@ -52,6 +57,10 @@ class AptFile(Processor):
     feature = 'apt-file'
 
     aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
+
+    def setup(self):
+        if not file_in_path(self.aptfile):
+            raise Exception("Cannot locate apt-file executeable")
 
     @match(r'^apt-?file\s+(?:search\s+)?(.+)$')
     def search(self, event, term):

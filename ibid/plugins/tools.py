@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import file_in_path
 
 help = {}
 
@@ -68,6 +69,10 @@ class Units(Processor):
     }
 
     temp_function_names = set(temp_scale_names.values())
+
+    def setup(self):
+        if not file_in_path(self.units):
+            raise Exception("Cannot locate units executeable")
 
     def format_temperature(self, unit):
         "Return the unit, and convert to 'tempX' format if a known temperature scale"

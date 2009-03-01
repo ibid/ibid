@@ -6,6 +6,7 @@ from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import file_in_path
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -52,6 +53,10 @@ class Ping(Processor):
     feature = 'ping'
 
     ping = Option('ping', 'Path to ping executable', 'ping')
+
+    def setup(self):
+        if not file_in_path(self.ping):
+            raise Exception("Cannot locate ping executeable")
 
     @match(r'^ping\s+(\S+)$')
     def handle_ping(self, event, host):
