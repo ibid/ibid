@@ -24,6 +24,10 @@ class Actions(Processor):
                 return
             channel = event.channel
 
+        if source.lower() not in ibid.sources:
+            event.addresponse(u"I don't have a source called %s" % source.lower())
+            return
+
         source = ibid.sources[source.lower()]
 
         if not hasattr(source, 'join'):
@@ -43,6 +47,11 @@ class Actions(Processor):
 
         if not source:
             source = event.source
+
+        if source.lower() not in ibid.sources:
+            event.addresponse(u"I don't have a source called %s" % source.lower())
+            return
+
         source = ibid.sources[source.lower()]
 
         if not hasattr(source, 'change_nick'):
