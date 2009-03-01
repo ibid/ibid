@@ -9,7 +9,7 @@ from ibid.config import Option, IntOption
 help = {'buildbot': u'Displays buildbot build results and triggers builds.'}
 
 class BuildBot(Processor, RPC):
-    """rebuild <branch> [ (revision|r) <number> ]"""
+    u"""rebuild <branch> [ (revision|r) <number> ]"""
     feature = 'buildbot'
 
     server = Option('server', 'Buildbot server hostname', 'localhost')

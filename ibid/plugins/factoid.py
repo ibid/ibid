@@ -12,7 +12,9 @@ from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base
 
-help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key.'}
+help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. ' +
+                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. ' +
+                    u'Search searches the keys. Scan searches the values.'}
 
 log = logging.getLogger('plugins.factoid')
 
@@ -85,7 +87,7 @@ def get_factoid(session, name, number, pattern, all=False):
         return factoid or query.order_by(func.random()).first()
 
 class Utils(Processor):
-    """literal <name> [starting at <number>]"""
+    u"""literal <name> [starting from <number>]"""
     feature = 'factoids'
 
     @match(r'^literal\s+(.+?)(?:\s+start(?:ing)?\s+(?:from\s+)?(\d+))?$')
@@ -99,7 +101,8 @@ class Utils(Processor):
         session.close()
 
 class Forget(Processor):
-    """forget <name>"""
+    u"""forget <name>
+    <name> is the same as <other name>"""
     feature = 'factoids'
 
     permission = u'factoid'
@@ -172,7 +175,7 @@ class Forget(Processor):
             event.addresponse(u"I don't know about %s" % name)
 
 class Search(Processor):
-    """(search|scan) for <pattern>"""
+    u"""(search|scan) for <pattern> [from <start>]"""
     feature = 'factoids'
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
@@ -198,7 +201,7 @@ class Search(Processor):
             event.addresponse(u"I couldn't find anything with that name")
 
 class Get(Processor, RPC):
-    """<factoid> [( #<number> | /<pattern>/ )]"""
+    u"""<factoid> [( #<number> | /<pattern>/ )]"""
     feature = 'factoids'
 
     verbs = verbs
@@ -265,8 +268,7 @@ class Get(Processor, RPC):
             return reply
 
 class Set(Processor):
-    """<name> (<verb>|=<verb>=) <value>
-    <name> is the same as <name>"""
+    u"""<name> (<verb>|=<verb>=) [also] <value>"""
     feature = 'factoids'
 
     verbs = verbs

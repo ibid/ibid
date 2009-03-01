@@ -3,10 +3,10 @@
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-help = {"irc": "Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
+help = {"irc": u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
 
 class Actions(Processor):
-    """(join|part|leave) [<channel> [on <source>]]
+    u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
     feature = 'irc'
 

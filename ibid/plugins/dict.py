@@ -3,11 +3,12 @@ from dictclient import Connection
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 
-help = {'dict': 'Defines words and checks spellings.'}
+help = {'dict': u'Defines words and checks spellings.'}
 
 class Dict(Processor):
-    """(spell|define) <word> [using (<dictionary>|<stratergy>)]
-    (dictionaries|strategies)"""
+    u"""(spell|define) <word> [using (<dictionary>|<strategy>)]
+    (dictionaries|strategies)
+    (dictionary|strategy) <name>"""
     feature = 'dict'
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
@@ -24,15 +25,15 @@ class Dict(Processor):
         event.addresponse(u', '.join([d.getdefstr() for d in definitions]))
 
     @match(r'spell\s+(.+?)(?:\s+using\s+(.+))?$')
-    def handle_spell(self, event, word, stratergy):
-        suggestions = self.connection.match('*', stratergy or 'soundex', word)
+    def handle_spell(self, event, word, strategy):
+        suggestions = self.connection.match('*', strategy or 'soundex', word)
         event.addresponse(u', '.join([d.getword() for d in suggestions]))
 
     @match(r'^dictionaries$')
     def handle_dictionaries(self, event):
         event.addresponse(u', '.join(self.dictionaries.keys()))
 
-    @match(r'^strategies$')
+    @match(r'^strater?gies$')
     def handle_strategies(self, event):
         event.addresponse(u', '.join(self.strategies.keys()))
 
@@ -43,10 +44,10 @@ class Dict(Processor):
         else:
             event.addresponse(u"I don't have that response")
 
-    @match(r'^stratergy\s+(.+?)$')
-    def handle_stratergy(self, event, stratergy):
-        if stratergy in self.strategies:
-            event.addresponse(unicode(self.strategies[stratergy]))
+    @match(r'^strater?gy\s+(.+?)$')
+    def handle_strategy(self, event, strategy):
+        if strategy in self.strategies:
+            event.addresponse(unicode(self.strategies[strategy]))
         else:
             event.addresponse(u"I don't have that response")
 

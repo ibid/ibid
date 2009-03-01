@@ -14,7 +14,12 @@ from ibid.utils import ago, decode_htmlentities
 
 help = {}
 
+help["lookup"] = u"Lookup things on popular sites."
+
 class Bash(Processor):
+    u"bash[.org] (random|<number>)"
+
+    feature = "lookup"
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
     def bash(self, event, quote):
@@ -22,15 +27,23 @@ class Bash(Processor):
         soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
         f.close()
 
+        if quote.lower() == "random":
+            number = u"".join(soup.find('p', attrs={'class': 'quote'}).find('b').contents)
+            event.addresponse(u"%s:" % number)
+
         quote = soup.find('p', attrs={'class': 'qt'})
         if not quote:
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be.")
         else:
             for line in quote.contents:
                 if str(line) != '<br />':
-                    event.addresponse(str(line).strip())
+                    event.addresponse(unicode(line).strip())
 
 class LastFm(Processor):
+    u"last.fm for <username>"
+
+    feature = "lookup"
+
     @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
     def listsongs(self, event, username):
         songs = feedparser.parse("http://ws.audioscrobbler.com/1.0/user/%s/recenttracks.rss?%s" % (username, time()))
@@ -41,7 +54,8 @@ class LastFm(Processor):
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery"
 class Lotto(Processor):
-    """lotto"""
+    u"""lotto"""
+
     feature = 'lotto'
     
     errors = {
@@ -51,7 +65,7 @@ class Lotto(Processor):
     
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/balls/ball_(\d+).gif')
-    za_text = 'Latest lotto results for South Africa, Lotto: '
+    za_text = u'Latest lotto results for South Africa, Lotto: '
     
     @match(r'lotto(\s+for\s+south\s+africa)?')
     def za(self, event, za):
@@ -69,15 +83,18 @@ class Lotto(Processor):
         
         if len(balls) != 14:
             return event.addresponse(self.errors['balls'] % \
-                     (14, len(balls), ", ".join(balls)))
+                     (14, len(balls), u", ".join(balls)))
         
-        r += " ".join(balls[:6])
-        r += " (Bonus: %s), Lotto Plus: " % (balls[6], )
-        r += " ".join(balls[7:13])
-        r += " (Bonus: %s)" % (balls[13], )
+        r += u" ".join(balls[:6])
+        r += u" (Bonus: %s), Lotto Plus: " % (balls[6], )
+        r += u" ".join(balls[7:13])
+        r += u" (Bonus: %s)" % (balls[13], )
         event.addresponse(r)
 
 class FMyLife(Processor):
+    u"""fml (<number>|random)"""
+
+    feature = "lookup"
 
     def remote_get(self, id):
         f = urlopen('http://www.fmylife.com/' + str(id))
@@ -87,11 +104,17 @@ class FMyLife(Processor):
         quote = soup.find('div', id='wrapper').div.p
         return quote and u'"%s"' % (quote.contents[0],) or None
 
-    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+)$')
+    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random)$')
     def fml(self, event, id):
-        event.addresponse(self.remote_get(int(id)) or u"No such quote")
+        event.addresponse(self.remote_get(id) or u"No such quote")
+
+help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 
 class Twitter(Processor):
+    u"""latest (tweet|identica) from <name>
+    (tweet|identica) <number>"""
+
+    feature = "microblog"
 
     default = { 'twitter': 'http://twitter.com/',
                 'tweet': 'http://twitter.com/',
@@ -135,6 +158,10 @@ class Twitter(Processor):
         event.addresponse(self.remote_update('identi.ca', int(id)))
 
 class Currency(Processor):
+    u"""exchange <amount> <currency> for <currency>
+    currencies for <country>"""
+
+    feature = "lookup"
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = []
@@ -179,6 +206,10 @@ class Currency(Processor):
             event.addresponse(u'No currencies found')
 
 class Weather(Processor):
+    u"""weather in <city>
+    forecast for <city>"""
+
+    feature = "lookup"
 
     defaults = {    'ct': 'Cape Town, South Africa',
                     'jhb': 'Johannesburg, South Africa',

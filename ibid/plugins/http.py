@@ -8,9 +8,9 @@ help = {}
 
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
-help['get'] = 'Retrieves a URL and returns the HTTP status and optionally the HTML title.'
+help['get'] = u'Retrieves a URL and returns the HTTP status and optionally the HTML title.'
 class HTTP(Processor):
-	"""(get|head) <url>"""
+	u"""(get|head) <url>"""
 	feature = 'get'
 
 	max_size = IntOption('max_size', 'Only request this many bytes', 500)

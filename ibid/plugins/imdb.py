@@ -6,13 +6,16 @@
 from .. imdb import IMDb, IMDbDataAccessError, IMDbError
 
 from ibid.plugins import Processor, match
-from ibid.config import Option, IntOption
+from ibid.config import Option, BoolOption
 
-help = {'imdb': 'Looks up movies on IMDB.com.'}
+help = {'imdb': u'Looks up movies on IMDB.com.'}
 
 class IMDB(Processor):
-    "imdb [search] [character|company|episode|movie|person] <terms> [result <index>]"
+    u"imdb [search] [character|company|episode|movie|person] <terms> [#<index>]"
     feature = 'imdb'
+
+    access_system = Option("accesssystem", "Method of querying IMDB", "http")
+    adult_search = BoolOption("adultsearch", "Include adult films in search results", True)
 
     name_keys = {
             "character": "long imdb name",
@@ -23,10 +26,9 @@ class IMDB(Processor):
     }
 
     def setup(self):
-        # adultSearch = 1 is the default, but we expose this parameter for bot-owners to tweak.
-        self.imdb = IMDb(accessSystem='http', adultSearch=1)
+        self.imdb = IMDb(accessSystem=self.access_system, adultSearch=int(self.adult_search))
 
-    @match(r'^imdb(?:\s+search)?(?:\s+(character|company|episode|movie|person))?\s+(.+?)(?:\s+result\s+(\d+))?$')
+    @match(r'^imdb(?:\s+search)?(?:\s+(character|company|episode|movie|person))?\s+(.+?)(?:\s+#(\d+))?$')
     def search(self, event, search_type, terms, index):
         if search_type is None:
             search_type = "movie"
@@ -60,7 +62,7 @@ class IMDB(Processor):
             return
 
         if len(results) == 0:
-            event.addresponse(u"Sorry, couldn't find that. You sure you know how to spell?")
+            event.addresponse(u"Sorry, couldn't find that.")
         else:
             results = [x[self.name_keys[search_type]] for x in results]
             results = enumerate(results)
@@ -99,7 +101,7 @@ class IMDB(Processor):
             desc += u" Starring: %s." % (u", ".join(x["name"] for x in episode["cast"][:3]))
         if episode.has_key("rating"):
             desc += u" Rated: %.1f " % episode["rating"]
-        desc += u", ".join(movie.get("genres", ()))
+        desc += u", ".join(episode.get("genres", ()))
         desc += u" Plot: %s" % episode.get("plot outline", u"Unknown")
         return desc
 
@@ -116,12 +118,7 @@ class IMDB(Processor):
         return desc
 
     def display_person(self, person):
-        # Quite a few fields are normally repeated in the bio, so we won't bother including them.
-        #desc = u"%s: %s, Born " % (person.personID, person["name"])
-        #if person["birth name"] != person["name"]:
-        #    desc += u"%s " % person["birth name"]
-        #desc += u"%s. %s" % (person["birth date"], u" ".join(person["mini biography"]))
-        return u"%s: %s. %s. Bio: %s" % (person.personID, person["name"],
+        desc = u"%s: %s. %s." % (person.personID, person["name"],
                 u", ".join(role.title() for role in (
                     u"actor", u"animation department", u"art department",
                     u"art director", u"assistant director", u"camera department",
@@ -132,6 +129,12 @@ class IMDB(Processor):
                     u"production designer", u"set decorator", u"sound department",
                     u"speccial effects department", u"stunts", u"transport department",
                     u"visual effects department", u"writer", u"miscellaneous crew"
-                ) if person.has_key(role)), u" ".join(person["mini biography"]))
+                ) if person.has_key(role)))
+        if person.has_key("mini biography"):
+            desc += u" " + u" ".join(person["mini biography"])
+        else:
+            if person.has_key("birth name") or person.has_key("birth date"):
+                desc += u" Born %s." % u", ".join(person[attr] for attr in ("birth name", "birth date") if person.has_key(attr))
+        return desc
 
 # vi: set et sta sw=4 ts=4:

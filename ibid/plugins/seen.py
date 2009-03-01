@@ -10,7 +10,7 @@ from ibid.config import Option
 from ibid.models import Base, Identity, Account
 from ibid.utils import ago
 
-help = {'seen': 'Records when people were last seen.'}
+help = {'seen': u'Records when people were last seen.'}
 
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
@@ -64,7 +64,7 @@ class See(Processor):
         session.close()
 
 class Seen(Processor):
-    """seen <who>"""
+    u"""seen <who>"""
     feature = 'seen'
 
     datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')

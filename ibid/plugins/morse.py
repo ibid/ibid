@@ -2,8 +2,10 @@ from ibid.plugins import Processor, match
 
 help = {}
 
+help["morse"] = u"Translates messages into and out of morse code."
+
 class Morse(Processor):
-    """morse (text|morsecode)"""
+    u"""morse (text|morsecode)"""
     feature = 'morse'
 
     @match(r'^morse\s+(.+)$')
@@ -64,12 +66,12 @@ class Morse(Processor):
 
 
         def text2morse(text):
-            return " ".join(table.get(c.upper(), c) for c in text)
+            return u" ".join(table.get(c.upper(), c) for c in text)
         
         def morse2text(morse):
             rtable = dict((v, k) for k, v in table.items())
             toks = morse.split(' ')
-            return " ".join(rtable.get(t, t) for t in toks)
+            return u" ".join(rtable.get(t, t) for t in toks)
 
         if message.replace('-', '').replace('.', '').isspace():
             event.addresponse(morse2text(message))

@@ -5,12 +5,12 @@ from BeautifulSoup import BeautifulSoup
 from ibid.plugins import Processor, match
 from ibid.config import Option
 
-help = {'google': 'Retrieves results from Google and Google Calculator.'}
+help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
 user_agent = 'Mozilla/5.0'
 
 class Search(Processor):
-    """google [for] <term>"""
+    u"""google [for] <term>"""
     feature = 'google'
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
@@ -21,7 +21,6 @@ class Search(Processor):
         if country:
             url = url + '&meta=cr%%3Dcountry%s' % country.upper()
 
-        print self.user_agent
         f = urlopen(Request(url, headers={'user-agent': self.user_agent}))
         soup = BeautifulSoup(f.read())
         f.close()
@@ -31,15 +30,15 @@ class Search(Processor):
         for item in items:
             try:
                 url = item.a['href']
-                title = ''.join([e.string for e in item.a.contents])
-                results.append('"%s" %s' % (title, url))
+                title = u''.join([e.string for e in item.a.contents])
+                results.append(u'"%s" %s' % (title, url))
             except Exception:
                 pass
 
-        event.addresponse(', '.join(results))
+        event.addresponse(u', '.join(results))
 
 class Calc(Processor):
-    """gcalc <expression>"""
+    u"""gcalc <expression>"""
     feature = 'google'
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
@@ -57,7 +56,7 @@ class Calc(Processor):
             event.addresponse(font.b.string)
 
 class Define(Processor):
-    """gdefine <term>"""
+    u"""gdefine <term>"""
     feature = 'google'
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
@@ -70,7 +69,7 @@ class Define(Processor):
 
         definitions = []
         for li in soup.findAll('li'):
-            definitions.append('"%s"' % li.contents[0])
+            definitions.append('"%s"' % li.contents[0].strip())
 
         if definitions:
             event.addresponse(', '.join(definitions))
@@ -78,7 +77,7 @@ class Define(Processor):
             event.addresponse(u"Are you making up words again?")
 
 class Compare(Processor):
-    """google cmp [for] <term> and <term>"""
+    u"""google cmp [for] <term> and <term>"""
     feature = 'google'
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)

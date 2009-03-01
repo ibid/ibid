@@ -3,10 +3,12 @@ import inspect
 import ibid
 from ibid.plugins import Processor, match
 
-help = {'help': 'Provides help and usage information about plugins.'}
+help = {'help': u'Provides help and usage information about plugins.'}
 
 class Help(Processor):
-	"""(help|usage) [<feature>]"""
+	u"""features
+	help [<feature>]
+	usage <feature>"""
 	feature = 'help'
 
 	@match(r'^help$')

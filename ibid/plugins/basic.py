@@ -56,14 +56,15 @@ class Redirect(Processor):
                 responses.append(response)
             event.responses = responses
 
-choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
 help['choose'] = u'Choose one of the given options.'
 class Choose(Processor):
     u"""choose <choice> or <choice>..."""
     feature = 'choose'
 
+    choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
+
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse(u'I choose %s' % choice(choose_re.split(choices)))
+        event.addresponse(u'I choose %s' % choice(self.choose_re.split(choices)))
 
 # vi: set et sta sw=4 ts=4:
