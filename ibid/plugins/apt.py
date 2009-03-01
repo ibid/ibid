@@ -2,58 +2,102 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 
 help['aptitude'] = u'Searches for packages'
 class Aptitude(Processor):
-    """(apt|aptitude|apt-get) [search] <term>"""
+    u"""apt (search|show) <term>"""
     feature = 'aptitude'
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
+
+    bad_search_strings = (
+        "?action", "~a", "?automatic", "~A", "?broken", "~b",
+        "?config-files", "~c", "?garbage", "~g", "?installed", "~i",
+        "?new", "~N", "?obsolete", "~o", "?upgradable", "~U",
+        "?user-tag", "?version", "~V"
+    )
 
     def setup(self):
         if not file_in_path(self.aptitude):
             raise Exception("Cannot locate aptitude executeable")
 
-    @match(r'^(?:apt|aptitude|apt-get)\s+(?:search\s+)(.+)$')
+    def _check_terms(self, event, term):
+        "Check for naughty users"
+
+        for word in self.bad_search_strings:
+            if word in term:
+                event.addresponse(u"I can't tell you about my host system. Sorry.")
+                return False
+
+        if term.strip().startswith("-"):
+            event.addresponse(False)
+            return False
+
+        return True
+
+    @match(r'^(?:apt|aptitude|apt-get|apt-cache)\s+search\s+(.+)$')
     def search(self, event, term):
+
+        if not self._check_terms(event, term):
+            return
+
         apt = Popen([self.aptitude, 'search', '-F', '%p', term], stdout=PIPE, stderr=PIPE)
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0 and output:
+        if code == 0:
             if output:
-                event.addresponse(u', '.join(line.strip() for line in output.splitlines()))
+                output = unicode_output(output.strip())
+                output = [line.strip() for line in output.splitlines()]
+                event.addresponse(u"Found %i packages: %s" % (len(output), u', '.join(output)))
             else:
                 event.addresponse(u'No packages found')
+        else:
+            error = unicode_output(error.strip())
+            if error.startswith(u"E: "):
+                error = error[3:]
+            event.addresponse(u"Couldn't search: %s" % error)
 
-    @match(r'(?:apt|aptitude|apt-get)\s+(?:show\s+)(.+)$')
-    def show(self, event, package):
-        apt = Popen([self.aptitude, 'show', package], stdout=PIPE, stderr=PIPE)
+    @match(r'(?:apt|aptitude|apt-get)\s+show\s+(.+)$')
+    def show(self, event, term):
+
+        if not self._check_terms(event, term):
+            return
+
+        apt = Popen([self.aptitude, 'show', term], stdout=PIPE, stderr=PIPE)
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0 and output:
-            print output
+        if code == 0:
             description = None
+            output = unicode_output(output)
             for line in output.splitlines():
                 if not description:
-                    if line.startswith('Description:'):
-                        description = u'%s:' % line.replace('Description:', '', 1).strip()
-                    elif line.startswith('Provided by:'):
-                        description = u'Virtual package provided by %s' % line.replace('Provided by:', '', 1).strip()
+                    if line.startswith(u'Description:'):
+                        description = u'%s:' % line.split(None, 1)[1]
+                    elif line.startswith(u'Provided by:'):
+                        description = u'Virtual package provided by %s' % line.split(None, 2)[2]
+                elif line != "":
+                    description += u' ' + line.strip()
                 else:
-                    description += ' ' + line.strip()
+                    # More than one package listed
+                    break
             if description:
                 event.addresponse(description)
             else:
-                event.addresponse(u'No such package')
+                raise Exception("We couldn't successfully parse aptitude's output")
+        else:
+            error = unicode_output(error.strip())
+            if error.startswith(u"E: "):
+                error = error[3:]
+            event.addresponse(u"Couldn't find package: %s" % error)
     
 help['apt-file'] = u'Searches for packages containing the specified file'
 class AptFile(Processor):
-    """apt-file [search] <term>"""
+    u"""apt-file [search] <term>"""
     feature = 'apt-file'
 
     aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
@@ -68,10 +112,19 @@ class AptFile(Processor):
         output, error = apt.communicate()
         code = apt.wait()
 
-        if code == 0 and output:
+        if code == 0:
             if output:
-                event.addresponse(u', '.join(line.split(':')[0] for line in output.splitlines()))
+                output = unicode_output(output.strip())
+                output = [line.split(u':')[0] for line in output.splitlines()]
+                event.addresponse(u"Found %i packages: %s" % (len(output), u', '.join(output)))
             else:
-                event.addresponse(u'No packages found')
+                event.addresponse(u'No packages found.')
+        else:
+            error = unicode_output(error.strip())
+            if u"The cache directory is empty." in error:
+                event.addresponse(u'Search error: apt-file cache empty.')
+            else:
+                event.addresponse(u'Search error')
+            raise Exception("apt-file: %s" % error)
 
 # vi: set et sta sw=4 ts=4:

@@ -2,13 +2,13 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 
 help['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
-    """bc <expression>"""
+    u"""bc <expression>"""
 
     feature = 'bc'
 
@@ -25,11 +25,23 @@ class BC(Processor):
         code = bc.wait()
 
         if code == 0:
-            event.addresponse(output.strip())
+            if output:
+                output = unicode_output(output.strip())
+                output = output.replace('\\\n', '')
+                event.addresponse(output)
+            else:
+                error = unicode_output(error.strip())
+                error = error.split(":", 1)[1].strip()
+                error = error[0].lower() + error[1:]
+                event.addresponse(u"You can't %s" % error)
+        else:
+            event.addresponse(u"Error running bc")
+            error = unicode_output(error.strip())
+            raise Exception("BC Error: %s" % error)
 
-help['calc'] = 'Returns the anwser to mathematical expressions'
+help['calc'] = u'Returns the anwser to mathematical expressions'
 class Calc(Processor):
-    """[calc] <expression>"""
+    u"""[calc] <expression>"""
     feature = 'calc'
 
     priority = 500

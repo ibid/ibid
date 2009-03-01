@@ -4,32 +4,32 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 
-help['retest'] = 'Checks whether a regular expression matches a given string.'
+help['retest'] = u'Checks whether a regular expression matches a given string.'
 class ReTest(Processor):
-    """does <pattern> match <string>"""
+    u"""does <pattern> match <string>"""
     feature = 'retest'
 
     @match('^does\s+(.+?)\s+match\s+(.+?)$')
     def retest(self, event, regex, string):
-        event.addresponse(re.search(regex, string) and 'Yes' or 'No')
+        event.addresponse(re.search(regex, string) and u'Yes' or u'No')
 
-help['random'] = 'Generates random numbers.'
+help['random'] = u'Generates random numbers.'
 class Random(Processor):
-    """random [ <max> | <min> <max> ]"""
+    u"""random [ <max> | <min> <max> ]"""
     feature = 'random'
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):
         if not begin and not end:
-            event.addresponse(str(random()))
+            event.addresponse(unicode(random()))
         else:
             begin = int(begin)
             end = end and int(end) or 0
-            event.addresponse(str(randint(min(begin,end), max(begin,end))))
+            event.addresponse(unicode(randint(min(begin,end), max(begin,end))))
 
 bases = {   'bin': (lambda x: int(x, 2), lambda x: "".join(map(lambda y:str((x>>y)&1), range(8-1, -1, -1)))),
             'hex': (lambda x: int(x, 6), hex),
@@ -37,9 +37,9 @@ bases = {   'bin': (lambda x: int(x, 2), lambda x: "".join(map(lambda y:str((x>>
             'dec': (lambda x: int(x, 10), lambda x: x),
             'ascii': (ord, chr),
         }
-help['base'] = 'Converts between numeric bases as well as ASCII.'
+help['base'] = u'Converts between numeric bases as well as ASCII.'
 class Base(Processor):
-    """convert <num> from <base> to <base>"""
+    u"""convert <num> from <base> to <base>"""
     feature = 'base'
 
     @match(r'^convert\s+(\S+)\s+(?:from\s+)?(%s)\s+(?:to\s+)?(%s)$' % ('|'.join(bases.keys()), '|'.join(bases.keys())))
@@ -49,9 +49,9 @@ class Base(Processor):
         event.addresponse(str(number))
 
 
-help['units'] = 'Converts values between various units.'
+help['units'] = u'Converts values between various units.'
 class Units(Processor):
-    """convert [<value>] <unit> to <unit>"""
+    u"""convert [<value>] <unit> to <unit>"""
     feature = 'units'
 
     units = Option('units', 'Path to units executable', 'units')
@@ -104,6 +104,7 @@ class Units(Processor):
         output, error = units.communicate()
         code = units.wait()
 
+        output = unicode_output(output)
         result = output.splitlines()[0].strip()
 
         if code == 0:

@@ -36,3 +36,10 @@ def file_in_path(program):
 	path = [os.path.join(dir, program) for dir in path]
 	path = [True for file in path if os.path.isfile(file)]
 	return bool(path)
+
+def unicode_output(output, errors="strict"):
+	try:
+		encoding = os.getenv("LANG").split(".")[1]
+	except:
+		encoding = "ascii"
+	return unicode(output, encoding, errors)
