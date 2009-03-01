@@ -22,6 +22,7 @@ class Coffee(Processor):
         # Hi ... race condition.
         if self.pot:
             event.addresponse(u"There's already a pot on")
+            return
         
         self.pot = [event.sender['nick']]
         sleep(self.time)
