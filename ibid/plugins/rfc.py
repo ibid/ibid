@@ -1,17 +1,19 @@
 import os.path
+import re
 import time
 
 from ibid.config import Option
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download
 
-help = {"rfc": "Looks up RFCs by number or title."}
+help = {"rfc": u"Looks up RFCs by number or title."}
 
 cachetime = 60*60
 
 class RFC(Processor):
-    """rfc <number>
-    rfc for <search terms>"""
+    u"""rfc <number>
+    rfc [for] <search terms>
+    rfc [for] /regex/"""
     feature = "rfc"
 
     indexurl = Option('index_url', "A HTTP url for the RFC Index file", "http://www.rfc-editor.org/rfc/rfc-index.txt")
@@ -54,7 +56,7 @@ class RFC(Processor):
 
         return rfcs
 
-    @match(r'^rfc\s+(\d+)$')
+    @match(r'^rfc\s+#?(\d+)$')
     def lookup(self, event, number):
         rfcs = self._parse_rfcs()
 
@@ -64,15 +66,28 @@ class RFC(Processor):
         else:
             event.addresponse(u"Sorry, no such RFC.")
 
-    @match(r'^rfc\s+for\s+(.+)$')
+    @match(r'^rfc\s+(?:for\s+)?(.+)$')
     def search(self, event, terms):
+        # If it's an RFC number, lookup() will catch it
+        if terms.isdigit():
+            return
+
         rfcs = self._parse_rfcs()
         
-        # TODO: Not much of a search engine...
-        terms = set(terms.split())
+        # Search engines:
         pool = rfcs.iteritems()
-        for term in terms:
-            pool = [(rfc, text) for rfc, text in pool if term.lower() in text.lower()]
+        if len(terms) > 2 and terms[0] == terms[-1] == "/":
+            try:
+                term_re = re.compile(terms[1:-1])
+            except re.error:
+                event.addresponse(u"Couldn't search. Invalid regex: %s", re.message)
+                return
+            pool = [(rfc, text) for rfc, text in pool if term_re.match(text)]
+
+        else:
+            terms = set(terms.split())
+            for term in terms:
+                pool = [(rfc, text) for rfc, text in pool if term.lower() in text.lower()]
 
         # Newer RFCs matter more:
         pool.reverse()
@@ -80,8 +95,8 @@ class RFC(Processor):
         if pool:
             event.addresponse(u"Found %i matching RFCs. Listing %i:" % (len(pool), min(len(pool), 5)))
             for result in pool[:5]:
-                event.addresponse("%04i: %s" % result)
+                event.addresponse(u"%04i: %s" % result)
         else:
-            event.addresponse("Sorry, can't find anything.")
+            event.addresponse(u"Sorry, can't find anything.")
 
 # vi: set et sta sw=4 ts=4:
