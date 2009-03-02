@@ -14,12 +14,11 @@ from ibid.utils import ago, decode_htmlentities
 
 help = {}
 
-help["lookup"] = u"Lookup things on popular sites."
-
+help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
     u"bash[.org] (random|<number>)"
 
-    feature = "lookup"
+    feature = 'bash'
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
     def bash(self, event, quote):
@@ -39,10 +38,11 @@ class Bash(Processor):
                 if str(line) != '<br />':
                     event.addresponse(unicode(line).strip())
 
+help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
     u"last.fm for <username>"
 
-    feature = "lookup"
+    feature = "lastfm"
 
     @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
     def listsongs(self, event, username):
@@ -52,7 +52,7 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
 
-help['lotto'] = u"Gets the latest lotto results from the South African National Lottery"
+help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
 class Lotto(Processor):
     u"""lotto"""
 
@@ -91,10 +91,11 @@ class Lotto(Processor):
         r += u" (Bonus: %s)" % (balls[13], )
         event.addresponse(r)
 
+help['fml'] = u'Retrieves quotes from fmylife.com.'
 class FMyLife(Processor):
     u"""fml (<number>|random)"""
 
-    feature = "lookup"
+    feature = "fml"
 
     def remote_get(self, id):
         f = urlopen('http://www.fmylife.com/' + str(id))
@@ -109,7 +110,6 @@ class FMyLife(Processor):
         event.addresponse(self.remote_get(id) or u"No such quote")
 
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
-
 class Twitter(Processor):
     u"""latest (tweet|identica) from <name>
     (tweet|identica) <number>"""
@@ -157,11 +157,12 @@ class Twitter(Processor):
     def identica(self, event, id):
         event.addresponse(self.remote_update('identi.ca', int(id)))
 
+help['currency'] = u'Converts amounts between currencies.'
 class Currency(Processor):
     u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
 
-    feature = "lookup"
+    feature = "currency"
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = []
@@ -205,11 +206,12 @@ class Currency(Processor):
         else:
             event.addresponse(u'No currencies found')
 
+help['weather'] = u'Retrieves current weather and forecasts for cities.'
 class Weather(Processor):
     u"""weather in <city>
     forecast for <city>"""
 
-    feature = "lookup"
+    feature = "weather"
 
     defaults = {    'ct': 'Cape Town, South Africa',
                     'jhb': 'Johannesburg, South Africa',
