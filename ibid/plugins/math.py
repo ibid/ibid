@@ -18,7 +18,7 @@ class BC(Processor):
 
     def setup(self):
         if not file_in_path(self.bc):
-            raise Exception("Cannot locate bc executeable")
+            raise Exception("Cannot locate bc executable")
 
     @match(r'^bc\s+(.+)$')
     def calculate(self, event, expression):

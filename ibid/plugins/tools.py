@@ -55,7 +55,7 @@ class Units(Processor):
 
     def setup(self):
         if not file_in_path(self.units):
-            raise Exception("Cannot locate units executeable")
+            raise Exception("Cannot locate units executable")
 
     def format_temperature(self, unit):
         "Return the unit, and convert to 'tempX' format if a known temperature scale"

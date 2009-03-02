@@ -22,7 +22,7 @@ class Fortune(Processor, RPC):
 
     def setup(self):
         if not file_in_path(self.fortune):
-            raise Exception("Cannot locate fortune executeable")
+            raise Exception("Cannot locate fortune executable")
 
     @match(r'^fortune$')
     def handler(self, event):
@@ -62,7 +62,7 @@ class Man(Processor):
 
     def setup(self):
         if not file_in_path(self.man):
-            raise Exception("Cannot locate man executeable")
+            raise Exception("Cannot locate man executable")
 
     @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
     def handle_man(self, event, section, page):

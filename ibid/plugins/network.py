@@ -56,7 +56,7 @@ class Ping(Processor):
 
     def setup(self):
         if not file_in_path(self.ping):
-            raise Exception("Cannot locate ping executeable")
+            raise Exception("Cannot locate ping executable")
 
     @match(r'^ping\s+(\S+)$')
     def handle_ping(self, event, host):
@@ -84,7 +84,7 @@ class Tracepath(Processor):
 
     def setup(self):
         if not file_in_path(self.tracepath):
-            raise Exception("Cannot locate tracepath executeable")
+            raise Exception("Cannot locate tracepath executable")
 
     @match(r'^tracepath\s+(\S+)$')
     def handle_tracepath(self, event, host):
@@ -113,7 +113,7 @@ class IPCalc(Processor):
 
     def setup(self):
         if not file_in_path(self.ipcalc):
-            raise Exception("Cannot locate ipcalc executeable")
+            raise Exception("Cannot locate ipcalc executable")
 
     @match(r'^ipcalc\s+(.+)$')
     def handle_ipcalc(self, event, parameter):

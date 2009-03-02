@@ -22,7 +22,7 @@ class Aptitude(Processor):
 
     def setup(self):
         if not file_in_path(self.aptitude):
-            raise Exception("Cannot locate aptitude executeable")
+            raise Exception("Cannot locate aptitude executable")
 
     def _check_terms(self, event, term):
         "Check for naughty users"
@@ -104,7 +104,7 @@ class AptFile(Processor):
 
     def setup(self):
         if not file_in_path(self.aptfile):
-            raise Exception("Cannot locate apt-file executeable")
+            raise Exception("Cannot locate apt-file executable")
 
     @match(r'^apt-?file\s+(?:search\s+)?(.+)$')
     def search(self, event, term):
