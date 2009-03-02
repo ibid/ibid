@@ -100,7 +100,8 @@ class Ircbot(irc.IRCClient):
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
         if 'action' in response and response['action']:
-            self.me(response['target'].encode('utf-8'), message.encode('utf-8'))
+            # We can't use self.me() because it prepends a # onto channel names
+            self.ctcpMakeQuery(response['target'].encode('utf-8'), [('ACTION', message.encode('utf-8'))])
             self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
             self.msg(response['target'].encode('utf-8'), message.encode('utf-8'))

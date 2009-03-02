@@ -4,35 +4,36 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 
-help['retest'] = 'Checks whether a regular expression matches a given string.'
+help['retest'] = u'Checks whether a regular expression matches a given string.'
 class ReTest(Processor):
-    """does <pattern> match <string>"""
+    u"""does <pattern> match <string>"""
     feature = 'retest'
 
     @match('^does\s+(.+?)\s+match\s+(.+?)$')
     def retest(self, event, regex, string):
-        event.addresponse(re.search(regex, string) and 'Yes' or 'No')
+        event.addresponse(re.search(regex, string) and u'Yes' or u'No')
 
-help['random'] = 'Generates random numbers.'
+help['random'] = u'Generates random numbers.'
 class Random(Processor):
-    """random [ <max> | <min> <max> ]"""
+    u"""random [ <max> | <min> <max> ]"""
     feature = 'random'
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):
         if not begin and not end:
-            event.addresponse(str(random()))
+            event.addresponse(unicode(random()))
         else:
             begin = int(begin)
             end = end and int(end) or 0
-            event.addresponse(str(randint(min(begin,end), max(begin,end))))
+            event.addresponse(unicode(randint(min(begin,end), max(begin,end))))
 
 help['units'] = 'Converts values between various units.'
 class Units(Processor):
-    """convert [<value>] <unit> to <unit>"""
+    u"""convert [<value>] <unit> to <unit>"""
     feature = 'units'
     priority = 10
 
@@ -51,6 +52,10 @@ class Units(Processor):
     }
 
     temp_function_names = set(temp_scale_names.values())
+
+    def setup(self):
+        if not file_in_path(self.units):
+            raise Exception("Cannot locate units executeable")
 
     def format_temperature(self, unit):
         "Return the unit, and convert to 'tempX' format if a known temperature scale"
@@ -82,6 +87,7 @@ class Units(Processor):
         output, error = units.communicate()
         code = units.wait()
 
+        output = unicode_output(output)
         result = output.splitlines()[0].strip()
 
         if code == 0:

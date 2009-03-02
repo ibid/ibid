@@ -5,9 +5,9 @@ from ibid.plugins import Processor, match, authorise
 
 help = {}
 
-help['plugins'] = 'Lists, loads and unloads plugins.'
+help['plugins'] = u'Lists, loads and unloads plugins.'
 class ListPLugins(Processor):
-    """list plugins"""
+    u"""list plugins"""
     feature = 'plugins'
 
     @match(r'^lsmod|list\s+plugins$')
@@ -19,8 +19,9 @@ class ListPLugins(Processor):
 
         event.addresponse(', '.join(plugins))
 
-help['core'] = 'Reloads core modules.'
+help['core'] = u'Reloads core modules.'
 class ReloadCoreModules(Processor):
+    u"""reload (reloader|dispatcher|databases|auth)"""
     feature = 'core'
 
     priority = -5
@@ -38,7 +39,7 @@ class ReloadCoreModules(Processor):
         event.addresponse(result and u'%s reloaded' % module or u"Couldn't reload %s" % module)
 
 class LoadModules(Processor):
-    """(load|unload|reload) <plugin|processor>"""
+    u"""(load|unload|reload) <plugin|processor>"""
     feature = 'plugins'
 
     permission = u'plugins'
@@ -58,7 +59,7 @@ class LoadModules(Processor):
 
 help['die'] = u'Terminates the bot'
 class Die(Processor):
-    """die"""
+    u"""die"""
     feature = 'die'
 
     permission = u'admin'

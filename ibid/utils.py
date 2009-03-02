@@ -1,4 +1,6 @@
 from htmlentitydefs import name2codepoint
+import os
+import os.path
 import re
 
 def ago(delta, units=None):
@@ -28,3 +30,16 @@ def substitute_entity(match):
 def decode_htmlentities(string):
     entity_re = re.compile("&(#?)(\d{1,5}|\w{1,8});")
     return entity_re.subn(substitute_entity, string)[0]
+
+def file_in_path(program):
+	path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+	path = [os.path.join(dir, program) for dir in path]
+	path = [True for file in path if os.path.isfile(file)]
+	return bool(path)
+
+def unicode_output(output, errors="strict"):
+	try:
+		encoding = os.getenv("LANG").split(".")[1]
+	except:
+		encoding = "ascii"
+	return unicode(output, encoding, errors)

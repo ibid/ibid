@@ -5,12 +5,14 @@ import ibid
 from ibid.config import FileConfig
 from ibid.plugins import Processor, match, authorise
 
-help = {'config': 'Gets and sets configuration settings, and rereads the configuration file.'}
+help = {'config': u'Gets and sets configuration settings, and rereads the configuration file.'}
 
 log = logging.getLogger('plugins.config')
 
 class Config(Processor):
-    """reread config | set config <name> <value> | get config <name>"""
+    u"""reread config
+    set config <name> to <value>
+    get config <name>"""
     feature = 'config'
 
     priority = -10

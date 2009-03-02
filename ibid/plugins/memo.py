@@ -13,7 +13,7 @@ from ibid.plugins.identity import get_identities
 from ibid.models import Base, Identity, Account
 from ibid.utils import ago
 
-help = {'memo': 'Keeps messages for people.'}
+help = {'memo': u'Keeps messages for people.'}
 
 memo_cache = {}
 log = logging.getLogger('plugins.memo')
@@ -40,7 +40,7 @@ Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
 Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)
 
 class Tell(Processor):
-    """(tell|pm|privmsg|msg) <person> <message>"""
+    u"""(tell|pm|privmsg|msg) <person> <message>"""
     feature = 'memo'
 
     permission = u'sendmemo'
@@ -135,7 +135,7 @@ class Notify(Processor):
         session.close()
 
 class Messages(Processor):
-    """my messages
+    u"""my messages
     message <number>"""
     feature = 'memo'
 

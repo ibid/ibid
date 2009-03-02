@@ -1,14 +1,13 @@
 from random import choice
 import re
-import logging
 
 from ibid.plugins import Processor, match, handler, authorise
 
 help = {}
 
-help['saydo'] = 'Says or does stuff in a channel.'
+help['saydo'] = u'Says or does stuff in a channel.'
 class SayDo(Processor):
-    """(say|do) <channel> <text>"""
+    u"""(say|do) <channel> <text>"""
     feature = 'saydo'
 
     permission = u'saydo'
@@ -24,7 +23,7 @@ class SayDo(Processor):
 
 help['redirect'] = u'Redirects the response to a command to a different channel.'
 class RedirectCommand(Processor):
-    """redirect [to] <channel> [on <source>] <command>"""
+    u"""redirect [to] <channel> [on <source>] <command>"""
     feature = 'redirect'
 
     priority = -1200
@@ -56,31 +55,15 @@ class Redirect(Processor):
                 responses.append(response)
             event.responses = responses
 
-choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
-help['choose'] = 'Choose one of the given options.'
+help['choose'] = u'Choose one of the given options.'
 class Choose(Processor):
-    """choose <choice> or <choice>..."""
+    u"""choose <choice> or <choice>..."""
     feature = 'choose'
+
+    choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
 
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse(u'I choose %s' % choice(choose_re.split(choices)))
-
-class UnicodeWarning(Processor):
-
-    priority = 1950
-
-    def setup(self):
-        self.log = logging.getLogger('plugins.unicode')
-
-    def process(self, object):
-        if isinstance(object, dict):
-            for value in object.values():
-                self.process(value)
-        elif isinstance(object, list):
-            for value in object:
-                self.process(value)
-        elif isinstance(object, str):
-            self.log.warning(u"Found a non-unicode string: %s" % object)
+        event.addresponse(u'I choose %s' % choice(self.choose_re.split(choices)))
 
 # vi: set et sta sw=4 ts=4:

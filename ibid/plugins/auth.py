@@ -13,9 +13,9 @@ log = logging.getLogger('plugins.auth')
 
 actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
 
-help['auth'] = 'Adds and removes authentication credentials and permissions'
+help['auth'] = u'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
-    """authenticate <account> using <method> [<credential>]"""
+    u"""authenticate <account> [on source] using <method> [<credential>]"""
     feature = 'auth'
 
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
@@ -59,7 +59,9 @@ class AddAuth(Processor):
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
-    """(grant|revoke|remove) <permission> (to|from|on) <username> [when authed] | list permissions"""
+    u"""(grant|revoke) <permission> (to|from|on) <username> [when authed]
+    permissions [for <username>]
+    list permissions"""
     feature = 'auth'
 
     permission = u'admin'
@@ -139,7 +141,7 @@ class Permissions(Processor):
         event.addresponse(', '.join(permissions))
 
 class Auth(Processor):
-    """auth <credential>"""
+    u"""auth <credential>"""
     feature = 'auth'
 
     @match(r'^auth(?:\s+(.+))?$')
