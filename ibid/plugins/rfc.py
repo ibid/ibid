@@ -78,7 +78,7 @@ class RFC(Processor):
         pool = rfcs.iteritems()
         if len(terms) > 2 and terms[0] == terms[-1] == "/":
             try:
-                term_re = re.compile(terms[1:-1])
+                term_re = re.compile(terms[1:-1], re.I)
             except re.error:
                 event.addresponse(u"Couldn't search. Invalid regex: %s", re.message)
                 return
