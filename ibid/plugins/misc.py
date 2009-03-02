@@ -73,7 +73,7 @@ class Dvorak(Processor):
     def convert_from_qwerty(self, event, text):
         event.addresponse(text.translate(self.typed_on_qwerty))
     
-    @match(r'(?:aoeu|querty)\s+(.+)')
+    @match(r'(?:aoeu|qwerty)\s+(.+)')
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
 

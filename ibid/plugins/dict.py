@@ -42,13 +42,13 @@ class Dict(Processor):
         if dictionary in self.dictionaries:
             event.addresponse(unicode(self.dictionaries[dictionary]))
         else:
-            event.addresponse(u"I don't have that response")
+            event.addresponse(u"I don't have that dictionary")
 
     @match(r'^strater?gy\s+(.+?)$')
     def handle_strategy(self, event, strategy):
         if strategy in self.strategies:
             event.addresponse(unicode(self.strategies[strategy]))
         else:
-            event.addresponse(u"I don't have that response")
+            event.addresponse(u"I don't have that strategy")
 
 # vi: set et sta sw=4 ts=4:
