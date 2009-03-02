@@ -49,6 +49,16 @@ class Calc(Processor):
 
         try:
             result = eval(expression, {'__builtins__': None}, self.safe)
+        except ZeroDivisionError, e:
+            event.addresponse(u"I can't divide by zero.")
+            return
+        except ArithmeticError, e:
+            event.addresponse(u"I can't do that: %s" % e.message)
+            return
+        except ValueError, e:
+            if e.message == "math domain error":
+                event.addresponse(u"I can't do that: %s" % e.message)
+                return
         except Exception, e:
             return
 
