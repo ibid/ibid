@@ -7,7 +7,8 @@ Install required modules:
 # apt-get install python-virtualenv python-soappy python-twisted \
    python-configobj python-sqllite2 python-feedparser \
    python-httplib2 python-beautifulsoup python-dictclient \
-   python-imdbpy python-dns pysilc python-pinder
+   python-imdbpy python-dns python-simplejson \
+   python-jinja pysilc python-pinder
 
 Switch to the user ibid will be running as.
 Set up a virtual Python environment

@@ -1,10 +1,10 @@
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-help = {'sources': 'Controls and lists the configured sources.'}
+help = {'sources': u'Controls and lists the configured sources.'}
 
 class Admin(Processor):
-    """(connect|disconnect) (to|from) <source>
+    u"""(connect|disconnect) (to|from) <source>
     load <source> source"""
     feature = 'sources'
 
@@ -37,7 +37,7 @@ class Admin(Processor):
             event.addresponse(u"Couldn't load %s source" % source)
 
 class Info(Processor):
-    """(sources|list configured sources)"""
+    u"""(sources|list configured sources)"""
     feature = 'sources'
 
     @match(r'^sources$')

@@ -9,7 +9,7 @@ help = {}
 
 help['coffee'] = u"Times coffee brewing and reserves cups for people"
 class Coffee(Processor):
-    """coffee (on|please)"""
+    u"""coffee (on|please)"""
     feature = 'coffee'
 
     pot = None
@@ -22,13 +22,12 @@ class Coffee(Processor):
         # Hi ... race condition.
         if self.pot:
             event.addresponse(u"There's already a pot on")
-            return event
+            return
         
         self.pot = [event.sender['nick']]
         sleep(self.time)
         event.addresponse(u"Coffee's ready for %s!" % u', '.join(self.pot))
         self.pot = None
-        return event
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
@@ -42,13 +41,11 @@ class Coffee(Processor):
             self.pot.append(event.sender['nick'])
             event.addresponse(True)
 
-        return event
-
 version = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or None
 
 help['version'] = u"Show the Ibid version currently running"
 class Version(Processor):
-    """version"""
+    u"""version"""
     feature = 'version'
 
     @match(r'^version$')
@@ -57,7 +54,7 @@ class Version(Processor):
 
 help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
 class Dvorak(Processor):
-    """(aoeu|asdf) <text>"""
+    u"""(aoeu|asdf) <text>"""
     feature = 'dvorak'
     
     # List of characters on each keyboard layout
@@ -69,11 +66,11 @@ class Dvorak(Processor):
     # Typed by a Dvorak typist on a QWERTY-mapped keyboard
     typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
     
-    @match(r'asdf\s+(.+)')
+    @match(r'(?:asdf|dvorak)\s+(.+)')
     def convert_from_qwerty(self, event, text):
         event.addresponse(text.translate(self.typed_on_qwerty))
     
-    @match(r'aoeu\s+(.+)')
+    @match(r'(?:aoeu|qwerty)\s+(.+)')
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
 

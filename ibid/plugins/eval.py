@@ -10,10 +10,10 @@ except ImportError:
 
 from ibid.plugins import Processor, match, authorise
 
-help = {'eval': 'Evaluates Python, Perl and Lua code.'}
+help = {'eval': u'Evaluates Python, Perl and Lua code.'}
 
 class Python(Processor):
-	"""py <code>"""
+	u"""py <code>"""
 	feature = 'eval'
 
 	permission = u'eval'
@@ -27,13 +27,13 @@ class Python(Processor):
 			exec('import sys', globals)
 			exec('import re', globals)
 			exec('import time', globals)
-			result = str(eval(code, globals, {}))
+			result = unicode(eval(code, globals, {}))
 		except Exception, e:
-			result = str(e)
+			result = unicode(e)
 		event.addresponse(result)
 
 class Perl(Processor):
-	"""pl <code>"""
+	u"""pl <code>"""
 	feature = 'eval'
 
 	permission = u'eval'
@@ -46,10 +46,10 @@ class Perl(Processor):
 		except Exception, e:
 			result = e
 
-		event.addresponse(str(result))
+		event.addresponse(unicode(result))
 
 class Lua(Processor):
-	"""lua <code>"""
+	u"""lua <code>"""
 	feature = 'eval'
 
 	permission = u'eval'
@@ -62,4 +62,4 @@ class Lua(Processor):
 		except Exception, e:
 			result = e
 
-		event.addresponse(str(result))
+		event.addresponse(unicode(result))

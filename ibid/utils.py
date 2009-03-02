@@ -1,4 +1,5 @@
 from htmlentitydefs import name2codepoint
+import os
 import os.path
 import re
 import time
@@ -59,3 +60,16 @@ def cacheable_download(url, cachefile):
 		outfile.write(buf)
 	
 	outfile.close()
+
+def file_in_path(program):
+	path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+	path = [os.path.join(dir, program) for dir in path]
+	path = [True for file in path if os.path.isfile(file)]
+	return bool(path)
+
+def unicode_output(output, errors="strict"):
+	try:
+		encoding = os.getenv("LANG").split(".")[1]
+	except:
+		encoding = "ascii"
+	return unicode(output, encoding, errors)

@@ -3,10 +3,10 @@
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-help = {"irc": "Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
+help = {"irc": u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
 
 class Actions(Processor):
-    """(join|part|leave) [<channel> [on <source>]]
+    u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
     feature = 'irc'
 
@@ -23,6 +23,10 @@ class Actions(Processor):
             if action == 'join':
                 return
             channel = event.channel
+
+        if source.lower() not in ibid.sources:
+            event.addresponse(u"I don't have a source called %s" % source.lower())
+            return
 
         source = ibid.sources[source.lower()]
 
@@ -43,6 +47,11 @@ class Actions(Processor):
 
         if not source:
             source = event.source
+
+        if source.lower() not in ibid.sources:
+            event.addresponse(u"I don't have a source called %s" % source.lower())
+            return
+
         source = ibid.sources[source.lower()]
 
         if not hasattr(source, 'change_nick'):

@@ -1,15 +1,17 @@
 from subprocess import Popen, PIPE
+import os
 
 from nickometer import nickometer
 
 from ibid.plugins import Processor, match, RPC
 from ibid.config import Option
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 
 help['fortune'] = u'Returns a random fortune.'
 class Fortune(Processor, RPC):
-    """fortune"""
+    u"""fortune"""
     feature = 'fortune'
 
     fortune = Option('fortune', 'Path of the fortune executable', 'fortune')
@@ -17,6 +19,10 @@ class Fortune(Processor, RPC):
     def __init__(self, name):
         super(Fortune, self).__init__(name)
         RPC.__init__(self)
+
+    def setup(self):
+        if not file_in_path(self.fortune):
+            raise Exception("Cannot locate fortune executable")
 
     @match(r'^fortune$')
     def handler(self, event):
@@ -27,14 +33,16 @@ class Fortune(Processor, RPC):
         output, error = fortune.communicate()
         code = fortune.wait()
 
+        output = unicode_output(output.strip())
+
         if code == 0:
-            return output.strip()
+            return output
         else:
             return None
 
 help['nickometer'] = u'Calculates how lame a nick is.'
 class Nickometer(Processor):
-    """nickometer [<nick>] [with reasons]"""
+    u"""nickometer [<nick>] [with reasons]"""
     feature = 'nickometer'
     
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
@@ -47,30 +55,42 @@ class Nickometer(Processor):
 
 help['man'] = u'Retrieves information from manpages.'
 class Man(Processor):
-    """man [<section>] <page>"""
+    u"""man [<section>] <page>"""
     feature = 'man'
 
     man = Option('man', 'Path of the man executable', 'man')
+
+    def setup(self):
+        if not file_in_path(self.man):
+            raise Exception("Cannot locate man executable")
 
     @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
     def handle_man(self, event, section, page):
         command = [self.man, page]
         if section:
             command.insert(1, section)
-        man = Popen(command, stdout=PIPE, stderr=PIPE)
+        
+        if page.strip().startswith("-"):
+            event.addresponse(False)
+            return
+
+        env = os.environ.copy()
+        env["COLUMNS"] = "500"
+
+        man = Popen(command, stdout=PIPE, stderr=PIPE, env=env)
         output, error = man.communicate()
         code = man.wait()
 
         if code != 0:
             event.addresponse(u'Manpage not found')
         else:
-            lines = [unicode(line, 'utf-8', errors='replace') for line in output.splitlines()]
-            index = lines.index('NAME')
+            output = unicode_output(output.strip(), errors="replace")
+            output = output.splitlines()
+            index = output.index('NAME')
             if index:
-                event.addresponse(lines[index+1].strip())
-            index = lines.index('SYNOPSIS')
+                event.addresponse(output[index+1].strip())
+            index = output.index('SYNOPSIS')
             if index:
-                event.addresponse(lines[index+1].strip())
-        
+                event.addresponse(output[index+1].strip())
 
 # vi: set et sta sw=4 ts=4:

@@ -44,7 +44,7 @@ class Feed(Base):
         self.entries = self.feed['entries']
 
 class Manage(Processor):
-    """add feed <url> as <name>
+    u"""add feed <url> as <name>
     list feeds
     remove <name> feed"""
     feature = 'feeds'
@@ -72,7 +72,7 @@ class Manage(Processor):
 
         session.close()
 
-    @match(r'^list\s+feeds$')
+    @match(r'^(?:list\s+)?feeds$')
     def list(self, event):
         session = ibid.databases.ibid()
         feeds = session.query(Feed).all()
@@ -98,7 +98,7 @@ class Manage(Processor):
         session.close()
 
 class Retrieve(Processor):
-    """(latest|last) [ <count> ] articles from <name> [ starting [(at|from)] <number> ]
+    u"""latest [ <count> ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
     feature = 'feeds'
 

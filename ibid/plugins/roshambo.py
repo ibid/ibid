@@ -6,9 +6,9 @@ help = {}
 
 choices = ['paper', 'rock', 'scissors']
 
-help['roshambo'] = 'Plays rock, paper, scissors.'
+help['roshambo'] = u'Plays rock, paper, scissors.'
 class RoShamBo(Processor):
-    """roshambo (rock|paper|scissors)"""
+    u"""roshambo (rock|paper|scissors)"""
     feature = 'roshambo'
 
     @match(r'^roshambo\s+(rock|paper|scissors)$')
@@ -17,13 +17,12 @@ class RoShamBo(Processor):
         bchoice = randint(0, 2)
  
         if uchoice == bchoice:
-            reply = 'We drew! I also chose %s' % choices[bchoice]
+            reply = u'We drew! I also chose %s' % choices[bchoice]
         elif (uchoice + 1) % 3 == bchoice:
-            reply = 'You win! I chose %s :-(' % choices[bchoice]
+            reply = u'You win! I chose %s :-(' % choices[bchoice]
         else:
-            reply = 'I win! I chose %s' % choices[bchoice]
+            reply = u'I win! I chose %s' % choices[bchoice]
  
         event.addresponse(reply)
-        return event
 
 # vi: set et sta sw=4 ts=4:

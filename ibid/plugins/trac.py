@@ -9,7 +9,7 @@ from ibid.plugins import Processor, match, RPC
 from ibid.config import Option
 from ibid.utils import ago
 
-help = {'trac': 'Retrieves tickets from a Trac database.'}
+help = {'trac': u'Retrieves tickets from a Trac database.'}
 
 class Ticket(object):
     pass
@@ -20,7 +20,7 @@ ticket_table = Table('ticket', metadata, autoload=True)
 mapper(Ticket, ticket_table)
     
 class GetTicket(Processor, RPC):
-    """ticket <number>
+    u"""ticket <number>
     (open|my|<who>'s) tickets"""
     feature = 'trac'
 

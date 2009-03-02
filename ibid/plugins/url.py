@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib import urlencode
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError
 import re
 
@@ -9,7 +10,7 @@ from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.models import Base
 
-help = {'url': 'Captures URLs seen in channel, and shortens and lengthens URLs'}
+help = {'url': u'Captures URLs seen in channel, and shortens and lengthens URLs'}
 
 class URL(Base):
     __table__ = Table('urls', Base.metadata,
@@ -46,16 +47,16 @@ class Grab(Processor):
         session.close()
 
 class Shorten(Processor):
-    """shorten <url>"""
+    u"""shorten <url>"""
     feature = 'url'
 
     @match(r'^shorten\s+(\S+\.\S+)$')
     def shorten(self, event, url):
-        f = urlopen('http://is.gd/api.php?longurl=%s' % url)
+        f = urlopen('http://is.gd/api.php?%s' % urlencode({'longurl': url}))
         shortened = f.read()
         f.close()
 
-        event.addresponse(shortened)
+        event.addresponse(unicode(shortened))
 
 class NullRedirect(HTTPRedirectHandler):
 
@@ -63,10 +64,14 @@ class NullRedirect(HTTPRedirectHandler):
         return None
 
 class Lengthen(Processor):
-    """<url>"""
+    u"""<url>"""
     feature = 'url'
 
-    services = Option('services', 'List of URL prefixes of URL shortening services', ('http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/', 'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/', 'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'))
+    services = Option('services', 'List of URL prefixes of URL shortening services', (
+        'http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/',
+        'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/',
+        'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'
+    ))
 
     def setup(self):
         self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I)
@@ -78,7 +83,7 @@ class Lengthen(Processor):
             f = opener.open(url)
         except HTTPError, e:
             if e.code in (301, 302, 303, 307):
-                event.addresponse(e.hdrs['location'])
+                event.addresponse(unicode(e.hdrs['location']))
                 return
 
         f.close()

@@ -16,7 +16,7 @@ log = logging.getLogger('plugins.identity')
 
 help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
-    """create account <name>"""
+    u"""create account <name>"""
     feature = 'accounts'
 
     @match(r'^create\s+account\s+(.+)$')
@@ -56,7 +56,7 @@ class Accounts(Processor):
 chars = string.letters + string.digits
 
 class Identities(Processor):
-    """(I|<username>) (am|is) <identity> on <source>
+    u"""(I am|<username> is) <identity> on <source>
     remove identity <identity> on <source> [from <username>]"""
     feature = 'accounts'
     priority = -10
@@ -179,9 +179,8 @@ class Identities(Processor):
 
         session.close()
 
-help['attributes'] = 'Adds and removes attributes attached to an account'
 class Attributes(Processor):
-    """set (my|<account>) <name> to <value>"""
+    u"""set (my|<account>) <name> to <value>"""
     feature = 'accounts'
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
@@ -213,6 +212,8 @@ class Attributes(Processor):
         log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender['connection'])
 
 class Describe(Processor):
+    u"""who (am I|is <username>)"""
+    feature = "accounts"
 
     @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
     def describe(self, event, username):

@@ -10,7 +10,7 @@ from ibid.plugins import Processor, match, RPC, handler
 from ibid.config import Option
 from ibid.utils import ago
 
-help = {'bzr': 'Retrieves commit logs from a Bazaar repository.'}
+help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
 
 class LogFormatter(log.LogFormatter):
 
@@ -42,7 +42,7 @@ class LogFormatter(log.LogFormatter):
         self.to_file.write(commit)
 
 class Bazaar(Processor, RPC):
-    """last commit to <repo> | commit <revno> [full]
+    u"""(last commit|commit <revno>) [to <repo>] [full]
     repositories"""
     feature = 'bzr'
 
@@ -83,7 +83,7 @@ class Bazaar(Processor, RPC):
 
         for commit in commits:
             if commit:
-                event.addresponse(commit.strip())
+                event.addresponse(unicode(commit.strip()))
 
     def get_commits(self, repository, start, end=None, full=None):
         branch = None
@@ -111,7 +111,9 @@ class Bazaar(Processor, RPC):
 
     @handler
     def launchpad(self, event):
-        if ibid.sources[event.source.lower()].type != 'smtp' or 'X-Launchpad-Branch' not in event.headers:
+        if event.source.lower() not in ibid.sources \
+                or ibid.sources[event.source.lower()].type != 'smtp' \
+                or 'X-Launchpad-Branch' not in event.headers:
             return
 
         event.processed = True

@@ -28,8 +28,11 @@ class Karma(Base):
         self.value = 0
 
 class Set(Processor):
-    """<subject> (++|--|==|ftw|ftl) [[reason]]"""
+    u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
     feature = 'karma'
+
+    # Clashes with morse
+    priority = 10
 
     permission = u'karma'
 
@@ -85,7 +88,7 @@ class Set(Processor):
             event.processed = True
 
 class Get(Processor):
-    """karma for <subject>
+    u"""karma for <subject>
     [reverse] karmaladder"""
     feature = 'karma'
 

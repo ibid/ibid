@@ -1,12 +1,11 @@
 import re
 from time import time
 from random import choice
+import logging
 
 import ibid
 from ibid.plugins import Processor, handler
 from ibid.config import Option, IntOption
-
-help = {}
 
 class Addressed(Processor):
 
@@ -34,7 +33,6 @@ class Addressed(Processor):
 
                 event.addressed = matches.group(1)
                 event.message = new_message
-                return event
 
 class Strip(Processor):
 
@@ -59,8 +57,6 @@ class Ignore(Processor):
             if event.sender['nick'] == who:
                 event.processed = True
 
-        return event
-
 class Responses(Processor):
 
     priority = 1600
@@ -78,25 +74,30 @@ class Responses(Processor):
                 response['target'] = event.channel
             if 'source' not in response:
                 response['source'] = event.source
-            if 'action' in response and ibid.sources[response['source'].lower()].type not in ('irc', 'silc'):
+            if 'action' in response and (response['source'].lower() not in ibid.sources \
+                    or ibid.sources[response['source'].lower()].type not in ('irc', 'silc')):
                 response['reply'] = '* %s %s' % (ibid.config['botname'], response['reply'])
             converted.append(response)
 
         event.responses = converted
-        return event
-
 
 class Address(Processor):
 
     processed = True
-    acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements', (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
+    acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements',
+            (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
+    refusals = Option('refusals', 'Responses for negative acknowledgements',
+            (u'No', u"I won't", u"Shan't", u"I'm sorry, but I can't do that"))
 
     @handler
     def address(self, event):
         addressed = []
         for response in event.responses:
             if isinstance(response, bool):
-                response = choice(self.acknowledgements)
+                if response:
+                    response = choice(self.acknowledgements)
+                else:
+                    response = choice(self.refusals)
             if isinstance(response, basestring) and event.public:
                 addressed.append('%s: %s' % (event.sender['nick'], response))
             else:
@@ -111,9 +112,7 @@ class Timestamp(Processor):
     def process(self, event):
         event.time = time()
 
-help['complain'] = 'Responds with a complaint. Used to handle unprocessed messages.'
 class Complain(Processor):
-    feature = 'complain'
 
     priority = 950
     complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
@@ -125,7 +124,6 @@ class Complain(Processor):
             event.addresponse(choice(self.notauthed))
         else:
             event.addresponse(choice(self.complaints))
-        return event
 
 class RateLimit(Processor):
 
@@ -146,5 +144,21 @@ class RateLimit(Processor):
                     event.addresponse({'reply': u"Geez, give me some time to think!"})
                 else:
                     event.processed = True
+
+class UnicodeWarning(Processor):
+    priority = 1950
+
+    def setup(self):
+        self.log = logging.getLogger('plugins.unicode')
+
+    def process(self, object):
+        if isinstance(object, dict):
+            for value in object.values():
+                self.process(value)
+        elif isinstance(object, list):
+            for value in object:
+                self.process(value)
+        elif isinstance(object, str):
+            self.log.warning(u"Found a non-unicode string: %s" % object)
 
 # vi: set et sta sw=4 ts=4:

@@ -55,6 +55,5 @@ class Proxy(Processor):
         if response:
             event['responses'].append(response)
             event['processed'] = True
-            return event
 
 # vi: set et sta sw=4 ts=4:
