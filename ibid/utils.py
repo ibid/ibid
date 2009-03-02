@@ -45,13 +45,15 @@ def cacheable_download(url, cachefile):
 	if cachefile[0] not in (os.sep, os.altsep):
 		cachedir = ibid.config.plugins['cachedir']
 		if not cachedir:
-			raise ibid.ConfigException("No cache directory specified")
+			cachedir = os.path.join(ibid.options['base'], 'cache')
+		elif cachedir[0] == "~":
+			cachedir = os.path.expanduser(cachedir)
 
-		cachedir = os.path.join(cachedir, os.path.dirname(cachefile))
-		if not os.path.isdir(cachedir):
-			os.makedirs(cachedir)
+		plugindir = os.path.join(cachedir, os.path.dirname(cachefile))
+		if not os.path.isdir(plugindir):
+			os.makedirs(plugindir)
 	
-		cachefile = os.path.join(cachedir, os.path.basename(cachefile))
+		cachefile = os.path.join(cachedir, cachefile)
 
 	exists = os.path.isfile(cachefile)
 
@@ -71,7 +73,7 @@ def cacheable_download(url, cachefile):
 			raise
 	
 	# Download into a temporary file, in case something goes wrong
-	downloadfile = os.path.join(os.path.dirname(cachefile), ".download." + os.path.basename(cachefile))
+	downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
 	outfile = file(downloadfile, "wb")
 	buf = "x"
 	while len(buf) > 0:
