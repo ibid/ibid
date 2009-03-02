@@ -82,7 +82,7 @@ def cacheable_download(url, cachefile):
 
 	try:
 		os.path.rename(downloadfile, cachefile)
-	except os.OSError:
+	except OSError:
 		# Are we on a system that doesn't support atomic renames?
 		os.path.remove(cachefile)
 		os.path.rename(downloadfile, cachefile)
