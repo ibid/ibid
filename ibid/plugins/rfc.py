@@ -56,6 +56,10 @@ class RFCLookup(Processor):
                 "ESCC X.500/X.400 Task Force",
         )
         # She's pretty, isn't she?
+        # Beginners guide:
+        # First line is title, initials
+        # Second is middle names, surnames, and suffixes
+        # Third is date and extensions
         record_re = re.compile(r"^(.+?)\. ((?:(?:[A-Z]{1,2}|[A-Z]\.-?[A-Z]|[A-Z]-[A-Z]|[A-Z]\([A-Z]\)|[A-Z][a-z]+)\.{0,2}"
             r"(?: (?:[Vv]an|[Dd]e[nr]?|[Ll][ae]|El|Del|Dos|da))* ?[a-zA-Z\-']+(?:[\.,]? (?:\d+(?:rd|nd|st|th)|Jr|I+)\.?)?|%s)"
             r"(?:, ?)?)+\. ([A-Z][a-z]{2,8}(?: \d{1,2})? \d{4})\. \((.+)\)$" % "|".join(special_authors))
@@ -67,6 +71,8 @@ class RFCLookup(Processor):
 
             self.issued = not self.record == "Not Issued."
             self.summary = self.record
+
+        def parse(self):
             if self.issued:
                 m = self.record_re.match(self.record)
                 if not m:
@@ -185,6 +191,7 @@ class RFCLookup(Processor):
         if pool:
             event.addresponse(u"Found %i matching RFCs. Listing %i:" % (len(pool), min(len(pool), 5)))
             for result in pool[:5]:
+                result.parse()
                 event.addresponse(u"%04i: %s" % (result.number, result.summary))
         else:
             event.addresponse(u"Sorry, can't find anything.")
