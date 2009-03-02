@@ -30,4 +30,3 @@ class HTTP(Processor):
 				reply = u'%s "%s"' % (reply, match.groups()[0].strip())
 
 		event.addresponse(reply)
-		return event

@@ -18,7 +18,6 @@ class ListPLugins(Processor):
                 plugins.append(processor.name)
 
         event.addresponse(', '.join(plugins))
-        return event
 
 help['core'] = 'Reloads core modules.'
 class ReloadCoreModules(Processor):

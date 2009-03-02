@@ -73,8 +73,5 @@ class Morse(Processor):
 
         if message.replace('-', '').replace('.', '').isspace():
             event.addresponse(morse2text(message))
-	    return event
-
         else:
             event.addresponse(text2morse(message))
-	    return event

@@ -21,7 +21,6 @@ class SayDo(Processor):
             reply['action'] = True
 
         event.addresponse(reply)
-        return event
 
 help['redirect'] = u'Redirects the response to a command to a different channel.'
 class RedirectCommand(Processor):

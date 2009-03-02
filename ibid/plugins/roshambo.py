@@ -24,6 +24,5 @@ class RoShamBo(Processor):
             reply = 'I win! I chose %s' % choices[bchoice]
  
         event.addresponse(reply)
-        return event
 
 # vi: set et sta sw=4 ts=4:

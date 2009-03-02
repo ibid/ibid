@@ -47,7 +47,7 @@ class Config(Processor):
         for part in key.split('.'):
             if part not in config:
                 event.addresponse(u'No such option')
-                return event
+                return
             config = config[part]
         event.addresponse(unicode(config))
         

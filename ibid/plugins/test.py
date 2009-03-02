@@ -9,7 +9,6 @@ class Delay(Processor):
     def handler(self, event, delay):
         sleep(float(delay))
         event.addresponse('Done')
-        return event
 
 class Authorise(Processor):
 
@@ -26,5 +25,12 @@ class Email(Processor):
     def email(self, event, address):
         event.addresponse({'reply': 'Test message', 'source': 'email', 'target': unicode(address)})
         event.addresponse(u"I've emailed %s" % address)
+
+class Except(Processor):
+
+    @match(r'^raise\s+exception$')
+    def handler(self, event):
+        event.addresponse("I'll except in a moment")
+        raise Exception("Ow, that hurt.")
 
 # vi: set et sta sw=4 ts=4:

@@ -125,6 +125,5 @@ class Seen(Processor):
 
         event.addresponse(reply)
         session.close()
-        return event
 
 # vi: set et sta sw=4 ts=4:
