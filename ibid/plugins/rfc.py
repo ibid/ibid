@@ -14,18 +14,19 @@ class RFC(Processor):
     rfc for <search terms>"""
     feature = "rfc"
 
-    cachedir = Option('cachedir', "Directory to store RFC cache file in", "/tmp/")
+    indexurl = Option('index_url', "A HTTP url for the RFC Index file", "http://www.rfc-editor.org/rfc/rfc-index.txt")
+    indexfile = None
     last_checked = 0
 
     def _update_list(self):
-        if self.last_checked == 0 or time.time() - self.last_checked > cachetime:
-            cacheable_download("http://www.rfc-editor.org/rfc/rfc-index.txt", os.path.join(self.cachedir, "rfc-index.txt"))
+        if not self.indexfile or time.time() - self.last_checked > cachetime:
+            self.indexfile = cacheable_download(self.indexurl, "rfc/rfc-index.txt")
             self.last_checked = time.time()
 
     def _parse_rfcs(self):
         self._update_list()
 
-        f = file(os.path.join(self.cachedir, "rfc-index.txt"), "rU")
+        f = file(self.indexfile, "rU")
         lines = f.readlines()
         f.close()
 
