@@ -1,9 +1,8 @@
 from time import sleep
 
-from pkg_resources import resource_exists, resource_string
-
 from ibid.plugins import Processor, match
 from ibid.config import IntOption
+from ibid.utils import ibid_version
 
 help = {}
 
@@ -41,8 +40,6 @@ class Coffee(Processor):
             self.pot.append(event.sender['nick'])
             event.addresponse(True)
 
-version = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or None
-
 help['version'] = u"Show the Ibid version currently running"
 class Version(Processor):
     u"""version"""
@@ -50,7 +47,7 @@ class Version(Processor):
 
     @match(r'^version$')
     def show_version(self, event):
-        event.addresponse(version and u"I am version %s" % version or u"I don't know what version I am :-(")
+        event.addresponse(ibid_version() and u"I am version %s" % ibid_version() or u"I don't know what version I am :-(")
 
 help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
 class Dvorak(Processor):
