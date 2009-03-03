@@ -70,7 +70,11 @@ class Search(Processor):
             title = re.sub("&(\w+);", replace, title)
 
             results.append(u'"%s" %s' % (title, item["unescapedUrl"]))
-        event.addresponse(u', '.join(results))
+            
+        if results:
+            event.addresponse(u', '.join(results))
+        else:
+            event.addresponse(u"Wow! Google couldn't find anything.")
 
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
@@ -99,8 +103,8 @@ class Search(Processor):
 
     @match(r'^google\s+cmp\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
     def compare(self, event, term1, term2):
-        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"]["estimatedResultCount"])
-        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"]["estimatedResultCount"])
+        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
         event.addresponse(u'%s wins with %i hits, %s had %i hits' % 
             (count1 > count2 and (term1, count1, term2, count2) or (term2, count2, term1, count1))
         )
