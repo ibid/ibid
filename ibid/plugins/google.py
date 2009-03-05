@@ -76,7 +76,7 @@ class GoogleAPISearch(Processor):
 class GoogleScrapeSearch(Processor):
     u"""gcalc <expression>
     gdefine <term>
-    google.<TLD> <terms>"""
+    google.<TLD> [for] <terms>"""
 
     feature = 'google'
 
@@ -116,7 +116,7 @@ class GoogleScrapeSearch(Processor):
             event.addresponse(u"Are you making up words again?")
 
     # Not supported by Google API: http://code.google.com/p/google-ajax-apis/issues/detail?id=24
-    @match(r'^google(?:\.com?)?\.([a-z]{2})\s+(.*)$')
+    @match(r'^google(?:\.com?)?\.([a-z]{2})(?:\s+for)?\s+(.*)$')
     def country_search(self, event, country, terms):
         soup = self._google_scrape_search(terms, country)
 
