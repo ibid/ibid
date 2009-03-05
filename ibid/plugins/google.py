@@ -6,7 +6,7 @@ from urllib2 import urlopen, Request
 
 from BeautifulSoup import BeautifulSoup
 
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import ibid_version
 
@@ -92,20 +92,6 @@ class GoogleScrapeSearch(Processor):
         f.close()
         return soup
 
-    def setup(self):
-        countries = """AD AE AF AG AI AL AM AN AO AQ AR AS AT AU AW AZ BA BB BD
-        BE BF BG BH BI BJ BM BN BO BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK
-        CL CM CN CO CR CS CU CV CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET
-        EU FI FJ FK FM FO FR FX GA GD GE GF GH GI GL GM GN GP GQ GR GS GT GU GW
-        GY HK HM HN HR HT HU ID IE IL IN IO IQ IR IS IT JM JO JP KE KG KH KI KM
-        KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD MG MH MK ML
-        MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR
-        NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RU RW SA SB
-        SC SD SE SG SH SI SJ SK SL SM SN SO SR ST SV SY SZ TC TD TF TG TH TJ TK
-        TM TN TO TP TR TT TV TW TZ UA UG UK UM US UY UZ VA VC VE VG VI VN VU WF
-        WS YE YT YU ZA ZM ZW""".lower().split()
-        self.country_search.im_func.pattern = re.compile(r'^google(?:\.com?)?\.(%s)\s+(.*)$' % '|'.join(countries), re.I)
-    
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
         soup = self._google_scrape_search(expression)
@@ -130,7 +116,7 @@ class GoogleScrapeSearch(Processor):
             event.addresponse(u"Are you making up words again?")
 
     # Not supported by Google API: http://code.google.com/p/google-ajax-apis/issues/detail?id=24
-    @handler
+    @match(r'^google(?:\.com?)?\.([a-z]{2})\s+(.*)$')
     def country_search(self, event, country, terms):
         soup = self._google_scrape_search(terms, country)
 
