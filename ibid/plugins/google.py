@@ -15,6 +15,15 @@ help = {'google': u'Retrieves results from Google and Google Calculator.'}
 default_user_agent = 'Mozilla/5.0'
 default_referrer = "http://ibid.omnia.za.net/"
 
+def de_entity(text):
+    "Remove HTML entities, and replace with their characters"
+    replace = lambda match: unichr(int(match.group(1)))
+    text = re.sub("&#(\d+);", replace, text)
+
+    replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
+    text = re.sub("&(\w+);", replace, text)
+    return text
+
 class GoogleAPISearch(Processor):
     u"""google [for] <term>
     googlefight [for] <term> and <term>"""
@@ -49,13 +58,7 @@ class GoogleAPISearch(Processor):
 
             title = item["titleNoFormatting"]
 
-            replace = lambda match: unichr(int(match.group(1)))
-            title = re.sub("&#(\d+);", replace, title)
-
-            replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
-            title = re.sub("&(\w+);", replace, title)
-
-            results.append(u'"%s" %s' % (title, item["unescapedUrl"]))
+            results.append(u'"%s" %s' % (de_entity(title), item["unescapedUrl"]))
             
         if results:
             event.addresponse(u', '.join(results))
@@ -108,7 +111,7 @@ class GoogleScrapeSearch(Processor):
 
         definitions = []
         for li in soup.findAll('li'):
-            definitions.append(li.contents[0].strip())
+            definitions.append(de_entity(li.contents[0].strip()))
 
         if definitions:
             event.addresponse(u' :: '.join(definitions))
@@ -128,7 +131,7 @@ class GoogleScrapeSearch(Processor):
                 title = u''.join([e.string for e in item.a.contents])
                 if title.startswith("Image results for"):
                     continue
-                results.append(u'"%s" %s' % (title, url))
+                results.append(u'"%s" %s' % (de_entity(title), url))
             except Exception:
                 pass
             if len(results) >= 8:
