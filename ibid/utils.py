@@ -1,6 +1,7 @@
 from htmlentitydefs import name2codepoint
 import os
 import os.path
+from pkg_resources import resource_exists, resource_string
 import re
 import time
 import urllib2
@@ -103,3 +104,6 @@ def unicode_output(output, errors="strict"):
 	except:
 		encoding = "ascii"
 	return unicode(output, encoding, errors)
+
+def ibid_version():
+	return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None

@@ -1,53 +1,103 @@
+import htmlentitydefs
+import re
+import simplejson
 from urllib import quote
 from urllib2 import urlopen, Request
+
 from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
+from ibid.utils import ibid_version
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
-user_agent = 'Mozilla/5.0'
+default_user_agent = 'Mozilla/5.0'
+default_referrer = "http://ibid.omnia.za.net/"
 
-class Search(Processor):
-    u"""google [for] <term>"""
+def de_entity(text):
+    "Remove HTML entities, and replace with their characters"
+    replace = lambda match: unichr(int(match.group(1)))
+    text = re.sub("&#(\d+);", replace, text)
+
+    replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
+    text = re.sub("&(\w+);", replace, text)
+    return text
+
+class GoogleAPISearch(Processor):
+    u"""google [for] <term>
+    googlefight [for] <term> and <term>"""
+
     feature = 'google'
 
-    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
+    api_key = Option('api_key', 'Your Google API Key (optional)', None)
+    referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
 
-    @match(r'^google\s+(?:(za)\s+)?(?:for\s+)?(.+?)$')
-    def search(self, event, country, query):
-        url = 'http://www.google.com/search?num=3&q=%s' % quote(query)
+    google_api_url = "http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s"
+
+    def _google_api_search(self, query, resultsize="large"):
+        url = self.google_api_url % quote(query)
+        url += "&rsz=%s" % resultsize
+        if self.api_key:
+            url += '&key=%s' % quote(key)
+        req = Request(url, headers={
+            'user-agent': "Ibid/%s" % ibid_version() or "dev",
+            'referrer': self.referrer,
+        })
+        f = urlopen(req)
+        result = f.read()
+        f.close()
+        result = simplejson.loads(result)
+        return result
+
+    @match(r'^google\s+(?:for\s+)?(.+?)$')
+    def search(self, event, query):
+        items = self._google_api_search(query)
+        results = []
+        for item in items["responseData"]["results"]:
+
+            title = item["titleNoFormatting"]
+
+            results.append(u'"%s" %s' % (de_entity(title), item["unescapedUrl"]))
+            
+        if results:
+            event.addresponse(u', '.join(results))
+        else:
+            event.addresponse(u"Wow! Google couldn't find anything.")
+
+    @match(r'^(?:rank|(?:google(?:fight|compare|cmp)))\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
+    def googlefight(self, event, term1, term2):
+        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        event.addresponse(u'%s wins with %i hits, %s had %i hits' % 
+            (count1 > count2 and (term1, count1, term2, count2) or (term2, count2, term1, count1))
+        )
+
+# Unfortunatly google API search doesn't support all of google search's
+# features.
+# Dear Google: We promise we don't bite.
+class GoogleScrapeSearch(Processor):
+    u"""gcalc <expression>
+    gdefine <term>
+    google.<TLD> [for] <terms>"""
+
+    feature = 'google'
+
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', default_user_agent)
+    google_scrape_url = "http://www.google.com/search?q=%s"
+
+    def _google_scrape_search(self, query, country=None):
+        url = self.google_scrape_url
         if country:
-            url = url + '&meta=cr%%3Dcountry%s' % country.upper()
-
-        f = urlopen(Request(url, headers={'user-agent': self.user_agent}))
+            url += "&cr=country%s" % country.upper()
+        f = urlopen(Request(url % quote(query), headers={'user-agent': self.user_agent}))
         soup = BeautifulSoup(f.read())
         f.close()
-
-        results = []
-        items = soup.findAll('li')[:10]
-        for item in items:
-            try:
-                url = item.a['href']
-                title = u''.join([e.string for e in item.a.contents])
-                results.append(u'"%s" %s' % (title, url))
-            except Exception:
-                pass
-
-        event.addresponse(u', '.join(results))
-
-class Calc(Processor):
-    u"""gcalc <expression>"""
-    feature = 'google'
-
-    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
+        return soup
 
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
-        f = urlopen(Request('http://www.google.com/search?num=1&q=%s' % quote(expression), headers={'user-agent': self.user_agent}))
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = self._google_scrape_search(expression)
 
         font = soup.find('font', size='+1')
         if not font:
@@ -55,51 +105,41 @@ class Calc(Processor):
         else:
             event.addresponse(font.b.string)
 
-class Define(Processor):
-    u"""gdefine <term>"""
-    feature = 'google'
-
-    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
-
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
-        f = urlopen(Request('http://www.google.com/search?num=1&q=define:%s' % quote(term), headers={'user-agent': self.user_agent}))
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = self._google_scrape_search("define:%s" % term)
 
         definitions = []
         for li in soup.findAll('li'):
-            definitions.append('"%s"' % li.contents[0].strip())
+            definitions.append(de_entity(li.contents[0].strip()))
 
         if definitions:
-            event.addresponse(', '.join(definitions))
+            event.addresponse(u' :: '.join(definitions))
         else:
             event.addresponse(u"Are you making up words again?")
 
-class Compare(Processor):
-    u"""google cmp [for] <term> and <term>"""
-    feature = 'google'
+    # Not supported by Google API: http://code.google.com/p/google-ajax-apis/issues/detail?id=24
+    @match(r'^google(?:\.com?)?\.([a-z]{2})(?:\s+for)?\s+(.*)$')
+    def country_search(self, event, country, terms):
+        soup = self._google_scrape_search(terms, country)
 
-    user_agent = Option('user_agent', 'HTTP user agent to present to Google', user_agent)
+        results = []
+        items = soup.findAll('li')
+        for item in items:
+            try:
+                url = item.a['href']
+                title = u''.join([e.string for e in item.a.contents])
+                if title.startswith("Image results for"):
+                    continue
+                results.append(u'"%s" %s' % (de_entity(title), url))
+            except Exception:
+                pass
+            if len(results) >= 8:
+                break
 
-
-    def results(self, term):
-        f = urlopen(Request('http://www.google.com/search?num=1&q=%s' % quote(term), headers={'user-agent': self.user_agent}))
-        soup = BeautifulSoup(f.read())
-        f.close()
-
-        noresults = soup.findAll('div', attrs={'class': 'med'})
-        if noresults and len(noresults) > 1 and noresults[1].find('did not match any documents') != -1:
-            return 0
+        if results:
+            event.addresponse(u", ".join(results))
         else:
-            results = soup.find('div', id='prs').nextSibling.contents[5].string.replace(',', '')
-            if results:
-                return int(results)
-
-    @match(r'^google\s+cmp\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
-    def compare(self, event, term1, term2):
-        count1 = self.results(term1)
-        count2 = self.results(term2)
-        event.addresponse(u'%s wins with %s hits, %s had %s hits' % (count1 > count2 and term1 or term2, count1 > count2 and count1 or count2, count1 > count2 and term2 or term1, count1 > count2 and count2 or count1))
+            event.addresponse(u"Wow! Google couldn't find anything.")
 
 # vi: set et sta sw=4 ts=4:
