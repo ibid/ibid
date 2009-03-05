@@ -39,3 +39,5 @@ if __name__ == '__main__':
     mainloop = gobject.MainLoop()
     print "Running Ibid service."
     mainloop.run()
+
+# vi: set et sta sw=4 ts=4:

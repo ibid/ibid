@@ -17,3 +17,5 @@ class FakeConfig(dict):
 
 def set_config(config):
     ibid.config = FakeConfig(config)
+
+# vi: set et sta sw=4 ts=4:

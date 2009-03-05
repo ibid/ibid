@@ -77,3 +77,5 @@ class Morse(Processor):
             event.addresponse(morse2text(message))
         else:
             event.addresponse(text2morse(message))
+
+# vi: set et sta sw=4 ts=4:

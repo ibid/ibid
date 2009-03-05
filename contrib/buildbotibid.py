@@ -84,3 +84,5 @@ class IbidNotifier(base.StatusReceiverMultiService):
         result = Results[results]
         return getPage("%s?branch=%s&revision=%s&person=%s&result=%s" % \
                      (self.url, branch, rev, person, result))
+
+# vi: set et sta sw=4 ts=4:

@@ -127,3 +127,4 @@ sub HandlePresence {
     print "* $from -> $type [$status]";
 }
 
+# vi: set et sta sw=4 ts=4:
