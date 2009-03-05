@@ -77,7 +77,6 @@ class RFCLookup(Processor):
                 m = self.record_re.match(self.record)
                 if not m:
                     log.warning("CAN'T DECODE RFC: " + self.record)
-                    self.summary = u""
                 else:
                     self.title, self.authors, self.date, extensions = m.groups()
                     extensions = self.extensions_re.split(extensions)
@@ -115,9 +114,9 @@ class RFCLookup(Processor):
                     self.extensions = extensions
                     self.summary = u"%s. %s." % (self.title, self.date)
                     if self.status:
-                        self.summary += u"  " + self.status
+                        self.summary += u" " + self.status
                     if self.obsoleted:
-                        self.summary += u"  Obsoleted by " + u", ".join(self.obsoleted)
+                        self.summary += u" Obsoleted by " + u", ".join(self.obsoleted)
 
     def _parse_rfcs(self):
         self._update_list()
@@ -158,7 +157,7 @@ class RFCLookup(Processor):
 
         number = int(number)
         if number in rfcs:
-            event.addresponse(rfcs[number].record)
+            event.addresponse(u"%s http://www.rfc-editor.org/rfc/rfc%i.txt " % (rfcs[number].record, number))
         else:
             event.addresponse(u"Sorry, no such RFC.")
 
@@ -189,10 +188,13 @@ class RFCLookup(Processor):
         pool.reverse()
 
         if pool:
-            event.addresponse(u"Found %i matching RFCs. Listing %i:" % (len(pool), min(len(pool), 5)))
+            response = u"Found %i matching RFC%s. Listing %i: " % (len(pool), len(pool) > 1 and u"s" or u"", min(len(pool), 5))
+            results = []
             for result in pool[:5]:
                 result.parse()
-                event.addresponse(u"%04i: %s" % (result.number, result.summary))
+                results.append("%04i: %s" % (result.number, result.summary))
+            response += u",  ".join(results)
+            event.addresponse(response)
         else:
             event.addresponse(u"Sorry, can't find anything.")
 
