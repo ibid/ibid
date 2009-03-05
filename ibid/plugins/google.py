@@ -81,7 +81,7 @@ class GoogleScrapeSearch(Processor):
     feature = 'google'
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', default_user_agent)
-    google_scrape_url = "http://www.google.com/search?num=1&q=%s"
+    google_scrape_url = "http://www.google.com/search?q=%s"
 
     def _google_scrape_search(self, query, country=None):
         url = self.google_scrape_url
