@@ -83,4 +83,7 @@ class AuthException(IbidException):
 class SourceException(IbidException):
     pass
 
+class ConfigException(Exception):
+    pass
+
 # vi: set et sta sw=4 ts=4:

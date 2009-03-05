@@ -2,6 +2,10 @@ from htmlentitydefs import name2codepoint
 import os
 import os.path
 import re
+import time
+import urllib2
+
+import ibid
 
 def ago(delta, units=None):
 	parts = []
@@ -30,6 +34,62 @@ def substitute_entity(match):
 def decode_htmlentities(string):
     entity_re = re.compile("&(#?)(\d{1,5}|\w{1,8});")
     return entity_re.subn(substitute_entity, string)[0]
+
+def cacheable_download(url, cachefile):
+	"""Download url to cachefile if it's modified since cachefile.
+	Specify cachefile in the form pluginname/cachefile.
+	Returns complete path to downloaded file."""
+
+	# We do allow absolute paths, for people who know what they are doing,
+	# but the common use case should be pluginname/cachefile.
+	if cachefile[0] not in (os.sep, os.altsep):
+		cachedir = ibid.config.plugins['cachedir']
+		if not cachedir:
+			cachedir = os.path.join(ibid.options['base'], 'cache')
+		elif cachedir[0] == "~":
+			cachedir = os.path.expanduser(cachedir)
+
+		plugindir = os.path.join(cachedir, os.path.dirname(cachefile))
+		if not os.path.isdir(plugindir):
+			os.makedirs(plugindir)
+	
+		cachefile = os.path.join(cachedir, cachefile)
+
+	exists = os.path.isfile(cachefile)
+
+	req = urllib2.Request(url)
+
+	if exists:
+		modified = os.path.getmtime(cachefile)
+		modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
+		req.add_header("If-Modified-Since", modified)
+
+	try:
+		connection = urllib2.urlopen(req)
+	except urllib2.HTTPError, e:
+		if e.code == 304 and exists:
+			return cachefile
+		else:
+			raise
+	
+	# Download into a temporary file, in case something goes wrong
+	downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
+	outfile = file(downloadfile, "wb")
+	buf = "x"
+	while len(buf) > 0:
+		buf = connection.read(1024)
+		outfile.write(buf)
+	
+	outfile.close()
+
+	try:
+		os.rename(downloadfile, cachefile)
+	except OSError:
+		# Are we on a system that doesn't support atomic renames?
+		os.remove(cachefile)
+		os.rename(downloadfile, cachefile)
+	
+	return cachefile
 
 def file_in_path(program):
 	path = os.environ.get("PATH", os.defpath).split(os.pathsep)
