@@ -14,19 +14,16 @@ help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
 user_agent = 'Mozilla/5.0'
 
-class Search(Processor):
+class GoogleAPISearch(Processor):
     u"""google [for] <term>
-    gcalc <expression>
-    gdefine <term>
-    google cmp [for] <term> and <term>"""
+    googlefight [for] <term> and <term>"""
+
     feature = 'google'
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referrer = Option('referrer', 'The referrer string to use (API searches)', "http://ibid.omnia.za.net/")
-    user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', user_agent)
 
     google_api_url = "http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s"
-    google_scrape_url = "http://www.google.com/search?num=1&q=%s"
 
     def _google_api_search(self, query, resultsize="large"):
         url = self.google_api_url % quote(query)
@@ -44,19 +41,8 @@ class Search(Processor):
         result = simplejson.loads(result)
         return result
 
-    def _google_scrape_search(self, query):
-        f = urlopen(Request(self.google_scrape_url % quote(query), headers={'user-agent': self.user_agent}))
-        soup = BeautifulSoup(f.read())
-        f.close()
-        return soup
-
     @match(r'^google\s+(?:for\s+)?(.+?)$')
     def search(self, event, query):
-
-        # Clashing regexs:
-        if self.compare.im_func.pattern.match(event.message):
-            return
-
         items = self._google_api_search(query)
         results = []
         for item in items["responseData"]["results"]:
@@ -76,9 +62,31 @@ class Search(Processor):
         else:
             event.addresponse(u"Wow! Google couldn't find anything.")
 
+    @match(r'^(?:rank|(?:google(?:fight|compare|cmp)))\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
+    def googlefight(self, event, term1, term2):
+        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        event.addresponse(u'%s wins with %i hits, %s had %i hits' % 
+            (count1 > count2 and (term1, count1, term2, count2) or (term2, count2, term1, count1))
+        )
+
+class GoogleScrapeSearch(Processor):
+    u"""gcalc <expression>
+    gdefine <term>"""
+
+    feature = 'google'
+
+    user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', user_agent)
+    google_scrape_url = "http://www.google.com/search?num=1&q=%s"
+
+    def _google_scrape_search(self, query):
+        f = urlopen(Request(self.google_scrape_url % quote(query), headers={'user-agent': self.user_agent}))
+        soup = BeautifulSoup(f.read())
+        f.close()
+        return soup
+
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
-
         soup = self._google_scrape_search(expression)
 
         font = soup.find('font', size='+1')
@@ -89,7 +97,6 @@ class Search(Processor):
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
-
         soup = self._google_scrape_search("define:%s" % term)
 
         definitions = []
@@ -101,11 +108,4 @@ class Search(Processor):
         else:
             event.addresponse(u"Are you making up words again?")
 
-    @match(r'^google\s+cmp\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
-    def compare(self, event, term1, term2):
-        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
-        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
-        event.addresponse(u'%s wins with %i hits, %s had %i hits' % 
-            (count1 > count2 and (term1, count1, term2, count2) or (term2, count2, term1, count1))
-        )
 # vi: set et sta sw=4 ts=4:
