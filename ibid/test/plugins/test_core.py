@@ -84,3 +84,5 @@ class TestAddressed(unittest.TestCase):
             event.message = u'foo%s%s' % suffix
             self.processor.process(event)
             self.assert_addressed(event, False, u'foo%s%s' % suffix)
+
+# vi: set et sta sw=4 ts=4:

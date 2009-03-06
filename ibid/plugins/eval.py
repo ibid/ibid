@@ -1,65 +1,67 @@
 try:
-	import perl
+    import perl
 except ImportError:
-	pass
+    pass
 
 try:
-	import lua
+    import lua
 except ImportError:
-	pass
+    pass
 
 from ibid.plugins import Processor, match, authorise
 
 help = {'eval': u'Evaluates Python, Perl and Lua code.'}
 
 class Python(Processor):
-	u"""py <code>"""
-	feature = 'eval'
+    u"""py <code>"""
+    feature = 'eval'
 
-	permission = u'eval'
+    permission = u'eval'
 
-	@match(r'^py(?:thon)?\s+(.+)$')
-	@authorise
-	def eval(self, event, code):
-		try:
-			globals = {}
-			exec('import os', globals)
-			exec('import sys', globals)
-			exec('import re', globals)
-			exec('import time', globals)
-			result = unicode(eval(code, globals, {}))
-		except Exception, e:
-			result = unicode(e)
-		event.addresponse(result)
+    @match(r'^py(?:thon)?\s+(.+)$')
+    @authorise
+    def eval(self, event, code):
+        try:
+            globals = {}
+            exec('import os', globals)
+            exec('import sys', globals)
+            exec('import re', globals)
+            exec('import time', globals)
+            result = unicode(eval(code, globals, {}))
+        except Exception, e:
+            result = unicode(e)
+        event.addresponse(result)
 
 class Perl(Processor):
-	u"""pl <code>"""
-	feature = 'eval'
+    u"""pl <code>"""
+    feature = 'eval'
 
-	permission = u'eval'
+    permission = u'eval'
 
-	@match(r'^(?:perl|pl)\s+(.+)$')
-	@authorise
-	def eval(self, event, code):
-		try:
-			result = perl.eval(code)
-		except Exception, e:
-			result = e
+    @match(r'^(?:perl|pl)\s+(.+)$')
+    @authorise
+    def eval(self, event, code):
+        try:
+            result = perl.eval(code)
+        except Exception, e:
+            result = e
 
-		event.addresponse(unicode(result))
+        event.addresponse(unicode(result))
 
 class Lua(Processor):
-	u"""lua <code>"""
-	feature = 'eval'
+    u"""lua <code>"""
+    feature = 'eval'
 
-	permission = u'eval'
+    permission = u'eval'
 
-	@match(r'^lua\s+(.+)$')
-	@authorise
-	def eval(self, event, code):
-		try:
-			result = lua.eval(code)
-		except Exception, e:
-			result = e
+    @match(r'^lua\s+(.+)$')
+    @authorise
+    def eval(self, event, code):
+        try:
+            result = lua.eval(code)
+        except Exception, e:
+            result = e
 
-		event.addresponse(unicode(result))
+        event.addresponse(unicode(result))
+
+# vi: set et sta sw=4 ts=4:
