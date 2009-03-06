@@ -101,7 +101,7 @@ class Utils(Processor):
         session.close()
 
 class Forget(Processor):
-    u"""forget <name>
+    u"""forget <name> [( #<number> | /<pattern>/ )]
     <name> is the same as <other name>"""
     feature = 'factoids'
 
@@ -124,10 +124,12 @@ class Forget(Processor):
                     return
 
                 if factoids[0][2].identity_id not in identities and not factoidadmin:
+                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
 
                 if session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.names)) > 0 and not factoidadmin:
+                        raise ibid.AuthException(u"You are not permitted to do that")
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     session.delete(factoid)
@@ -137,10 +139,12 @@ class Forget(Processor):
 
             else:
                 if factoids[0][1].identity_id not in identities and not factoidadmin:
+                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
 
                 if session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0 and not factoidadmin:
+                        raise ibid.AuthException(u"You are not permitted to do that")
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     session.delete(factoid)
@@ -159,6 +163,7 @@ class Forget(Processor):
     def alias(self, event, target, source):
 
         if target.lower() == source.lower():
+            event.addresponse(u"That makes no sense, they *are* the same")
             return
 
         session = ibid.databases.ibid()
@@ -289,6 +294,7 @@ class Set(Processor):
             if correction:
                 identities = get_identities(event, session)
                 if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0:
+                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
                 for fvalue in factoid.values:
                     session.delete(fvalue)
@@ -312,4 +318,92 @@ class Set(Processor):
         session.close()
         event.addresponse(True)
 
+class Modify(Processor):
+    u"""<name> [( #<number> | /<pattern>/ )] += <suffix>
+    <name> [( #<number> | /<pattern>/ )] ~= ( s/<regex>/<replacement>/[g][i] | y/<source>/<dest>/ )"""
+    feature = 'factoids'
+
+    permission = u'factoid'
+    permissions = (u'factoidadmin',)
+    priority = 890
+
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*\+=\s?(.+)$')
+    @authorise
+    def append(self, event, name, number, pattern, suffix):
+        session = ibid.databases.ibid()
+        factoids = get_factoid(session, name, number, pattern, True)
+        if len(factoids) == 0:
+            event.addresponse(u"I didn't know about %s anyway" % name)
+        elif len(factoids) > 1:
+            event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+        else:
+            factoidadmin = auth_responses(event, u'factoidadmin')
+            identities = get_identities(event, session)
+            factoid = factoids[0]
+
+            if factoid[2].identity_id not in identities and not factoidadmin:
+                raise ibid.AuthException(u"You are not permitted to do that")
+                return
+
+            log.info(u"Appending '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
+                    suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
+            factoid[2].value += suffix
+
+            session.flush()
+            session.close()
+            event.addresponse(True)
+
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*~=\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[g]?[i]?)$')
+    @authorise
+    def modify(self, event, name, number, pattern, operation, separator):
+        session = ibid.databases.ibid()
+        factoids = get_factoid(session, name, number, pattern, True)
+        if len(factoids) == 0:
+            event.addresponse(u"I didn't know about %s anyway" % name)
+        elif len(factoids) > 1:
+            event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+        else:
+            factoidadmin = auth_responses(event, u'factoidadmin')
+            identities = get_identities(event, session)
+            factoid = factoids[0]
+
+            if factoid[2].identity_id not in identities and not factoidadmin:
+                raise ibid.AuthException(u"You are not permitted to do that")
+                return
+
+            if separator in ("^", "]"):
+                separator = '\\' + separator
+            parts = re.split(r"(?<=[^\\])[%s]" % separator, operation)
+            if len(parts) != 4:
+                event.addresponse(u"That operation makes no sense. Work on your regex-fu.")
+                return
+
+            op, search, replace, flags = parts
+            if op == "s":
+                if "i" in flags.lower():
+                    search += "(?i)"
+                try:
+                    factoid[2].value, subs = re.subn(search, replace, factoid[2].value, int("g" not in flags))
+                except:
+                    event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                    return
+
+            elif op == "y":
+                if len(search) != len(replace):
+                    event.addresponse(u"That operation makes no sense. The source and destination must be the same length.")
+                    return
+                try:
+                    table = dict((ord(x), ord(y)) for x, y in zip(search, replace))
+                    factoid[2].value = factoid[2].value.translate(table)
+
+                except:
+                    event.addresponse(u"That operation makes no sense. Try something like y/abcdef/ABCDEF/")
+                    return
+
+            log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
+                    operation, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
+
+            session.flush()
+            session.close()
+            event.addresponse(True)
 # vi: set et sta sw=4 ts=4:
