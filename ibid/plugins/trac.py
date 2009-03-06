@@ -8,7 +8,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, RPC
-from ibid.config import Option
+from ibid.config import Option, BoolOption
 from ibid.utils import ago
 
 help = {'trac': u'Retrieves tickets from a Trac database.'}
@@ -21,7 +21,7 @@ metadata = MetaData(bind=ibid.databases.trac().bind)
 ticket_table = Table('ticket', metadata, autoload=True)
 mapper(Ticket, ticket_table)
     
-class GetTicket(Processor, RPC):
+class Tickets(Processor, RPC):
     u"""ticket <number>
     (open|my|<who>'s) tickets"""
     feature = 'trac'
@@ -29,6 +29,7 @@ class GetTicket(Processor, RPC):
     url = Option('url', 'URL of Trac instance')
     source = Option('source', 'Source to send commit notifications to')
     channel = Option('channel', 'Channel to send commit notifications to')
+    announce_changes = BoolOption('announce_changes', u'Announce changes to tickets', True)
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -52,6 +53,9 @@ class GetTicket(Processor, RPC):
         return True
 
     def remote_ticket_changed(self, id, comment, author, old_values):
+        if not self.announce_changes:
+            return False
+
         ticket = self.get_ticket(id)
         if not ticket:
             raise Exception(u'No such ticket')
