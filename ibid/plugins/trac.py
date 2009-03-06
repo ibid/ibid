@@ -81,14 +81,15 @@ class Tickets(Processor, RPC):
         else:
             event.addresponse(u"No such ticket")
 
-    @match(r"^(?:(my|\S+?(?:'s))\s+)?(?:(open|closed|new|assigned)\s+)?tickets$")
-    def list(self, event, owner, status):
+    @match(r"^(?:(my|\S+?(?:'s))\s+)?(?:(open|closed|new|assigned)\s+)?tickets(?:\s+for\s+(.+?))?$")
+    def handle_list(self, event, owner, status, milestone):
+        print milestone
         session = ibid.databases.trac()
         print owner
 
         status = status or 'open'
         if status.lower() == 'open':
-            statuses = ('new', 'assigned')
+            statuses = (u'new', u'assigned', u'reopened')
         else:
             statuses = (status.lower(),)
         
@@ -100,6 +101,9 @@ class Tickets(Processor, RPC):
             else:
                 owner = owner.lower().replace("'s", '')
             query = query.filter(func.lower(Ticket.owner)==(owner.lower()))
+
+        if milestone:
+            query = query.filter_by(milestone=milestone)
 
         tickets = query.order_by(Ticket.id).all()
 
