@@ -371,13 +371,37 @@ class Modify(Processor):
                 raise ibid.AuthException(u"You are not permitted to do that")
                 return
 
-            if separator in ("^", "]"):
-                separator = '\\' + separator
-            parts = re.split(r"(?<=[^\\])[%s]" % separator, operation)
+            # Not very pythonistic, but escaping is a nightmare.
+            parts = [[]]
+            pos = 0
+            while pos < len(operation):
+                char = operation[pos]
+                if char == separator:
+                    parts.append([])
+                elif char == "\\":
+                    if pos < len(operation) - 1:
+                        if operation[pos+1] == "\\":
+                            parts[-1].append("\\")
+                            pos += 1
+                        elif operation[pos+1] == separator:
+                            parts[-1].append(separator)
+                            pos += 1
+                        else:
+                            parts[-1].append("\\")
+                    else:
+                        parts[-1].append("\\")
+                else:
+                    parts[-1].append(char)
+                pos += 1
+
+            parts = [u"".join(x) for x in parts]
+            log.debug(parts)
+
             if len(parts) != 4:
                 event.addresponse(u"That operation makes no sense. Work on your regex-fu.")
                 return
 
+            oldvalue = factoid[2].value
             op, search, replace, flags = parts
             if op == "s":
                 if "i" in flags.lower():
@@ -401,7 +425,7 @@ class Modify(Processor):
                     return
 
             log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
-                    operation, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
+                    operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
             session.flush()
             session.close()
