@@ -1,4 +1,6 @@
 from datetime import datetime
+from simplejson import loads
+import logging
 
 from sqlalchemy import Table, MetaData
 from sqlalchemy.orm import mapper
@@ -31,19 +33,39 @@ class GetTicket(Processor, RPC):
     def __init__(self, name):
         Processor.__init__(self, name)
         RPC.__init__(self)
+        self.log = logging.getLogger('plugins.trac')
 
     def get_ticket(self, id):
         session = ibid.databases.trac()
         ticket = session.query(Ticket).get(id)
         session.close()
-        return ticket and u'Ticket %s (%s %s %s) reported by %s %s ago assigned to %s: "%s" %sticket/%s' % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.reporter, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary, self.url, ticket.id) or None
+        return ticket
 
-    def remote_newticket(self, id):
+    def remote_ticket_created(self, id):
         ticket = self.get_ticket(id)
         if not ticket:
             raise Exception(u"No such ticket")
 
-        ibid.dispatcher.send({'reply': ticket, 'source': self.source, 'target': self.channel})
+        message = u'New %s in %s reported by %s: "%s" %sticket/%s' % (ticket.type, ticket.component, ticket.reporter, ticket.summary, self.url, ticket.id)
+        ibid.dispatcher.send({'reply': message, 'source': self.source, 'target': self.channel})
+        self.log.info(u'Ticket %s created', id)
+        return True
+
+    def remote_ticket_changed(self, id, comment, author, old_values):
+        ticket = self.get_ticket(id)
+        if not ticket:
+            raise Exception(u'No such ticket')
+
+        changes = []
+        for field, old in old_values.items():
+            if hasattr(ticket, field):
+                changes.append(u'%s: %s' % (field, getattr(ticket, field)))
+        if comment:
+            changes.append(u'comment: "%s"' % comment)
+
+        message = u'Ticket %s (%s %s %s in %s for %s) modified by %s. %s' % (id, ticket.status, ticket.priority, ticket.type, ticket.component, ticket.milestone, author, u', '.join(changes))
+        ibid.dispatcher.send({'reply': message, 'source': self.source, 'target': self.channel})
+        self.log.info(u'Ticket %s modified', id)
         return True
 
     @match(r'^ticket\s+(\d+)$')
@@ -51,7 +73,7 @@ class GetTicket(Processor, RPC):
         ticket = self.get_ticket(int(number))
 
         if ticket:
-            event.addresponse(ticket)
+            event.addresponse(u'Ticket %s (%s %s %s in %s for %s) reported %s ago assigned to %s: "%s" %sticket/%s' % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.component, ticket.milestone, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary, self.url, ticket.id))
         else:
             event.addresponse(u"No such ticket")
 
