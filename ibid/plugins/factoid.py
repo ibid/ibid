@@ -395,7 +395,6 @@ class Modify(Processor):
                 pos += 1
 
             parts = [u"".join(x) for x in parts]
-            log.debug(parts)
 
             if len(parts) != 4:
                 event.addresponse(u"That operation makes no sense. Work on your regex-fu.")
