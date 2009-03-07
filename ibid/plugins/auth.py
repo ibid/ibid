@@ -27,7 +27,7 @@ class AddAuth(Processor):
                 event.addresponse(u"I don't know who you are")
                 return
             if not ibid.auth.authenticate(event):
-                event.notauthed = True
+                event.complain = 'notauthed'
                 return
             account = session.query(Account).filter_by(id=event.account).first()
 
