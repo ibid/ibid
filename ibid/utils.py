@@ -1,10 +1,16 @@
+import cgi
+from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
 import os.path
 from pkg_resources import resource_exists, resource_string
 import re
+from StringIO import StringIO
 import time
 import urllib2
+import zlib
+
+from html5lib import HTMLParser, treebuilders
 
 import ibid
 
@@ -80,10 +86,21 @@ def cacheable_download(url, cachefile):
     # Download into a temporary file, in case something goes wrong
     downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
     outfile = file(downloadfile, "wb")
-    buf = "x"
-    while len(buf) > 0:
-        buf = connection.read(1024)
-        outfile.write(buf)
+    data = connection.read()
+
+    compression = connection.headers.get('content-encoding')
+    if compression:
+        if compression.lower() == "deflate":
+            try:
+                data = zlib.decompress(data)
+            except zlib.error:
+                data = zlib.decompress(data, -zlib.MAX_WBITS)
+        elif compression.lower() == "gzip":
+            compressedstream = StringIO(data)
+            gzipper = GzipFile(fileobj=compressedstream)
+            data = gzipper.read()
+
+    outfile.write(data)
     
     outfile.close()
 
@@ -111,5 +128,35 @@ def unicode_output(output, errors="strict"):
 
 def ibid_version():
     return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+
+def get_soup(url, data=None, headers={}):
+    "Request a URL and create a BeautifulSoup parse tree from it"
+
+    req = urllib2.Request(url, data, headers)
+    f = urllib2.urlopen(req)
+    data = f.read()
+    f.close()
+
+    encoding = None
+    contentType = f.headers.get('content-type')
+    if contentType:
+        (mediaType, params) = cgi.parse_header(contentType)
+        encoding = params.get('charset')
+
+    compression = f.headers.get('content-encoding')
+    if compression.lower() == "deflate":
+        try:
+            data = zlib.decompress(data)
+        except zlib.error:
+            data = zlib.decompress(data, -zlib.MAX_WBITS)
+    elif compression.lower() == "gzip":
+        compressedstream = StringIO(data)
+        gzipper = GzipFile(fileobj=compressedstream)
+        data = gzipper.read()
+
+    treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
+    parser = HTMLParser(tree=treebuilder)
+
+    return parser.parse(data, encoding=encoding)
 
 # vi: set et sta sw=4 ts=4:
