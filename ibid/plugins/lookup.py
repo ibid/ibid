@@ -3,16 +3,36 @@ from urllib import urlencode, quote
 from time import time
 from datetime import datetime
 from simplejson import loads
+import cgi
 import re
 
 import feedparser
-from BeautifulSoup import BeautifulSoup
+from html5lib import HTMLParser, treebuilders
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import ago, decode_htmlentities
 
 help = {}
+
+def get_soup(url, data=None, headers={}):
+    "Request a URL and create a BeautifulSoup parse tree from it"
+
+    req = Request(url, data, headers)
+    f = urlopen(req)
+    data = f.read()
+    f.close()
+
+    encoding = None
+    contentType = f.headers.get('content-type')
+    if contentType:
+        (mediaType, params) = cgi.parse_header(contentType)
+        encoding = params.get('charset')
+
+    treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
+    parser = HTMLParser(tree=treebuilder)
+
+    return parser.parse(data, encoding = encoding)
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
@@ -22,15 +42,13 @@ class Bash(Processor):
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
     def bash(self, event, quote):
-        f = urlopen('http://bash.org/?%s' % quote.lower())
-        soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
-        f.close()
+        soup = get_soup('http://bash.org/?%s' % quote.lower())
 
         if quote.lower() == "random":
-            number = u"".join(soup.find('p', attrs={'class': 'quote'}).find('b').contents)
+            number = u"".join(soup.find('p', 'quote').find('b').contents)
             event.addresponse(u"%s:" % number)
 
-        quote = soup.find('p', attrs={'class': 'qt'})
+        quote = soup.find('p', 'qt')
         if not quote:
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be.")
         else:
@@ -100,12 +118,14 @@ class FMyLife(Processor):
     feature = "fml"
 
     def remote_get(self, id):
-        f = urlopen('http://www.fmylife.com/' + str(id))
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = get_soup('http://www.fmylife.com/' + str(id))
 
         quote = soup.find('div', id='wrapper').div.p
-        return quote and u'"%s"' % (quote.contents[0],) or None
+        if quote:
+            url = u"http://www.fmylife.com" + quote.find('a', 'fmllink')['href']
+            quote = u"".join(tag.contents[0] for tag in quote.findAll(True))
+
+            return u'%s: "%s"' % (url, quote)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random)$')
     def fml(self, event, id):
@@ -170,14 +190,12 @@ class Currency(Processor):
     currencies = []
 
     def _load_currencies(self):
-        request = Request('http://www.xe.com/iso4217.php', '', self.headers)
-        f = urlopen(request)
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = get_soup('http://www.xe.com/iso4217.php', headers=self.headers)
 
         self.currencies = []
-        for tr in soup.find('table', attrs={'class': 'tbl_main'}).table.findAll('tr'):
+        for tr in soup.find('table', 'tbl_main').table.findAll('tr'):
             code, place = tr.findAll('td')
+            code = code.contents[0]
             place = ''.join(place.findAll(text=True))
             place, name = place.find(',') != -1 and place.split(',', 1) or place.split(' ', 1)
             self.currencies.append((code.string, place.strip(), name.strip()))
@@ -185,12 +203,9 @@ class Currency(Processor):
     @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
     def exchange(self, event, amount, frm, to):
         data = {'Amount': amount, 'From': frm, 'To': to}
-        request = Request('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers)
-        f = urlopen(request)
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = get_soup('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers)
 
-        event.addresponse(soup.findAll('span', attrs={'class': 'XEsmall'})[1].contents[0])
+        event.addresponse(u" ".join(tag.contents[0] for tag in soup.findAll('h2', 'XE')))
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
@@ -238,9 +253,7 @@ class Weather(Processor):
         if place.lower() in self.places:
             place = self.places[place.lower()]
 
-        f = urlopen('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
-        soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
-        f.close()
+        soup = get_soup('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
 
         if soup.body.center and soup.body.center.b.string == 'Search not found:':
             raise Weather.WeatherException(u'City not found')
@@ -257,7 +270,7 @@ class Weather(Processor):
         soup = self._get_page(place)
         tds = soup.table.table.findAll('td')
 
-        values = {'place': tds[0].findAll('b')[1].string, 'time': tds[0].findAll('b')[0].string}
+        values = {'place': tds[0].findAll('b')[1].contents[0], 'time': tds[0].findAll('b')[0].contents[0]}
         for index, td in enumerate(tds[2::2]):
             values[self.labels[index]] = self._text(td)
 
@@ -268,7 +281,7 @@ class Weather(Processor):
         forecasts = []
 
         for td in soup.findAll('table')[2].findAll('td', align='left'):
-            day = td.b.string
+            day = td.b.contents[0]
             forecast = td.contents[2]
             forecasts.append('%s: %s' % (day, self._text(forecast)))
 
