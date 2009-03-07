@@ -147,7 +147,9 @@ class Twitter(Processor):
         elif service_url.endswith("/api/"):
             url = "%s/notice/%i" % (service_url[:-5], statuses[0]["id"])
 
-        return u'%s: "%s"' % (url, statuses[0]['text'])
+        when = ago(datetime.utcnow() - datetime.strptime(statuses[0]["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1)
+
+        return u'%s: "%s" %s ago' % (url, statuses[0]['text'], when)
 
     @handler
     def update(self, event, service, id):
