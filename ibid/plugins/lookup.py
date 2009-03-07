@@ -1,38 +1,17 @@
-from urllib2 import urlopen, Request
+from urllib2 import urlopen
 from urllib import urlencode, quote
 from time import time
 from datetime import datetime
 from simplejson import loads
-import cgi
 import re
 
 import feedparser
-from html5lib import HTMLParser, treebuilders
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities
+from ibid.utils import ago, decode_htmlentities, get_soup
 
 help = {}
-
-def get_soup(url, data=None, headers={}):
-    "Request a URL and create a BeautifulSoup parse tree from it"
-
-    req = Request(url, data, headers)
-    f = urlopen(req)
-    data = f.read()
-    f.close()
-
-    encoding = None
-    contentType = f.headers.get('content-type')
-    if contentType:
-        (mediaType, params) = cgi.parse_header(contentType)
-        encoding = params.get('charset')
-
-    treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
-    parser = HTMLParser(tree=treebuilder)
-
-    return parser.parse(data, encoding = encoding)
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):

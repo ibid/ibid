@@ -1,3 +1,4 @@
+import cgi
 from htmlentitydefs import name2codepoint
 import os
 import os.path
@@ -5,6 +6,8 @@ from pkg_resources import resource_exists, resource_string
 import re
 import time
 import urllib2
+
+from html5lib import HTMLParser, treebuilders
 
 import ibid
 
@@ -111,5 +114,24 @@ def unicode_output(output, errors="strict"):
 
 def ibid_version():
     return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+
+def get_soup(url, data=None, headers={}):
+    "Request a URL and create a BeautifulSoup parse tree from it"
+
+    req = urllib2.Request(url, data, headers)
+    f = urllib2.urlopen(req)
+    data = f.read()
+    f.close()
+
+    encoding = None
+    contentType = f.headers.get('content-type')
+    if contentType:
+        (mediaType, params) = cgi.parse_header(contentType)
+        encoding = params.get('charset')
+
+    treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
+    parser = HTMLParser(tree=treebuilder)
+
+    return parser.parse(data, encoding = encoding)
 
 # vi: set et sta sw=4 ts=4:
