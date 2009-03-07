@@ -115,12 +115,18 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
-    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
+    complaints = Option('complaints', 'Complaint responses',
+            (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
+    notauthed = Option('notauthed', 'Complaint responses for auth failures',
+            (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
+    exceptioned = Option('exceptioned', 'Complaint responses for exceptions in modules',
+            (u"I'm not feeling too well", u"That didn't go down very well. Burp.", u"That didn't seem to agree with me"))
 
     @handler
     def complain(self, event):
-        if 'notauthed' in event:
+        if 'exceptioned' in event:
+            event.addresponse(choice(self.exceptioned))
+        elif 'notauthed' in event:
             event.addresponse(choice(self.notauthed))
         else:
             event.addresponse(choice(self.complaints))

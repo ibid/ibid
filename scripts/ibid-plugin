@@ -77,6 +77,7 @@ while True:
             processor.process(event)
         except Exception:
             log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+            event.exceptioned = True
 
     for response in event.responses:
         if isinstance(response, dict):
