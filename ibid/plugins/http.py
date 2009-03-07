@@ -1,4 +1,6 @@
-from httplib2 import Http
+from httplib import HTTPConnection, HTTPSConnection
+from urllib import getproxies_environment
+from urlparse import urlparse
 import re
 
 from ibid.plugins import Processor, match
@@ -19,16 +21,36 @@ class HTTP(Processor):
     def handler(self, event, action, url):
         if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
             url = "http://" + url
+        if url.count("/") < 3:
+            url += "/"
 
-        http = Http()
+        action = action.upper()
+
+        scheme, host = urlparse(url)[:2]
+        scheme = scheme.lower()
+        proxies = getproxies_environment()
+        if scheme in proxies:
+            scheme, host = urlparse(proxies[scheme])[:2]
+            scheme = scheme.lower()
+
+        if scheme == "https":
+            conn = HTTPSConnection(host)
+        else:
+            conn = HTTPConnection(host)
+
         headers={}
-        if action.lower() == 'get':
+        if action == 'GET':
             headers['Range'] = 'bytes=0-%s' % self.max_size
-        response, content = http.request(url, action.upper(), headers=headers)
+        conn.request(action.upper(), url, headers=headers)
+
+        response = conn.getresponse()
         reply = u'%s %s' % (response.status, response.reason)
 
-        if action.lower() == 'get':
-            match = title.search(content)
+        data = response.read()
+        conn.close()
+
+        if action == 'GET':
+            match = title.search(data)
             if match:
                 reply = u'%s "%s"' % (reply, match.groups()[0].strip())
 
