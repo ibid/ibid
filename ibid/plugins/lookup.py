@@ -137,11 +137,17 @@ class Twitter(Processor):
         return u'%s: "%s"' % (status['user']['screen_name'], status['text'])
 
     def remote_latest(self, service, user):
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (self.services[service], user))
+        service_url = self.services[service]
+        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service_url, user))
         statuses = loads(f.read())
         f.close()
 
-        return u'"%s"' % (statuses[0]['text'])
+        if "twitter" in service_url:
+            url = "%s%s/status/%i" % (service_url, user, statuses[0]["id"])
+        elif service_url.endswith("/api/"):
+            url = "%s/notice/%i" % (service_url[:-5], statuses[0]["id"])
+
+        return u'%s: "%s"' % (url, statuses[0]['text'])
 
     @handler
     def update(self, event, service, id):
