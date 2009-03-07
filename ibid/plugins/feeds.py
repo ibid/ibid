@@ -10,6 +10,7 @@ from html2text import html2text_file
 import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base
+from ibid.utils import cacheable_download
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -34,13 +35,13 @@ class Feed(Base):
         self.time = datetime.now()
 
     def is_valid(self):
-        self.update()
-        if self.feed['version']:
-            return True
-        return False
+        self.feed = feedparser.parse(self.url)
+        self.entries = self.feed['entries']
+        return bool(self.feed['version'])
 
     def update(self):
-        self.feed = feedparser.parse(self.url)
+        feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (re.sub(r'\W+', '_', self.name), self.identity_id))
+        self.feed = feedparser.parse(feedfile)
         self.entries = self.feed['entries']
 
 class Manage(Processor):
