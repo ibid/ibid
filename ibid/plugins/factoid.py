@@ -124,12 +124,10 @@ class Forget(Processor):
                     return
 
                 if factoids[0][2].identity_id not in identities and not factoidadmin:
-                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
 
                 if session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.names)) > 0 and not factoidadmin:
-                        raise ibid.AuthException(u"You are not permitted to do that")
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     session.delete(factoid)
@@ -139,12 +137,10 @@ class Forget(Processor):
 
             else:
                 if factoids[0][1].identity_id not in identities and not factoidadmin:
-                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
 
                 if session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0 and not factoidadmin:
-                        raise ibid.AuthException(u"You are not permitted to do that")
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     session.delete(factoid)
@@ -294,7 +290,6 @@ class Set(Processor):
             if correction:
                 identities = get_identities(event, session)
                 if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0:
-                    raise ibid.AuthException(u"You are not permitted to do that")
                     return
                 for fvalue in factoid.values:
                     session.delete(fvalue)
@@ -342,7 +337,6 @@ class Modify(Processor):
             factoid = factoids[0]
 
             if factoid[2].identity_id not in identities and not factoidadmin:
-                raise ibid.AuthException(u"You are not permitted to do that")
                 return
 
             log.info(u"Appending '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
@@ -368,7 +362,6 @@ class Modify(Processor):
             factoid = factoids[0]
 
             if factoid[2].identity_id not in identities and not factoidadmin:
-                raise ibid.AuthException(u"You are not permitted to do that")
                 return
 
             # Not very pythonistic, but escaping is a nightmare.
