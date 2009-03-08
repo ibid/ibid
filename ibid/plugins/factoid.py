@@ -2,7 +2,7 @@ from time import localtime, strftime, time
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
@@ -14,7 +14,6 @@ from ibid.models import Base
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
-                    u'Search searches the keys. Scan searches the values. '
                     u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
 log = logging.getLogger('plugins.factoid')
@@ -114,7 +113,7 @@ class Forget(Processor):
     permission = u'factoid'
     permissions = (u'factoidadmin',)
 
-    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(/(.+?)/(r?)))?$')
+    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     @authorise
     def forget(self, event, name, number, pattern, is_regex):
         session = ibid.databases.ibid()
@@ -182,24 +181,49 @@ class Forget(Processor):
             event.addresponse(u"I don't know about %s" % name)
 
 class Search(Processor):
-    u"""(search|scan) for <pattern> [from <start>]"""
+    u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
     feature = 'factoids'
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
     default = IntOption('search_default', u'Default number of results to return', 10)
 
-    @match(r'^(search|scan)\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
-    def search(self, event, type, limit, pattern, start):
+    regex_re = re.compile(r'^/(.*)/(r?)$')
+
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
         start = start and int(start) or 0
+
+        search_type = search_type and search_type.lower() or u""
+
+        m = self.regex_re.match(pattern)
+        is_regex = False
+        if m:
+            pattern = m.group(1)
+            is_regex = bool(m.group(2))
 
         session = ibid.databases.ibid()
         count = session.query(FactoidValue.factoid_id, func.count(u'*').label('count')).group_by(FactoidValue.factoid_id).subquery()
         query = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id))
-        if type.lower() == u'search':
-            query = query.filter(FactoidName.name.op('REGEXP')(pattern))
+
+        if search_type.startswith('fact'):
+            filter_on = (FactoidName.name,)
+        elif search_type.startswith('value'):
+            filter_on = (FactoidValue.value,)
         else:
-            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+            filter_on = (FactoidName.name, FactoidValue.value)
+
+        if is_regex:
+            filter_op = lambda x, y: x.op('REGEXP')(y)
+        else:
+            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
+            filter_op = lambda x, y: x.like(y)
+
+        if len(filter_on) == 1:
+            query = query.filter(filter_op(filter_on[0], pattern))
+        else:
+            query = query.filter(or_(filter_op(filter_on[0], pattern), filter_op(filter_on[1], pattern)))
+
         matches = query[start:start+limit]
 
         if matches:
