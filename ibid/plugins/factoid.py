@@ -334,7 +334,10 @@ class Modify(Processor):
         session = ibid.databases.ibid()
         factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
-            event.addresponse(u"I didn't know about %s anyway" % name)
+            if pattern:
+                event.addresponse(u"I don't know about any %s matching %s" % (name, pattern))
+            else:
+                event.addresponse(u"I don't know about %s" % name)
         elif len(factoids) > 1:
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
@@ -359,7 +362,10 @@ class Modify(Processor):
         session = ibid.databases.ibid()
         factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
-            event.addresponse(u"I didn't know about %s anyway" % name)
+            if pattern:
+                event.addresponse(u"I don't know about any %s matching %s" % (name, pattern))
+            else:
+                event.addresponse(u"I don't know about %s" % name)
         elif len(factoids) > 1:
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
