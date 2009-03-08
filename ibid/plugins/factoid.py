@@ -67,16 +67,21 @@ class Factoid(Base):
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
+escape_like_re = re.compile(r'([%_\\])')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
-def get_factoid(session, name, number, pattern, all=False):
+def get_factoid(session, name, number, pattern, is_regex, all=False):
     factoid = None
     query = session.query(Factoid).add_entity(FactoidName).add_entity(FactoidValue).join('names').filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\').join('values')
     if pattern:
-        query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        if is_regex:
+            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        else:
+            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
+            query = query.filter(FactoidValue.value.like(pattern))
     if number:
         try:
             factoid = query.order_by(FactoidValue.id)[int(number)]
@@ -102,18 +107,18 @@ class Utils(Processor):
         session.close()
 
 class Forget(Processor):
-    u"""forget <name> [( #<number> | /<pattern>/ )]
+    u"""forget <name> [( #<number> | /<pattern>/[r] )]
     <name> is the same as <other name>"""
     feature = 'factoids'
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)
 
-    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
+    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(/(.+?)/(r?)))?$')
     @authorise
-    def forget(self, event, name, number, pattern):
+    def forget(self, event, name, number, pattern, is_regex):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
@@ -203,7 +208,7 @@ class Search(Processor):
             event.addresponse(u"I couldn't find anything with that name")
 
 class Get(Processor, RPC):
-    u"""<factoid> [( #<number> | /<pattern>/ )]"""
+    u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
     verbs = verbs
@@ -217,17 +222,17 @@ class Get(Processor, RPC):
         RPC.__init__(self)
 
     def setup(self):
-        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
 
     @handler
-    def get(self, event, verb, name, number, pattern):
-        response = self.remote_get(name, number, pattern, event)
+    def get(self, event, verb, name, number, pattern, is_regex):
+        response = self.remote_get(name, number, pattern, is_regex, event)
         if response:
             event.addresponse(response)
 
-    def remote_get(self, name, number=None, pattern=None, event={}):
+    def remote_get(self, name, number=None, pattern=None, is_regex=None, event={}):
         session = ibid.databases.ibid()
-        factoid = get_factoid(session, name, number, pattern)
+        factoid = get_factoid(session, name, number, pattern, is_regex)
         session.close()
 
         if factoid:
@@ -315,19 +320,19 @@ class Set(Processor):
         event.addresponse(True)
 
 class Modify(Processor):
-    u"""<name> [( #<number> | /<pattern>/ )] += <suffix>
-    <name> [( #<number> | /<pattern>/ )] ~= ( s/<regex>/<replacement>/[g][i] | y/<source>/<dest>/ )"""
+    u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
+    <name> [( #<number> | /<pattern>/ )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
     feature = 'factoids'
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)
     priority = 890
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*\+=\s?(.+)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$')
     @authorise
-    def append(self, event, name, number, pattern, suffix):
+    def append(self, event, name, number, pattern, is_regex, suffix):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
             event.addresponse(u"I didn't know about %s anyway" % name)
         elif len(factoids) > 1:
@@ -348,11 +353,11 @@ class Modify(Processor):
             session.close()
             event.addresponse(True)
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*~=\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[gir]*)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*~=\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[gir]*)$')
     @authorise
-    def modify(self, event, name, number, pattern, operation, separator):
+    def modify(self, event, name, number, pattern, is_regex, operation, separator):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
             event.addresponse(u"I didn't know about %s anyway" % name)
         elif len(factoids) > 1:
