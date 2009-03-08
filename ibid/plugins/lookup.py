@@ -127,7 +127,7 @@ class Twitter(Processor):
 
     def setup(self):
         self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % ('|'.join(self.services.keys()),))
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:by\s+|from\s+)?(\S+)$' % ('|'.join(self.services.keys()),))
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$' % ('|'.join(self.services.keys()),))
 
     def remote_update(self, service, id):
         f = urlopen('%sstatuses/show/%s.json' % (self.services[service], id))
@@ -137,11 +137,20 @@ class Twitter(Processor):
         return u'%s: "%s"' % (status['user']['screen_name'], status['text'])
 
     def remote_latest(self, service, user):
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (self.services[service], user))
+        service_url = self.services[service]
+        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service_url, user))
         statuses = loads(f.read())
         f.close()
+        latest = statuses[0]
 
-        return u'"%s"' % (statuses[0]['text'])
+        if "twitter" in service_url:
+            url = "%s%s/status/%i" % (service_url, latest["user"]["screen_name"], latest["id"])
+        elif service_url.endswith("/api/"):
+            url = "%s/notice/%i" % (service_url[:-5], latest["id"])
+
+        when = ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1)
+
+        return u'"%s" %s ago, %s' % (latest['text'], when, url)
 
     @handler
     def update(self, event, service, id):
