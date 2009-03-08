@@ -321,7 +321,7 @@ class Set(Processor):
 
 class Modify(Processor):
     u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
-    <name> [( #<number> | /<pattern>/ )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
+    <name> [( #<number> | /<pattern>/[r] )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
     feature = 'factoids'
 
     permission = u'factoid'
