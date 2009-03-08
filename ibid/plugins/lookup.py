@@ -141,15 +141,16 @@ class Twitter(Processor):
         f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service_url, user))
         statuses = loads(f.read())
         f.close()
+        latest = statuses[0]
 
         if "twitter" in service_url:
-            url = "%s%s/status/%i" % (service_url, user, statuses[0]["id"])
+            url = "%s%s/status/%i" % (service_url, latest["user"]["screen_name"], latest["id"])
         elif service_url.endswith("/api/"):
-            url = "%s/notice/%i" % (service_url[:-5], statuses[0]["id"])
+            url = "%s/notice/%i" % (service_url[:-5], latest["id"])
 
-        when = ago(datetime.utcnow() - datetime.strptime(statuses[0]["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1)
+        when = ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1)
 
-        return u'%s: "%s" %s ago' % (url, statuses[0]['text'], when)
+        return u'"%s" %s ago, %s' % (latest['text'], when, url)
 
     @handler
     def update(self, event, service, id):
