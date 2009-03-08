@@ -12,9 +12,10 @@ from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base
 
-help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. ' +
-                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. ' +
-                    u'Search searches the keys. Scan searches the values.'}
+help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
+                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
+                    u'Search searches the keys. Scan searches the values. '
+                    u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
 log = logging.getLogger('plugins.factoid')
 
@@ -347,7 +348,7 @@ class Modify(Processor):
             session.close()
             event.addresponse(True)
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*~=\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[g]?[i]?)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?\s*~=\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[gir]*)$')
     @authorise
     def modify(self, event, name, number, pattern, operation, separator):
         session = ibid.databases.ibid()
@@ -371,18 +372,18 @@ class Modify(Processor):
                 char = operation[pos]
                 if char == separator:
                     parts.append([])
-                elif char == "\\":
+                elif char == u"\\":
                     if pos < len(operation) - 1:
-                        if operation[pos+1] == "\\":
-                            parts[-1].append("\\")
+                        if operation[pos+1] == u"\\":
+                            parts[-1].append(u"\\")
                             pos += 1
                         elif operation[pos+1] == separator:
                             parts[-1].append(separator)
                             pos += 1
                         else:
-                            parts[-1].append("\\")
+                            parts[-1].append(u"\\")
                     else:
-                        parts[-1].append("\\")
+                        parts[-1].append(u"\\")
                 else:
                     parts[-1].append(char)
                 pos += 1
@@ -390,27 +391,36 @@ class Modify(Processor):
             parts = [u"".join(x) for x in parts]
 
             if len(parts) != 4:
-                event.addresponse(u"That operation makes no sense. Work on your regex-fu.")
+                event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
                 return
 
             oldvalue = factoid[2].value
             op, search, replace, flags = parts
+            flags = flags.lower()
             if op == "s":
-                if "i" in flags.lower():
-                    search += "(?i)"
-                try:
-                    factoid[2].value, subs = re.subn(search, replace, factoid[2].value, int("g" not in flags))
-                except:
-                    event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
-                    return
+                if "r" in flags:
+                    if "i" in flags:
+                        search += "(?i)"
+                    try:
+                        factoid[2].value = re.sub(search, replace, oldvalue, int("g" not in flags))
+                    except:
+                        event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                        return
+                else:
+                    newvalue = oldvalue.replace(search, replace, "g" in flags and -1 or 1)
+                    if newvalue == oldvalue:
+                        event.addresponse(u"I couldn't find '%s' in '%s'. If that was a proper regular expression, append the 'r' flag" %
+                            (search, oldvalue))
+                        return
+                    factoid[2].value = newvalue
 
             elif op == "y":
                 if len(search) != len(replace):
-                    event.addresponse(u"That operation makes no sense. The source and destination must be the same length.")
+                    event.addresponse(u"That operation makes no sense. The source and destination must be the same length")
                     return
                 try:
                     table = dict((ord(x), ord(y)) for x, y in zip(search, replace))
-                    factoid[2].value = factoid[2].value.translate(table)
+                    factoid[2].value = oldvalue.translate(table)
 
                 except:
                     event.addresponse(u"That operation makes no sense. Try something like y/abcdef/ABCDEF/")
@@ -422,4 +432,5 @@ class Modify(Processor):
             session.flush()
             session.close()
             event.addresponse(True)
+
 # vi: set et sta sw=4 ts=4:
