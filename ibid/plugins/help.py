@@ -27,7 +27,7 @@ class Help(Processor):
                     if feature not in features:
                         features.append(feature)
 
-        event.addresponse(u' '.join(features))
+        event.addresponse(u'Features: %s', u' '.join(sorted(features)))
 
     @match(r'^help\s+(.+)$')
     def help(self, event, feature):
@@ -39,7 +39,7 @@ class Help(Processor):
                 event.addresponse(module.help[feature])
                 return
 
-        event.addresponse(u"I can't help you with %s" % feature)
+        event.addresponse(u"I can't help you with %s", feature)
 
     @match(r'^(?:usage|how\s+do\s+I\s+use)\s+(.+)$')
     def usage(self, event, feature):
@@ -49,9 +49,9 @@ class Help(Processor):
             for name, klass in inspect.getmembers(processor, inspect.isclass):
                 if hasattr(klass, 'feature') and klass.feature == feature and klass.__doc__:
                     for line in klass.__doc__.splitlines():
-                        event.addresponse('Usage: %s' % line.strip())
+                        event.addresponse(u'Usage: %s', line.strip())
 
         if not event.responses:
-            event.addresponse(u"I don't know how to use %s either" % feature)
+            event.addresponse(u"I don't know how to use %s either", feature)
 
 # vi: set et sta sw=4 ts=4:

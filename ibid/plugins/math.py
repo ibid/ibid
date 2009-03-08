@@ -30,12 +30,12 @@ class BC(Processor):
             if output:
                 output = unicode_output(output.strip())
                 output = output.replace('\\\n', '')
-                event.addresponse(output)
+                event.addresponse(u'%s', output)
             else:
                 error = unicode_output(error.strip())
                 error = error.split(":", 1)[1].strip()
                 error = error[0].lower() + error[1:]
-                event.addresponse(u"You can't %s" % error)
+                event.addresponse(u"You can't %s", error)
         else:
             event.addresponse(u"Error running bc")
             error = unicode_output(error.strip())
@@ -70,17 +70,17 @@ class Calc(Processor):
             event.addresponse(u"I can't divide by zero.")
             return
         except ArithmeticError, e:
-            event.addresponse(u"I can't do that: %s" % e.message)
+            event.addresponse(u"I can't do that: %s", e.message)
             return
         except ValueError, e:
             if e.message == "math domain error":
-                event.addresponse(u"I can't do that: %s" % e.message)
+                event.addresponse(u"I can't do that: %s", e.message)
                 return
         except Exception, e:
             return
 
         if isinstance(result, (int, long, float, complex)):
-            event.addresponse(unicode(result))
+            event.addresponse(u'%s', result)
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
@@ -197,17 +197,19 @@ class BaseConvert(Processor):
         base_to = self._parse_base(base_to)
         
         if min(base_from, base_to) < 2 or max(base_from, base_to) > 64:
-            event.addresponse(u"Sorry, valid bases are between 2 and 64, inclusive.")
+            event.addresponse(u'Sorry, valid bases are between 2 and 64, inclusive')
             return
         
         try:
             number = self._from_base(number, base_from)
         except ValueError, e:
-            event.addresponse(e.message)
+            event.addresponse(u'%s', e.message)
             return
         
-        event.addresponse(u"That is %s in %s." %
-                (self._in_base(number, base_to), self._base_name(base_to)))
+        event.addresponse(u'That is %(result)s in %(base)s', {
+            'result': self._in_base(number, base_to),
+            'base': self._base_name(base_to),
+        })
 
     @handler
     def ascii_decode(self, event, text, base_to):
@@ -222,16 +224,19 @@ class BaseConvert(Processor):
         for char in text:
             code_point = ord(char)
             if code_point > 255:
-                output += u"U%s " % self._in_base(code_point, base_to)
+                output += u'U%s ' % self._in_base(code_point, base_to)
             else:
                 output += self._in_base(code_point, base_to) + u" "
         
         output = output.strip()
 
-        event.addresponse(u"That is %s in %s." % (output, self._base_name(base_to)))
+        event.addresponse(u'That is %(result)s in %(base)s', {
+            'result': output,
+            'base': self._base_name(base_to),
+        })
 
-        if base_to == 64 and [True for plugin in ibid.processors if getattr(plugin, "feature", None) == "base64"]:
-            event.addresponse(u'If you want a base64 encoding, use the "base64" feature.')
+        if base_to == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+            event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
     @handler
     def ascii_encode(self, event, source, base_from):
@@ -266,11 +271,11 @@ class BaseConvert(Processor):
             if len(buf) > 0:
                 output += process_buf(buf)
         except ValueError, e:
-            event.addresponse(e.message)
+            event.addresponse(u'%s', e.message)
             return
         
-        event.addresponse(u'That is "%s".' % output)
-        if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, "feature", None) == "base64"]:
-            event.addresponse(u'If you want a base64 encoding, use the "base64" feature.')
+        event.addresponse(u'That is "%s"', output)
+        if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+            event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
 # vi: set et sta sw=4 ts=4:

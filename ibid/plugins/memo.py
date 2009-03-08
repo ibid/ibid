@@ -60,11 +60,11 @@ class Tell(Processor):
                 if not identity:
                     identity = account.identities[0]
         if not to:
-            event.addresponse(u"I don't know who %s is" % who)
+            event.addresponse(u"I don't know who %s is", who)
             return
 
         if permission(u'recvmemo', to.account and to.account.id or None, to.source) != 'yes':
-            event.addresponse(u'Just tell %s yourself' % who)
+            event.addresponse(u'Just tell %s yourself', who)
             return
 
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
@@ -95,11 +95,22 @@ class Deliver(Processor):
         memos = get_memos(session, event)
 
         for memo in memos:
-            message = '%s: By the way, %s on %s told me to tell you %s %s ago' % (event.sender['nick'], memo.sender.identity, memo.sender.source, memo.memo, ago(datetime.now()-memo.time))
             if memo.private:
+                message = u'By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago' % {
+                    'sender': memo.sender.identity,
+                    'source': memo.sender.source,
+                    'message': memo.memo,
+                    'ago': ago(datetime.now()-memo.time),
+                }
                 event.addresponse({'reply': message, 'target': event.sender['id']})
             else:
-                event.addresponse(message)
+                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago', {
+                    'recipient': event.sender['nick'],
+                    'sender': memo.sender.identity,
+                    'source': memo.sender.source,
+                    'message': memo.memo,
+                    'ago': ago(datetime.now()-memo.time),
+                })
 
             memo.delivered = True
             session.save_or_update(memo)
@@ -128,7 +139,7 @@ class Notify(Processor):
         memos = get_memos(session, event)
 
         if len(memos) > 0:
-            event.addresponse({'reply': 'You have %s messages' % len(memos), 'target': event.sender['id']})
+            event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
             memo_cache[event.identity] = None
 
@@ -145,7 +156,7 @@ class Messages(Processor):
     def messages(self, event):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
-        event.addresponse(', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
+        event.addresponse(u'%s', u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
         session.close()
 
     @match(r'message\s+(\d+)$')
@@ -153,7 +164,12 @@ class Messages(Processor):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
         memo = memos[int(number)]
-        event.addresponse(u"From %s on %s at %s: %s" % (memo.sender.identity, memo.sender.source, memo.time.strftime(self.datetime_format), memo.memo))
+        event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
+            'sender': memo.sender.identity,
+            'source': memo.sender.source,
+            'time': memo.time.strftime(self.datetime_format),
+            'message': memo.memo,
+        })
         session.close()
 
 

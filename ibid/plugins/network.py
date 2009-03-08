@@ -35,17 +35,20 @@ class DNS(Processor):
         try:
             answers = resolver.query(host, str(record))
         except NoAnswer:
-            event.addresponse(u"I couldn't find any %s records for %s" % (record, host))
+            event.addresponse(u"I couldn't find any %(type)s records for %(host)s", {
+                'type': record,
+                'host': host,
+            })
             return
         except NXDOMAIN:
-            event.addresponse(u"I couldn't find the domain %s" % host)
+            event.addresponse(u"I couldn't find the domain %s", host)
             return
 
         responses = []
         for rdata in answers:
             responses.append(unicode(rdata))
 
-        event.addresponse(u', '.join(responses))
+        event.addresponse(u'Records: %s', u', '.join(responses))
 
 help['ping'] = u'ICMP pings the specified host.'
 class Ping(Processor):
@@ -69,11 +72,12 @@ class Ping(Processor):
         code = ping.wait()
 
         if code == 0:
-            output = unicode_output(' '.join(output.splitlines()[-2:]))
-            event.addresponse(output)
+            output = unicode_output(output)
+            output = u' '.join(output.splitlines()[-2:])
+            event.addresponse(u'%s', output)
         else:
-            error = unicode_output(error.replace('\n', ' ').replace('ping:', '', 1).strip())
-            event.addresponse(error)
+            error = unicode_output(error).replace(u'\n', u' ').replace(u'ping:', u'', 1).strip()
+            event.addresponse(u'Error: %s', error)
 
 help['tracepath'] = u'Traces the path to the given host.'
 class Tracepath(Processor):
@@ -96,10 +100,10 @@ class Tracepath(Processor):
         if code == 0:
             output = unicode_output(output)
             for line in output.splitlines():
-                event.addresponse(line)
+                event.addresponse(u'%s', line)
         else:
             error = unicode_output(error.strip())
-            event.addresponse(error.replace('\n', ' '))
+            event.addresponse(u'Error: %s', error.replace(u'\n', u' '))
 
 help['ipcalc'] = u'IP address calculator'
 class IPCalc(Processor):
@@ -133,14 +137,14 @@ class IPCalc(Processor):
 
         if code == 0:
             output = unicode_output(output)
-            if output.startswith("INVALID ADDRESS"):
+            if output.startswith(u"INVALID ADDRESS"):
                 event.addresponse(u"That's an invalid address. Try something like 192.168.1.0/24")
             else:
                 for line in output.splitlines():
                     if line.strip():
-                        event.addresponse(line)
+                        event.addresponse(u'%s', line)
         else:
             error = unicode_output(error.strip())
-            event.addresponse(error.replace('\n', ' '))
+            event.addresponse(u'%s', error.replace(u'\n', u' '))
 
 # vi: set et sta sw=4 ts=4:

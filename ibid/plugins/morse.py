@@ -70,12 +70,12 @@ class Morse(Processor):
         
         def morse2text(morse):
             rtable = dict((v, k) for k, v in table.items())
-            toks = morse.split(' ')
+            toks = morse.split(u' ')
             return u" ".join(rtable.get(t, t) for t in toks)
 
         if message.replace('-', '').replace('.', '').isspace():
-            event.addresponse(morse2text(message))
+            event.addresponse(u'Decodes as %s', morse2text(message))
         else:
-            event.addresponse(text2morse(message))
+            event.addresponse(u'Encodes as %s', text2morse(message))
 
 # vi: set et sta sw=4 ts=4:
