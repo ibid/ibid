@@ -9,6 +9,7 @@ import urllib2
 
 from html5lib import HTMLParser, treebuilders
 from xml.etree import cElementTree
+from BeautifulSoup import BeautifulSoup
 
 import ibid
 
@@ -130,7 +131,9 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
         (mediaType, params) = cgi.parse_header(contentType)
         encoding = params.get('charset')
 
-    if treetype == "etree":
+    if treetype == "beautifulsoup":
+        return BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    elif treetype == "etree":
         treebuilder = treebuilders.getTreeBuilder("etree", cElementTree)
     else:
         treebuilder = treebuilders.getTreeBuilder(treetype)
