@@ -84,7 +84,7 @@ class Calc(Processor):
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
-    """[convert] <number> [from base <number>] to base <number>
+    u"""[convert] <number> [from base <number>] to base <number>
     [convert] ascii <text> to base <number>
     [convert] <sequence> from base <number> to ascii"""
 
