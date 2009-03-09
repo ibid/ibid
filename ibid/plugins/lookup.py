@@ -192,7 +192,7 @@ class Currency(Processor):
 
         if frm not in self.currencies or to not in self.currencies:
             if command.lower() == "exchange":
-                event.addresponse("Sorry, I don't know about a currency called %s" % (frm not in self.currencies and frm or to))
+                event.addresponse(u"Sorry, I don't know about a currency called %s" % (frm not in self.currencies and frm or to))
             return
 
         data = {'Amount': amount, 'From': frm, 'To': to}
