@@ -54,6 +54,6 @@ class HTTP(Processor):
             if match:
                 reply += u' "%s"' % match.groups()[0].strip()
 
-        event.addresponse('%s', reply)
+        event.addresponse(u'%s', reply)
 
 # vi: set et sta sw=4 ts=4:

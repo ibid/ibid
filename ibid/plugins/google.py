@@ -147,7 +147,7 @@ class GoogleScrapeSearch(Processor):
                 break
 
         if results:
-            event.addresponse('%s', u', '.join(results))
+            event.addresponse(u'%s', u', '.join(results))
         else:
             event.addresponse(u"Wow! Google couldn't find anything")
 
