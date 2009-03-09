@@ -166,14 +166,14 @@ class Currency(Processor):
     feature = "currency"
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
-    currencies = []
+    currencies = {}
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
 
         tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
-        self.currencies = []
+        self.currencies = {}
         for tbl_sub in tbl_main.getiterator('table'):
             if tbl_sub.get('class') == 'tbl_sub':
                 for tr in tbl_sub.getiterator('tr'):
@@ -183,14 +183,26 @@ class Currency(Processor):
                         place = u""
                     if "," in place[1:-1]:
                         place, name = place.split(',', 1)
-                    self.currencies.append((code, place.strip(), name.strip()))
+                    self.currencies[code] = (place.strip(), name.strip())
 
-    @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
-    def exchange(self, event, amount, frm, to):
+    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
+    def exchange(self, event, command, amount, frm, to):
+        if not self.currencies:
+            self._load_currencies()
+
+        if frm not in self.currencies or to not in self.currencies:
+            if command.lower() == "exchange":
+                event.addresponse("Sorry, I don't know about a currency called %s" % (frm not in self.currencies and frm or to))
+            return
+
         data = {'Amount': amount, 'From': frm, 'To': to}
         etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
-        event.addresponse(u" ".join(tag.text for tag in etree.getiterator('h2')))
+        result = u" ".join(tag.text for tag in etree.getiterator('h2'))
+        if result:
+            event.addresponse(result)
+        else:
+            event.addresponse(u"The bureau de change appears to be closed for lunch")
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
@@ -199,7 +211,7 @@ class Currency(Processor):
 
         search = re.compile(place, re.I)
         results = []
-        for code, place, name in self.currencies:
+        for code, (place, name) in self.currencies.iteritems():
             if search.search(place):
                 results.append('%s uses %s (%s)' % (place, name, code))
 
