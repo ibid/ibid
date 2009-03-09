@@ -34,3 +34,5 @@ Other things we recommend:
 * Install a dictd on localhost for the dict plugin (debian/ubuntu package "dictd")
 * Install GNU units for the unit conversion plugin ("units")
 * Install bc for "bc" calculations ("bc")
+* Install ipcalc ("ipcalc")
+* Install and configure apt-file ("apt-file")
