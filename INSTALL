@@ -1,13 +1,20 @@
 Installation Instructions for Debian/Ubuntu Systems:
 
+Supported releases:
+* Ubuntu hardy (with hardy-backports)
+* Ubuntu intrepid
+* Ubuntu jaunty
+* Debian lenny
+* Debian squeeze
+
 Add the Ibid PPA to your APT sources:
 # echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -c | cut -f2` main > /etc/apt/sources.list.d/ibid.list
 # apt-key adv --recv-keys --keyserver keyserver.ubuntu.com c2d0f8531bba37930c0d85e3d59f9e8dfd1c44ba
 # aptitude update
 
 Install required modules:
-# aptitude install python-virtualenv python-soappy python-twisted \
-   python-configobj python-sqllite2 python-feedparser \
+# aptitude install python-soappy python-sqlalchemy python-twisted \
+   python-configobj python-pysqlite2 python-feedparser \
    python-html5lib python-dictclient python-imdbpy \
    python-dns python-simplejson python-jinja \
    python-pysilc python-pinder
