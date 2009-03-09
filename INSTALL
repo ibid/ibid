@@ -14,7 +14,7 @@ Add the Ibid PPA to your APT sources:
 
 Install required modules:
 # aptitude install python-beautifulsoup python-celementtree \
-	python-configobj python-dictclient python-dns \
+	python-configobj python-dictclient python-dnspython \
 	python-feedparser python-html5lib python-imdbpy \
 	python-jinja python-pinder python-pysilc \
 	python-pysqlite2 python-simplejson python-soappy \
