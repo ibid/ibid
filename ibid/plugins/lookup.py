@@ -9,7 +9,7 @@ import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities, get_soup
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree
 
 help = {}
 
@@ -21,7 +21,7 @@ class Bash(Processor):
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
     def bash(self, event, quote):
-        soup = get_soup('http://bash.org/?%s' % quote.lower())
+        soup = get_html_parse_tree('http://bash.org/?%s' % quote.lower())
 
         if quote.lower() == "random":
             number = u"".join(soup.find('p', 'quote').find('b').contents)
@@ -97,7 +97,7 @@ class FMyLife(Processor):
     feature = "fml"
 
     def remote_get(self, id):
-        soup = get_soup('http://www.fmylife.com/' + str(id))
+        soup = get_html_parse_tree('http://www.fmylife.com/' + str(id))
 
         quote = soup.find('div', id='wrapper').div.p
         if quote:
@@ -169,22 +169,28 @@ class Currency(Processor):
     currencies = []
 
     def _load_currencies(self):
-        soup = get_soup('http://www.xe.com/iso4217.php', headers=self.headers)
+        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
+
+        tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
         self.currencies = []
-        for tr in soup.find('table', 'tbl_main').table.findAll('tr'):
-            code, place = tr.findAll('td')
-            code = code.contents[0]
-            place = ''.join(place.findAll(text=True))
-            place, name = place.find(',') != -1 and place.split(',', 1) or place.split(' ', 1)
-            self.currencies.append((code.string, place.strip(), name.strip()))
+        for tbl_sub in tbl_main.getiterator('table'):
+            if tbl_sub.get('class') == 'tbl_sub':
+                for tr in tbl_sub.getiterator('tr'):
+                    code, place = [x.text for x in tr.getchildren()]
+                    name = u""
+                    if not place:
+                        place = u""
+                    if "," in place[1:-1]:
+                        place, name = place.split(',', 1)
+                    self.currencies.append((code, place.strip(), name.strip()))
 
     @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
     def exchange(self, event, amount, frm, to):
         data = {'Amount': amount, 'From': frm, 'To': to}
-        soup = get_soup('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers)
+        etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
-        event.addresponse(u" ".join(tag.contents[0] for tag in soup.findAll('h2', 'XE')))
+        event.addresponse(u" ".join(tag.text for tag in etree.getiterator('h2')))
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
@@ -232,7 +238,7 @@ class Weather(Processor):
         if place.lower() in self.places:
             place = self.places[place.lower()]
 
-        soup = get_soup('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
+        soup = get_html_parse_tree('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
 
         if soup.body.center and soup.body.center.b.string == 'Search not found:':
             raise Weather.WeatherException(u'City not found')

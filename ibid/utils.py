@@ -8,6 +8,7 @@ import time
 import urllib2
 
 from html5lib import HTMLParser, treebuilders
+from xml.etree import cElementTree
 
 import ibid
 
@@ -115,8 +116,8 @@ def unicode_output(output, errors="strict"):
 def ibid_version():
     return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
 
-def get_soup(url, data=None, headers={}):
-    "Request a URL and create a BeautifulSoup parse tree from it"
+def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
+    "Request a URL, parse with html5lib, and return a parse tree from it"
 
     req = urllib2.Request(url, data, headers)
     f = urllib2.urlopen(req)
@@ -129,7 +130,11 @@ def get_soup(url, data=None, headers={}):
         (mediaType, params) = cgi.parse_header(contentType)
         encoding = params.get('charset')
 
-    treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
+    if treetype == "etree":
+        treebuilder = treebuilders.getTreeBuilder("etree", cElementTree)
+    else:
+        treebuilder = treebuilders.getTreeBuilder(treetype)
+
     parser = HTMLParser(tree=treebuilder)
 
     return parser.parse(data, encoding = encoding)
