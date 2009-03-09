@@ -116,7 +116,7 @@ class Complain(Processor):
 
     priority = 950
     complaints = Option('complaints', 'Complaint responses', {
-        'nonsese': (
+        'nonsense': (
             u'Huh?', u'Sorry...', u'?',
             u'Excuse me?', u'*blink*', u'What?',
         ),
@@ -135,7 +135,7 @@ class Complain(Processor):
         if 'complain' in event:
             event.addresponse(choice(self.complaints[event.complain]))
         else:
-            event.addresponse(choice(self.complaints['nonsese']))
+            event.addresponse(choice(self.complaints['nonsense']))
 
 class RateLimit(Processor):
 
