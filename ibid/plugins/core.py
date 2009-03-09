@@ -115,24 +115,27 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    complaints = Option('complaints', 'Complaint responses',
-            (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
-    notauthed_complaints = Option('notauthed_complaints', 'Complaint responses for auth failures',
-            (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
-    exception_complaints = Option('exception_complaints', 'Complaint responses for exceptions in modules',
-            (u"I'm not feeling too well", u"That didn't go down very well. Burp.", u"That didn't seem to agree with me"))
+    complaints = Option('complaints', 'Complaint responses', {
+        'nonsese': (
+            u'Huh?', u'Sorry...', u'?',
+            u'Excuse me?', u'*blink*', u'What?',
+        ),
+        'notauthed': (
+            u"I'm not your bitch", u"Just do it yourself",
+            u"I'm not going to listen to you", u"You're not the boss of me",
+        ),
+        'exception': (
+            u"I'm not feeling too well", u"That didn't go down very well. Burp.",
+            u"That didn't seem to agree with me",
+        ),
+    })
 
     @handler
     def complain(self, event):
         if 'complain' in event:
-            if event.complain == 'notauthed':
-                event.addresponse(choice(self.notauthed_complaints))
-                return
-            elif event.complain == 'exception':
-                event.addresponse(choice(self.exception_complaints))
-                return
-
-        event.addresponse(choice(self.complaints))
+            event.addresponse(choice(self.complaints[event.complain]))
+        else:
+            event.addresponse(choice(self.complaints['nonsese']))
 
 class RateLimit(Processor):
 
