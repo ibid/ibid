@@ -13,11 +13,12 @@ Add the Ibid PPA to your APT sources:
 # aptitude update
 
 Install required modules:
-# aptitude install python-soappy python-sqlalchemy python-twisted \
-   python-configobj python-pysqlite2 python-feedparser \
-   python-html5lib python-dictclient python-imdbpy \
-   python-dns python-simplejson python-jinja \
-   python-pysilc python-pinder
+# aptitude install python-beautifulsoup python-celementtree \
+	python-configobj python-dictclient python-dns \
+	python-feedparser python-html5lib python-imdbpy \
+	python-jinja python-pinder python-pysilc \
+	python-pysqlite2 python-simplejson python-soappy \
+	python-sqlalchemy python-twisted
 
 Switch to the user ibid will be running as.
 $ export PYTHONPATH=.
