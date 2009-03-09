@@ -52,7 +52,8 @@ class HTTP(Processor):
         if action == 'GET':
             match = title.search(data)
             if match:
-                reply = u'%s "%s"' % (reply, match.groups()[0].strip())
+                reply += u' "%s"' % match.groups()[0].strip()
 
-        event.addresponse(reply)
+        event.addresponse(u'%s', reply)
+
 # vi: set et sta sw=4 ts=4:

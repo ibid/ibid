@@ -29,7 +29,7 @@ class Aptitude(Processor):
 
         for word in self.bad_search_strings:
             if word in term:
-                event.addresponse(u"I can't tell you about my host system. Sorry.")
+                event.addresponse(u"I can't tell you about my host system. Sorry")
                 return False
 
         if term.strip().startswith("-"):
@@ -52,14 +52,17 @@ class Aptitude(Processor):
             if output:
                 output = unicode_output(output.strip())
                 output = [line.strip() for line in output.splitlines()]
-                event.addresponse(u"Found %i packages: %s" % (len(output), u', '.join(output)))
+                event.addresponse(u'Found %(num)i packages: %(names)s', {
+                    'num': len(output),
+                    'names': u', '.join(output),
+                })
             else:
                 event.addresponse(u'No packages found')
         else:
             error = unicode_output(error.strip())
             if error.startswith(u"E: "):
                 error = error[3:]
-            event.addresponse(u"Couldn't search: %s" % error)
+            event.addresponse(u"Couldn't search: %s", error)
 
     @match(r'(?:apt|aptitude|apt-get)\s+show\s+(.+)$')
     def show(self, event, term):
@@ -73,27 +76,30 @@ class Aptitude(Processor):
 
         if code == 0:
             description = None
+            provided = None
             output = unicode_output(output)
             for line in output.splitlines():
                 if not description:
                     if line.startswith(u'Description:'):
                         description = u'%s:' % line.split(None, 1)[1]
                     elif line.startswith(u'Provided by:'):
-                        description = u'Virtual package provided by %s' % line.split(None, 2)[2]
+                        provided = line.split(None, 2)[2]
                 elif line != "":
                     description += u' ' + line.strip()
                 else:
                     # More than one package listed
                     break
-            if description:
-                event.addresponse(description)
+            if provided:
+                event.addresponse(u'Virtual package provided by %s', provided)
+            elif description:
+                event.addresponse(u'%s', description)
             else:
                 raise Exception("We couldn't successfully parse aptitude's output")
         else:
             error = unicode_output(error.strip())
             if error.startswith(u"E: "):
                 error = error[3:]
-            event.addresponse(u"Couldn't find package: %s" % error)
+            event.addresponse(u"Couldn't find package: %s", error)
     
 help['apt-file'] = u'Searches for packages containing the specified file'
 class AptFile(Processor):
@@ -116,13 +122,16 @@ class AptFile(Processor):
             if output:
                 output = unicode_output(output.strip())
                 output = [line.split(u':')[0] for line in output.splitlines()]
-                event.addresponse(u"Found %i packages: %s" % (len(output), u', '.join(output)))
+                event.addresponse(u'Found %(num)i packages: %(names)s', {
+                    'num': len(output),
+                    'names': u', '.join(output),
+                })
             else:
-                event.addresponse(u'No packages found.')
+                event.addresponse(u'No packages found')
         else:
             error = unicode_output(error.strip())
             if u"The cache directory is empty." in error:
-                event.addresponse(u'Search error: apt-file cache empty.')
+                event.addresponse(u'Search error: apt-file cache empty')
             else:
                 event.addresponse(u'Search error')
             raise Exception("apt-file: %s" % error)

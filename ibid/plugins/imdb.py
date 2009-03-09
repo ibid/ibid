@@ -50,25 +50,28 @@ class IMDB(Processor):
                     self.imdb.update(result)
 
         except IMDbDataAccessError, e:
-            event.addresponse(u"IMDb doesn't like me today. It said '%s'" % e[0]["errmsg"])
+            event.addresponse(u"IMDb doesn't like me today. It said '%s'", e[0]["errmsg"])
             raise
 
         except IMDbError, e:
-            event.addresponse(u"IMDb must be having a bad day (or you are asking it silly things)")
+            event.addresponse(u'IMDb must be having a bad day (or you are asking it silly things)')
             raise
 
         if result is not None:
-            event.addresponse(u"Found " + getattr(self, "display_" + search_type)(result))
+            event.addresponse(u'Found %s', getattr(self, 'display_' + search_type)(result))
             return
 
         if len(results) == 0:
-            event.addresponse(u"Sorry, couldn't find that.")
+            event.addresponse(u"Sorry, couldn't find that")
         else:
             results = [x[self.name_keys[search_type]] for x in results]
             results = enumerate(results)
             results = [u"%i: %s" % (x[0] + 1, x[1]) for x in results]
-            more = (u"", u">")[len(results) == 20]
-            event.addresponse(u"Found %s%i matches: %s" % (more, len(results), u", ".join(results)))
+            event.addresponse(u'Found %(greaterthan)s%(num)i matches: %(results)s', {
+                'greaterthan': (u'', u'>')[len(results) == 20],
+                'num': len(results),
+                'results': u', '.join(results),
+            })
 
     def display_character(self, character):
         desc = u"%s: %s." % (character.characterID, character["long imdb name"])

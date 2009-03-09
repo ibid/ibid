@@ -25,13 +25,13 @@ class Coffee(Processor):
         
         self.pot = [event.sender['nick']]
         sleep(self.time)
-        event.addresponse(u"Coffee's ready for %s!" % u', '.join(self.pot))
+        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pot))
         self.pot = None
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
         if not self.pot:
-            event.addresponse(u"There isn't a pot on.")
+            event.addresponse(u"There isn't a pot on")
 
         elif len(self.pot) >= self.cups:
             event.addresponse(u"Sorry, there aren't any more cups left")
@@ -47,7 +47,10 @@ class Version(Processor):
 
     @match(r'^version$')
     def show_version(self, event):
-        event.addresponse(ibid_version() and u"I am version %s" % ibid_version() or u"I don't know what version I am :-(")
+        if ibid_version():
+            event.addresponse(u'I am version %s', ibid_version())
+        else:
+            event.addresponse(u"I don't know what version I am :-(")
 
 help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
 class Dvorak(Processor):
@@ -65,10 +68,10 @@ class Dvorak(Processor):
     
     @match(r'(?:asdf|dvorak)\s+(.+)')
     def convert_from_qwerty(self, event, text):
-        event.addresponse(text.translate(self.typed_on_qwerty))
+        event.addresponse(u'%s', text.translate(self.typed_on_qwerty))
     
     @match(r'(?:aoeu|qwerty)\s+(.+)')
     def convert_from_dvorak(self, event, text):
-        event.addresponse(text.translate(self.typed_on_dvorak))
+        event.addresponse(u'%s', text.translate(self.typed_on_dvorak))
 
 # vi: set et sta sw=4 ts=4:
