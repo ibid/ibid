@@ -144,15 +144,16 @@ def get_soup(url, data=None, headers={}):
         encoding = params.get('charset')
 
     compression = f.headers.get('content-encoding')
-    if compression.lower() == "deflate":
-        try:
-            data = zlib.decompress(data)
-        except zlib.error:
-            data = zlib.decompress(data, -zlib.MAX_WBITS)
-    elif compression.lower() == "gzip":
-        compressedstream = StringIO(data)
-        gzipper = GzipFile(fileobj=compressedstream)
-        data = gzipper.read()
+    if compression:
+        if compression.lower() == "deflate":
+            try:
+                data = zlib.decompress(data)
+            except zlib.error:
+                data = zlib.decompress(data, -zlib.MAX_WBITS)
+        elif compression.lower() == "gzip":
+            compressedstream = StringIO(data)
+            gzipper = GzipFile(fileobj=compressedstream)
+            data = gzipper.read()
 
     treebuilder = treebuilders.getTreeBuilder("beautifulsoup")
     parser = HTMLParser(tree=treebuilder)
