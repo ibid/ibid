@@ -25,11 +25,11 @@ class Random(Processor):
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):
         if not begin and not end:
-            event.addresponse(unicode(random()))
+            event.addresponse(u'I always liked %f', random())
         else:
             begin = int(begin)
             end = end and int(end) or 0
-            event.addresponse(unicode(randint(min(begin,end), max(begin,end))))
+            event.addresponse(u'I always liked %i', randint(min(begin,end), max(begin,end)))
 
 help['units'] = 'Converts values between various units.'
 class Units(Processor):
@@ -91,13 +91,20 @@ class Units(Processor):
         result = output.splitlines()[0].strip()
 
         if code == 0:
-            event.addresponse(result)
+            event.addresponse(u'%s', result)
         elif code == 1:
             if result == "conformability error":
-                event.addresponse(u"I don't think %s can be converted to %s." % (frm, to))
+                event.addresponse(u"I don't think %(from)s can be converted to %(to)s", {
+                    'from': frm,
+                    'to': to,
+                })
             elif result.startswith("conformability error"):
-                event.addresponse(u"I don't think %s can be converted to %s: %s" % (frm, to, result.split(":", 1)[1]))
+                event.addresponse(u"I don't think %(from)s can be converted to %(to)s: %(error)s", {
+                    'from': frm,
+                    'to': to,
+                    'error': result.split(":", 1)[1],
+                })
             else:
-                event.addresponse(u"I can't do that: %s" % result)
+                event.addresponse(u"I can't do that: %s", result)
 
 # vi: set et sta sw=4 ts=4:

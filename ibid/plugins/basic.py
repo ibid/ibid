@@ -64,6 +64,6 @@ class Choose(Processor):
 
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse(u'I choose %s' % choice(self.choose_re.split(choices)))
+        event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
 
 # vi: set et sta sw=4 ts=4:

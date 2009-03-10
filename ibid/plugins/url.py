@@ -56,7 +56,7 @@ class Shorten(Processor):
         shortened = f.read()
         f.close()
 
-        event.addresponse(unicode(shortened))
+        event.addresponse(u'That reduces to: %s', shortened)
 
 class NullRedirect(HTTPRedirectHandler):
 
@@ -83,7 +83,7 @@ class Lengthen(Processor):
             f = opener.open(url)
         except HTTPError, e:
             if e.code in (301, 302, 303, 307):
-                event.addresponse(unicode(e.hdrs['location']))
+                event.addresponse(u'That expands to: %s', e.hdrs['location'])
                 return
 
         f.close()

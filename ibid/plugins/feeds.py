@@ -58,7 +58,7 @@ class Manage(Processor):
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
 
         if feed:
-            event.addresponse(u"I already have the %s feed" % name)
+            event.addresponse(u"I already have the %s feed", name)
             return
         
         valid = bool(feedparser.parse(url)["version"])
@@ -76,7 +76,10 @@ class Manage(Processor):
                     break
 
         if not valid:
-            event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed" % (name,url))
+            event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed", {
+                'name': name,
+                'url': url,
+            })
             return
 
         feed = Feed(unicode(name), unicode(url), event.identity)
@@ -90,7 +93,7 @@ class Manage(Processor):
         session = ibid.databases.ibid()
         feeds = session.query(Feed).all()
         if feeds:
-            event.addresponse(u', '.join([feed.name for feed in feeds]))
+            event.addresponse(u'I know about: %s', u', '.join(sorted([feed.name for feed in feeds])))
         else:
             event.addresponse(u"I don't know about any feeds")
 
@@ -101,7 +104,7 @@ class Manage(Processor):
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
 
         if not feed:
-            event.addresponse(u"I don't have the %s feed anyway" % name)
+            event.addresponse(u"I don't have the %s feed anyway", name)
         else:
             session.delete(feed)
             log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
@@ -125,7 +128,7 @@ class Retrieve(Processor):
         session.close()
 
         if not feed:
-            event.addresponse(u"I don't know about the %s feed" % name)
+            event.addresponse(u"I don't know about the %s feed", name)
             return
 
         feed.update()
@@ -133,7 +136,9 @@ class Retrieve(Processor):
             event.addresponse(u"I can't access that feed")
             return
 
-        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in feed.entries[start:number+start]]))
+        articles = feed.entries[start:number+start]
+        articles = ['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
+        event.addresponse(u'%s', u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
@@ -142,7 +147,7 @@ class Retrieve(Processor):
         session.close()
 
         if not feed:
-            event.addresponse(u"I don't know about the %s feed" % name)
+            event.addresponse(u"I don't know about the %s feed", name)
             return
 
         feed.update() 
@@ -165,7 +170,7 @@ class Retrieve(Processor):
                     break
 
             if not article:
-                event.addresponse(u"Are you making up news again?")
+                event.addresponse(u'Are you making up news again?')
                 return
 
         if 'summary' in article:
@@ -176,6 +181,10 @@ class Retrieve(Processor):
             else:
                 summary = article.content[0].value
 
-        event.addresponse(u'"%s" %s : %s' % (html2text_file(article.title, None).strip(), article.link, summary))
+        event.addresponse(u'"%(title)s" %(link)s : %(summary)s', {
+            'title': html2text_file(article.title, None).strip(),
+            'link': article.link,
+            'summary': summary,
+        })
 
 # vi: set et sta sw=4 ts=4:
