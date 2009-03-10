@@ -1,5 +1,6 @@
 from cStringIO import StringIO
 from datetime import datetime
+import logging
 
 from bzrlib.branch import Branch
 from bzrlib import log
@@ -53,6 +54,7 @@ class Bazaar(Processor, RPC):
     launchpad_branches = Option('launchpad_branches', 'Branch paths in Launchpad mapped to names')
 
     def __init__(self, name):
+        self.log = logging.getLogger('plugins.bzr')
         Processor.__init__(self, name)
         RPC.__init__(self)
 
@@ -62,7 +64,7 @@ class Bazaar(Processor, RPC):
             try:
                 self.branches[name.lower()] = Branch.open(repository)
             except NotBranchError, e:
-                print str(e)
+                self.log.error(u'%s is not a branch', repository)
 
     @match(r'^(?:repos|repositories)$')
     def handle_repositories(self, event):
