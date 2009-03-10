@@ -22,7 +22,7 @@ class Dispatcher(object):
             except Exception:
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
 
-        print event
+        self.log.debug(event)
 
         filtered = []
         for response in event['responses']:
