@@ -116,7 +116,7 @@ class Complain(Processor):
 
     priority = 950
     complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
-    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
+    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"I'm not your bitch", u'Just do it yourself', u"I'm not going to listen to you", u"You're not the boss of me"))
 
     @handler
     def complain(self, event):
@@ -141,7 +141,7 @@ class RateLimit(Processor):
             self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
-                    event.addresponse({'reply': u"Geez, give me some time to think!"})
+                    event.addresponse({'reply': u'Geez, give me some time to think!'})
                 else:
                     event.processed = True
 
@@ -159,6 +159,6 @@ class UnicodeWarning(Processor):
             for value in object:
                 self.process(value)
         elif isinstance(object, str):
-            self.log.warning(u"Found a non-unicode string: %s" % object)
+            self.log.warning(u'Found a non-unicode string: %s' % object)
 
 # vi: set et sta sw=4 ts=4:

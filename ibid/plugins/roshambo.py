@@ -17,12 +17,12 @@ class RoShamBo(Processor):
         bchoice = randint(0, 2)
  
         if uchoice == bchoice:
-            reply = u'We drew! I also chose %s' % choices[bchoice]
+            reply = u'We drew! I also chose %s'
         elif (uchoice + 1) % 3 == bchoice:
-            reply = u'You win! I chose %s :-(' % choices[bchoice]
+            reply = u'You win! I chose %s :-('
         else:
-            reply = u'I win! I chose %s' % choices[bchoice]
+            reply = u'I win! I chose %s'
  
-        event.addresponse(reply)
+        event.addresponse(reply, choices[bchoice])
 
 # vi: set et sta sw=4 ts=4:

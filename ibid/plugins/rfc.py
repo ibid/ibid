@@ -157,9 +157,12 @@ class RFCLookup(Processor):
 
         number = int(number)
         if number in rfcs:
-            event.addresponse(u"%s http://www.rfc-editor.org/rfc/rfc%i.txt " % (rfcs[number].record, number))
+            event.addresponse(u"%(record)s http://www.rfc-editor.org/rfc/rfc%(number)i.txt", {
+                'record': rfcs[number].record,
+                'number': number,
+            })
         else:
-            event.addresponse(u"Sorry, no such RFC.")
+            event.addresponse(u"Sorry, no such RFC")
 
     @match(r'^rfc\s+(?:for\s+)?(.+)$')
     def search(self, event, terms):
@@ -188,14 +191,16 @@ class RFCLookup(Processor):
         pool.reverse()
 
         if pool:
-            response = u"Found %i matching RFC%s. Listing %i: " % (len(pool), len(pool) > 1 and u"s" or u"", min(len(pool), 5))
             results = []
             for result in pool[:5]:
                 result.parse()
                 results.append("%04i: %s" % (result.number, result.summary))
-            response += u",  ".join(results)
-            event.addresponse(response)
+            event.addresponse(u'Found %(found)i matching RFCs. Listing %(listing)i: %(results)', {
+                'found': len(pool),
+                'listing': min(len(pool), 5),
+                'results': u',  '.join(results),
+            })
         else:
-            event.addresponse(u"Sorry, can't find anything.")
+            event.addresponse(u"Sorry, can't find anything")
 
 # vi: set et sta sw=4 ts=4:

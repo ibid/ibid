@@ -22,32 +22,39 @@ class Dict(Processor):
     @match(r'^define\s+(.+?)(?:\s+using\s+(.+))?$')
     def define(self, event, word, dictionary):
         definitions = self.connection.define(dictionary or '*', word)
-        event.addresponse(u', '.join([d.getdefstr() for d in definitions]))
+        event.addresponse(u'%s', u', '.join([d.getdefstr() for d in definitions]))
 
     @match(r'spell\s+(.+?)(?:\s+using\s+(.+))?$')
     def handle_spell(self, event, word, strategy):
-        suggestions = self.connection.match('*', strategy or 'soundex', word)
-        event.addresponse(u', '.join([d.getword() for d in suggestions]))
+        correct = self.connection.match('*', 'exact', word)
+        if correct:
+            event.addresponse(u'That seems correct. Carry on')
+            return
+        suggestions = self.connection.match('*', strategy or 'lev', word)
+        if suggestions:
+            event.addresponse(u'Suggestions: %s', u', '.join([d.getword() for d in suggestions]))
+        else:
+            event.addresponse(u"That doesn't seem correct, but I can't find anything to suggest")
 
     @match(r'^dictionaries$')
     def handle_dictionaries(self, event):
-        event.addresponse(u', '.join(self.dictionaries.keys()))
+        event.addresponse(u'Dictionaries: %s', u', '.join(sorted(self.dictionaries.keys())))
 
     @match(r'^strater?gies$')
     def handle_strategies(self, event):
-        event.addresponse(u', '.join(self.strategies.keys()))
+        event.addresponse(u'Strategies: %s', u', '.join(sorted(self.strategies.keys())))
 
     @match(r'^dictionary\s+(.+?)$')
     def handle_dictionary(self, event, dictionary):
         if dictionary in self.dictionaries:
-            event.addresponse(unicode(self.dictionaries[dictionary]))
+            event.addresponse(u'%s', self.dictionaries[dictionary])
         else:
             event.addresponse(u"I don't have that dictionary")
 
     @match(r'^strater?gy\s+(.+?)$')
     def handle_strategy(self, event, strategy):
         if strategy in self.strategies:
-            event.addresponse(unicode(self.strategies[strategy]))
+            event.addresponse(u'%s', self.strategies[strategy])
         else:
             event.addresponse(u"I don't have that strategy")
 

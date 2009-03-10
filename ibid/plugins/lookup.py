@@ -25,15 +25,15 @@ class Bash(Processor):
 
         if quote.lower() == "random":
             number = u"".join(soup.find('p', 'quote').find('b').contents)
-            event.addresponse(u"%s:" % number)
+            event.addresponse(u'%s:', number)
 
         quote = soup.find('p', 'qt')
         if not quote:
-            event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be.")
+            event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be")
         else:
             for line in quote.contents:
                 if str(line) != '<br />':
-                    event.addresponse(unicode(line).strip())
+                    event.addresponse(u'%s', line.strip())
 
 help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
@@ -43,11 +43,11 @@ class LastFm(Processor):
 
     @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
     def listsongs(self, event, username):
-        songs = feedparser.parse("http://ws.audioscrobbler.com/1.0/user/%s/recenttracks.rss?%s" % (username, time()))
+        songs = feedparser.parse('http://ws.audioscrobbler.com/1.0/user/%s/recenttracks.rss?%s' % (username, time()))
         if songs['bozo']:
-            event.addresponse(u"No such user")
+            event.addresponse(u'No such user')
         else:
-            event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
+            event.addresponse(u'%s', u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
 class Lotto(Processor):
@@ -55,40 +55,37 @@ class Lotto(Processor):
 
     feature = 'lotto'
     
-    errors = {
-      'open': 'Something went wrong getting to the Lotto site',
-      'balls': 'I expected to get %s balls, but found %s. They were: %s',
-    }
-    
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/balls/ball_(\d+).gif')
-    za_text = u'Latest lotto results for South Africa, Lotto: '
     
     @match(r'lotto(\s+for\s+south\s+africa)?')
     def za(self, event, za):
         try:
             f = urlopen(self.za_url)
         except Exception, e:
-            event.addresponse(self.errors['open'])
+            event.addresponse(u'Something went wrong getting to the Lotto site')
             return
         
         s = "".join(f)
         f.close()
         
-        r = self.za_text
-        
         balls = self.za_re.findall(s)
         
         if len(balls) != 14:
-            event.addresponse(self.errors['balls'] % \
-                (14, len(balls), ", ".join(balls)))
+            event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
+                'expected': 14,
+                'found': len(balls),
+                'balls': u', '.join(balls),
+            })
             return
         
-        r += u" ".join(balls[:6])
-        r += u" (Bonus: %s), Lotto Plus: " % (balls[6], )
-        r += u" ".join(balls[7:13])
-        r += u" (Bonus: %s)" % (balls[13], )
-        event.addresponse(r)
+        event.addresponse(u'Latest lotto results for South Africa, '
+            u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s)', {
+            'lottoballs': u" ".join(balls[:6]),
+            'lottobonus': balls[6],
+            'plusballs':  u" ".join(balls[7:13]),
+            'plusbonus':  balls[13],
+        })
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
 class FMyLife(Processor):
@@ -108,7 +105,11 @@ class FMyLife(Processor):
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random)$')
     def fml(self, event, id):
-        event.addresponse(self.remote_get(id) or u"No such quote")
+        quote = self.remote_get(id)
+        if quote:
+            event.addresponse(u'%s', quote)
+        else:
+            event.addresponse(u'No such quote')
 
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 class Twitter(Processor):
@@ -126,37 +127,48 @@ class Twitter(Processor):
 
     def setup(self):
         self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % ('|'.join(self.services.keys()),))
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:by\s+|from\s+)?(\S+)$' % ('|'.join(self.services.keys()),))
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$' % ('|'.join(self.services.keys()),))
 
     def remote_update(self, service, id):
         f = urlopen('%sstatuses/show/%s.json' % (self.services[service], id))
         status = loads(f.read())
         f.close()
 
-        return u'%s: "%s"' % (status['user']['screen_name'], status['text'])
+        return {'screen_name': status['user']['screen_name'], 'text': status['text']}
 
     def remote_latest(self, service, user):
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (self.services[service], user))
+        service_url = self.services[service]
+        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service_url, user))
         statuses = loads(f.read())
         f.close()
+        latest = statuses[0]
 
-        return u'"%s"' % (statuses[0]['text'])
+        if "twitter" in service_url:
+            url = "%s%s/status/%i" % (service_url, latest["user"]["screen_name"], latest["id"])
+        elif service_url.endswith("/api/"):
+            url = "%s/notice/%i" % (service_url[:-5], latest["id"])
+
+        return {
+            'text': latest['text'],
+            'ago': ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1),
+            'url': url,
+        }
 
     @handler
     def update(self, event, service, id):
-        event.addresponse(self.remote_update(service.lower(), int(id)))
+        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service.lower(), int(id)))
 
     @handler
     def latest(self, event, service, user):
-        event.addresponse(self.remote_latest(service.lower(), user))
+        event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service.lower(), user))
 
     @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
-        event.addresponse(self.remote_update('twitter', int(id)))
+        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update('twitter', int(id)))
 
     @match(r'^https?://(?:www\.)?identi.ca/notice/(\d+)$')
     def identica(self, event, id):
-        event.addresponse(self.remote_update('identi.ca', int(id)))
+        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update('identi.ca', int(id)))
 
 help['currency'] = u'Converts amounts between currencies.'
 class Currency(Processor):
@@ -192,7 +204,7 @@ class Currency(Processor):
 
         if frm not in self.currencies or to not in self.currencies:
             if command.lower() == "exchange":
-                event.addresponse(u"Sorry, I don't know about a currency called %s" % (frm not in self.currencies and frm or to))
+                event.addresponse(u"Sorry, I don't know about a currency called %s", (frm not in self.currencies and frm or to))
             return
 
         data = {'Amount': amount, 'From': frm, 'To': to}
@@ -200,7 +212,7 @@ class Currency(Processor):
 
         result = u" ".join(tag.text for tag in etree.getiterator('h2'))
         if result:
-            event.addresponse(result)
+            event.addresponse(u'%s', result)
         else:
             event.addresponse(u"The bureau de change appears to be closed for lunch")
 
@@ -213,10 +225,10 @@ class Currency(Processor):
         results = []
         for code, (place, name) in self.currencies.iteritems():
             if search.search(place):
-                results.append('%s uses %s (%s)' % (place, name, code))
+                results.append(u'%s uses %s (%s)' % (place, name, code))
 
         if results:
-            event.addresponse(u', '.join(results))
+            event.addresponse(u'%s', u', '.join(results))
         else:
             event.addresponse(u'No currencies found')
 
@@ -280,7 +292,7 @@ class Weather(Processor):
         for td in soup.findAll('table')[2].findAll('td', align='left'):
             day = td.b.contents[0]
             forecast = td.contents[2]
-            forecasts.append('%s: %s' % (day, self._text(forecast)))
+            forecasts.append(u'%s: %s' % (day, self._text(forecast)))
 
         return forecasts
 
@@ -288,19 +300,25 @@ class Weather(Processor):
     def weather(self, event, place):
         try:
             values = self.remote_weather(place)
-            event.addresponse(u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s' % values)
+            event.addresponse(u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s', values)
         except Weather.TooManyPlacesException, e:
-            event.addresponse(u'Too many places match %s: %s' % (place, '; '.join(e.message)))
+            event.addresponse(u'Too many places match %(place)s: %(exception)s', {
+                'place': place,
+                'exception': u'; '.join(e.message),
+            })
         except Weather.WeatherException, e:
-            event.addresponse(e.message)
+            event.addresponse(u'%s', e.message)
 
     @match(r'^forecast\s+(?:for\s+)?(.+)$')
     def forecast(self, event, place):
         try:
-            event.addresponse(u', '.join(self.remote_forecast(place)))
+            event.addresponse(u'%s', u', '.join(self.remote_forecast(place)))
         except Weather.TooManyPlacesException, e:
-            event.addresponse(u'Too many places match %s: %s' % (place, '; '.join(e.message)))
+            event.addresponse(u'Too many places match %(place)s: %(exception)s', {
+                'place': place,
+                'exception': u'; '.join(e.message),
+            })
         except Weather.WeatherException, e:
-            event.addresponse(e.message)
+            event.addresponse(u'%s', e.message)
 
 # vi: set et sta sw=4 ts=4:

@@ -25,21 +25,21 @@ class Actions(Processor):
             channel = event.channel
 
         if source.lower() not in ibid.sources:
-            event.addresponse(u"I don't have a source called %s" % source.lower())
+            event.addresponse(u"I don't have a source called %s", source.lower())
             return
 
         source = ibid.sources[source.lower()]
 
         if not hasattr(source, 'join'):
-            event.addresponse(u"%s cannot join/part channels" % (source.name,))
+            event.addresponse(u'%s cannot join/part channels', source.name)
             return
 
         if action == 'join':
             source.join(channel)
-            event.addresponse(u"Joining %s" % channel)
+            event.addresponse(u'Joining %s', channel)
         else:
             source.part(channel)
-            event.addresponse(u"Parting %s" % channel)
+            event.addresponse(u'Parting %s', channel)
 
     @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
     @authorise
@@ -49,15 +49,15 @@ class Actions(Processor):
             source = event.source
 
         if source.lower() not in ibid.sources:
-            event.addresponse(u"I don't have a source called %s" % source.lower())
+            event.addresponse(u"I don't have a source called %s", source.lower())
             return
 
         source = ibid.sources[source.lower()]
 
         if not hasattr(source, 'change_nick'):
-            event.addresponse(u"%s cannot change nicks" % source)
+            event.addresponse(u'%s cannot change nicks', source)
         else:
             source.change_nick(nick)
-            event.addresponse(u'Changing nick to %s' % nick)
+            event.addresponse(u'Changing nick to %s', nick)
 
 # vi: set et sta sw=4 ts=4:
