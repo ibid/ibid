@@ -36,7 +36,7 @@ class AddAuth(Processor):
                 return
             account = session.query(Account).filter_by(username=user).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % user)
+                event.addresponse(u"I don't know who %s is", user)
                 session.close()
                 return
 
@@ -55,7 +55,7 @@ class AddAuth(Processor):
         log.info(u"Added %s credential %s for account %s (%s) on %s by account %s", method, credential.credential, account.id, account.username, source, event.account)
         session.close()
 
-        event.addresponse(u'Okay')
+        event.addresponse(True)
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
@@ -73,7 +73,7 @@ class Permissions(Processor):
         session = ibid.databases.ibid()
         account = session.query(Account).filter_by(username=username).first()
         if not account:
-            event.addresponse(u"I don't know who %s is" % username)
+            event.addresponse(u"I don't know who %s is", username)
             session.close()
             return
 
@@ -82,7 +82,7 @@ class Permissions(Processor):
             if permission:
                 session.delete(permission)
             else:
-                event.addresponse(u"%s doesn't have that permission anyway" % username)
+                event.addresponse(u"%s doesn't have that permission anyway", username)
                 return
 
         else:
@@ -97,7 +97,11 @@ class Permissions(Processor):
                 value = 'yes'
 
             if permission.value == value:
-                event.addresponse(u"%s permission for %s is already %s" % (name, username, value))
+                event.addresponse(u'%(permission)s permission for %(user)s is already %(value)s', {
+                    'permission': name,
+                    'user': username,
+                    'value': value,
+                })
                 return
 
             permission.value = value
@@ -122,10 +126,11 @@ class Permissions(Processor):
                 return
             account = session.query(Account).filter_by(username=username).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % username)
+                event.addresponse(u"I don't know who %s is", username)
                 return
 
-        event.addresponse(', '.join(['%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions]))
+        permissions = sorted(u'%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions)
+        event.addresponse(u'Permissions: %s', u', '.join(permissions))
 
     @match(r'^list\s+permissions$')
     def list_permissions(self, event):
@@ -138,7 +143,7 @@ class Permissions(Processor):
                     if permission not in permissions:
                         permissions.append(permission)
 
-        event.addresponse(', '.join(permissions))
+        event.addresponse(u'Permissions: %s', u', '.join(sorted(permissions)))
 
 class Auth(Processor):
     u"""auth <credential>"""

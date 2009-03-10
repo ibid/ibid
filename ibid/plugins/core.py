@@ -133,9 +133,9 @@ class Complain(Processor):
     @handler
     def complain(self, event):
         if 'complain' in event:
-            event.addresponse(choice(self.complaints[event.complain]))
+            event.addresponse(u'%s', choice(self.complaints[event.complain]))
         else:
-            event.addresponse(choice(self.complaints['nonsense']))
+            event.addresponse(u'%s', choice(self.complaints['nonsense']))
 
 class RateLimit(Processor):
 
@@ -153,7 +153,7 @@ class RateLimit(Processor):
             self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
-                    event.addresponse({'reply': u"Geez, give me some time to think!"})
+                    event.addresponse({'reply': u'Geez, give me some time to think!'})
                 else:
                     event.processed = True
 
@@ -171,6 +171,6 @@ class UnicodeWarning(Processor):
             for value in object:
                 self.process(value)
         elif isinstance(object, str):
-            self.log.warning(u"Found a non-unicode string: %s" % object)
+            self.log.warning(u'Found a non-unicode string: %s' % object)
 
 # vi: set et sta sw=4 ts=4:

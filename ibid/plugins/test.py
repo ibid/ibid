@@ -8,7 +8,7 @@ class Delay(Processor):
     @match(r'^delay\s+(\d+\.?\d*)$')
     def handler(self, event, delay):
         sleep(float(delay))
-        event.addresponse('Done')
+        event.addresponse(True)
 
 class Authorise(Processor):
 
@@ -23,8 +23,8 @@ class Email(Processor):
 
     @match(r'^email\s+(.+)$')
     def email(self, event, address):
-        event.addresponse({'reply': 'Test message', 'source': 'email', 'target': unicode(address)})
-        event.addresponse(u"I've emailed %s" % address)
+        event.addresponse({'reply': u'Test message', 'source': 'email', 'target': unicode(address)})
+        event.addresponse(u"I've emailed %s", address)
 
 class Except(Processor):
 

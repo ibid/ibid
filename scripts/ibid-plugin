@@ -1,24 +1,35 @@
 #!/usr/bin/env python
 
 import logging
-import os
-import sqlalchemy
-from sys import argv, exit
+from optparse import OptionParser
+from os import getenv
+from sys import exit
 
 try:
     import readline
 except ImportError:
     pass
 
-if len(argv) < 2:
-    print 'Usage: %s plugin[s]' % (argv[0], )
-    exit(1)
-
 import ibid
 import ibid.plugins
 from ibid.config import FileConfig
 from ibid.event import Event
 from ibid.models import Identity
+
+parser = OptionParser(usage="%prog [options...] [plugins...]")
+parser.add_option("-a", "--all", dest="load_all", action="store_true",
+        help="Load all configured plugins")
+parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
+        help="Only load the specified plugins, not the common base plugins")
+parser.add_option("-s", "--skip", dest="skip", action="append", metavar="PLUGIN",
+        help="Skip loading PLUGIN (may be specified more than once)")
+
+(options, args) = parser.parse_args()
+
+if options.load_all and not options.load_base:
+    parser.error("Incompatible combination: --all and --only")
+
+# Setup Ibid core:
 
 def auth_responses(event, permission):
     return True
@@ -33,13 +44,18 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 
-plugins = argv[1:]
-if len(argv[1:]) == 1 and argv[1] == "--all":
-    plugins = ibid.config.get("load")
+plugins = set(args)
+if options.load_all:
+    plugins = set(ibid.config.get("load"))
+if options.load_base:
+    plugins |= set(("admin", "config", "core", "help", "test"))
+if options.skip:
+    plugins -= set(options.skip)
+
 for plugin in plugins:
     ibid.reloader.load_processor(plugin)
 
-username = unicode(os.getenv('USER'))
+username = unicode(getenv('USER'))
 if not username:
     username = u'tester'
 session = ibid.databases.ibid()
@@ -52,7 +68,7 @@ if not identity:
 identity_id = identity.id
 
 try:
-    encoding = os.getenv("LANG").split(".")[1]
+    encoding = getenv("LANG").split(".")[1]
 except:
     encoding = "ascii"
 

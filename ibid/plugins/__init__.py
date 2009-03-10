@@ -51,9 +51,9 @@ class Processor(object):
                     match = method.pattern.search(event.message)
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
-                            event = method(event, *match.groups()) or event
+                            method(event, *match.groups())
                 else:
-                    event = method(event) or event
+                    method(event)
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)

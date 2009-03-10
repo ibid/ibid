@@ -50,7 +50,7 @@ class Set(Processor):
     @authorise
     def set(self, event, subject, adjust, reason):
         if self.public and not event.public:
-            event.addresponse(u"Karma must be done in public")
+            event.addresponse(u'Karma must be done in public')
             return
 
         if subject.lower() in self.ignore:
@@ -97,16 +97,19 @@ class Get(Processor):
         session = ibid.databases.ibid()
         karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
         if not karma:
-            event.addresponse(u"%s has neutral karma" % subject)
+            event.addresponse(u'%s has neutral karma', subject)
         else:
-            event.addresponse(u"%s has karma of %s" % (subject, karma.value))
+            event.addresponse(u'%(subject)s has karma of %(value)s', {
+                'subject': subject,
+                'value': karma.value,
+            })
         session.close()
 
     @match(r'^(reverse\s+)?karmaladder$')
     def ladder(self, event, reverse):
         session = ibid.databases.ibid()
         karmas = session.query(Karma).order_by(reverse and Karma.value.asc() or Karma.value.desc()).limit(30).all()
-        event.addresponse(', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+        event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
         session.close()
 
 # vi: set et sta sw=4 ts=4:
