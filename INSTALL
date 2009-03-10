@@ -6,7 +6,7 @@ Add the Ibid PPA to your APT sources:
 Install required modules:
 # apt-get install python-virtualenv python-soappy python-twisted \
    python-configobj python-sqllite2 python-feedparser \
-   python-httplib2 python-beautifulsoup python-dictclient \
+   python-beautifulsoup python-dictclient \
    python-imdbpy python-dns python-simplejson \
    python-jinja pysilc python-pinder
 

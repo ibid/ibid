@@ -27,10 +27,10 @@ class Python(Processor):
             exec('import sys', globals)
             exec('import re', globals)
             exec('import time', globals)
-            result = unicode(eval(code, globals, {}))
+            result = eval(code, globals, {})
         except Exception, e:
-            result = unicode(e)
-        event.addresponse(result)
+            result = e
+        event.addresponse(u'%s', result)
 
 class Perl(Processor):
     u"""pl <code>"""
@@ -46,7 +46,7 @@ class Perl(Processor):
         except Exception, e:
             result = e
 
-        event.addresponse(unicode(result))
+        event.addresponse(u'%s', result)
 
 class Lua(Processor):
     u"""lua <code>"""
@@ -62,6 +62,6 @@ class Lua(Processor):
         except Exception, e:
             result = e
 
-        event.addresponse(unicode(result))
+        event.addresponse(u'%s', result)
 
 # vi: set et sta sw=4 ts=4:

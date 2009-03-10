@@ -29,12 +29,12 @@ class Accounts(Processor):
                 admin = True
             else:
                 account = session.query(Account).filter_by(id=event.account).first()
-                event.addresponse(u'You already have an account called "%s".' % account.username)
+                event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
         account = session.query(Account).filter_by(username=username).first()
         if account:
-            event.addresponse(u'There is already an account called "%s". Please choose a different name.' % account.username)
+            event.addresponse(u'There is already an account called "%s". Please choose a different name', account.username)
             return
 
         account = Account(username)
@@ -51,7 +51,7 @@ class Accounts(Processor):
 
         identify_cache.clear()
         session.close()
-        event.addresponse(u'Done')
+        event.addresponse(True)
 
 chars = string.letters + string.digits
 
@@ -78,7 +78,8 @@ class Identities(Processor):
                 username = event.sender['id']
                 account = session.query(Account).filter_by(username=username).first()
                 if account:
-                    event.addresponse(u"I tried to create the account %s for you, but it already exists. Please use 'create account <name>'." % username)
+                    event.addresponse(u'I tried to create the account %s for you, but it already exists. '
+                        u"Please use 'create account <name>'", username)
                     return
                 account = Account(username)
                 session.save_or_update(account)
@@ -88,7 +89,7 @@ class Identities(Processor):
                 session.save_or_update(currentidentity)
                 session.flush()
                 identify_cache.clear()
-                event.addresponse(u"I've created the account %s for you" % username)
+                event.addresponse(u"I've created the account %s for you", username)
                 log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)", currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
 
@@ -98,16 +99,16 @@ class Identities(Processor):
             admin = True
             account = session.query(Account).filter_by(username=username).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % username)
+                event.addresponse(u"I don't know who %s is", username)
                 return
 
         ident = session.query(Identity).filter(func.lower(Identity.identity)==identity.lower()).filter(func.lower(Identity.source)==source.lower()).first()
         if ident and ident.account:
-            event.addresponse(u'This identity is already attached to account %s' % ident.account.username)
+            event.addresponse(u'This identity is already attached to account %s', ident.account.username)
             return
 
         if source.lower() not in ibid.sources:
-            event.addresponse(u"I am not connected to %s" % source)
+            event.addresponse(u'I am not connected to %s', source)
         else:
             source = ibid.sources[source.lower()].name
 
@@ -136,7 +137,10 @@ class Identities(Processor):
             session = ibid.databases.ibid()
             (account_id, user, source) = self.tokens[token]
             if event.source.lower() != source.lower() or event.sender['id'].lower() != user.lower():
-                event.addresponse(u'You need to send me this token from %s on %s' % (user, source))
+                event.addresponse(u'You need to send me this token from %(name)s on %(source)s', {
+                    'name': user,
+                    'source': source,
+                })
                 return
 
             identity = session.query(Identity).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
@@ -163,7 +167,7 @@ class Identities(Processor):
                 return
             account = session.query(Account).filter_by(username=username).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % username)
+                event.addresponse(u"I don't know who %s is", username)
                 return
 
         identity = session.query(Identity).filter_by(account_id=account.id).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
@@ -193,7 +197,7 @@ class Attributes(Processor):
                 return
             account = session.query(Account).filter_by(id=event.account).first()
             if not account:
-                event.addresponse(u"%s doesn't exist. Please use 'add account' first" % username)
+                event.addresponse(u"%s doesn't exist. Please use 'add account' first", username)
                 return
 
         else:
@@ -201,14 +205,14 @@ class Attributes(Processor):
                 return
             account = session.query(Account).filter_by(username=username).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % username)
+                event.addresponse(u"I don't know who %s is", username)
                 return
 
         account.attributes.append(Attribute(name, value))
         session.save_or_update(account)
         session.flush()
         session.close()
-        event.addresponse(u'Done')
+        event.addresponse(True)
         log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender['connection'])
 
 class Describe(Processor):
@@ -221,17 +225,23 @@ class Describe(Processor):
         if username.upper() == 'I':
             if not event.account:
                 identity = session.query(Identity).get(event.identity)
-                event.addresponse(u"%s on %s" % (identity.identity, identity.source))
+                event.addresponse(u"%(name)s on %(source)s", {
+                    'name': identity.identity,
+                    'source': identity.source,
+                })
                 return
             account = session.query(Account).get(event.account)
 
         else:
             account = session.query(Account).filter_by(username=username).first()
             if not account:
-                event.addresponse(u"I don't know who %s is" % username)
+                event.addresponse(u"I don't know who %s is", username)
                 return
 
-        event.addresponse(u'%s is %s' % (account.username, ', '.join('%s on %s' % (identity.identity, identity.source) for identity in account.identities)))
+        event.addresponse(u'%(accountname)s is %(identities)s', {
+            'accountname': account.username,
+            'identities': u', '.join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
+        })
         session.close()
 
 class Identify(Processor):

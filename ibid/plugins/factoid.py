@@ -101,7 +101,7 @@ class Utils(Processor):
         session = ibid.databases.ibid()
         factoid = session.query(Factoid).options(eagerload('values')).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
         if factoid:
-            event.addresponse(', '.join(['%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
+            event.addresponse(u'%s', u', '.join(['%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
 
         session.close()
 
@@ -125,7 +125,7 @@ class Forget(Processor):
 
             if (number or pattern):
                 if len(factoids) > 1:
-                    event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+                    event.addresponse(u'Pattern matches multiple factoids, please be more specific')
                     return
 
                 if factoids[0][2].identity_id not in identities and not factoidadmin:
@@ -157,7 +157,7 @@ class Forget(Processor):
             session.close()
             event.addresponse(True)
         else:
-            event.addresponse(u"I didn't know about %s anyway" % name)
+            event.addresponse(u"I didn't know about %s anyway", name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
     @authorise
@@ -178,7 +178,7 @@ class Forget(Processor):
             event.addresponse(True)
             log.info(u"Added name '%s' to factoid %s by %s/%s (%s)", name.name, factoid.id, event.account, event.identity, event.sender['connection'])
         else:
-            event.addresponse(u"I don't know about %s" % name)
+            event.addresponse(u"I don't know about %s", name)
 
 class Search(Processor):
     u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
@@ -227,7 +227,7 @@ class Search(Processor):
         matches = query[start:start+limit]
 
         if matches:
-            event.addresponse(u'; '.join('%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
+            event.addresponse(u'%s', u'; '.join('%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
@@ -295,7 +295,7 @@ class Get(Processor, RPC):
             if count:
                 return {'reply': reply}
 
-            reply = '%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
+            reply = u'%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
             return reply
 
 class Set(Processor):
@@ -325,7 +325,7 @@ class Set(Processor):
                     session.delete(fvalue)
                 session.flush()
             elif not addition:
-                event.addresponse(u"I already know stuff about %s" % name)
+                event.addresponse(u'I already know stuff about %s', name)
                 return
         else:
             factoid = Factoid()
@@ -359,9 +359,12 @@ class Modify(Processor):
         factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
             if pattern:
-                event.addresponse(u"I don't know about any %s matching %s" % (name, pattern))
+                event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
+                    'name': name,
+                    'pattern': pattern,
+                })
             else:
-                event.addresponse(u"I don't know about %s" % name)
+                event.addresponse(u"I don't know about %s", name)
         elif len(factoids) > 1:
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
@@ -387,9 +390,12 @@ class Modify(Processor):
         factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if len(factoids) == 0:
             if pattern:
-                event.addresponse(u"I don't know about any %s matching %s" % (name, pattern))
+                event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
+                    'name': name,
+                    'pattern': pattern,
+                })
             else:
-                event.addresponse(u"I don't know about %s" % name)
+                event.addresponse(u"I don't know about %s", name)
         elif len(factoids) > 1:
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
@@ -444,8 +450,10 @@ class Modify(Processor):
                 else:
                     newvalue = oldvalue.replace(search, replace, "g" in flags and -1 or 1)
                     if newvalue == oldvalue:
-                        event.addresponse(u"I couldn't find '%s' in '%s'. If that was a proper regular expression, append the 'r' flag" %
-                            (search, oldvalue))
+                        event.addresponse(u"I couldn't find '%(terms)s' in '%(oldvalue)s'. If that was a proper regular expression, append the 'r' flag", {
+                            'terms': search,
+                            'oldvalue': oldvalue,
+                        })
                         return
                     factoid[2].value = newvalue
 

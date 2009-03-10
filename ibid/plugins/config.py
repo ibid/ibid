@@ -24,8 +24,8 @@ class Config(Processor):
         ibid.config.reload()
         ibid.config.merge(FileConfig(join(ibid.options['base'], 'local.ini')))
         ibid.reloader.reload_config()
-        event.addresponse(u"Configuration reread")
-        log.info(u"Reread configuration file")
+        event.addresponse(u'Configuration reread')
+        log.info(u'Reread configuration file')
 
     @match(r'^set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
     @authorise
@@ -51,6 +51,6 @@ class Config(Processor):
                 event.addresponse(u'No such option')
                 return
             config = config[part]
-        event.addresponse(unicode(config))
+        event.addresponse(u'%s', config)
         
 # vi: set et sta sw=4 ts=4:
