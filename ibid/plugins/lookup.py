@@ -1,4 +1,4 @@
-from urllib2 import urlopen, Request
+from urllib2 import urlopen
 from urllib import urlencode, quote
 from time import time
 from datetime import datetime
@@ -6,11 +6,10 @@ from simplejson import loads
 import re
 
 import feedparser
-from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree
 
 help = {}
 
@@ -22,15 +21,13 @@ class Bash(Processor):
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
     def bash(self, event, quote):
-        f = urlopen('http://bash.org/?%s' % quote.lower())
-        soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
-        f.close()
+        soup = get_html_parse_tree('http://bash.org/?%s' % quote.lower())
 
         if quote.lower() == "random":
-            number = u"".join(soup.find('p', attrs={'class': 'quote'}).find('b').contents)
+            number = u"".join(soup.find('p', 'quote').find('b').contents)
             event.addresponse(u'%s:', number)
 
-        quote = soup.find('p', attrs={'class': 'qt'})
+        quote = soup.find('p', 'qt')
         if not quote:
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be")
         else:
@@ -97,12 +94,14 @@ class FMyLife(Processor):
     feature = "fml"
 
     def remote_get(self, id):
-        f = urlopen('http://www.fmylife.com/' + str(id))
-        soup = BeautifulSoup(f.read())
-        f.close()
+        soup = get_html_parse_tree('http://www.fmylife.com/' + str(id))
 
         quote = soup.find('div', id='wrapper').div.p
-        return quote and u'"%s"' % (quote.contents[0],) or None
+        if quote:
+            url = u"http://www.fmylife.com" + quote.find('a', 'fmllink')['href']
+            quote = u"".join(tag.contents[0] for tag in quote.findAll(True))
+
+            return u'%s: "%s"' % (url, quote)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random)$')
     def fml(self, event, id):
@@ -179,30 +178,43 @@ class Currency(Processor):
     feature = "currency"
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
-    currencies = []
+    currencies = {}
 
     def _load_currencies(self):
-        request = Request('http://www.xe.com/iso4217.php', '', self.headers)
-        f = urlopen(request)
-        soup = BeautifulSoup(f.read())
-        f.close()
+        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
 
-        self.currencies = []
-        for tr in soup.find('table', attrs={'class': 'tbl_main'}).table.findAll('tr'):
-            code, place = tr.findAll('td')
-            place = ''.join(place.findAll(text=True))
-            place, name = place.find(',') != -1 and place.split(',', 1) or place.split(' ', 1)
-            self.currencies.append((code.string, place.strip(), name.strip()))
+        tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
-    @match(r'^(?:exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
-    def exchange(self, event, amount, frm, to):
+        self.currencies = {}
+        for tbl_sub in tbl_main.getiterator('table'):
+            if tbl_sub.get('class') == 'tbl_sub':
+                for tr in tbl_sub.getiterator('tr'):
+                    code, place = [x.text for x in tr.getchildren()]
+                    name = u""
+                    if not place:
+                        place = u""
+                    if "," in place[1:-1]:
+                        place, name = place.split(',', 1)
+                    self.currencies[code] = (place.strip(), name.strip())
+
+    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
+    def exchange(self, event, command, amount, frm, to):
+        if not self.currencies:
+            self._load_currencies()
+
+        if frm not in self.currencies or to not in self.currencies:
+            if command.lower() == "exchange":
+                event.addresponse(u"Sorry, I don't know about a currency called %s", (frm not in self.currencies and frm or to))
+            return
+
         data = {'Amount': amount, 'From': frm, 'To': to}
-        request = Request('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers)
-        f = urlopen(request)
-        soup = BeautifulSoup(f.read())
-        f.close()
+        etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
-        event.addresponse(u'%s', soup.findAll('span', attrs={'class': 'XEsmall'})[1].contents[0])
+        result = u" ".join(tag.text for tag in etree.getiterator('h2'))
+        if result:
+            event.addresponse(u'%s', result)
+        else:
+            event.addresponse(u"The bureau de change appears to be closed for lunch")
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
@@ -211,7 +223,7 @@ class Currency(Processor):
 
         search = re.compile(place, re.I)
         results = []
-        for code, place, name in self.currencies:
+        for code, (place, name) in self.currencies.iteritems():
             if search.search(place):
                 results.append(u'%s uses %s (%s)' % (place, name, code))
 
@@ -250,9 +262,7 @@ class Weather(Processor):
         if place.lower() in self.places:
             place = self.places[place.lower()]
 
-        f = urlopen('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
-        soup = BeautifulSoup(f.read(), convertEntities=BeautifulSoup.HTML_ENTITIES)
-        f.close()
+        soup = get_html_parse_tree('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
 
         if soup.body.center and soup.body.center.b.string == 'Search not found:':
             raise Weather.WeatherException(u'City not found')
@@ -269,7 +279,7 @@ class Weather(Processor):
         soup = self._get_page(place)
         tds = soup.table.table.findAll('td')
 
-        values = {'place': tds[0].findAll('b')[1].string, 'time': tds[0].findAll('b')[0].string}
+        values = {'place': tds[0].findAll('b')[1].contents[0], 'time': tds[0].findAll('b')[0].contents[0]}
         for index, td in enumerate(tds[2::2]):
             values[self.labels[index]] = self._text(td)
 
@@ -280,7 +290,7 @@ class Weather(Processor):
         forecasts = []
 
         for td in soup.findAll('table')[2].findAll('td', align='left'):
-            day = td.b.string
+            day = td.b.contents[0]
             forecast = td.contents[2]
             forecasts.append(u'%s: %s' % (day, self._text(forecast)))
 
