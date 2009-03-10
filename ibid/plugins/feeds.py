@@ -1,6 +1,9 @@
 import re
 from datetime import datetime
 import logging
+from urllib2 import urlopen, URLError
+from urlparse import urljoin
+from html5lib import HTMLParser, treebuilders
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 from sqlalchemy.sql import func
@@ -10,6 +13,7 @@ from html2text import html2text_file
 import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base
+from ibid.utils import cacheable_download, get_soup
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -32,15 +36,11 @@ class Feed(Base):
         self.url = url
         self.identity_id = identity_id
         self.time = datetime.now()
-
-    def is_valid(self):
         self.update()
-        if self.feed['version']:
-            return True
-        return False
 
     def update(self):
-        self.feed = feedparser.parse(self.url)
+        feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (re.sub(r'\W+', '_', self.name), self.identity_id))
+        self.feed = feedparser.parse(feedfile)
         self.entries = self.feed['entries']
 
 class Manage(Processor):
@@ -58,22 +58,35 @@ class Manage(Processor):
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
 
         if feed:
-            event.addresponse(u'I already have the %s feed', name)
-        else:
-            feed = Feed(unicode(name), unicode(url), event.identity)
+            event.addresponse(u"I already have the %s feed", name)
+            return
+        
+        valid = bool(feedparser.parse(url)["version"])
 
-        if feed.is_valid():
-            session.save(feed)
-            session.flush()
-            event.addresponse(True)
-            log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
-        else:
-            event.addresponse(u'Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed', {
+        if not valid:
+            soup = get_soup(url)
+            for alternate in soup.findAll('link', {'rel': 'alternate',
+                    'type': re.compile(r'^application/(atom|rss)\+xml$'),
+                    'href': re.compile(r'.+')}):
+                newurl = urljoin(url, alternate["href"])
+                valid = bool(feedparser.parse(newurl)["version"])
+
+                if valid:
+                    url = newurl
+                    break
+
+        if not valid:
+            event.addresponse(u"Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed", {
                 'name': name,
                 'url': url,
             })
+            return
 
-        session.close()
+        feed = Feed(unicode(name), unicode(url), event.identity)
+        session.save(feed)
+        session.flush()
+        event.addresponse(True)
+        log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
 
     @match(r'^(?:list\s+)?feeds$')
     def list(self, event):
@@ -124,7 +137,7 @@ class Retrieve(Processor):
             return
 
         articles = feed.entries[start:number+start]
-        articles = ['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
+        articles = [u'%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
         event.addresponse(u'%s', u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
