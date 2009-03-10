@@ -23,7 +23,7 @@ class Dispatcher(object):
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = 'exception'
 
-        print event
+        self.log.debug(event)
 
         filtered = []
         for response in event['responses']:
@@ -116,8 +116,7 @@ class Reloader(object):
 
     def load_processors(self):
         for processor in ibid.config['load']:
-            if not self.load_processor(processor):
-                print "Couldn't load processor %s" % processor
+            self.load_processor(processor)
 
     def load_processor(self, name):
         object = name

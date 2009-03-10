@@ -95,9 +95,7 @@ class Tickets(Processor, RPC):
 
     @match(r"^(?:(my|\S+?(?:'s))\s+)?(?:(open|closed|new|assigned)\s+)?tickets(?:\s+for\s+(.+?))?$")
     def handle_list(self, event, owner, status, milestone):
-        print milestone
         session = ibid.databases.trac()
-        print owner
 
         status = status or 'open'
         if status.lower() == 'open':
