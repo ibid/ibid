@@ -2,7 +2,7 @@ from time import localtime, strftime, time
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
@@ -12,9 +12,9 @@ from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base
 
-help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. ' +
-                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. ' +
-                    u'Search searches the keys. Scan searches the values.'}
+help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
+                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
+                    u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
 log = logging.getLogger('plugins.factoid')
 
@@ -66,16 +66,21 @@ class Factoid(Base):
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
+escape_like_re = re.compile(r'([%_\\])')
 verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
-def get_factoid(session, name, number, pattern, all=False):
+def get_factoid(session, name, number, pattern, is_regex, all=False):
     factoid = None
     query = session.query(Factoid).add_entity(FactoidName).add_entity(FactoidValue).join('names').filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\').join('values')
     if pattern:
-        query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        if is_regex:
+            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        else:
+            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
+            query = query.filter(FactoidValue.value.like(pattern))
     if number:
         try:
             factoid = query.order_by(FactoidValue.id)[int(number)]
@@ -96,23 +101,23 @@ class Utils(Processor):
         session = ibid.databases.ibid()
         factoid = session.query(Factoid).options(eagerload('values')).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
         if factoid:
-            event.addresponse(u'%s', u', '.join(['%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
+            event.addresponse(u'%s', u', '.join([u'%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
 
         session.close()
 
 class Forget(Processor):
-    u"""forget <name>
+    u"""forget <name> [( #<number> | /<pattern>/[r] )]
     <name> is the same as <other name>"""
     feature = 'factoids'
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)
 
-    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+/(.+?)/)?$')
+    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     @authorise
-    def forget(self, event, name, number, pattern):
+    def forget(self, event, name, number, pattern, is_regex):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
@@ -159,6 +164,7 @@ class Forget(Processor):
     def alias(self, event, target, source):
 
         if target.lower() == source.lower():
+            event.addresponse(u"That makes no sense, they *are* the same")
             return
 
         session = ibid.databases.ibid()
@@ -175,33 +181,58 @@ class Forget(Processor):
             event.addresponse(u"I don't know about %s", name)
 
 class Search(Processor):
-    u"""(search|scan) for <pattern> [from <start>]"""
+    u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
     feature = 'factoids'
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
     default = IntOption('search_default', u'Default number of results to return', 10)
 
-    @match(r'^(search|scan)\s+(?:for\s+)?(?:(\d+)\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
-    def search(self, event, type, limit, pattern, start):
+    regex_re = re.compile(r'^/(.*)/(r?)$')
+
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
         start = start and int(start) or 0
+
+        search_type = search_type and search_type.lower() or u""
+
+        m = self.regex_re.match(pattern)
+        is_regex = False
+        if m:
+            pattern = m.group(1)
+            is_regex = bool(m.group(2))
 
         session = ibid.databases.ibid()
         count = session.query(FactoidValue.factoid_id, func.count(u'*').label('count')).group_by(FactoidValue.factoid_id).subquery()
         query = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id))
-        if type.lower() == u'search':
-            query = query.filter(FactoidName.name.op('REGEXP')(pattern))
+
+        if search_type.startswith('fact'):
+            filter_on = (FactoidName.name,)
+        elif search_type.startswith('value'):
+            filter_on = (FactoidValue.value,)
         else:
-            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+            filter_on = (FactoidName.name, FactoidValue.value)
+
+        if is_regex:
+            filter_op = lambda x, y: x.op('REGEXP')(y)
+        else:
+            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
+            filter_op = lambda x, y: x.like(y)
+
+        if len(filter_on) == 1:
+            query = query.filter(filter_op(filter_on[0], pattern))
+        else:
+            query = query.filter(or_(filter_op(filter_on[0], pattern), filter_op(filter_on[1], pattern)))
+
         matches = query[start:start+limit]
 
         if matches:
-            event.addresponse(u'%s', u'; '.join('%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
+            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
 class Get(Processor, RPC):
-    u"""<factoid> [( #<number> | /<pattern>/ )]"""
+    u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
     verbs = verbs
@@ -215,17 +246,17 @@ class Get(Processor, RPC):
         RPC.__init__(self)
 
     def setup(self):
-        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/)?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
 
     @handler
-    def get(self, event, verb, name, number, pattern):
-        response = self.remote_get(name, number, pattern, event)
+    def get(self, event, verb, name, number, pattern, is_regex):
+        response = self.remote_get(name, number, pattern, is_regex, event)
         if response:
             event.addresponse(response)
 
-    def remote_get(self, name, number=None, pattern=None, event={}):
+    def remote_get(self, name, number=None, pattern=None, is_regex=None, event={}):
         session = ibid.databases.ibid()
-        factoid = get_factoid(session, name, number, pattern)
+        factoid = get_factoid(session, name, number, pattern, is_regex)
         session.close()
 
         if factoid:
@@ -311,5 +342,138 @@ class Set(Processor):
         session.flush()
         session.close()
         event.addresponse(True)
+
+class Modify(Processor):
+    u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
+    <name> [( #<number> | /<pattern>/[r] )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
+    feature = 'factoids'
+
+    permission = u'factoid'
+    permissions = (u'factoidadmin',)
+    priority = 890
+
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$')
+    @authorise
+    def append(self, event, name, number, pattern, is_regex, suffix):
+        session = ibid.databases.ibid()
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
+        if len(factoids) == 0:
+            if pattern:
+                event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
+                    'name': name,
+                    'pattern': pattern,
+                })
+            else:
+                event.addresponse(u"I don't know about %s", name)
+        elif len(factoids) > 1:
+            event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+        else:
+            factoidadmin = auth_responses(event, u'factoidadmin')
+            identities = get_identities(event, session)
+            factoid = factoids[0]
+
+            if factoid[2].identity_id not in identities and not factoidadmin:
+                return
+
+            log.info(u"Appending '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
+                    suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
+            factoid[2].value += suffix
+
+            session.flush()
+            session.close()
+            event.addresponse(True)
+
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[gir]*)$')
+    @authorise
+    def modify(self, event, name, number, pattern, is_regex, operation, separator):
+        session = ibid.databases.ibid()
+        factoids = get_factoid(session, name, number, pattern, is_regex, True)
+        if len(factoids) == 0:
+            if pattern:
+                event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
+                    'name': name,
+                    'pattern': pattern,
+                })
+            else:
+                event.addresponse(u"I don't know about %s", name)
+        elif len(factoids) > 1:
+            event.addresponse(u"Pattern matches multiple factoids, please be more specific")
+        else:
+            factoidadmin = auth_responses(event, u'factoidadmin')
+            identities = get_identities(event, session)
+            factoid = factoids[0]
+
+            if factoid[2].identity_id not in identities and not factoidadmin:
+                return
+
+            # Not very pythonistic, but escaping is a nightmare.
+            parts = [[]]
+            pos = 0
+            while pos < len(operation):
+                char = operation[pos]
+                if char == separator:
+                    parts.append([])
+                elif char == u"\\":
+                    if pos < len(operation) - 1:
+                        if operation[pos+1] == u"\\":
+                            parts[-1].append(u"\\")
+                            pos += 1
+                        elif operation[pos+1] == separator:
+                            parts[-1].append(separator)
+                            pos += 1
+                        else:
+                            parts[-1].append(u"\\")
+                    else:
+                        parts[-1].append(u"\\")
+                else:
+                    parts[-1].append(char)
+                pos += 1
+
+            parts = [u"".join(x) for x in parts]
+
+            if len(parts) != 4:
+                event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                return
+
+            oldvalue = factoid[2].value
+            op, search, replace, flags = parts
+            flags = flags.lower()
+            if op == "s":
+                if "r" in flags:
+                    if "i" in flags:
+                        search += "(?i)"
+                    try:
+                        factoid[2].value = re.sub(search, replace, oldvalue, int("g" not in flags))
+                    except:
+                        event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                        return
+                else:
+                    newvalue = oldvalue.replace(search, replace, "g" in flags and -1 or 1)
+                    if newvalue == oldvalue:
+                        event.addresponse(u"I couldn't find '%(terms)s' in '%(oldvalue)s'. If that was a proper regular expression, append the 'r' flag", {
+                            'terms': search,
+                            'oldvalue': oldvalue,
+                        })
+                        return
+                    factoid[2].value = newvalue
+
+            elif op == "y":
+                if len(search) != len(replace):
+                    event.addresponse(u"That operation makes no sense. The source and destination must be the same length")
+                    return
+                try:
+                    table = dict((ord(x), ord(y)) for x, y in zip(search, replace))
+                    factoid[2].value = oldvalue.translate(table)
+
+                except:
+                    event.addresponse(u"That operation makes no sense. Try something like y/abcdef/ABCDEF/")
+                    return
+
+            log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
+                    operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
+
+            session.flush()
+            session.close()
+            event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:

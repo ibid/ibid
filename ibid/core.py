@@ -192,7 +192,7 @@ class Reloader(object):
         self.log.info(u"Notified all processors of config reload")
 
 def regexp(pattern, item):
-    return re.search(pattern, item) and True or False
+    return re.search(pattern, item, re.I) and True or False
 
 def sqlite_creator(database):
     from pysqlite2 import dbapi2 as sqlite
