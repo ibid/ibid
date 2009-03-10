@@ -76,7 +76,7 @@ class Manage(Processor):
                     break
 
         if not valid:
-            event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed", {
+            event.addresponse(u"Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed", {
                 'name': name,
                 'url': url,
             })
