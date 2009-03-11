@@ -23,7 +23,8 @@ class Dispatcher(object):
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = 'exception'
 
-        self.log.debug(event)
+        if event.source != u'clock' or event.processed:
+            self.log.debug(event)
 
         filtered = []
         for response in event['responses']:
@@ -34,7 +35,8 @@ class Dispatcher(object):
                 self.send(response)
 
         event.responses = filtered
-        self.log.debug(u"Returning event to %s source", event.source)
+        if event.source != u'clock': 
+            self.log.debug(u"Returning event to %s source", event.source)
         return event
 
     def send(self, response):
@@ -46,7 +48,8 @@ class Dispatcher(object):
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
         
     def dispatch(self, event):
-        self.log.debug(u"Received event from %s source", event.source)
+        if event.source != u'clock': 
+            self.log.debug(u"Received event from %s source", event.source)
         return threads.deferToThread(self._process, event)
 
 class Reloader(object):
