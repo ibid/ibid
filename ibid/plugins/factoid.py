@@ -271,10 +271,8 @@ class Get(Processor, RPC):
                 reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
-            if 'who' in event:
-                reply = reply.replace('$who', event['who'])
-            if 'channel' in event:
-                reply = reply.replace('$channel', event['channel'])
+            reply = reply.replace('$who', event.sender['nick'])
+            reply = reply.replace('$channel', event.channel)
             now = localtime()
             reply = reply.replace('$year', str(now[0]))
             reply = reply.replace('$month', str(now[1]))
