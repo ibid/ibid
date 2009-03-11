@@ -24,7 +24,7 @@ class Processor(object):
             new.default = getattr(cls, name)
             setattr(cls, name, new)
 
-        return super(Processor, cls).__new__(cls, *args)
+        return super(Processor, cls).__new__(cls)
 
     def __init__(self, name):
         self.name = name
@@ -136,7 +136,7 @@ class RPC(pb.Referenceable, resource.Resource):
             result = function(*args, **kwargs)
             return simplejson.dumps(result)
         except Exception, e:
-            return simplejson.dumps({'exception': True, 'message': e.message})
+            return simplejson.dumps({'exception': True, 'message': unicode(e)})
 
     def render_GET(self, request):
         function = self.get_function(request)

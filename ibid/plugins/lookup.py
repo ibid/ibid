@@ -304,10 +304,10 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.message),
+                'exception': u'; '.join(e.args[0]),
             })
         except Weather.WeatherException, e:
-            event.addresponse(u'%s', e.message)
+            event.addresponse(u'%s', unicode(e))
 
     @match(r'^forecast\s+(?:for\s+)?(.+)$')
     def forecast(self, event, place):
@@ -316,9 +316,9 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.message),
+                'exception': u'; '.join(e.args[0]),
             })
         except Weather.WeatherException, e:
-            event.addresponse(u'%s', e.message)
+            event.addresponse(u'%s', unicode(e))
 
 # vi: set et sta sw=4 ts=4:
