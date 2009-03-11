@@ -13,7 +13,7 @@ from html2text import html2text_file
 import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base
-from ibid.utils import cacheable_download, get_soup
+from ibid.utils import cacheable_download, get_html_parse_tree
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -64,7 +64,7 @@ class Manage(Processor):
         valid = bool(feedparser.parse(url)["version"])
 
         if not valid:
-            soup = get_soup(url)
+            soup = get_html_parse_tree(url)
             for alternate in soup.findAll('link', {'rel': 'alternate',
                     'type': re.compile(r'^application/(atom|rss)\+xml$'),
                     'href': re.compile(r'.+')}):
