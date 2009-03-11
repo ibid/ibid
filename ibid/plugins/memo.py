@@ -100,7 +100,7 @@ class Deliver(Processor):
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.now()-memo.time),
+                    'ago': ago(datetime.utcnow()-memo.time),
                 }
                 event.addresponse({'reply': message, 'target': event.sender['id']})
             else:
@@ -109,7 +109,7 @@ class Deliver(Processor):
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.now()-memo.time),
+                    'ago': ago(datetime.utcnow()-memo.time),
                 })
 
             memo.delivered = True
