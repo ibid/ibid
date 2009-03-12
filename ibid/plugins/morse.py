@@ -75,7 +75,10 @@ class Morse(Processor):
     @match(r'^morse\s*(.*)$')
     def morse(self, event, message):
         if "message_raw" in event:
-            message = self._raw_match_re.match(event.message_raw).group(1)
+            try:
+                message = self._raw_match_re.match(event.message_raw).group(1)
+            except AttributeError: # Didn't match
+                return
 
         if message.replace(u'-', u'').replace(u'.', u'').strip() == u'':
             event.addresponse(u'Decodes as %s', self._morse2text(message))
