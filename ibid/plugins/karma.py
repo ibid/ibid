@@ -97,6 +97,8 @@ class Get(Processor):
         session = ibid.databases.ibid()
         karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
         if not karma:
+            event.addresponse(u'nobody cares, dude')
+        elif karma.value == 0:
             event.addresponse(u'%s has neutral karma', subject)
         else:
             event.addresponse(u'%(subject)s has karma of %(value)s', {
