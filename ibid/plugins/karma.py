@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.config import Option, BoolOption
+from ibid.config import Option, BoolOption, IntOption
 from ibid.models import Base
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -42,6 +42,7 @@ class Set(Processor):
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
     ignore = Option('ignore', 'Karma subjects to silently ignore', ())
+    importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 4)
 
     def setup(self):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
@@ -76,7 +77,13 @@ class Set(Processor):
             karma.changes += 2
             change = u'Increased and decreased'
 
-        session.save_or_update(karma)
+        if karma.value == 0 and karma.changes <= self.importance:
+            change = u'Forgotten (unimportant)'
+
+            session.delete(karma)
+        else:
+            session.save_or_update(karma)
+
         session.flush()
         session.close()
 
