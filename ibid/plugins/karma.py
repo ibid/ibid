@@ -121,4 +121,29 @@ class Get(Processor):
         event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
         session.close()
 
+class Forget(Processor):
+    u"""forget karma for <subject> [[reason]]"""
+    feature = 'karma'
+
+    # Clashes with factoid
+    priority = -10
+
+    permission = u'karmaadmin'
+
+    @match(r'^forget\s+karma\s+for\s+(.+?)(?:\s*[[{(]+\s*(.+?)\s*[\]})]+)?$')
+    @authorise
+    def forget(self, event, subject, reason):
+        session = ibid.databases.ibid()
+        karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
+        if not karma:
+            karma = Karma(subject)
+            event.addresponse(u"I was pretty ambivalent about %s, anyway", subject)
+
+        session.delete(karma)
+        session.flush()
+        session.close()
+
+        log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s", subject, event.account, event.identity, event.sender['connection'], reason)
+        event.addresponse(True)
+
 # vi: set et sta sw=4 ts=4:
