@@ -59,14 +59,14 @@ class AddAuth(Processor):
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
-    u"""(grant|revoke) <permission> (to|from|on) <username> [when authed]
+    u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
     permissions [for <username>]
     list permissions"""
     feature = 'auth'
 
     permission = u'admin'
 
-    @match(r'^(grant|revoke|remove)\s+(.+?)\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
+    @match(r'^(grant|revoke|remove)\s+(.+?)(?:\s+permission)?\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
     @authorise
     def grant(self, event, action, name, username, auth):
 
