@@ -118,7 +118,10 @@ class Get(Processor):
     def ladder(self, event, reverse):
         session = ibid.databases.ibid()
         karmas = session.query(Karma).order_by(reverse and Karma.value.asc() or Karma.value.desc()).limit(30).all()
-        event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+        if karmas:
+            event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+        else:
+            event.addresponse(u"I don't really care about anything")
         session.close()
 
 class Forget(Processor):
