@@ -68,7 +68,7 @@ class Reloader(object):
             self.log.info(u"Reloaded reloader")
             return True
         except Exception, e:
-            self.log.error(u"Failed to reload reloader: %s", e.message)
+            self.log.error(u"Failed to reload reloader: %s", unicode(e))
             return False
         
     def load_source(self, name, service=None):
@@ -181,7 +181,7 @@ class Reloader(object):
             self.log.info(u'Reloaded auth')
             return True
         except Exception, e:
-            self.log.error(u"Couldn't reload auth: %s", e.message)
+            self.log.error(u"Couldn't reload auth: %s", unicode(e))
 
         return False
 
