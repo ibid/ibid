@@ -107,10 +107,11 @@ class Identities(Processor):
             event.addresponse(u'This identity is already attached to account %s', ident.account.username)
             return
 
-        if source.lower() not in ibid.sources:
+        if source not in ibid.sources:
             event.addresponse(u'I am not connected to %s', source)
+            return
         else:
-            source = ibid.sources[source.lower()].name
+            source = ibid.sources[source].name
 
         if not admin:
             token = ''.join([choice(chars) for i in xrange(16)])
