@@ -103,7 +103,7 @@ def auth_responses(event, permission):
 def authorise(passthrough=True):
     def wrap(function):
         function.authorised = True
-        function.auth_passthrough = True
+        function.auth_passthrough = passthrough
         return function
     return wrap
 
