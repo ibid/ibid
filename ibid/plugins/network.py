@@ -107,42 +107,62 @@ class Tracepath(Processor):
 
 help['ipcalc'] = u'IP address calculator'
 class IPCalc(Processor):
-    u"""ipcalc <network> <subnet>
+    u"""ipcalc <network>/<subnet>
     ipcalc <address> - <address>"""
     feature = 'ipcalc'
 
     ipcalc = Option('ipcalc', 'Path to ipcalc executable', 'ipcalc')
 
-    deaggregate_re = re.compile(r'^((?:\d{1,3}\.){3}\d{1,3})\s+-\s+((?:\d{1,3}\.){3}\d{1,3})$')
-
     def setup(self):
         if not file_in_path(self.ipcalc):
             raise Exception("Cannot locate ipcalc executable")
 
-    @match(r'^ipcalc\s+(.+)$')
-    def handle_ipcalc(self, event, parameter):
-        if parameter.strip().startswith("-"):
-            event.addresponse(False)
-            return
-        
-        m = self.deaggregate_re.match(parameter)
-        if m:
-            parameter = [m.group(1), '-', m.group(2)]
-        else:
-            parameter = [parameter]
-        
-        ipcalc = Popen([self.ipcalc, '-n', '-b'] + parameter, stdout=PIPE, stderr=PIPE)
+    def call_ipcalc(self, parameters):
+        ipcalc = Popen([self.ipcalc, '-n', '-b'] + parameters, stdout=PIPE, stderr=PIPE)
         output, error = ipcalc.communicate()
         code = ipcalc.wait()
+        output = unicode_output(output)
+
+        return (code, output)
+
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3})(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
+    def ipcalc_netmask(self, event, address, netmask):
+        address = address
+        if netmask:
+            address += u'/' + netmask
+        code, output = self.call_ipcalc([address])
 
         if code == 0:
-            output = unicode_output(output)
-            if output.startswith(u"INVALID ADDRESS"):
+            if output.startswith(u'INVALID ADDRESS'):
                 event.addresponse(u"That's an invalid address. Try something like 192.168.1.0/24")
             else:
+                response = {}
                 for line in output.splitlines():
-                    if line.strip():
-                        event.addresponse(u'%s', line)
+                    if ":" in line:
+                        name, value = [x.strip() for x in line.split(u':', 1)]
+                        name = name.lower()
+                        if name == "netmask":
+                            value, response['cidr'] = value.split(' = ')
+                        elif name == "hosts/net":
+                            value, response['class'] = value.split(None, 1)
+                        response[name] = value
+
+                event.addresponse(u'Host: %(address)s/%(netmask)s (/%(cidr)s) Wildcard: %(wildcard)s | '
+                    u'Network: %(network)s (%(hostmin)s - %(hostmax)s) Broadcast: %(broadcast)s Hosts: %(hosts/net)s %(class)s',
+                    response)
+        else:
+            error = unicode_output(error.strip())
+            event.addresponse(u'%s', error.replace(u'\n', u' '))
+
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3})\s*-\s*((?:\d{1,3}\.){3}\d{1,3})$')
+    def ipcalc_deggregate(self, event, frm, to):
+        code, output = self.call_ipcalc([frm, '-', to])
+
+        if code == 0:
+            if output.startswith(u'INVALID ADDRESS'):
+                event.addresponse(u"That's an invalid address. Try something like 192.168.1.0")
+            else:
+                event.addresponse(u'Deaggregates to: %s', u', '.join(output.splitlines()[1:]))
         else:
             error = unicode_output(error.strip())
             event.addresponse(u'%s', error.replace(u'\n', u' '))
