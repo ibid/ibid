@@ -54,7 +54,7 @@ class Message:
         event = Event(self.name, u'message')
         (realname, address) = parseaddr(mail['from'])
         event.channel = event.sender['connection'] = event.sender['id'] = unicode(address, 'utf-8', 'replace')
-        event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or address
+        event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or event.channel
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
