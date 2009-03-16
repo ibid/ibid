@@ -119,6 +119,10 @@ class Bazaar(Processor, RPC):
             return
 
         event.processed = True
+
+        if 'X-Launchpad-Branch' not in event.headers or 'X-Launchpad-Branch-Revision-Number' not in event.headers:
+            return
+
         if event.headers['X-Launchpad-Branch'] in self.launchpad_branches:
             self.remote_committed(self.launchpad_branches[event.headers['X-Launchpad-Branch']], int(event.headers['X-Launchpad-Branch-Revision-Number']))
 
