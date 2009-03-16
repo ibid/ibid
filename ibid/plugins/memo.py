@@ -60,7 +60,7 @@ class Tell(Processor):
 
     @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$',
             version='deaddressed')
-    @authorise
+    @authorise(passthrough=False)
     def tell(self, event, how, who, source, memo):
         source_specified = bool(source)
         if not source:

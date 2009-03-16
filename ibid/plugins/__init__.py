@@ -63,6 +63,8 @@ class Processor(object):
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
                             method(event, *match.groups())
+                        elif not getattr(method, 'auth_passthrough', True):
+                            event.processed = True
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
@@ -98,9 +100,12 @@ def auth_responses(event, permission):
 
     return True
 
-def authorise(function):
-    function.authorised = True
-    return function
+def authorise(passthrough=True):
+    def wrap(function):
+        function.authorised = True
+        function.auth_passthrough = True
+        return function
+    return wrap
 
 from ibid.source.http import templates
 

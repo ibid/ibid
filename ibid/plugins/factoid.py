@@ -204,7 +204,7 @@ class Forget(Processor):
     permissions = (u'factoidadmin',)
 
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
-    @authorise
+    @authorise(passthrough=False)
     def forget(self, event, name, number, pattern, is_regex):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if factoids:
@@ -262,7 +262,7 @@ class Forget(Processor):
             event.addresponse(u"I didn't know about %s anyway", name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
-    @authorise
+    @authorise(passthrough=False)
     def alias(self, event, target, source):
 
         target = strip_name(target)
@@ -433,7 +433,7 @@ class Set(Processor):
         self.set_factoid.im_func.message_version = 'deaddressed'
 
     @handler
-    @authorise
+    @authorise(passthrough=False)
     def set_factoid(self, event, correction, name, addition1, verb1, verb2, addition2, value):
         verb = verb1 or verb2
         addition = addition1 or addition2
@@ -489,7 +489,7 @@ class Modify(Processor):
     priority = 190
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=(.+)$', version='deaddressed')
-    @authorise
+    @authorise(passthrough=False)
     def append(self, event, name, number, pattern, is_regex, suffix):
         name = strip_name(name)
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
@@ -522,7 +522,7 @@ class Modify(Processor):
             event.addresponse(True)
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
-    @authorise
+    @authorise(passthrough=False)
     def modify(self, event, name, number, pattern, is_regex, operation, separator):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
