@@ -41,7 +41,10 @@ class AddAuth(Processor):
                 return
 
         if source:
-            source = ibid.sources[source.lower()].name
+            if source not in ibid.sources:
+                event.addresponse(u"I am not connected to %s", source)
+                return
+            source = ibid.sources[source].name
 
         if method.lower() == 'password':
             password = hash(credential)

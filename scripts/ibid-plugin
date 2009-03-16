@@ -44,6 +44,11 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 
+class TestSource(dict):
+    type = 'test'
+
+ibid.sources[u'test_source'] = TestSource()
+
 plugins = set(args)
 if options.load_all:
     plugins = set(ibid.config.get("load"))
