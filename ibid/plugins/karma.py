@@ -42,7 +42,7 @@ class Set(Processor):
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
     ignore = Option('ignore', 'Karma subjects to silently ignore', ())
-    importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 4)
+    importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
 
     def setup(self):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
