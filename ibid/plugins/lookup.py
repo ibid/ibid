@@ -202,6 +202,8 @@ class Currency(Processor):
         if not self.currencies:
             self._load_currencies()
 
+        frm = frm.upper()
+        to = to.upper()
         if frm not in self.currencies or to not in self.currencies:
             if command.lower() == "exchange":
                 event.addresponse(u"Sorry, I don't know about a currency called %s", (frm not in self.currencies and frm or to))
