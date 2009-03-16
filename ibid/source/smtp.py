@@ -60,7 +60,7 @@ class Message:
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
         event.headers = dict((i[0], unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
 
-        message = mail.is_multipart() and mail.get_payload()[0] or mail.get_payload()
+        message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
             event.message = stripsig.sub('', message).strip().replace('\n', ' ')
         else:
