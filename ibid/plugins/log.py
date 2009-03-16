@@ -20,7 +20,7 @@ class Log(Processor):
 
     def get_logfile(self, source, channel, when):
         when = localtime(when)
-        if source.lower() in ibid.sources and ibid.sources[source.lower()].type == 'jabber':
+        if ibid.sources[source.lower()].type == 'jabber':
             channel = channel.split('/')[0]
         filename = self.log %   {   'source': source,
                                     'channel': channel,
