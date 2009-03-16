@@ -42,7 +42,7 @@ class Dispatcher(object):
         return event
 
     def send(self, response):
-        source = response['source'].lower()
+        source = response['source']
         if source in ibid.sources:
             reactor.callFromThread(ibid.sources[source].send, response)
             self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
@@ -91,8 +91,8 @@ class Reloader(object):
             self.log.exception(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
-        ibid.sources[name.lower()] = moduleclass(name)
-        ibid.sources[name.lower()].setServiceParent(service)
+        ibid.sources[name] = moduleclass(name)
+        ibid.sources[name].setServiceParent(service)
         self.log.info(u"Loaded %s source %s", type, name)
         return True
 
@@ -102,7 +102,6 @@ class Reloader(object):
                 self.load_source(source, service)
 
     def unload_source(self, name):
-        name = name.lower()
         if name not in ibid.sources:
             return False
 
