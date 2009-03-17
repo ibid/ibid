@@ -4,6 +4,7 @@ import logging
 from os.path import join, expanduser
 
 from twisted.internet import reactor, threads
+from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -122,8 +123,16 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
-        for processor in ibid.config['load']:
-            self.load_processor(processor)
+        if 'load' in ibid.config.plugins:
+            plugins = set(ibid.config.plugins['load'])
+        else:
+            plugins = set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
+        
+        if 'skip' in ibid.config.plugins:
+            plugins -= set(ibid.config.plugins['skip'])
+            
+        for plugin in plugins:
+            self.load_processor(plugin)
 
     def load_processor(self, name):
         object = name

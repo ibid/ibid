@@ -10,6 +10,8 @@ try:
 except ImportError:
     pass
 
+from twisted.python.modules import getModule
+
 import ibid
 import ibid.plugins
 from ibid.config import FileConfig
@@ -18,11 +20,13 @@ from ibid.models import Identity
 
 parser = OptionParser(usage="%prog [options...] [plugins...]")
 parser.add_option("-a", "--all", dest="load_all", action="store_true",
-        help="Load all configured plugins")
+        help="Load all available plugins")
 parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
         help="Only load the specified plugins, not the common base plugins")
 parser.add_option("-s", "--skip", dest="skip", action="append", metavar="PLUGIN",
         help="Skip loading PLUGIN (may be specified more than once)")
+parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
+        help="Load all all configured plugins")
 
 (options, args) = parser.parse_args()
 
@@ -50,10 +54,17 @@ class TestSource(dict):
 ibid.sources[u'test_source'] = TestSource()
 
 plugins = set(args)
-if options.load_all:
-    plugins = set(ibid.config.get("load"))
-if options.load_base:
+if options.load_all or options.load_configured:
+    plugins = set(module.name.replace('ibid.plugins.', '') for module in getModule('ibid.plugins').iterModules())
+
+if options.load_configured:
+    if 'load' in ibid.config.plugins:
+        plugins = set(ibid.config.plugins['load'])
+    if 'skip' in ibid.config.plugins:
+        plugins -= set(ibid.config.plugins['skip'])
+elif options.load_base:
     plugins |= set(("admin", "config", "core", "help", "test"))
+
 if options.skip:
     plugins -= set(options.skip)
 
