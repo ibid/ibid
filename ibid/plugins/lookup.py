@@ -9,9 +9,30 @@ import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, cacheable_download
 
 help = {}
+
+def get_country_codes():
+    # The XML download doesn't include things like UK, so we consume this steaming pile of crud instead
+    filename = cacheable_download('http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm', 'lookup/iso-3166-1_decoding_table.htm')
+    etree = get_html_parse_tree('file://' + filename, treetype='etree')
+    table = [x for x in etree.getiterator('table')][2]
+
+    countries = {}
+    for tr in table.getiterator('tr'):
+        abbr = [x.text for x in tr.getiterator('div')][0]
+        eng_name = [x.text for x in tr.getchildren()][1]
+
+        if eng_name and eng_name.strip():
+            # Cleanup:
+            if u',' in eng_name:
+                eng_name = u' '.join(reversed(eng_name.split(',', 1)))
+            eng_name = u' '.join(eng_name.split())
+
+            countries[abbr.upper()] = eng_name.title()
+
+    return countries
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
@@ -179,6 +200,7 @@ class Currency(Processor):
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
+    country_codes = {}
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
@@ -197,19 +219,60 @@ class Currency(Processor):
                         place, name = place.split(',', 1)
                     self.currencies[code] = (place.strip(), name.strip())
 
-    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
+    def _resolve_currency(self, name):
+        "Return the canonical name for a currency"
+
+        name = name.lower()
+
+        # .TLD
+        if name.startswith(u".") and len(name) == 3:
+            name = name[1:]
+        
+        # Make singular
+        if name.endswith(u's') and len(name) > 3:
+            name = name[:-1]
+
+        # TLD
+        if len(name) == 2:
+            if name.upper() in self.country_codes:
+                name = self.country_codes[name.upper()].lower()
+        
+        # Currency Name
+        if name == u'dollar':
+            name = 'usd'
+        if name.upper() not in self.currencies:
+            for code, (place, currency) in self.currencies.iteritems():
+                if name in currency.lower():
+                    name = code
+                    break
+
+        # Country Name
+        if name.upper() not in self.currencies:
+            for code, (place, currency) in self.currencies.iteritems():
+                if name in place.lower():
+                    name = code
+                    break
+
+        if name.upper() in self.currencies:
+            return name.upper()
+        return False
+
+    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
     def exchange(self, event, command, amount, frm, to):
         if not self.currencies:
             self._load_currencies()
 
-        frm = frm.upper()
-        to = to.upper()
-        if frm not in self.currencies or to not in self.currencies:
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        canonical_frm = self._resolve_currency(frm)
+        canonical_to = self._resolve_currency(to)
+        if not canonical_frm or not canonical_to:
             if command.lower() == "exchange":
-                event.addresponse(u"Sorry, I don't know about a currency called %s", (frm not in self.currencies and frm or to))
+                event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
             return
 
-        data = {'Amount': amount, 'From': frm, 'To': to}
+        data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
         etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
         result = u" ".join(tag.text for tag in etree.getiterator('h2'))
