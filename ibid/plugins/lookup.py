@@ -297,6 +297,44 @@ class Currency(Processor):
         else:
             event.addresponse(u'No currencies found')
 
+help['tld'] = u"Resolve country TLDs (ISO 3166)"
+class TLD(Processor):
+    u""".<tld>
+    tld for <country>"""
+    feature = 'tld'
+
+    country_codes = {}
+
+    @match(r'^\.([a-zA-Z]{2})$')
+    def tld_to_country(self, event, tld):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        tld = tld.upper()
+
+        if tld in self.country_codes:
+            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                'tld': tld,
+                'country': self.country_codes[tld],
+            })
+        else:
+            event.addresponse(u"ISO doesn't know about any such TLD")
+
+    @match(r'^tld for (.+)$')
+    def country_to_tld(self, event, location):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        for tld, country in self.country_codes.iteritems():
+            if location.lower() in country.lower():
+                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                    'tld': tld,
+                    'country': country,
+                })
+                return
+
+        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
+
 help['weather'] = u'Retrieves current weather and forecasts for cities.'
 class Weather(Processor):
     u"""weather in <city>
