@@ -275,9 +275,16 @@ class Currency(Processor):
         data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
         etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
-        result = u" ".join(tag.text for tag in etree.getiterator('h2'))
+        result = [tag.text for tag in etree.getiterator('h2')]
         if result:
-            event.addresponse(u'%s', result)
+            event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
+                'fresult': result[0],
+                'tresult': result[2],
+                'fcountry': self.currencies[canonical_frm][0],
+                'fcurrency': self.currencies[canonical_frm][1],
+                'tcountry': self.currencies[canonical_to][0],
+                'tcurrency': self.currencies[canonical_to][1],
+            })
         else:
             event.addresponse(u"The bureau de change appears to be closed for lunch")
 
