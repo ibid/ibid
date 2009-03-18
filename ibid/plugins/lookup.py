@@ -213,13 +213,28 @@ class Currency(Processor):
             if tbl_sub.get('class') == 'tbl_sub':
                 for tr in tbl_sub.getiterator('tr'):
                     code, place = [x.text for x in tr.getchildren()]
-                    name = u""
+                    name = u''
                     if not place:
-                        place = u""
-                    if "," in place[1:-1]:
-                        place, name = place.split(',', 1)
-                    self.currencies[code] = (place.strip(), name.strip())
-        print self.currencies
+                        place = u''
+                    if u',' in place[1:-1]:
+                        place, name = place.split(u',', 1)
+                    place = place.strip()
+                    if code in self.currencies:
+                        currency = self.currencies[code]
+                        # Are we using another country's currency?
+                        if place != u'' and name != u'' and (currency[1] == u'' or currency[1].rsplit(None, 1)[0] in place
+                                or (u'(also called' in currency[1] and currency[1].split(u'(', 1)[0].rsplit(None, 1)[0] in place)):
+                            currency[0].insert(0, place)
+                            currency[1] = name.strip()
+                        else:
+                            currency[0].append(place)
+                    else:
+                        self.currencies[code] = [[place], name.strip()]
+        # Special cases for shared currencies:
+        self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
+        self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
+        self.currencies['XOF'][1] = u'Francs'
+
 
     def _resolve_currency(self, name):
         "Return the canonical name for a currency"
@@ -237,9 +252,9 @@ class Currency(Processor):
         if name == u'dollar':
             return "USD"
 
-        name_re = re.compile(r'^(.+\s+)?(%s)(\s+.+)?$' % name.replace('\\', '\\\\'), re.I | re.UNICODE)
-        for code, (place, currency) in self.currencies.iteritems():
-            if name_re.match(currency) or name_re.match(place):
+        name_re = re.compile(r'^(.+\s+)?\(?%ss?\)?(\s+.+)?$' % name, re.I | re.UNICODE)
+        for code, (places, currency) in self.currencies.iteritems():
+            if name_re.match(currency) or [True for place in places if name_re.match(place)]:
                 return code
 
         return False
@@ -267,9 +282,9 @@ class Currency(Processor):
             event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
                 'fresult': result[0],
                 'tresult': result[2],
-                'fcountry': self.currencies[canonical_frm][0],
+                'fcountry': self.currencies[canonical_frm][0][0],
                 'fcurrency': self.currencies[canonical_frm][1],
-                'tcountry': self.currencies[canonical_to][0],
+                'tcountry': self.currencies[canonical_to][0][0],
                 'tcurrency': self.currencies[canonical_to][1],
             })
         else:
