@@ -314,7 +314,7 @@ class TLD(Processor):
 
     country_codes = {}
 
-    @match(r'^\s*\.([a-zA-Z]{2})\s*$')
+    @match(r'^\.([a-zA-Z]{2})$')
     def tld_to_country(self, event, tld):
         if not self.country_codes:
             self.country_codes = get_country_codes()
