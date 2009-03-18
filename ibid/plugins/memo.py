@@ -162,7 +162,7 @@ class Messages(Processor):
             event.addresponse(u"Sorry, nobody loves you")
         session.close()
 
-    @match(r'message\s+(\d+)$')
+    @match(r'^message\s+(\d+)$')
     def message(self, event, number):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
