@@ -201,6 +201,7 @@ class Currency(Processor):
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
+    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
@@ -218,43 +219,29 @@ class Currency(Processor):
                     if "," in place[1:-1]:
                         place, name = place.split(',', 1)
                     self.currencies[code] = (place.strip(), name.strip())
+        print self.currencies
 
     def _resolve_currency(self, name):
         "Return the canonical name for a currency"
 
-        name = name.lower()
+        if name.upper() in self.currencies:
+            return name.upper()
 
-        # .TLD
-        if name.startswith(u".") and len(name) == 3:
-            name = name[1:]
-        
-        # Make singular
-        if name.endswith(u's') and len(name) > 3:
-            name = name[:-1]
+        name = self.strip_currency_re.match(name).group(1).lower()
 
-        # TLD
-        if len(name) == 2:
-            if name.upper() in self.country_codes:
-                name = self.country_codes[name.upper()].lower()
+        # TLD -> country name
+        if len(name) == 2 and name.upper() in self.country_codes:
+           name = self.country_codes[name.upper()].lower()
         
         # Currency Name
         if name == u'dollar':
-            name = 'usd'
-        if name.upper() not in self.currencies:
-            for code, (place, currency) in self.currencies.iteritems():
-                if name in currency.lower():
-                    name = code
-                    break
+            return "USD"
 
-        # Country Name
-        if name.upper() not in self.currencies:
-            for code, (place, currency) in self.currencies.iteritems():
-                if name in place.lower():
-                    name = code
-                    break
+        name_re = re.compile(r'^(.+\s+)?(%s)(\s+.+)?$' % name.replace('\\', '\\\\'), re.I | re.UNICODE)
+        for code, (place, currency) in self.currencies.iteritems():
+            if name_re.match(currency) or name_re.match(place):
+                return code
 
-        if name.upper() in self.currencies:
-            return name.upper()
         return False
 
     @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
