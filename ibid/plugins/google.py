@@ -1,8 +1,10 @@
+from cgi import parse_qs
 import htmlentitydefs
 import re
 import simplejson
 from urllib import quote
 from urllib2 import urlopen, Request
+from urlparse import urlparse
 
 from BeautifulSoup import BeautifulSoup
 
@@ -128,6 +130,8 @@ class GoogleScrapeSearch(Processor):
         for item in items:
             try:
                 url = item.a['href']
+                if url.startswith(u"/aclk?"):
+                    url = parse_qs(urlparse(url).query)['q'][0]
                 title = u''.join([e.string for e in item.a.contents])
                 if title.startswith("Image results for"):
                     continue
