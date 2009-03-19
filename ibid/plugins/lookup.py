@@ -155,7 +155,7 @@ class Twitter(Processor):
         status = loads(f.read())
         f.close()
 
-        return {'screen_name': status['user']['screen_name'], 'text': status['text']}
+        return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
         service_url = self.services[service]
@@ -170,7 +170,7 @@ class Twitter(Processor):
             url = "%s/notice/%i" % (service_url[:-5], latest["id"])
 
         return {
-            'text': latest['text'],
+            'text': decode_htmlentities(latest['text']),
             'ago': ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1),
             'url': url,
         }
