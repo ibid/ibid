@@ -60,8 +60,10 @@ class Tell(Processor):
                 if not identity:
                     identity = account.identities[0]
         if not to:
-            event.addresponse(u"I don't know who %s is", who)
-            return
+            to = Identity(event.source, who)
+            session.save(to)
+            session.flush()
+            log.info(u"Created identity %s for %s on %s", to.id, to.identity, to.source)
 
         if permission(u'recvmemo', to.account and to.account.id or None, to.source) != 'yes':
             event.addresponse(u'Just tell %s yourself', who)
