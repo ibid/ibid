@@ -24,7 +24,7 @@ class Dict(Processor):
         definitions = self.connection.define(dictionary or '*', word)
         event.addresponse(u'%s', u', '.join([d.getdefstr() for d in definitions]))
 
-    @match(r'spell\s+(.+?)(?:\s+using\s+(.+))?$')
+    @match(r'^spell\s+(.+?)(?:\s+using\s+(.+))?$')
     def handle_spell(self, event, word, strategy):
         correct = self.connection.match('*', 'exact', word)
         if correct:

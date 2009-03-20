@@ -23,7 +23,10 @@ class Dispatcher(object):
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = 'exception'
 
-        self.log.debug(event)
+        log_level = logging.DEBUG
+        if event.type == u'clock' and not event.processed:
+            log_level -= 5
+        self.log.log(log_level, event)
 
         filtered = []
         for response in event['responses']:
@@ -34,11 +37,12 @@ class Dispatcher(object):
                 self.send(response)
 
         event.responses = filtered
-        self.log.debug(u"Returning event to %s source", event.source)
+        self.log.log(log_level, u"Returning event to %s source", event.source)
+
         return event
 
     def send(self, response):
-        source = response['source'].lower()
+        source = response['source']
         if source in ibid.sources:
             reactor.callFromThread(ibid.sources[source].send, response)
             self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
@@ -46,7 +50,11 @@ class Dispatcher(object):
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
         
     def dispatch(self, event):
-        self.log.debug(u"Received event from %s source", event.source)
+        log_level = logging.DEBUG
+        if event.type == u'clock':
+            log_level -= 5
+        self.log.log(log_level, u"Received event from %s source", event.source)
+
         return threads.deferToThread(self._process, event)
 
 class Reloader(object):
@@ -68,7 +76,7 @@ class Reloader(object):
             self.log.info(u"Reloaded reloader")
             return True
         except Exception, e:
-            self.log.error(u"Failed to reload reloader: %s", e.message)
+            self.log.error(u"Failed to reload reloader: %s", unicode(e))
             return False
         
     def load_source(self, name, service=None):
@@ -83,8 +91,8 @@ class Reloader(object):
             self.log.exception(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
-        ibid.sources[name.lower()] = moduleclass(name)
-        ibid.sources[name.lower()].setServiceParent(service)
+        ibid.sources[name] = moduleclass(name)
+        ibid.sources[name].setServiceParent(service)
         self.log.info(u"Loaded %s source %s", type, name)
         return True
 
@@ -94,7 +102,6 @@ class Reloader(object):
                 self.load_source(source, service)
 
     def unload_source(self, name):
-        name = name.lower()
         if name not in ibid.sources:
             return False
 
@@ -181,7 +188,7 @@ class Reloader(object):
             self.log.info(u'Reloaded auth')
             return True
         except Exception, e:
-            self.log.error(u"Couldn't reload auth: %s", e.message)
+            self.log.error(u"Couldn't reload auth: %s", unicode(e))
 
         return False
 

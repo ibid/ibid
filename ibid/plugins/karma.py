@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.config import Option, BoolOption
+from ibid.config import Option, BoolOption, IntOption
 from ibid.models import Base
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -42,6 +42,7 @@ class Set(Processor):
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
     ignore = Option('ignore', 'Karma subjects to silently ignore', ())
+    importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
 
     def setup(self):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
@@ -76,7 +77,13 @@ class Set(Processor):
             karma.changes += 2
             change = u'Increased and decreased'
 
-        session.save_or_update(karma)
+        if karma.value == 0 and karma.changes <= self.importance:
+            change = u'Forgotten (unimportant)'
+
+            session.delete(karma)
+        else:
+            session.save_or_update(karma)
+
         session.flush()
         session.close()
 
@@ -97,6 +104,8 @@ class Get(Processor):
         session = ibid.databases.ibid()
         karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
         if not karma:
+            event.addresponse(u'nobody cares, dude')
+        elif karma.value == 0:
             event.addresponse(u'%s has neutral karma', subject)
         else:
             event.addresponse(u'%(subject)s has karma of %(value)s', {
@@ -109,7 +118,35 @@ class Get(Processor):
     def ladder(self, event, reverse):
         session = ibid.databases.ibid()
         karmas = session.query(Karma).order_by(reverse and Karma.value.asc() or Karma.value.desc()).limit(30).all()
-        event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+        if karmas:
+            event.addresponse(u'%s', ', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+        else:
+            event.addresponse(u"I don't really care about anything")
         session.close()
+
+class Forget(Processor):
+    u"""forget karma for <subject> [[reason]]"""
+    feature = 'karma'
+
+    # Clashes with factoid
+    priority = -10
+
+    permission = u'karmaadmin'
+
+    @match(r'^forget\s+karma\s+for\s+(.+?)(?:\s*[[{(]+\s*(.+?)\s*[\]})]+)?$')
+    @authorise
+    def forget(self, event, subject, reason):
+        session = ibid.databases.ibid()
+        karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
+        if not karma:
+            karma = Karma(subject)
+            event.addresponse(u"I was pretty ambivalent about %s, anyway", subject)
+
+        session.delete(karma)
+        session.flush()
+        session.close()
+
+        log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s", subject, event.account, event.identity, event.sender['connection'], reason)
+        event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:

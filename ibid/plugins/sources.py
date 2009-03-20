@@ -13,8 +13,9 @@ class Admin(Processor):
     @match(r'^connect\s+(?:to\s+)?(\S+)$')
     @authorise
     def connect(self, event, source):
-
-        if ibid.sources[source.lower()].connect():
+        if source not in ibid.sources:
+            event.addresponse(u"I don't have a source called %s", source)
+        elif ibid.sources[source].connect():
             event.addresponse(u'Connecting to %s', source)
         else:
             event.addresponse(u"I couldn't connect to %s", source)
@@ -22,8 +23,9 @@ class Admin(Processor):
     @match(r'^disconnect\s+(?:from\s+)?(\S+)$')
     @authorise
     def disconnect(self, event, source):
-
-        if ibid.sources[source.lower()].disconnect():
+        if source not in ibid.sources:
+            event.addresponse(u"I am not connected to %s", source)
+        elif ibid.sources[source].disconnect():
             event.addresponse(u'Disconnecting from %s', source)
         else:
             event.addresponse(u"I couldn't disconnect from %s", source)

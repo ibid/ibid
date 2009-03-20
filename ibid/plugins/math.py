@@ -70,11 +70,11 @@ class Calc(Processor):
             event.addresponse(u"I can't divide by zero.")
             return
         except ArithmeticError, e:
-            event.addresponse(u"I can't do that: %s", e.message)
+            event.addresponse(u"I can't do that: %s", unicode(e))
             return
         except ValueError, e:
-            if e.message == "math domain error":
-                event.addresponse(u"I can't do that: %s", e.message)
+            if unicode(e) == u"math domain error":
+                event.addresponse(u"I can't do that: %s", unicode(e))
                 return
         except Exception, e:
             return
@@ -203,7 +203,7 @@ class BaseConvert(Processor):
         try:
             number = self._from_base(number, base_from)
         except ValueError, e:
-            event.addresponse(u'%s', e.message)
+            event.addresponse(u'%s', unicode(e))
             return
         
         event.addresponse(u'That is %(result)s in %(base)s', {
@@ -271,7 +271,7 @@ class BaseConvert(Processor):
             if len(buf) > 0:
                 output += process_buf(buf)
         except ValueError, e:
-            event.addresponse(u'%s', e.message)
+            event.addresponse(u'%s', unicode(e))
             return
         
         event.addresponse(u'That is "%s"', output)

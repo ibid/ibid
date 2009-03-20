@@ -377,6 +377,7 @@ class Modify(Processor):
                     suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
             factoid[2].value += suffix
 
+            session.save_or_update(factoid[2])
             session.flush()
             session.close()
             event.addresponse(True)
@@ -470,6 +471,7 @@ class Modify(Processor):
             log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
                     operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
+            session.save_or_update(factoid[2])
             session.flush()
             session.close()
             event.addresponse(True)

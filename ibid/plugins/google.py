@@ -1,28 +1,21 @@
+from cgi import parse_qs
 import htmlentitydefs
 import re
 import simplejson
 from urllib import quote
 from urllib2 import urlopen, Request
+from urlparse import urlparse
 
 from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import ibid_version
+from ibid.utils import decode_htmlentities, ibid_version
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
 default_user_agent = 'Mozilla/5.0'
 default_referrer = "http://ibid.omnia.za.net/"
-
-def de_entity(text):
-    "Remove HTML entities, and replace with their characters"
-    replace = lambda match: unichr(int(match.group(1)))
-    text = re.sub("&#(\d+);", replace, text)
-
-    replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
-    text = re.sub("&(\w+);", replace, text)
-    return text
 
 class GoogleAPISearch(Processor):
     u"""google [for] <term>
@@ -58,7 +51,7 @@ class GoogleAPISearch(Processor):
 
             title = item["titleNoFormatting"]
 
-            results.append(u'"%s" %s' % (de_entity(title), item["unescapedUrl"]))
+            results.append(u'"%s" %s' % (decode_htmlentities(title), item["unescapedUrl"]))
             
         if results:
             event.addresponse(u'%s', u', '.join(results))
@@ -120,7 +113,7 @@ class GoogleScrapeSearch(Processor):
 
         definitions = []
         for li in soup.findAll('li'):
-            definitions.append(de_entity(li.contents[0].strip()))
+            definitions.append(decode_htmlentities(li.contents[0].strip()))
 
         if definitions:
             event.addresponse(u'%s', u' :: '.join(definitions))
@@ -137,10 +130,12 @@ class GoogleScrapeSearch(Processor):
         for item in items:
             try:
                 url = item.a['href']
+                if url.startswith(u"/aclk?"):
+                    url = parse_qs(urlparse(url).query)['q'][0]
                 title = u''.join([e.string for e in item.a.contents])
                 if title.startswith("Image results for"):
                     continue
-                results.append(u'"%s" %s' % (de_entity(title), url))
+                results.append(u'"%s" %s' % (decode_htmlentities(title), url))
             except Exception:
                 pass
             if len(results) >= 8:

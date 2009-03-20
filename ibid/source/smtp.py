@@ -54,13 +54,13 @@ class Message:
         event = Event(self.name, u'message')
         (realname, address) = parseaddr(mail['from'])
         event.channel = event.sender['connection'] = event.sender['id'] = unicode(address, 'utf-8', 'replace')
-        event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or address
+        event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or event.channel
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
         event.headers = dict((i[0], unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
 
-        message = mail.is_multipart() and mail.get_payload()[0] or mail.get_payload()
+        message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
             event.message = stripsig.sub('', message).strip().replace('\n', ' ')
         else:

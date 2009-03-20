@@ -64,7 +64,7 @@ class Aptitude(Processor):
                 error = error[3:]
             event.addresponse(u"Couldn't search: %s", error)
 
-    @match(r'(?:apt|aptitude|apt-get)\s+show\s+(.+)$')
+    @match(r'^(?:apt|aptitude|apt-get)\s+show\s+(.+)$')
     def show(self, event, term):
 
         if not self._check_terms(event, term):

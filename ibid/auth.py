@@ -33,7 +33,7 @@ def permission(name, account, source):
             return permission.value
 
     permissions = []
-    permissions.extend(ibid.sources[source.lower()].permissions)
+    permissions.extend(ibid.sources[source].permissions)
     if 'permissions' in ibid.config.auth:
         permissions.extend(ibid.config.auth['permissions'])
 
@@ -63,7 +63,7 @@ class Auth(object):
 
         config = ibid.config.auth
         methods = []
-        methods.extend(ibid.sources[event.source.lower()].auth)
+        methods.extend(ibid.sources[event.source].auth)
         methods.extend(config['methods'])
 
         if event.sender['connection'] in self.cache:
@@ -75,8 +75,8 @@ class Auth(object):
                 del self.cache[event.sender['connection']]
 
         for method in methods:
-            if hasattr(ibid.sources[event.source.lower()], 'auth_%s' % method):
-                function = getattr(ibid.sources[event.source.lower()], 'auth_%s' % method)
+            if hasattr(ibid.sources[event.source], 'auth_%s' % method):
+                function = getattr(ibid.sources[event.source], 'auth_%s' % method)
             elif hasattr(self, method):
                 function = getattr(self, method)
             else:

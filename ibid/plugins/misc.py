@@ -66,11 +66,11 @@ class Dvorak(Processor):
     # Typed by a Dvorak typist on a QWERTY-mapped keyboard
     typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
     
-    @match(r'(?:asdf|dvorak)\s+(.+)')
+    @match(r'^(?:asdf|dvorak)\s+(.+)$')
     def convert_from_qwerty(self, event, text):
         event.addresponse(u'%s', text.translate(self.typed_on_qwerty))
     
-    @match(r'(?:aoeu|qwerty)\s+(.+)')
+    @match(r'^(?:aoeu|qwerty)\s+(.+)$')
     def convert_from_dvorak(self, event, text):
         event.addresponse(u'%s', text.translate(self.typed_on_dvorak))
 

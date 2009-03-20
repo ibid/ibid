@@ -41,7 +41,10 @@ class AddAuth(Processor):
                 return
 
         if source:
-            source = ibid.sources[source.lower()].name
+            if source not in ibid.sources:
+                event.addresponse(u"I am not connected to %s", source)
+                return
+            source = ibid.sources[source].name
 
         if method.lower() == 'password':
             password = hash(credential)
@@ -59,14 +62,14 @@ class AddAuth(Processor):
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
-    u"""(grant|revoke) <permission> (to|from|on) <username> [when authed]
+    u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
     permissions [for <username>]
     list permissions"""
     feature = 'auth'
 
     permission = u'admin'
 
-    @match(r'^(grant|revoke|remove)\s+(.+?)\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
+    @match(r'^(grant|revoke|remove)\s+(.+?)(?:\s+permission)?\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
     @authorise
     def grant(self, event, action, name, username, auth):
 

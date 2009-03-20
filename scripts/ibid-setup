@@ -19,7 +19,7 @@ for module in getModule('ibid.plugins').iterModules():
     try:
         __import__(module.name)
     except Exception, e:
-        print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), e.message)
+        print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), unicode(e))
 
 if exists('ibid.ini'):
     config = FileConfig('ibid.ini')
@@ -83,7 +83,11 @@ account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)
 
-for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin', u'config', u'saydo', u'factoid', u'factoidadmin', u'karma'):
+for permission in (
+        u'accounts', u'sources', u'plugins',
+        u'core', u'admin', u'config',
+        u'saydo', u'factoid', u'factoidadmin',
+        u'karma', u'karmaadmin'):
     perm = Permission(permission, u'auth')
     account.permissions.append(perm)
 

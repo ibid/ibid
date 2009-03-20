@@ -77,6 +77,10 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
                 self.parent.log.info(u"Ignoring message because sender is not in accept_domains")
                 return
 
+        if message.body is None:
+            self.parent.log.info(u'Ignoring empty message')
+            return
+
         event = Event(self.parent.name, u'message')
         event.message = unicode(message.body)
         event.sender['connection'] = message['from']
