@@ -123,24 +123,21 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
-        if 'load' in ibid.config.plugins:
-            plugins = set(ibid.config.plugins['load'])
-        else:
-            plugins = set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
+        load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
+        skip = 'skip' in ibid.config.plugins and ibid.config.plugins['skip'] or []
+
+        all_plugins = set(plugin.split('.')[0] for plugin in load)
+        if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
+            all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
         
-        if 'skip' in ibid.config.plugins:
-            plugins -= set(ibid.config.plugins['skip'])
-            
-        for plugin in plugins:
-            self.load_processor(plugin)
+        for plugin in all_plugins:
+            load_features = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
+            skip_features = [p.split('.')[1] for p in skip if p.startswith(plugin + '.')]
+            if plugin not in skip or load_features:
+                self.load_processor(plugin, skip=skip_features, load=load_features, override_auto=(plugin in load))
 
-    def load_processor(self, name):
-        object = name
-        if name in ibid.config.plugins and 'type' in ibid.config.plugins[name]:
-            object = ibid.config['plugins'][name]['type']
-
-        module = 'ibid.plugins.' + object.split('.')[0]
-        classname = 'ibid.plugins.' + object
+    def load_processor(self, name, skip=[], load=[], override_auto=False):
+        module = 'ibid.plugins.' + name
         try:
             __import__(module)
             m = eval(module)
@@ -154,13 +151,12 @@ class Reloader(object):
             return False
 
         try:
-            if module == classname:
-                for classname, klass in inspect.getmembers(m, inspect.isclass):
-                    if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+            no_autoload = getattr(m, 'no_autoload', [])
+            for classname, klass in inspect.getmembers(m, inspect.isclass):
+                if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+                    feature = getattr(klass, 'feature', None)
+                    if feature not in skip and (feature in load or (override_auto or feature not in no_autoload and not load)):
                         ibid.processors.append(klass(name))
-            else:
-                moduleclass = eval(classname)
-                ibid.processors.append(moduleclass(name))
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)

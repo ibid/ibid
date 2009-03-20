@@ -18,20 +18,17 @@ from ibid.config import FileConfig
 from ibid.event import Event
 from ibid.models import Identity
 
-parser = OptionParser(usage="%prog [options...] [plugins...]")
-parser.add_option("-a", "--all", dest="load_all", action="store_true",
-        help="Load all available plugins")
+parser = OptionParser(usage="""%prog [options...] [plugins...]
+plugins is the list of plugins to load. A plugin name followed by a - will be skipped rather than loaded.""")
 parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
         help="Only load the specified plugins, not the common base plugins")
-parser.add_option("-s", "--skip", dest="skip", action="append", metavar="PLUGIN",
-        help="Skip loading PLUGIN (may be specified more than once)")
 parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
         help="Load all all configured plugins")
 
 (options, args) = parser.parse_args()
 
-if options.load_all and not options.load_base:
-    parser.error("Incompatible combination: --all and --only")
+if options.load_configured and not options.load_base:
+    parser.error("Incompatible combination: --configured and --only")
 
 # Setup Ibid core:
 
@@ -53,23 +50,28 @@ class TestSource(dict):
 
 ibid.sources[u'test_source'] = TestSource()
 
-plugins = set(args)
-if options.load_all or options.load_configured:
-    plugins = set(module.name.replace('ibid.plugins.', '') for module in getModule('ibid.plugins').iterModules())
+load = [plugin for plugin in args if not plugin.endswith("-")]
+skip = [plugin[:-1] for plugin in args if plugin.endswith("-")]
 
-if options.load_configured:
+if options.load_base:
+    load.extend(("admin", "config", "core", "help", "test"))
+
+if load:
     if 'load' in ibid.config.plugins:
-        plugins = set(ibid.config.plugins['load'])
+        ibid.config.plugins['load'].extend(load)
+    else:
+        ibid.config.plugins['load'] = load
+
+if skip:
     if 'skip' in ibid.config.plugins:
-        plugins -= set(ibid.config.plugins['skip'])
-elif options.load_base:
-    plugins |= set(("admin", "config", "core", "help", "test"))
+        ibid.config.plugins['skip'].extend(skip)
+    else:
+        ibid.config.plugins['skip'] = skip
 
-if options.skip:
-    plugins -= set(options.skip)
+if not options.load_configured:
+    ibid.config.plugins['autoload'] = False
 
-for plugin in plugins:
-    ibid.reloader.load_processor(plugin)
+ibid.reloader.load_processors()
 
 username = unicode(getenv('USER'))
 if not username:
