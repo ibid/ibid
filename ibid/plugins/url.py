@@ -1,7 +1,6 @@
 from datetime import datetime
 from urllib import urlencode
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPBasicAuthHandler, install_opener
-from BeautifulSoup import BeautifulSoup
 import logging
 import re
 
@@ -11,7 +10,7 @@ import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.models import Base
-from ibid.utils  import decode_htmlentities
+from ibid.utils  import get_html_parse_tree
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
 
@@ -47,7 +46,7 @@ class Delicious():
             connection_body.append(event.sender['connection'])
         obfusc = at_re.sub('^', connection_body[1])
 
-        tags =  event.sender['nick'] + " " + obfusc + " " + event.channel + " " + event.source
+        tags = event.sender['nick'] + " " + obfusc + " " + event.channel + " " + event.source
 
         data = {
             'url' : url,
@@ -70,10 +69,10 @@ class Delicious():
     def _get_title(self,url):
         "Gets the title of a page"
         try:
-            soup = BeautifulSoup(urlopen(url))
-            title = soup.title.string
-            final_title = decode_htmlentities(title)
-            return final_title
+            headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+            etree = get_html_parse_tree(url, None, headers, 'etree')
+            title = etree.findtext("head/title")
+            return title
         except Exception, e:
             log.error(u"Delicious logic - error determining the title for url %s: %s", url, e.message)
             return url
