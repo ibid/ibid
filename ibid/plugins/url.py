@@ -11,7 +11,7 @@ import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.models import Base
-from ibid.utils  import decode_htmlentities, get_html_parse_tree
+from ibid.utils  import decode_htmlentities
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
 
@@ -70,12 +70,6 @@ class Delicious():
     def _get_title(self,url):
         "Gets the title of a page"
         try:
-            # headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
-            # # pydb.debugger()
-            # etree = get_html_parse_tree(url, None, headers, 'etree')
-            # # result = [tag.text for tag in etree.getiterator('title')]
-            # it = etree.getiterator('title')
-            # print etree
             soup = BeautifulSoup(urlopen(url))
             title = soup.title.string
             final_title = decode_htmlentities(title)
