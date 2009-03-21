@@ -8,8 +8,8 @@ from ibid.config import Option, IntOption
 help = {'dict': u'Defines words and checks spellings.'}
 
 class Dict(Processor):
-    u"""spell <word> [using <dictionary>]
-    define <word> [using <strategy>]
+    u"""spell <word> [using <strategy>]
+    define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
     feature = 'dict'
