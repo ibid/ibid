@@ -2,8 +2,7 @@ from datetime import datetime
 from urllib import urlencode
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPBasicAuthHandler, install_opener
 from BeautifulSoup import BeautifulSoup
-import htmlentitydefs
-import logging, pydb
+import logging
 import re
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
@@ -12,6 +11,7 @@ import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.models import Base
+from ibid.utils  import decode_htmlentities, get_html_parse_tree
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
 
@@ -34,20 +34,20 @@ class URL(Base):
         self.identity_id = identity_id
         self.time = datetime.now()
 
-class Delicious(Processor):
+class Delicious():
 
-    def add_post(self,username,password,url=None):
+    def add_post(self,username,password,event,url=None):
         "Posts a URL to delicious.com"
 
         date  = datetime.now()
         title = self._get_title(url)
-        pydb.debugger()
 
         connection_body = exclamation_re.split(event.sender['connection'])
         if len(connection_body) == 1:
             connection_body.append(event.sender['connection'])
         obfusc = at_re.sub('^', connection_body[1])
-        tags =  event.sender['nick'] + " " + obfusc + " " + event.channel
+
+        tags =  event.sender['nick'] + " " + obfusc + " " + event.channel + " " + event.source
 
         data = {
             'url' : url,
@@ -55,27 +55,33 @@ class Delicious(Processor):
             'tags' : tags,
             'replace' : u"yes",
             'dt' : date,
+            'extended' : event.message_raw
             }
 
         self._set_auth(username,password)
-        posturl = "https://api.del.icio.us/v1/posts/add?"+urlencode(data)
+        posturl = "https://api.del.icio.us/v1/posts/add?"+urlencode(data, 'utf-8')
         resp = urlopen(posturl).read()
         if 'done' in resp:
-            log.info(u"Successfully posted url %s posted in channel %s by nick %s at time %s", url, channel, nick, date)
+            log.info(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s", \
+                     url, event.channel, event.sender['nick'], date)
         else:
-            log.error(u"Error posting url %s: %s", url, response)
+            log.error(u"Error posting url %s to delicious: %s", url, response)
 
     def _get_title(self,url):
         "Gets the title of a page"
         try:
+            # headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+            # # pydb.debugger()
+            # etree = get_html_parse_tree(url, None, headers, 'etree')
+            # # result = [tag.text for tag in etree.getiterator('title')]
+            # it = etree.getiterator('title')
+            # print etree
             soup = BeautifulSoup(urlopen(url))
             title = soup.title.string
-             ## doing a de_entity results in > 'ascii' codec can't encode character u'\xab' etc.
-             ## leaving this code here in case someone works out how to get urllib2 to post unicode?
-             #final_title = self._de_entity(title)
-            return title
+            final_title = decode_htmlentities(title)
+            return final_title
         except Exception, e:
-            log.error(u"Error determining the title for url %s: %s", url, e.message)
+            log.error(u"Delicious logic - error determining the title for url %s: %s", url, e.message)
             return url
 
     def _set_auth(self,username,password):
@@ -85,21 +91,12 @@ class Delicious(Processor):
         opener = build_opener(auth_handler)
         install_opener(opener)
 
-    def _de_entity(self,text):
-        "Remove HTML entities, and replace with their characters"
-        replace = lambda match: unichr(int(match.group(1)))
-        text = re.sub("&#(\d+);", replace, text)
-
-        replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
-        text = re.sub("&(\w+);", replace, text)
-        return text
-
 class Grab(Processor):
 
     addressed = False
     processed = True
-    username   = Option('username', 'delicious account name')
-    password   = Option('password', 'delicious account password')
+    username  = Option('username', 'delicious account name')
+    password  = Option('password', 'delicious account password')
     delicious = Delicious()
 
     @match(r'((?:\S+://|(?:www|ftp)\.)\S+|\S+\.(?:com|org|net|za)\S*)')
@@ -116,8 +113,8 @@ class Grab(Processor):
         session.flush()
         session.close()
 
-        if self.username != "":
-            self.delicious.add_post(self.username, self.password, url)
+        if self.username != None:
+            self.delicious.add_post(self.username, self.password, event, url)
 
 class Shorten(Processor):
     u"""shorten <url>"""
