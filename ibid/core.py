@@ -131,10 +131,10 @@ class Reloader(object):
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
         
         for plugin in all_plugins:
-            load_features = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
-            skip_features = [p.split('.')[1] for p in skip if p.startswith(plugin + '.')]
-            if plugin not in skip or load_features:
-                self.load_processor(plugin, skip=skip_features, load=load_features, override_auto=(plugin in load))
+            load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
+            skip_processors = [p.split('.')[1] for p in skip if p.startswith(plugin + '.')]
+            if plugin not in skip or load_processors:
+                self.load_processor(plugin, skip=skip_processors, load=load_processors, override_auto=(plugin in load))
 
     def load_processor(self, name, skip=[], load=[], override_auto=False):
         module = 'ibid.plugins.' + name
@@ -151,11 +151,10 @@ class Reloader(object):
             return False
 
         try:
-            no_autoload = getattr(m, 'no_autoload', [])
             for classname, klass in inspect.getmembers(m, inspect.isclass):
                 if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
-                    feature = getattr(klass, 'feature', None)
-                    if feature not in skip and (feature in load or (override_auto or feature not in no_autoload and not load)):
+                    if (klass.__name__ not in skip and (klass.__name__ in load
+                            or (override_auto or klass.autoload and not load))):
                         ibid.processors.append(klass(name))
                 
         except Exception, e:
