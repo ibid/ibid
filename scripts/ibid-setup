@@ -63,7 +63,6 @@ else:
         copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
 
 engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
-metadata.bind = engine
 Session = sessionmaker(bind=engine)
 upgrade_builtin_schemas(Session)
 
