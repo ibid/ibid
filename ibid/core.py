@@ -123,6 +123,13 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
+        """Configuration:
+        [plugins]
+            load = List of plugins / plugin.Processors to load
+            sikip = List of plugins / plugin.Processors to skip automatically loading
+            autoload = (Boolean) Load all plugins by default?
+        """
+
         load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
         skip = 'skip' in ibid.config.plugins and ibid.config.plugins['skip'] or []
 
@@ -134,9 +141,15 @@ class Reloader(object):
             load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
             skip_processors = [p.split('.')[1] for p in skip if p.startswith(plugin + '.')]
             if plugin not in skip or load_processors:
-                self.load_processor(plugin, skip=skip_processors, load=load_processors, override_auto=(plugin in load))
+                self.load_processor(plugin, skip=skip_processors, load=load_processors, load_all=(plugin in load), skip_all=(plugin in skip))
 
-    def load_processor(self, name, skip=[], load=[], override_auto=False):
+    def load_processor(self, name, skip=[], load=[], load_all=False, skip_all=False):
+        """Load processor <name>.
+        Skip the Processors in skip.
+        Load the Processors in load.
+        If load_all, the autoload attribute on each Processor isn't checked.
+        If skip_all, only Processors in load are loaded.
+        """
         module = 'ibid.plugins.' + name
         try:
             __import__(module)
@@ -154,8 +167,11 @@ class Reloader(object):
             for classname, klass in inspect.getmembers(m, inspect.isclass):
                 if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
                     if (klass.__name__ not in skip and (klass.__name__ in load
-                            or (override_auto or klass.autoload and not load))):
+                            or ((load_all or klass.autoload) and not skip_all))):
+                        self.log.debug("Loading Processor: %s.%s", name, klass.__name__)
                         ibid.processors.append(klass(name))
+                    else:
+                        self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
