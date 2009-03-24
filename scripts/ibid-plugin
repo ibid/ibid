@@ -19,7 +19,7 @@ from ibid.event import Event
 from ibid.models import Identity
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
-plugins is the list of plugins to load. A plugin name followed by a - will be skipped rather than loaded.""")
+plugins is the list of plugins to load. A plugin name followed by a - will be disabled rather than loaded.""")
 parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
         help="Only load the specified plugins, not the common base plugins")
 parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
@@ -51,7 +51,7 @@ class TestSource(dict):
 ibid.sources[u'test_source'] = TestSource()
 
 load = [plugin for plugin in args if not plugin.endswith("-")]
-skip = [plugin[:-1] for plugin in args if plugin.endswith("-")]
+noload = [plugin[:-1] for plugin in args if plugin.endswith("-")]
 
 if options.load_base:
     load.extend(("admin", "config", "core", "help", "test"))
@@ -62,11 +62,11 @@ if load:
     else:
         ibid.config.plugins['load'] = load
 
-if skip:
-    if 'skip' in ibid.config.plugins:
-        ibid.config.plugins['skip'].extend(skip)
+if noload:
+    if 'noload' in ibid.config.plugins:
+        ibid.config.plugins['noload'].extend(noload)
     else:
-        ibid.config.plugins['skip'] = skip
+        ibid.config.plugins['noload'] = noload
 
 if not options.load_configured:
     ibid.config.plugins['autoload'] = False

@@ -126,12 +126,12 @@ class Reloader(object):
         """Configuration:
         [plugins]
             load = List of plugins / plugin.Processors to load
-            sikip = List of plugins / plugin.Processors to skip automatically loading
+            noload = List of plugins / plugin.Processors to skip automatically loading
             autoload = (Boolean) Load all plugins by default?
         """
 
         load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
-        skip = 'skip' in ibid.config.plugins and ibid.config.plugins['skip'] or []
+        noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
 
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
@@ -139,16 +139,16 @@ class Reloader(object):
         
         for plugin in all_plugins:
             load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
-            skip_processors = [p.split('.')[1] for p in skip if p.startswith(plugin + '.')]
-            if plugin not in skip or load_processors:
-                self.load_processor(plugin, skip=skip_processors, load=load_processors, load_all=(plugin in load), skip_all=(plugin in skip))
+            noload_processors = [p.split('.')[1] for p in noload if p.startswith(plugin + '.')]
+            if plugin not in noload or load_processors:
+                self.load_processor(plugin, noload=noload_processors, load=load_processors, load_all=(plugin in load), noload_all=(plugin in noload))
 
-    def load_processor(self, name, skip=[], load=[], load_all=False, skip_all=False):
+    def load_processor(self, name, noload=[], load=[], load_all=False, noload_all=False):
         """Load processor <name>.
-        Skip the Processors in skip.
+        Skip the Processors in noload.
         Load the Processors in load.
         If load_all, the autoload attribute on each Processor isn't checked.
-        If skip_all, only Processors in load are loaded.
+        If noload_all, only Processors in load are loaded.
         """
         module = 'ibid.plugins.' + name
         try:
@@ -166,8 +166,8 @@ class Reloader(object):
         try:
             for classname, klass in inspect.getmembers(m, inspect.isclass):
                 if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
-                    if (klass.__name__ not in skip and (klass.__name__ in load
-                            or ((load_all or klass.autoload) and not skip_all))):
+                    if (klass.__name__ not in noload and (klass.__name__ in load
+                            or ((load_all or klass.autoload) and not noload_all))):
                         self.log.debug("Loading Processor: %s.%s", name, klass.__name__)
                         ibid.processors.append(klass(name))
                     else:
