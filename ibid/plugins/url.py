@@ -36,7 +36,7 @@ class Delicious():
     at_re = re.compile('@\S+?\.')
     ip_re = re.compile('\.IP$')
 
-    def add_post(self,username,password,event,url=None):
+    def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
         date  = datetime.now()
@@ -77,7 +77,7 @@ class Delicious():
         else:
             log.error(u"Error posting url %s to delicious: %s", url, response)
 
-    def _get_title(self,url):
+    def _get_title(self, url):
         "Gets the title of a page"
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
@@ -88,7 +88,7 @@ class Delicious():
             log.exception(u"Delicious logic - error determining the title for url %s", url)
             return url
 
-    def _set_auth(self,username,password):
+    def _set_auth(self, username, password):
         "Provides HTTP authentication on username and password"
         auth_handler = HTTPBasicAuthHandler()
         auth_handler.add_password('del.icio.us API', 'https://api.del.icio.us', username, password)
