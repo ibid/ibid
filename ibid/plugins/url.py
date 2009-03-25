@@ -15,8 +15,6 @@ from ibid.utils  import get_html_parse_tree
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
 
 log            = logging.getLogger('plugins.url')
-at_re          = re.compile('@\S+?\.')
-exclamation_re = re.compile('!')
 
 class URL(Base):
     __table__ = Table('urls', Base.metadata,
@@ -35,18 +33,32 @@ class URL(Base):
 
 class Delicious():
 
+    at_re  = re.compile('@\S+?\.')
+    ip_re  = re.compile('\.IP$')
+
     def add_post(self,username,password,event,url=None):
         "Posts a URL to delicious.com"
 
         date  = datetime.now()
         title = self._get_title(url)
 
-        connection_body = exclamation_re.split(event.sender['connection'])
+        connection_body = event.sender['connection'].split('!')
         if len(connection_body) == 1:
             connection_body.append(event.sender['connection'])
-        obfusc = at_re.sub('^', connection_body[1])
 
-        tags = event.sender['nick'] + " " + obfusc + " " + event.channel + " " + event.source
+        if self.ip_re.search(connection_body[1]) != None:
+            connection_body[1] = ""
+
+        if event.source == 'jabber':
+            obfusc_conn = ""
+            obfusc_chan = event.channel.replace('@', '^')
+        else:
+            obfusc_conn = self.at_re.sub('^', connection_body[1])
+            obfusc_chan = self.at_re.sub('^', event.channel)
+
+
+        tags = event.sender['nick'] + " " + obfusc_conn + " " + obfusc_chan \
+               +  " " + event.source
 
         data = {
             'url' : url,
@@ -58,7 +70,8 @@ class Delicious():
             }
 
         self._set_auth(username,password)
-        posturl = "https://api.del.icio.us/v1/posts/add?"+urlencode(data, 'utf-8')
+        posturl = "https://api.del.icio.us/v1/posts/add?" \
+                  + urlencode(data, 'utf-8')
         resp = urlopen(posturl).read()
         if 'done' in resp:
             log.info(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s", \
@@ -69,12 +82,12 @@ class Delicious():
     def _get_title(self,url):
         "Gets the title of a page"
         try:
-            headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+            headers = {'User-Agent': 'Mozilla/5.0'}
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext("head/title")
             return title
         except Exception, e:
-            log.error(u"Delicious logic - error determining the title for url %s: %s", url, e.message)
+            log.exception(u"Delicious logic - error determining the title for url %s: %s", url, e.message)
             return url
 
     def _set_auth(self,username,password):
@@ -88,8 +101,8 @@ class Grab(Processor):
 
     addressed = False
     processed = True
-    username  = Option('username', 'delicious account name')
-    password  = Option('password', 'delicious account password')
+    username  = Option('delicious_username', 'delicious account name')
+    password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
 
     @match(r'((?:\S+://|(?:www|ftp)\.)\S+|\S+\.(?:com|org|net|za)\S*)')
