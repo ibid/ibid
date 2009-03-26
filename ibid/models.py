@@ -26,7 +26,13 @@ class VersionedSchema(object):
         try:
             if not schema:
                 log.info(u"Creating table %s", table.name)
+
+                # If MySQL, we prefer InnoDB:
+                if 'mysql_engine' not in table.kwargs:
+                    table.kwargs['mysql_engine'] = 'InnoDB'
+
                 table.create(bind=session.bind)
+
                 schema = Schema(unicode(table.name), cls.schema_version)
                 session.save_or_update(schema)
 
@@ -38,7 +44,7 @@ class VersionedSchema(object):
                     trans.commit()
                     trans = session.begin()
 
-                    eval('cls.upgrade_schema_to_%i' % version)()
+                    eval('cls.upgrade_schema_%i_to_%i' % (version - 1, version))()
 
                     schema.version = version
                     session.save_or_update(schema)
@@ -73,7 +79,7 @@ class VersionedSchema(object):
         sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
 
-        session.execute('ALTER TABLE %s ADD COLUMN %s;' % (table.name, description))
+        session.execute('ALTER TABLE "%s" ADD COLUMN %s;' % (table.name, description))
 
     @classmethod
     def drop_column(cls, col_name):
@@ -86,7 +92,7 @@ class VersionedSchema(object):
         if session.bind.dialect.name == 'sqlite':
             cls.rebuild_sqlite({col_name: None})
         else:
-            session.execute('ALTER TABLE %s DROP COLUMN %s;' % (cls.__table__.name, col_name))
+            session.execute('ALTER TABLE "%s" DROP COLUMN "%s";' % (cls.__table__.name, col_name))
 
     @classmethod
     def rename_column(cls, col, old_name):
@@ -102,7 +108,7 @@ class VersionedSchema(object):
         elif session.bind.dialect.name == 'mysql':
             cls.alter_column(col, old_name)
         else:
-            session.execute('ALTER TABLE %s RENAME COLUMN %s TO %s;' % (table.name, old_name, col.name))
+            session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
 
     @classmethod
     def alter_column(cls, col, old_name=None, length_only=False):
@@ -126,13 +132,13 @@ class VersionedSchema(object):
             cls.rebuild_sqlite({old_name is None and col.name or old_name: col})
 
         elif session.bind.dialect.name == 'mysql':
-            session.execute('ALTER TABLE %s CHANGE %s %s %s;'
-                % (table.name, old_name is not None and old_name or col.name, col.name, description))
+            session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
+                % (table.name, old_name is not None and old_name or col.name, description))
 
         else:
             if old_name is not None:
                 cls.rename_column(col, old_name)
-            session.execute('ALTER TABLE %s ALTER COLUMN %s TYPE %s' % (table.name, col.name, description))
+            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s' % (table.name, col.name, description))
 
     @classmethod
     def rebuild_sqlite(cls, colmap):
@@ -159,11 +165,11 @@ class VersionedSchema(object):
             if col is not None:
                 table.append_column(col)
 
-        session.execute('ALTER TABLE %s RENAME TO %s_old;' % (table.name, table.name))
+        session.execute('ALTER TABLE "%s" RENAME TO "%s_old";' % (table.name, table.name))
         table.create()
-        session.execute('INSERT INTO %s (%s) SELECT %s FROM %s_old;'
-                % (table.name, ", ".join(fullcolmap.values()), ", ".join(fullcolmap.keys()), table.name))
-        session.execute('DROP TABLE %s_old;' % table.name)
+        session.execute('INSERT INTO "%s" ("%s") SELECT "%s" FROM "%s_old";'
+                % (table.name, '", "'.join(fullcolmap.values()), '", "'.join(fullcolmap.keys()), table.name))
+        session.execute('DROP TABLE "%s_old";' % table.name)
 
 class Schema(VersionedSchema, Base):
     __table__ = Table('schema', Base.metadata,
@@ -184,6 +190,7 @@ class Schema(VersionedSchema, Base):
         session = sessionmaker()
         if not session.bind.has_table(cls.__table__.name):
             metadata.bind = session.bind
+            cls.__table__.kwargs['mysql_engine'] = 'InnoDB'
             cls.__table__.create()
 
 class Identity(VersionedSchema, Base):
@@ -206,19 +213,19 @@ class Identity(VersionedSchema, Base):
         return '<Identity %s on %s>' % (self.identity, self.source)
 
     @classmethod
-    def upgrade_schema_to_2(cls):
+    def upgrade_schema_1_to_2(cls):
         cls.add_column(Column('foo', Unicode(64)))
 
     @classmethod
-    def upgrade_schema_to_3(cls):
+    def upgrade_schema_2_to_3(cls):
         cls.rename_column(Column('foobar', Unicode(64)), old_name='foo')
 
     @classmethod
-    def upgrade_schema_to_4(cls):
+    def upgrade_schema_3_to_4(cls):
         cls.alter_column(Column('foobar', Unicode(69)))
 
     @classmethod
-    def upgrade_schema_to_5(cls):
+    def upgrade_schema_4_to_5(cls):
         cls.drop_column('foobar')
 
 class Attribute(VersionedSchema, Base):
@@ -289,7 +296,7 @@ class Account(VersionedSchema, Base):
         return '<Account %s>' % self.username
 
 def upgrade_builtin_schemas(sessionmaker):
-    for schema in (Schema, Identity, Attribute, Credential, Permission, Account):
+    for schema in (Schema, Account, Identity, Attribute, Credential, Permission):
         schema.upgrade_schema(sessionmaker)
     session = sessionmaker()
 

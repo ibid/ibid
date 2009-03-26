@@ -219,10 +219,23 @@ class DatabaseManager(dict):
     def load(self, name):
         uri = ibid.config.databases[name]
         if uri.startswith('sqlite:///'):
-            engine = create_engine('sqlite:///', creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))), encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+            engine = create_engine('sqlite:///',
+                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
+                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True)
+            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
+            if uri.startswith('mysql://'):
+                class MySQLModeListener(object):
+                    def connect(self, dbapi_con, con_record):
+                        dbapi_con.set_sql_mode("ANSI")
+                engine.pool.add_listener(MySQLModeListener())
+
+                engine.dialect.use_ansiquotes = True
+
         self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+
         self.log.info(u"Loaded %s database", name)
 
     def __getattr__(self, name):
