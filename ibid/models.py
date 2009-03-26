@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, DDL, PassiveDefault
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -14,104 +14,159 @@ log = logging.getLogger('ibid.models')
 class VersionedSchema(object):
     @classmethod
     def upgrade_schema(cls, sessionmaker):
-        session = sessionmaker()
-        schema = session.query(Schema).filter(Schema.table==unicode(cls.__table__.name)).first()
+        "Upgrade the table's schema to the latest version."
 
-        if not schema:
-            log.info(u"Creating table %s", cls.__table__.name)
-            metadata.bind = session.bind
-            cls.__table__.create()
-            schema = Schema(unicode(cls.__table__.name), cls.schema_version)
-            session.save_or_update(schema)
-            session.commit()
+        table = cls.__table__
 
-        elif cls.schema_version > schema.version:
-            for version in range(schema.version + 1, cls.schema_version + 1):
-                log.info(u"Upgrading table %s to version %i", cls.__table__.name, version)
-                metadata.bind = session.bind
-                eval('cls.upgrade_schema_to_%i' % version)()
-                schema.version = version
+        cls.upgrade_session = session = sessionmaker()
+        trans = session.begin()
+
+        schema = session.query(Schema).filter(Schema.table==unicode(table.name)).first()
+
+        try:
+            if not schema:
+                log.info(u"Creating table %s", table.name)
+                table.create(bind=session.bind)
+                schema = Schema(unicode(table.name), cls.schema_version)
                 session.save_or_update(schema)
-                session.commit()
 
-        session.flush()
+            elif cls.schema_version > schema.version:
+                cls.upgrade_reflected_model = MetaData(session.bind, reflect=True)
+                for version in range(schema.version + 1, cls.schema_version + 1):
+                    log.info(u"Upgrading table %s to version %i", table.name, version)
+
+                    trans.commit()
+                    trans = session.begin()
+
+                    eval('cls.upgrade_schema_to_%i' % version)()
+
+                    schema.version = version
+                    session.save_or_update(schema)
+                del cls.upgrade_reflected_model
+
+            trans.commit()
+
+        except:
+            trans.rollback()
+            raise
+
         session.close()
+        del cls.upgrade_session
 
-    @staticmethod
-    def add_column(col):
-        log.debug(u"Adding column %s to table %s", col.name, col.table.name)
-        sg = col.table.bind.dialect.schemagenerator(col.table.bind.dialect, col.table.bind)
-        description = sg.get_column_specification(col)
-        DDL('ALTER TABLE %s ADD COLUMN %s;' % (col.table.name, description), bind=col.table.bind).execute()
+    @classmethod
+    def get_reflected_model(cls, table_name=None):
+        "Reflect the given table or the class's __table__"
 
-    @staticmethod
-    def drop_column(table, col_name):
-        log.debug(u"Dropping column %s from table %s", col_name, table.name)
-        if table.bind.dialect.name == 'sqlite':
-            VersionedSchema.rebuild_sqlite(table, colmap={col_name: None})
-        else:
-            DDL('ALTER TABLE %s DROP COLUMN %s;' % (table.name, col_name), bind=table.bind).execute()
+        return cls.upgrade_reflected_model.tables.get(table_name is None and cls.__table__.name or table_name, None)
 
-    @staticmethod
-    def rename_column(col, old_name):
-        log.debug(u"Rename column %s to %s in table %s", old_name, col.name, col.table.name)
-        if col.table.bind.dialect.name == 'sqlite':
-            VersionedSchema.rebuild_sqlite(col.table, colmap={old_name: col.name})
-        elif col.table.bind.dialect.name == 'mysql':
-            VersionedSchema.alter_column(col, old_name is None and col.name or old_name)
-        else:
-            DDL('ALTER TABLE %s RENAME COLUMN %s TO %s;' % (col.table.name, old_name, col.name), bind=col.table.bind).execute()
+    @classmethod
+    def add_column(cls, col, table_name=None):
+        "Add column col to table. Specify table if name has changed in a more recent version"
 
-    @staticmethod
-    def alter_column(col, old_name=None, length_only=False):
-        log.debug(u"Altering column %s in table %s", col.name, col.table.name)
-        sg = col.table.bind.dialect.schemagenerator(col.table.bind.dialect, col.table.bind)
+        session = cls.upgrade_session
+        table = cls.get_reflected_model(table_name)
+
+        log.debug(u"Adding column %s to table %s", col.name, table.name)
+
+        table.append_column(col)
+
+        sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
 
-        if col.table.bind.dialect.name == 'sqlite':
+        session.execute('ALTER TABLE %s ADD COLUMN %s;' % (table.name, description))
+
+    @classmethod
+    def drop_column(cls, col_name, table_name=None):
+        "Drop column col_name from table. Specify table if name has changed in a more recent version"
+
+        session = cls.upgrade_session
+        if table_name is None:
+            table_name = cls.__table__.name
+
+        log.debug(u"Dropping column %s from table %s", col_name, table_name)
+
+        if session.bind.dialect.name == 'sqlite':
+            cls.rebuild_sqlite({col_name: None}, table_name)
+        else:
+            session.execute('ALTER TABLE %s DROP COLUMN %s;' % (table_name, col_name))
+
+    @classmethod
+    def rename_column(cls, col, old_name, table_name=None):
+        "Rename column from old_name to Column col. Specify table if name has changed in a more recent version"
+
+        session = cls.upgrade_session
+        table = cls.get_reflected_model(table_name)
+
+        log.debug(u"Rename column %s to %s in table %s", old_name, col.name, table.name)
+
+        if session.bind.dialect.name == 'sqlite':
+            cls.rebuild_sqlite({old_name: col}, table.name)
+        elif session.bind.dialect.name == 'mysql':
+            cls.alter_column(col, old_name)
+        else:
+            session.execute('ALTER TABLE %s RENAME COLUMN %s TO %s;' % (table_name, old_name, col.name))
+
+    @classmethod
+    def alter_column(cls, col, old_name=None, length_only=False, table_name=None):
+        """Change a column (possibly renaming from old_name) to Column col.
+        Specify length_only if the change is simply a change of data-type length.
+        Specify table if name has changed in a more recent version."""
+
+        session = cls.upgrade_session
+        table = cls.get_reflected_model(table_name)
+
+        log.debug(u"Altering column %s in table %s", col.name, table.name)
+
+        sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
+        description = sg.get_column_specification(col)
+
+        if session.bind.dialect.name == 'sqlite':
+            #TODO: Automatically detect length_only
             if length_only:
                 # SQLite doesn't enforce value length restrictions, only type changes have a real effect
                 return
-            colmap = {}
-            if old_name is not None:
-                colmap[old_name] = col.name
-            VersionedSchema.rebuild_sqlite(colmap=colmap)
 
-        elif col.table.bind.dialect.name == 'mysql':
-            DDL('ALTER TABLE %s CHANGE %s %s %s;'
-                    % (col.table.name, old_name is not None and old_name or col.table.name, col.name, description),
-                    bind=col.table.bind).execute()
+            cls.rebuild_sqlite({old_name is None and col.name or old_name: col}, table.name)
+
+        elif session.bind.dialect.name == 'mysql':
+            session.execute('ALTER TABLE %s CHANGE %s %s %s;'
+                % (table.name, old_name is not None and old_name or col.name, col.name, description))
 
         else:
             if old_name is not None:
-                VersionedSchema.rename_column(col, old_name)
-            DDL('ALTER TABLE %s ALTER COLUMN %s TYPE %s' % (col.table.name, col.name, description),
-                    bind=col.table.bind).execute()
+                cls.rename_column(col, old_name)
+            session.execute('ALTER TABLE %s ALTER COLUMN %s TYPE %s' % (table.name, col.name, description))
 
-    @staticmethod
-    def rebuild_sqlite(table, colmap):
+    @classmethod
+    def rebuild_sqlite(cls, colmap, table_name):
         """SQLite doesn't support modification of table schema - must rebuild the table.
-        colmap maps hold column names to new ones (or None)"""
+        colmap maps old column names to new Columns (or None for column deletion).
+        Only modified columns need to be listed, unchaged columns are carried over automatically.
+        Specify table in case name has changed in a more recent version."""
 
-        log.debug(u"Rebuilding SQLite table %s", table.name)
+        log.debug(u"Rebuilding SQLite table %s", table_name)
+
+        session = cls.upgrade_session
+        table = cls.get_reflected_model(table_name)
 
         fullcolmap = {}
         for col in table.c:
             if col.name in colmap:
-                fullcolmap[col.name] = colmap[col.name]
+                if colmap[col.name] is not None:
+                    fullcolmap[col.name] = colmap[col.name].name
             else:
                 fullcolmap[col.name] = col.name
 
-        DDL('ALTER TABLE %s RENAME TO %s_old;' % (table.name, table.name), bind=table.bind).execute()
-        table.create()
-        table.bind.execute('INSERT INTO %s (%s) SELECT %s FROM %s_old;'
-                % (table.name, ", ".join(fullcolmap.values()), ", ".join(fullcolmap.keys()), table.name))
-        DDL('DROP TABLE %s_old;')
+        for old, col in colmap.iteritems():
+            del table.c[old]
+            if col is not None:
+                table.append_column(col)
 
-    @staticmethod
-    def rename_table(table, old_name):
-        log.debug(u"Renaming table %s to %s", old_name, table.name)
-        DDL('ALTER TABLE %s RENAME TO %s;' % (old_name, table.name), bind=table.bind).execute()
+        session.execute('ALTER TABLE %s RENAME TO %s_old;' % (table.name, table.name))
+        table.create()
+        session.execute('INSERT INTO %s (%s) SELECT %s FROM %s_old;'
+                % (table.name, ", ".join(fullcolmap.values()), ", ".join(fullcolmap.keys()), table.name))
+        session.execute('DROP TABLE %s_old;' % table.name)
 
 class Schema(VersionedSchema, Base):
     __table__ = Table('schema', Base.metadata,
@@ -143,7 +198,7 @@ class Identity(VersionedSchema, Base):
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
-    schema_version = 1
+    schema_version = 5
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -152,6 +207,22 @@ class Identity(VersionedSchema, Base):
 
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
+
+    @classmethod
+    def upgrade_schema_to_2(cls):
+        cls.add_column(Column('foo', Unicode(64)))
+
+    @classmethod
+    def upgrade_schema_to_3(cls):
+        cls.rename_column(Column('foobar', Unicode(64)), old_name='foo')
+
+    @classmethod
+    def upgrade_schema_to_4(cls):
+        cls.alter_column(Column('foobar', Unicode(69)))
+
+    @classmethod
+    def upgrade_schema_to_5(cls):
+        cls.drop_column('foobar')
 
 class Attribute(VersionedSchema, Base):
     __table__ = Table('account_attributes', Base.metadata,

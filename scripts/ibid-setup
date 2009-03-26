@@ -63,7 +63,7 @@ else:
         copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
 
 engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, transactional=False)
 upgrade_builtin_schemas(Session)
 
 print u'Database tables created'
@@ -79,6 +79,7 @@ if pass1 != pass2:
     exit(1)
 
 session = Session()
+session.begin()
 account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)
