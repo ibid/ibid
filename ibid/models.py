@@ -54,17 +54,17 @@ class VersionedSchema(object):
         del cls.upgrade_session
 
     @classmethod
-    def get_reflected_model(cls, table_name=None):
-        "Reflect the given table or the class's __table__"
+    def get_reflected_model(cls):
+        "Reflect the class's __table__"
 
-        return cls.upgrade_reflected_model.tables.get(table_name is None and cls.__table__.name or table_name, None)
+        return cls.upgrade_reflected_model.tables.get(cls.__table__.name, None)
 
     @classmethod
-    def add_column(cls, col, table_name=None):
-        "Add column col to table. Specify table if name has changed in a more recent version"
+    def add_column(cls, col):
+        "Add column col to table"
 
         session = cls.upgrade_session
-        table = cls.get_reflected_model(table_name)
+        table = cls.get_reflected_model()
 
         log.debug(u"Adding column %s to table %s", col.name, table.name)
 
@@ -76,44 +76,41 @@ class VersionedSchema(object):
         session.execute('ALTER TABLE %s ADD COLUMN %s;' % (table.name, description))
 
     @classmethod
-    def drop_column(cls, col_name, table_name=None):
-        "Drop column col_name from table. Specify table if name has changed in a more recent version"
+    def drop_column(cls, col_name):
+        "Drop column col_name from table"
 
         session = cls.upgrade_session
-        if table_name is None:
-            table_name = cls.__table__.name
 
-        log.debug(u"Dropping column %s from table %s", col_name, table_name)
+        log.debug(u"Dropping column %s from table %s", col_name, cls.__table__.name)
 
         if session.bind.dialect.name == 'sqlite':
-            cls.rebuild_sqlite({col_name: None}, table_name)
+            cls.rebuild_sqlite({col_name: None})
         else:
-            session.execute('ALTER TABLE %s DROP COLUMN %s;' % (table_name, col_name))
+            session.execute('ALTER TABLE %s DROP COLUMN %s;' % (cls.__table__.name, col_name))
 
     @classmethod
-    def rename_column(cls, col, old_name, table_name=None):
-        "Rename column from old_name to Column col. Specify table if name has changed in a more recent version"
+    def rename_column(cls, col, old_name):
+        "Rename column from old_name to Column col"
 
         session = cls.upgrade_session
-        table = cls.get_reflected_model(table_name)
+        table = cls.get_reflected_model()
 
         log.debug(u"Rename column %s to %s in table %s", old_name, col.name, table.name)
 
         if session.bind.dialect.name == 'sqlite':
-            cls.rebuild_sqlite({old_name: col}, table.name)
+            cls.rebuild_sqlite({old_name: col})
         elif session.bind.dialect.name == 'mysql':
             cls.alter_column(col, old_name)
         else:
-            session.execute('ALTER TABLE %s RENAME COLUMN %s TO %s;' % (table_name, old_name, col.name))
+            session.execute('ALTER TABLE %s RENAME COLUMN %s TO %s;' % (table.name, old_name, col.name))
 
     @classmethod
-    def alter_column(cls, col, old_name=None, length_only=False, table_name=None):
+    def alter_column(cls, col, old_name=None, length_only=False):
         """Change a column (possibly renaming from old_name) to Column col.
-        Specify length_only if the change is simply a change of data-type length.
-        Specify table if name has changed in a more recent version."""
+        Specify length_only if the change is simply a change of data-type length."""
 
         session = cls.upgrade_session
-        table = cls.get_reflected_model(table_name)
+        table = cls.get_reflected_model()
 
         log.debug(u"Altering column %s in table %s", col.name, table.name)
 
@@ -126,7 +123,7 @@ class VersionedSchema(object):
                 # SQLite doesn't enforce value length restrictions, only type changes have a real effect
                 return
 
-            cls.rebuild_sqlite({old_name is None and col.name or old_name: col}, table.name)
+            cls.rebuild_sqlite({old_name is None and col.name or old_name: col})
 
         elif session.bind.dialect.name == 'mysql':
             session.execute('ALTER TABLE %s CHANGE %s %s %s;'
@@ -138,16 +135,16 @@ class VersionedSchema(object):
             session.execute('ALTER TABLE %s ALTER COLUMN %s TYPE %s' % (table.name, col.name, description))
 
     @classmethod
-    def rebuild_sqlite(cls, colmap, table_name):
+    def rebuild_sqlite(cls, colmap):
         """SQLite doesn't support modification of table schema - must rebuild the table.
         colmap maps old column names to new Columns (or None for column deletion).
         Only modified columns need to be listed, unchaged columns are carried over automatically.
         Specify table in case name has changed in a more recent version."""
 
-        log.debug(u"Rebuilding SQLite table %s", table_name)
-
         session = cls.upgrade_session
-        table = cls.get_reflected_model(table_name)
+        table = cls.get_reflected_model()
+
+        log.debug(u"Rebuilding SQLite table %s", table.name)
 
         fullcolmap = {}
         for col in table.c:
