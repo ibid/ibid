@@ -138,7 +138,8 @@ class VersionedSchema(object):
         else:
             if old_name is not None:
                 cls.rename_column(col, old_name)
-            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s' % (table.name, col.name, description))
+            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s'
+                % (table.name, col.name, description.split(" ", 1)[1]))
 
     @classmethod
     def rebuild_sqlite(cls, colmap):
@@ -202,7 +203,7 @@ class Identity(VersionedSchema, Base):
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
-    schema_version = 5
+    schema_version = 1
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -211,22 +212,6 @@ class Identity(VersionedSchema, Base):
 
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
-
-    @classmethod
-    def upgrade_schema_1_to_2(cls):
-        cls.add_column(Column('foo', Unicode(64)))
-
-    @classmethod
-    def upgrade_schema_2_to_3(cls):
-        cls.rename_column(Column('foobar', Unicode(64)), old_name='foo')
-
-    @classmethod
-    def upgrade_schema_3_to_4(cls):
-        cls.alter_column(Column('foobar', Unicode(69)))
-
-    @classmethod
-    def upgrade_schema_4_to_5(cls):
-        cls.drop_column('foobar')
 
 class Attribute(VersionedSchema, Base):
     __table__ = Table('account_attributes', Base.metadata,
