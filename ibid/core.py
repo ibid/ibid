@@ -4,6 +4,7 @@ import logging
 from os.path import join, expanduser
 
 from twisted.internet import reactor, threads
+from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -122,16 +123,34 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
-        for processor in ibid.config['load']:
-            self.load_processor(processor)
+        """Configuration:
+        [plugins]
+            load = List of plugins / plugin.Processors to load
+            noload = List of plugins / plugin.Processors to skip automatically loading
+            autoload = (Boolean) Load all plugins by default?
+        """
 
-    def load_processor(self, name):
-        object = name
-        if name in ibid.config.plugins and 'type' in ibid.config.plugins[name]:
-            object = ibid.config['plugins'][name]['type']
+        load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
+        noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
 
-        module = 'ibid.plugins.' + object.split('.')[0]
-        classname = 'ibid.plugins.' + object
+        all_plugins = set(plugin.split('.')[0] for plugin in load)
+        if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
+            all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
+        
+        for plugin in all_plugins:
+            load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
+            noload_processors = [p.split('.')[1] for p in noload if p.startswith(plugin + '.')]
+            if plugin not in noload or load_processors:
+                self.load_processor(plugin, noload=noload_processors, load=load_processors, load_all=(plugin in load), noload_all=(plugin in noload))
+
+    def load_processor(self, name, noload=[], load=[], load_all=False, noload_all=False):
+        """Load processor <name>.
+        Skip the Processors in noload.
+        Load the Processors in load.
+        If load_all, the autoload attribute on each Processor isn't checked.
+        If noload_all, only Processors in load are loaded.
+        """
+        module = 'ibid.plugins.' + name
         try:
             __import__(module)
             m = eval(module)
@@ -145,13 +164,14 @@ class Reloader(object):
             return False
 
         try:
-            if module == classname:
-                for classname, klass in inspect.getmembers(m, inspect.isclass):
-                    if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+            for classname, klass in inspect.getmembers(m, inspect.isclass):
+                if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+                    if (klass.__name__ not in noload and (klass.__name__ in load
+                            or ((load_all or klass.autoload) and not noload_all))):
+                        self.log.debug("Loading Processor: %s.%s", name, klass.__name__)
                         ibid.processors.append(klass(name))
-            else:
-                moduleclass = eval(classname)
-                ibid.processors.append(moduleclass(name))
+                    else:
+                        self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)

@@ -14,6 +14,7 @@ class Processor(object):
     addressed = True
     processed = False
     priority = 0
+    autoload = True
 
     def __new__(cls, *args):
         if cls.processed and cls.priority == 0:

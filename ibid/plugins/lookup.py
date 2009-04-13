@@ -9,9 +9,30 @@ import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, cacheable_download
 
 help = {}
+
+def get_country_codes():
+    # The XML download doesn't include things like UK, so we consume this steaming pile of crud instead
+    filename = cacheable_download('http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm', 'lookup/iso-3166-1_decoding_table.htm')
+    etree = get_html_parse_tree('file://' + filename, treetype='etree')
+    table = [x for x in etree.getiterator('table')][2]
+
+    countries = {}
+    for tr in table.getiterator('tr'):
+        abbr = [x.text for x in tr.getiterator('div')][0]
+        eng_name = [x.text for x in tr.getchildren()][1]
+
+        if eng_name and eng_name.strip():
+            # Cleanup:
+            if u',' in eng_name:
+                eng_name = u' '.join(reversed(eng_name.split(',', 1)))
+            eng_name = u' '.join(eng_name.split())
+
+            countries[abbr.upper()] = eng_name.title()
+
+    return countries
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
@@ -58,7 +79,7 @@ class Lotto(Processor):
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/balls/ball_(\d+).gif')
     
-    @match(r'lotto(\s+for\s+south\s+africa)?')
+    @match(r'^lotto(\s+for\s+south\s+africa)?$')
     def za(self, event, za):
         try:
             f = urlopen(self.za_url)
@@ -134,7 +155,7 @@ class Twitter(Processor):
         status = loads(f.read())
         f.close()
 
-        return {'screen_name': status['user']['screen_name'], 'text': status['text']}
+        return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
         service_url = self.services[service]
@@ -149,7 +170,7 @@ class Twitter(Processor):
             url = "%s/notice/%i" % (service_url[:-5], latest["id"])
 
         return {
-            'text': latest['text'],
+            'text': decode_htmlentities(latest['text']),
             'ago': ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1),
             'url': url,
         }
@@ -179,6 +200,8 @@ class Currency(Processor):
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
+    country_codes = {}
+    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
@@ -190,29 +213,80 @@ class Currency(Processor):
             if tbl_sub.get('class') == 'tbl_sub':
                 for tr in tbl_sub.getiterator('tr'):
                     code, place = [x.text for x in tr.getchildren()]
-                    name = u""
+                    name = u''
                     if not place:
-                        place = u""
-                    if "," in place[1:-1]:
-                        place, name = place.split(',', 1)
-                    self.currencies[code] = (place.strip(), name.strip())
+                        place = u''
+                    if u',' in place[1:-1]:
+                        place, name = place.split(u',', 1)
+                    place = place.strip()
+                    if code in self.currencies:
+                        currency = self.currencies[code]
+                        # Are we using another country's currency?
+                        if place != u'' and name != u'' and (currency[1] == u'' or currency[1].rsplit(None, 1)[0] in place
+                                or (u'(also called' in currency[1] and currency[1].split(u'(', 1)[0].rsplit(None, 1)[0] in place)):
+                            currency[0].insert(0, place)
+                            currency[1] = name.strip()
+                        else:
+                            currency[0].append(place)
+                    else:
+                        self.currencies[code] = [[place], name.strip()]
+        # Special cases for shared currencies:
+        self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
+        self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
+        self.currencies['XOF'][1] = u'Francs'
 
-    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(\S+)\s+(?:for|to|into)\s+(\S+)$')
+
+    def _resolve_currency(self, name):
+        "Return the canonical name for a currency"
+
+        if name.upper() in self.currencies:
+            return name.upper()
+
+        name = self.strip_currency_re.match(name).group(1).lower()
+
+        # TLD -> country name
+        if len(name) == 2 and name.upper() in self.country_codes:
+           name = self.country_codes[name.upper()].lower()
+        
+        # Currency Name
+        if name == u'dollar':
+            return "USD"
+
+        name_re = re.compile(r'^(.+\s+)?\(?%ss?\)?(\s+.+)?$' % name, re.I | re.UNICODE)
+        for code, (places, currency) in self.currencies.iteritems():
+            if name_re.match(currency) or [True for place in places if name_re.match(place)]:
+                return code
+
+        return False
+
+    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
     def exchange(self, event, command, amount, frm, to):
         if not self.currencies:
             self._load_currencies()
 
-        if frm not in self.currencies or to not in self.currencies:
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        canonical_frm = self._resolve_currency(frm)
+        canonical_to = self._resolve_currency(to)
+        if not canonical_frm or not canonical_to:
             if command.lower() == "exchange":
-                event.addresponse(u"Sorry, I don't know about a currency called %s", (frm not in self.currencies and frm or to))
+                event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
             return
 
-        data = {'Amount': amount, 'From': frm, 'To': to}
+        data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
         etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
 
-        result = u" ".join(tag.text for tag in etree.getiterator('h2'))
+        result = [tag.text for tag in etree.getiterator('h2')]
         if result:
-            event.addresponse(u'%s', result)
+            event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
+                'fresult': result[0],
+                'tresult': result[2],
+                'fcountry': self.currencies[canonical_frm][0][0],
+                'fcurrency': self.currencies[canonical_frm][1],
+                'tcountry': self.currencies[canonical_to][0][0],
+                'tcurrency': self.currencies[canonical_to][1],
+            })
         else:
             event.addresponse(u"The bureau de change appears to be closed for lunch")
 
@@ -231,6 +305,44 @@ class Currency(Processor):
             event.addresponse(u'%s', u', '.join(results))
         else:
             event.addresponse(u'No currencies found')
+
+help['tld'] = u"Resolve country TLDs (ISO 3166)"
+class TLD(Processor):
+    u""".<tld>
+    tld for <country>"""
+    feature = 'tld'
+
+    country_codes = {}
+
+    @match(r'^\.([a-zA-Z]{2})$')
+    def tld_to_country(self, event, tld):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        tld = tld.upper()
+
+        if tld in self.country_codes:
+            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                'tld': tld,
+                'country': self.country_codes[tld],
+            })
+        else:
+            event.addresponse(u"ISO doesn't know about any such TLD")
+
+    @match(r'^tld\s+for\s+(.+)$')
+    def country_to_tld(self, event, location):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        for tld, country in self.country_codes.iteritems():
+            if location.lower() in country.lower():
+                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                    'tld': tld,
+                    'country': country,
+                })
+                return
+
+        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
 help['weather'] = u'Retrieves current weather and forecasts for cities.'
 class Weather(Processor):
