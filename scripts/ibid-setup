@@ -13,7 +13,7 @@ from twisted.python.modules import getModule
 
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
-from ibid.models import Account, Identity, Permission, Credential, metadata, upgrade_builtin_schemas
+from ibid.models import Account, Identity, Permission, Credential, metadata, upgrade_schemas
 
 for module in getModule('ibid.plugins').iterModules():
     try:
@@ -64,7 +64,7 @@ else:
 
 engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
 Session = sessionmaker(bind=engine, transactional=False)
-upgrade_builtin_schemas(Session)
+upgrade_schemas(Session)
 
 print u'Database tables created'
 

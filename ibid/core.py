@@ -214,7 +214,7 @@ class DatabaseManager(dict):
         self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
-        ibid.models.upgrade_builtin_schemas(self['ibid'])
+        ibid.models.check_schema_versions(self['ibid'])
 
     def load(self, name):
         uri = ibid.config.databases[name]

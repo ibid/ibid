@@ -1,54 +1,75 @@
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import text
-from sqlalchemy.exceptions import OperationalError
+from sqlalchemy.exceptions import OperationalError, InvalidRequestError
+
+if __version__ < '0.5':
+    NoResultFound = InvalidRequestError
+else:
+    from sqlalchemy.orm.exc import NoResultFound
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 log = logging.getLogger('ibid.models')
 
 class VersionedSchema(object):
-    @classmethod
-    def upgrade_schema(cls, sessionmaker):
+    def __init__(self, table, version):
+        self.table = table
+        self.version = version
+
+    def is_up_to_date(self, session):
+        if not session.bind.has_table(self.table.name):
+            return False
+
+        try:
+            schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).one()
+            return schema.version == self.version
+        except NoResultFound:
+            return False
+
+    def upgrade_schema(self, sessionmaker):
         "Upgrade the table's schema to the latest version."
 
-        table = cls.__table__
+        for fk in self.table.foreign_keys:
+            dependancy = fk.target_fullname.split('.')[0]
+            log.debug("Upgrading table %s before %s", dependancy, self.table.name)
+            metadata.tables[dependancy].versioned_schema.upgrade_schema(sessionmaker)
 
-        cls.upgrade_session = session = sessionmaker()
+        self.upgrade_session = session = sessionmaker()
         trans = session.begin()
 
-        schema = session.query(Schema).filter(Schema.table==unicode(table.name)).first()
+        schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).first()
 
         try:
             if not schema:
-                log.info(u"Creating table %s", table.name)
+                log.info(u"Creating table %s", self.table.name)
 
                 # If MySQL, we prefer InnoDB:
-                if 'mysql_engine' not in table.kwargs:
-                    table.kwargs['mysql_engine'] = 'InnoDB'
+                if 'mysql_engine' not in self.table.kwargs:
+                    self.table.kwargs['mysql_engine'] = 'InnoDB'
 
-                table.create(bind=session.bind)
+                self.table.create(bind=session.bind)
 
-                schema = Schema(unicode(table.name), cls.schema_version)
+                schema = Schema(unicode(self.table.name), self.version)
                 session.save_or_update(schema)
 
-            elif cls.schema_version > schema.version:
-                cls.upgrade_reflected_model = MetaData(session.bind, reflect=True)
-                for version in range(schema.version + 1, cls.schema_version + 1):
-                    log.info(u"Upgrading table %s to version %i", table.name, version)
+            elif self.version > schema.version:
+                self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
+                for version in range(schema.version + 1, self.schema_version + 1):
+                    log.info(u"Upgrading table %s to version %i", self.table.name, version)
 
                     trans.commit()
                     trans = session.begin()
 
-                    eval('cls.upgrade_schema_%i_to_%i' % (version - 1, version))()
+                    eval('self.upgrade_schema_%i_to_%i' % (version - 1, version))()
 
                     schema.version = version
                     session.save_or_update(schema)
-                del cls.upgrade_reflected_model
+                del self.upgrade_reflected_model
 
             trans.commit()
 
@@ -57,20 +78,18 @@ class VersionedSchema(object):
             raise
 
         session.close()
-        del cls.upgrade_session
+        del self.upgrade_session
 
-    @classmethod
-    def get_reflected_model(cls):
-        "Reflect the class's __table__"
+    def get_reflected_model(self):
+        "Get a reflected table from the current DB's schema"
 
-        return cls.upgrade_reflected_model.tables.get(cls.__table__.name, None)
+        return self.upgrade_reflected_model.tables.get(self.table.name, None)
 
-    @classmethod
-    def add_column(cls, col):
+    def add_column(self, col):
         "Add column col to table"
 
-        session = cls.upgrade_session
-        table = cls.get_reflected_model()
+        session = self.upgrade_session
+        table = self.get_reflected_model()
 
         log.debug(u"Adding column %s to table %s", col.name, table.name)
 
@@ -81,42 +100,39 @@ class VersionedSchema(object):
 
         session.execute('ALTER TABLE "%s" ADD COLUMN %s;' % (table.name, description))
 
-    @classmethod
-    def drop_column(cls, col_name):
+    def drop_column(self, col_name):
         "Drop column col_name from table"
 
-        session = cls.upgrade_session
+        session = self.upgrade_session
 
-        log.debug(u"Dropping column %s from table %s", col_name, cls.__table__.name)
+        log.debug(u"Dropping column %s from table %s", col_name, self.table.name)
 
         if session.bind.dialect.name == 'sqlite':
-            cls.rebuild_sqlite({col_name: None})
+            self.rebuild_sqlite({col_name: None})
         else:
-            session.execute('ALTER TABLE "%s" DROP COLUMN "%s";' % (cls.__table__.name, col_name))
+            session.execute('ALTER TABLE "%s" DROP COLUMN "%s";' % (self.table.name, col_name))
 
-    @classmethod
-    def rename_column(cls, col, old_name):
+    def rename_column(self, col, old_name):
         "Rename column from old_name to Column col"
 
-        session = cls.upgrade_session
-        table = cls.get_reflected_model()
+        session = self.upgrade_session
+        table = self.get_reflected_model()
 
         log.debug(u"Rename column %s to %s in table %s", old_name, col.name, table.name)
 
         if session.bind.dialect.name == 'sqlite':
-            cls.rebuild_sqlite({old_name: col})
+            self.rebuild_sqlite({old_name: col})
         elif session.bind.dialect.name == 'mysql':
-            cls.alter_column(col, old_name)
+            self.alter_column(col, old_name)
         else:
             session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
 
-    @classmethod
-    def alter_column(cls, col, old_name=None, length_only=False):
+    def alter_column(self, col, old_name=None, length_only=False):
         """Change a column (possibly renaming from old_name) to Column col.
         Specify length_only if the change is simply a change of data-type length."""
 
-        session = cls.upgrade_session
-        table = cls.get_reflected_model()
+        session = self.upgrade_session
+        table = self.get_reflected_model()
 
         log.debug(u"Altering column %s in table %s", col.name, table.name)
 
@@ -129,7 +145,7 @@ class VersionedSchema(object):
                 # SQLite doesn't enforce value length restrictions, only type changes have a real effect
                 return
 
-            cls.rebuild_sqlite({old_name is None and col.name or old_name: col})
+            self.rebuild_sqlite({old_name is None and col.name or old_name: col})
 
         elif session.bind.dialect.name == 'mysql':
             session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
@@ -137,19 +153,18 @@ class VersionedSchema(object):
 
         else:
             if old_name is not None:
-                cls.rename_column(col, old_name)
+                self.rename_column(col, old_name)
             session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s'
                 % (table.name, col.name, description.split(" ", 1)[1]))
 
-    @classmethod
-    def rebuild_sqlite(cls, colmap):
+    def rebuild_sqlite(self, colmap):
         """SQLite doesn't support modification of table schema - must rebuild the table.
         colmap maps old column names to new Columns (or None for column deletion).
         Only modified columns need to be listed, unchaged columns are carried over automatically.
         Specify table in case name has changed in a more recent version."""
 
-        session = cls.upgrade_session
-        table = cls.get_reflected_model()
+        session = self.upgrade_session
+        table = self.get_reflected_model()
 
         log.debug(u"Rebuilding SQLite table %s", table.name)
 
@@ -172,7 +187,7 @@ class VersionedSchema(object):
                 % (table.name, '", "'.join(fullcolmap.values()), '", "'.join(fullcolmap.keys()), table.name))
         session.execute('DROP TABLE "%s_old";' % table.name)
 
-class Schema(VersionedSchema, Base):
+class Schema(Base):
     __table__ = Table('schema', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('table', Unicode(32), unique=True, nullable=False),
@@ -186,15 +201,25 @@ class Schema(VersionedSchema, Base):
     def __repr__(self):
         return '<Schema %s>' % self.table
 
-    @classmethod
-    def upgrade_schema(cls, sessionmaker):
-        session = sessionmaker()
-        if not session.bind.has_table(cls.__table__.name):
-            metadata.bind = session.bind
-            cls.__table__.kwargs['mysql_engine'] = 'InnoDB'
-            cls.__table__.create()
+    # Upgrades to this table are probably going to be tricky
+    class SchemaSchema(VersionedSchema):
+        def upgrade_schema(self, sessionmaker):
+            session = sessionmaker()
 
-class Identity(VersionedSchema, Base):
+            if not session.bind.has_table(self.table.name):
+                metadata.bind = session.bind
+                self.table.kwargs['mysql_engine'] = 'InnoDB'
+                self.table.create()
+
+                schema = Schema(unicode(self.table.name), self.version)
+                session.save_or_update(schema)
+
+            session.flush()
+            session.close()
+
+    __table__.versioned_schema = SchemaSchema(__table__, 1)
+
+class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id')),
@@ -203,7 +228,6 @@ class Identity(VersionedSchema, Base):
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
-    schema_version = 1
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -213,7 +237,9 @@ class Identity(VersionedSchema, Base):
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
 
-class Attribute(VersionedSchema, Base):
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+class Attribute(Base):
     __table__ = Table('account_attributes', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
@@ -221,7 +247,6 @@ class Attribute(VersionedSchema, Base):
         Column('value', Unicode(128), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
-    schema_version = 1
 
     def __init__(self, name, value):
         self.name = name
@@ -230,7 +255,9 @@ class Attribute(VersionedSchema, Base):
     def __repr__(self):
         return '<Attribute %s = %s>' % (self.name, self.value)
 
-class Credential(VersionedSchema, Base):
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
@@ -238,7 +265,6 @@ class Credential(VersionedSchema, Base):
         Column('method', Unicode(16), nullable=False),
         Column('credential', Unicode(256), nullable=False),
         useexisting=True)
-    schema_version = 1
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
@@ -246,7 +272,9 @@ class Credential(VersionedSchema, Base):
         self.method = method
         self.credential = credential
 
-class Permission(VersionedSchema, Base):
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+class Permission(Base):
     __table__ = Table('permissions', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
@@ -254,20 +282,19 @@ class Permission(VersionedSchema, Base):
         Column('value', Unicode(4), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
-    schema_version = 1
-
 
     def __init__(self, name=None, value=None, account_id=None):
         self.account_id = account_id
         self.name = name
         self.value = value
 
-class Account(VersionedSchema, Base):
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+class Account(Base):
     __table__ = Table('accounts', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('username', Unicode(32), unique=True, nullable=False),
         useexisting=True)
-    schema_version = 1
 
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)
@@ -280,9 +307,38 @@ class Account(VersionedSchema, Base):
     def __repr__(self):
         return '<Account %s>' % self.username
 
-def upgrade_builtin_schemas(sessionmaker):
-    for schema in (Schema, Account, Identity, Attribute, Credential, Permission):
-        schema.upgrade_schema(sessionmaker)
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+def check_schema_versions(sessionmaker):
+    """Pass through all tables, log out of date ones,
+    and return True/False for all tables up to date"""
+
     session = sessionmaker()
+    upgrades = []
+    for table in metadata.tables.itervalues():
+        if not hasattr(table, 'versioned_schema'):
+            log.error("Table %s is not versioned.", table.name)
+            continue
+
+        if not table.versioned_schema.is_up_to_date(session):
+            upgrades.append(table.name)
+
+    if not upgrades:
+        return True
+
+    raise Exception(u"Tables %s are out of date. Run ibid-setup" % u", ".join(upgrades))
+
+def upgrade_schemas(sessionmaker):
+    "Pass through all tables and update schemas"
+
+    # Make sure schema table is created first
+    metadata.tables['schema'].versioned_schema.upgrade_schema(sessionmaker)
+
+    for table in metadata.tables.itervalues():
+        if not hasattr(table, 'versioned_schema'):
+            log.error("Table %s is not versioned.", table.name)
+            continue
+
+        table.versioned_schema.upgrade_schema(sessionmaker)
 
 # vi: set et sta sw=4 ts=4:
