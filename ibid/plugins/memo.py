@@ -29,14 +29,14 @@ class Memo(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, from_id, to_id, memo, private=False):
         self.from_id = from_id
         self.to_id = to_id
         self.memo = memo
         self.private = private
         self.delivered = False
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
 Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)

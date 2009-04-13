@@ -24,6 +24,8 @@ class Sighting(Base):
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     identity = relation('Identity')
 
     def __init__(self, identity_id=None, type='message', channel=None, value=None):
@@ -35,8 +37,6 @@ class Sighting(Base):
 
     def __repr__(self):
         return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class See(Processor):
     feature = 'seen'

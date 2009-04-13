@@ -25,13 +25,13 @@ class URL(Base):
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, url, channel, identity_id):
         self.url = url
         self.channel = channel
         self.identity_id = identity_id
         self.time = datetime.now()
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Delicious():
 

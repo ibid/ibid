@@ -27,6 +27,8 @@ class Feed(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
     
     feed = None
     entries = None
@@ -37,8 +39,6 @@ class Feed(Base):
         self.identity_id = identity_id
         self.time = datetime.now()
         self.update()
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     def update(self):
         feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (re.sub(r'\W+', '_', self.name), self.identity_id))

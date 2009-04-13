@@ -212,13 +212,6 @@ class Schema(Base):
         Column('table', Unicode(32), unique=True, nullable=False),
         Column('version', Integer, nullable=False),
         useexisting=True)
-    
-    def __init__(self, table, version=0):
-        self.table = table
-        self.version = version
-
-    def __repr__(self):
-        return '<Schema %s>' % self.table
 
     # Upgrades to this table are probably going to be tricky
     class SchemaSchema(VersionedSchema):
@@ -237,6 +230,13 @@ class Schema(Base):
             session.close()
 
     __table__.versioned_schema = SchemaSchema(__table__, 1)
+    
+    def __init__(self, table, version=0):
+        self.table = table
+        self.version = version
+
+    def __repr__(self):
+        return '<Schema %s>' % self.table
 
 class Identity(Base):
     __table__ = Table('identities', Base.metadata,
@@ -248,6 +248,8 @@ class Identity(Base):
         UniqueConstraint('source', 'identity'),
         useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, source, identity, account_id=None):
         self.source = source
         self.identity = identity
@@ -255,8 +257,6 @@ class Identity(Base):
 
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Attribute(Base):
     __table__ = Table('account_attributes', Base.metadata,
@@ -267,14 +267,14 @@ class Attribute(Base):
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, name, value):
         self.name = name
         self.value = value
 
     def __repr__(self):
         return '<Attribute %s = %s>' % (self.name, self.value)
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
@@ -285,13 +285,13 @@ class Credential(Base):
         Column('credential', Unicode(256), nullable=False),
         useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
         self.source = source
         self.method = method
         self.credential = credential
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Permission(Base):
     __table__ = Table('permissions', Base.metadata,
@@ -302,18 +302,20 @@ class Permission(Base):
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, name=None, value=None, account_id=None):
         self.account_id = account_id
         self.name = name
         self.value = value
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Account(Base):
     __table__ = Table('accounts', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('username', Unicode(32), unique=True, nullable=False),
         useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     identities = relation(Identity, backref='account')
     attributes = relation(Attribute)
@@ -325,8 +327,6 @@ class Account(Base):
 
     def __repr__(self):
         return '<Account %s>' % self.username
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 def check_schema_versions(sessionmaker):
     """Pass through all tables, log out of date ones,

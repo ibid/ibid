@@ -22,12 +22,12 @@ class Karma(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, subject):
         self.subject = subject
         self.changes = 0
         self.value = 0
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class Set(Processor):
     u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""

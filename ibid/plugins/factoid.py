@@ -27,6 +27,8 @@ class FactoidName(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, name, identity_id, factoid_id=None):
         self.name = name
         self.factoid_id = factoid_id
@@ -34,8 +36,6 @@ class FactoidName(Base):
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
@@ -46,6 +46,8 @@ class FactoidValue(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, value, identity_id, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
@@ -54,21 +56,19 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
-
 class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     names = relation(FactoidName, cascade='all,delete', backref='factoid')
     values = relation(FactoidValue, cascade='all,delete', backref='factoid')
 
     def __repr__(self):
         return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
