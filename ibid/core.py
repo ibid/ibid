@@ -172,14 +172,14 @@ class Reloader(object):
                         ibid.processors.append(klass(name))
                     else:
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
+
+            ibid.models.check_schema_versions(ibid.databases['ibid'])
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False
 
         ibid.processors.sort(key=lambda x: x.priority)
-
-        ibid.models.check_schema_versions(ibid.databases['ibid'])
 
         self.log.debug(u"Loaded %s plugin", name)
         return True
