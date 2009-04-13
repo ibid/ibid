@@ -179,6 +179,8 @@ class Reloader(object):
 
         ibid.processors.sort(key=lambda x: x.priority)
 
+        ibid.models.check_schema_versions(ibid.databases['ibid'])
+
         self.log.debug(u"Loaded %s plugin", name)
         return True
 
@@ -234,6 +236,7 @@ class DatabaseManager(dict):
         self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
+
         ibid.models.check_schema_versions(self['ibid'])
 
     def load(self, name):

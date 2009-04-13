@@ -330,7 +330,7 @@ class Account(Base):
 
 def check_schema_versions(sessionmaker):
     """Pass through all tables, log out of date ones,
-    and return True/False for all tables up to date"""
+    and except if not all up to date"""
 
     session = sessionmaker()
     upgrades = []
@@ -343,7 +343,7 @@ def check_schema_versions(sessionmaker):
             upgrades.append(table.name)
 
     if not upgrades:
-        return True
+        return
 
     raise Exception(u"Tables %s are out of date. Run ibid-setup" % u", ".join(upgrades))
 
