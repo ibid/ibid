@@ -10,7 +10,7 @@ from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import Option
 from ibid.plugins.auth import permission
 from ibid.plugins.identity import get_identities
-from ibid.models import Base, Identity, Account
+from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago
 
 help = {'memo': u'Keeps messages for people.'}
@@ -35,6 +35,8 @@ class Memo(Base):
         self.memo = memo
         self.private = private
         self.delivered = False
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
 Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)

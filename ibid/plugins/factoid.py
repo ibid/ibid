@@ -10,7 +10,7 @@ import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
@@ -35,6 +35,8 @@ class FactoidName(Base):
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
 class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
     Column('id', Integer, primary_key=True),
@@ -52,6 +54,8 @@ class FactoidValue(Base):
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
 class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
@@ -63,6 +67,8 @@ class Factoid(Base):
 
     def __repr__(self):
         return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')

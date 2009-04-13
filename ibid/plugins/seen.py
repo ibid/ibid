@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.models import Base, Identity, Account
+from ibid.models import Base, VersionedSchema, Identity, Account,
 from ibid.utils import ago
 
 help = {'seen': u'Records when people were last seen.'}
@@ -35,6 +35,8 @@ class Sighting(Base):
 
     def __repr__(self):
         return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
 class See(Processor):
     feature = 'seen'
