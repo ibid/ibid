@@ -17,11 +17,30 @@ Base = declarative_base(metadata=metadata)
 log = logging.getLogger('ibid.models')
 
 class VersionedSchema(object):
+    """For an initial table schema, set
+    table.versioned_schema = VersionedSchema(__table__, 1)
+    Table creation (upgrading to version 1) is implicitly supported.
+
+    When you have upgrades to the schema, instead of using VersionedSchema
+    directly, derive from it and include your own upgrade_x_to_y(self) methods,
+    where y = x + 1
+    
+    In the upgrade methods, you can call the helper functions:
+    add_column, drop_column, rename_column, alter_column
+    They try to do the correct thing in most situations, including rebuilding
+    tables in SQLite, which doesn't actually support dropping/altering columns.
+    For column parameters, while you can point to columns in the table
+    definition, it is better style to repeat the Column() specification as the
+    column might be altered in a future version.
+    """
+
     def __init__(self, table, version):
         self.table = table
         self.version = version
 
     def is_up_to_date(self, session):
+        "Is the table in the database up to date with the schema?"
+
         if not session.bind.has_table(self.table.name):
             return False
 
@@ -59,13 +78,13 @@ class VersionedSchema(object):
 
             elif self.version > schema.version:
                 self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
-                for version in range(schema.version + 1, self.schema_version + 1):
+                for version in range(schema.version + 1, self.version + 1):
                     log.info(u"Upgrading table %s to version %i", self.table.name, version)
 
                     trans.commit()
                     trans = session.begin()
 
-                    eval('self.upgrade_schema_%i_to_%i' % (version - 1, version))()
+                    eval('self.upgrade_%i_to_%i' % (version - 1, version))()
 
                     schema.version = version
                     session.save_or_update(schema)
