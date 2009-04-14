@@ -67,10 +67,6 @@ class VersionedSchema(object):
             if not schema:
                 log.info(u"Creating table %s", self.table.name)
 
-                # If MySQL, we prefer InnoDB:
-                if 'mysql_engine' not in self.table.kwargs:
-                    self.table.kwargs['mysql_engine'] = 'InnoDB'
-
                 self.table.create(bind=session.bind)
 
                 schema = Schema(unicode(self.table.name), self.version)
@@ -220,7 +216,6 @@ class Schema(Base):
 
             if not session.bind.has_table(self.table.name):
                 metadata.bind = session.bind
-                self.table.kwargs['mysql_engine'] = 'InnoDB'
                 self.table.create()
 
                 schema = Schema(unicode(self.table.name), self.version)

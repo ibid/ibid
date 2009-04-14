@@ -232,12 +232,13 @@ def sqlite_creator(database):
 
 class DatabaseManager(dict):
 
-    def __init__(self):
+    def __init__(self, check_schema_versions=True):
         self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
 
-        ibid.models.check_schema_versions(self['ibid'])
+        if check_schema_versions:
+            ibid.models.check_schema_versions(self['ibid'])
 
     def load(self, name):
         uri = ibid.config.databases[name]
@@ -253,6 +254,11 @@ class DatabaseManager(dict):
                 class MySQLModeListener(object):
                     def connect(self, dbapi_con, con_record):
                         dbapi_con.set_sql_mode("ANSI")
+                        mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
+                        c = dbapi_con.cursor()
+                        c.execute("SET storage_engine=%s;" % mysql_engine)
+                        c.close()
+
                 engine.pool.add_listener(MySQLModeListener())
 
                 engine.dialect.use_ansiquotes = True
