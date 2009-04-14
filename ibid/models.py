@@ -126,7 +126,7 @@ class VersionedSchema(object):
 
         log.debug(u"Dropping column %s from table %s", col_name, self.table.name)
 
-        if session.bind.dialect.name == 'sqlite':
+        if session.bind.engine.name == 'sqlite':
             self.rebuild_sqlite({col_name: None})
         else:
             session.execute('ALTER TABLE "%s" DROP COLUMN "%s";' % (self.table.name, col_name))
@@ -139,9 +139,9 @@ class VersionedSchema(object):
 
         log.debug(u"Rename column %s to %s in table %s", old_name, col.name, table.name)
 
-        if session.bind.dialect.name == 'sqlite':
+        if session.bind.engine.name == 'sqlite':
             self.rebuild_sqlite({old_name: col})
-        elif session.bind.dialect.name == 'mysql':
+        elif session.bind.engine.name == 'mysql':
             self.alter_column(col, old_name)
         else:
             session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
@@ -158,7 +158,7 @@ class VersionedSchema(object):
         sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
 
-        if session.bind.dialect.name == 'sqlite':
+        if session.bind.engine.name == 'sqlite':
             #TODO: Automatically detect length_only
             if length_only:
                 # SQLite doesn't enforce value length restrictions, only type changes have a real effect
@@ -166,7 +166,7 @@ class VersionedSchema(object):
 
             self.rebuild_sqlite({old_name is None and col.name or old_name: col})
 
-        elif session.bind.dialect.name == 'mysql':
+        elif session.bind.engine.name == 'mysql':
             session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
                 % (table.name, old_name is not None and old_name or col.name, description))
 
