@@ -84,7 +84,7 @@ class VersionedSchema(object):
                     trans.commit()
                     trans = session.begin()
 
-                    eval('self.upgrade_%i_to_%i' % (version - 1, version))()
+                    getattr(self, 'upgrade_%i_to_%i' % (version - 1, version))()
 
                     schema.version = version
                     session.save_or_update(schema)
