@@ -33,8 +33,9 @@ class URL(Base):
 
 class Delicious():
 
-    at_re = re.compile('@\S+?\.')
-    ip_re = re.compile('\.IP$')
+    at_re  = re.compile(r'@\S+?\.')
+    ip_re  = re.compile(r'\.IP$|unaffiliated')
+    con_re = re.compile(r'!n=|!')
 
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
@@ -42,7 +43,7 @@ class Delicious():
         date  = datetime.now()
         title = self._get_title(url)
 
-        connection_body = event.sender['connection'].split('!')
+        connection_body = self.con_re.split(event.sender['connection'])
         if len(connection_body) == 1:
             connection_body.append(event.sender['connection'])
 
@@ -75,7 +76,7 @@ class Delicious():
             log.info(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
                      url, event.channel, event.sender['nick'], date)
         else:
-            log.error(u"Error posting url %s to delicious: %s", url, response)
+            log.error(u"Error posting url %s to delicious: %s", url, resp)
 
     def _get_title(self, url):
         "Gets the title of a page"
@@ -84,7 +85,7 @@ class Delicious():
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title
-        except Exception, e:
+        except Exception:
             log.exception(u"Delicious logic - error determining the title for url %s", url)
             return url
 
