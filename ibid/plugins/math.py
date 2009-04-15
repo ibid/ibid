@@ -1,3 +1,4 @@
+import logging
 import re
 from subprocess import Popen, PIPE
 
@@ -7,6 +8,7 @@ from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output
 
 help = {}
+log = logging.getLogger('math')
 
 help['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
@@ -86,7 +88,7 @@ class Calc(Processor):
 
         # Replace the power operator with our limited pow function
         # Due to its binding, we try to match from right to left, but respect brackets
-        pow_re = re.compile(r'^(.*\)|(.*)(\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+)(.*?)$')
+        pow_re = re.compile(r'^(.*\)|(.*?)(\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+)(.*?)$')
         func_re = re.compile(r'^(.*?[\s(])(\w+)$')
         while '**' in expression:
             brleft, prefix, left, right, suffix = pow_re.match(expression).groups()
@@ -120,7 +122,7 @@ class Calc(Processor):
 
             expression = u'%s pow(%s, %s) %s' % (prefix, left, right, suffix)
 
-        #log.debug('Normalised expression to to %s', expression)
+        #log.debug('Normalised expression to %s', expression)
 
         try:
             result = eval(expression, {'__builtins__': None}, self.safe)
