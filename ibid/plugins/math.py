@@ -42,6 +42,17 @@ class BC(Processor):
             raise Exception("BC Error: %s" % error)
 
 help['calc'] = u'Returns the anwser to mathematical expressions'
+class LimitException(Exception):
+    pass
+
+def limit_function(func, limits):
+    def wrapper(*args):
+        for arg, limit in zip(args, limits):
+            if arg > limit or arg < -limit:
+                raise LimitException
+        return func(*args)
+    return wrapper
+
 class Calc(Processor):
     u"""[calc] <expression>"""
     feature = 'calc'
@@ -51,18 +62,65 @@ class Calc(Processor):
     extras = ('abs', 'pow', 'round', 'min', 'max')
     banned = ('for', 'yield', 'lambda')
 
+    # We limit all results to ~ 1e100
+    limited = (
+        ('ldexp', (1e100, 333)),
+        ('exp', (230)),
+        ('pow', (1e100, 200)),
+    )
+
     # Create a safe dict to pass to eval() as locals
     safe = {}
     exec('from math import *', safe)
     del safe['__builtins__']
     for function in extras:
         safe[function] = eval(function)
+    for function, limits in limited:
+        safe[function] = limit_function(safe[function], limits)
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
         for term in self.banned:
             if term in expression:
                 return
+
+        # Replace the power operator with our limited pow function
+        # Due to its binding, we try to match from right to left, but respect brackets
+        pow_re = re.compile(r'^(.*\)|(.*)(\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+)(.*?)$')
+        func_re = re.compile(r'^(.*?[\s(])(\w+)$')
+        while '**' in expression:
+            brleft, prefix, left, right, suffix = pow_re.match(expression).groups()
+            if left == None and prefix == None:
+                left = brleft
+                prefix = u''
+
+            if ')' in left:
+                brackets = 0
+                for pos, c in enumerate(reversed(left)):
+                    if c == ')':
+                        brackets += 1
+                    elif c == '(':
+                        brackets -= 1
+                        if brackets == 0:
+                            prefix, left = prefix + left[:-pos - 1], left[-pos - 1:]
+                            # The open bracket may have been preceeded by a function name
+                            m = func_re.match(prefix)
+                            if m:
+                                prefix, left = m.group(1), m.group(2) + left
+
+            if '(' in right:
+                brackets = 0
+                for pos, c in enumerate(right):
+                    if c == '(':
+                        brackets += 1
+                    elif c == ')':
+                        brackets -= 1
+                        if brackets == 0:
+                            right, suffix = right[:pos + 1], right[pos + 1:]
+
+            expression = u'%s pow(%s, %s) %s' % (prefix, left, right, suffix)
+
+        #log.debug('Normalised expression to to %s', expression)
 
         try:
             result = eval(expression, {'__builtins__': None}, self.safe)
@@ -76,6 +134,9 @@ class Calc(Processor):
             if unicode(e) == u"math domain error":
                 event.addresponse(u"I can't do that: %s", unicode(e))
                 return
+        except LimitException, e:
+            event.addresponse(u"I'm afraid I'm not allowed to play with big numbers")
+            return
         except Exception, e:
             return
 
