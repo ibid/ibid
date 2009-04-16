@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match, handler, authorise
 from ibid.config import Option, BoolOption, IntOption
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 
@@ -21,6 +21,8 @@ class Karma(Base):
     Column('value', Integer, nullable=False),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     def __init__(self, subject):
         self.subject = subject

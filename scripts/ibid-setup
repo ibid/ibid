@@ -11,9 +11,11 @@ from shutil import copyfileobj
 from pkg_resources import resource_stream
 from twisted.python.modules import getModule
 
+import ibid
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
-from ibid.models import Account, Identity, Permission, Credential, metadata
+from ibid.core import DatabaseManager 
+from ibid.models import Account, Identity, Permission, Credential, metadata, upgrade_schemas
 
 for module in getModule('ibid.plugins').iterModules():
     try:
@@ -22,18 +24,19 @@ for module in getModule('ibid.plugins').iterModules():
         print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), unicode(e))
 
 if exists('ibid.ini'):
-    config = FileConfig('ibid.ini')
+    ibid.config = FileConfig('ibid.ini')
+    ibid.config.merge(FileConfig('local.ini'))
     sname = None
 
 else:
     sample_config = resource_stream('ibid', 'config.ini')
-    config = FileConfig(sample_config)
+    ibid.config = FileConfig(sample_config)
 
     botname = raw_input(u'What would you like to call your bot? ')
-    config['botname'] = botname
+    ibid.config['botname'] = botname
 
     print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
-    config.databases['ibid'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
+    ibid.config.databases['ibid'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
 
     print u"Please enter the details for the primary source. Press Enter for the default option."
     source = {'nick': '$botname'}
@@ -56,14 +59,15 @@ else:
         print 'Invalid source type'
         exit(1)
 
-    config.sources[sname] = source
+    ibid.config.sources[sname] = source
 
-    config.write(open('ibid.ini', 'w'))
+    ibid.config.write(open('ibid.ini', 'w'))
     if not exists('logging.ini'):
         copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
 
-engine = create_engine(config.databases['ibid'], encoding='utf-8', convert_unicode=True, assert_unicode=True)
-metadata.create_all(engine)
+db = DatabaseManager(check_schema_versions=False)
+Session = db['ibid']
+upgrade_schemas(Session)
 
 print u'Database tables created'
 
@@ -77,8 +81,8 @@ if pass1 != pass2:
     print 'Password do not match'
     exit(1)
 
-Session = sessionmaker(bind=engine)
 session = Session()
+session.begin()
 account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)

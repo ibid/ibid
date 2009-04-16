@@ -172,6 +172,8 @@ class Reloader(object):
                         ibid.processors.append(klass(name))
                     else:
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
+
+            ibid.models.check_schema_versions(ibid.databases['ibid'])
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
@@ -230,18 +232,39 @@ def sqlite_creator(database):
 
 class DatabaseManager(dict):
 
-    def __init__(self):
+    def __init__(self, check_schema_versions=True):
         self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
 
+        if check_schema_versions:
+            ibid.models.check_schema_versions(self['ibid'])
+
     def load(self, name):
         uri = ibid.config.databases[name]
         if uri.startswith('sqlite:///'):
-            engine = create_engine('sqlite:///', creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))), encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+            engine = create_engine('sqlite:///',
+                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
+                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True)
+            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
+            if uri.startswith('mysql://'):
+                class MySQLModeListener(object):
+                    def connect(self, dbapi_con, con_record):
+                        dbapi_con.set_sql_mode("ANSI")
+                        mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
+                        c = dbapi_con.cursor()
+                        c.execute("SET storage_engine=%s;" % mysql_engine)
+                        c.close()
+
+                engine.pool.add_listener(MySQLModeListener())
+
+                engine.dialect.use_ansiquotes = True
+
         self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+
         self.log.info(u"Loaded %s database", name)
 
     def __getattr__(self, name):

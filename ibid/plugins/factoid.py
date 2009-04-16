@@ -10,7 +10,7 @@ import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
@@ -26,6 +26,8 @@ class FactoidName(Base):
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     def __init__(self, name, identity_id, factoid_id=None):
         self.name = name
@@ -44,6 +46,8 @@ class FactoidValue(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
     def __init__(self, value, identity_id, factoid_id=None):
         self.value = value
         self.factoid_id = factoid_id
@@ -57,6 +61,8 @@ class Factoid(Base):
     Column('id', Integer, primary_key=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     names = relation(FactoidName, cascade='all,delete', backref='factoid')
     values = relation(FactoidValue, cascade='all,delete', backref='factoid')

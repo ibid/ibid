@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignK
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
 from ibid.utils  import get_html_parse_tree
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
@@ -24,6 +24,8 @@ class URL(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     def __init__(self, url, channel, identity_id):
         self.url = url

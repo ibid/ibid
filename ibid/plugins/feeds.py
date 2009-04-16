@@ -12,7 +12,7 @@ from html2text import html2text_file
 
 import ibid
 from ibid.plugins import Processor, match, authorise
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
@@ -27,6 +27,8 @@ class Feed(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
     
     feed = None
     entries = None
