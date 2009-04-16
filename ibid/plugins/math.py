@@ -47,13 +47,11 @@ help['calc'] = u'Returns the anwser to mathematical expressions'
 class LimitException(Exception):
     pass
 
-def limit_function(func, limits):
-    def wrapper(*args):
-        for arg, limit in zip(args, limits):
-            if arg > limit or arg < -limit:
-                raise LimitException
-        return func(*args)
-    return wrapper
+def limited_pow(*args):
+    for arg, limit in zip(args, (1e100, 200)):
+        if isinstance(arg, int) and (arg > limit or arg < -limit):
+            raise LimitException
+    return pow(*args)
 
 class Calc(Processor):
     u"""[calc] <expression>"""
@@ -61,15 +59,8 @@ class Calc(Processor):
 
     priority = 500
 
-    extras = ('abs', 'pow', 'round', 'min', 'max')
+    extras = ('abs', 'round', 'min', 'max')
     banned = ('for', 'yield', 'lambda')
-
-    # We limit all results to ~ 1e100
-    limited = (
-        ('ldexp', (1e100, 333)),
-        ('exp', (230)),
-        ('pow', (1e100, 200)),
-    )
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
@@ -77,8 +68,7 @@ class Calc(Processor):
     del safe['__builtins__']
     for function in extras:
         safe[function] = eval(function)
-    for function, limits in limited:
-        safe[function] = limit_function(safe[function], limits)
+    safe['pow'] = limited_pow
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
@@ -88,7 +78,7 @@ class Calc(Processor):
 
         # Replace the power operator with our limited pow function
         # Due to its binding, we try to match from right to left, but respect brackets
-        pow_re = re.compile(r'^(.*\)|(.*?)(\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+)(.*?)$')
+        pow_re = re.compile(r'^(.*\)|(.*?)((?:[0-9.]+[eE]-?)?\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+(?:[eE]-?\d+)?)(.*?)$')
         func_re = re.compile(r'^(.*?[\s(])(\w+)$')
         while '**' in expression:
             brleft, prefix, left, right, suffix = pow_re.match(expression).groups()
