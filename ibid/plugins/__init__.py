@@ -14,6 +14,7 @@ class Processor(object):
     addressed = True
     processed = False
     priority = 0
+    autoload = True
 
     def __new__(cls, *args):
         if cls.processed and cls.priority == 0:
@@ -24,7 +25,7 @@ class Processor(object):
             new.default = getattr(cls, name)
             setattr(cls, name, new)
 
-        return super(Processor, cls).__new__(cls, *args)
+        return super(Processor, cls).__new__(cls)
 
     def __init__(self, name):
         self.name = name
@@ -51,9 +52,9 @@ class Processor(object):
                     match = method.pattern.search(event.message)
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
-                            event = method(event, *match.groups()) or event
+                            method(event, *match.groups())
                 else:
-                    event = method(event) or event
+                    method(event)
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
@@ -82,7 +83,7 @@ def match(regex):
 
 def auth_responses(event, permission):
     if not ibid.auth.authorise(event, permission):
-        event.notauthed = True
+        event.complain = 'notauthed'
         return False
 
     return True
@@ -136,7 +137,7 @@ class RPC(pb.Referenceable, resource.Resource):
             result = function(*args, **kwargs)
             return simplejson.dumps(result)
         except Exception, e:
-            return simplejson.dumps({'exception': True, 'message': e.message})
+            return simplejson.dumps({'exception': True, 'message': unicode(e)})
 
     def render_GET(self, request):
         function = self.get_function(request)

@@ -17,7 +17,7 @@ class ListPLugins(Processor):
             if processor.name not in plugins:
                 plugins.append(processor.name)
 
-        event.addresponse(', '.join(plugins))
+        event.addresponse(u'Plugins: %s', u', '.join(sorted(plugins)))
 
 help['core'] = u'Reloads core modules.'
 class ReloadCoreModules(Processor):
@@ -36,7 +36,7 @@ class ReloadCoreModules(Processor):
         else:
             result = getattr(ibid.reloader, 'reload_%s' % module)()
 
-        event.addresponse(result and u'%s reloaded' % module or u"Couldn't reload %s" % module)
+        event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", module)
 
 class LoadModules(Processor):
     u"""(load|unload|reload) <plugin|processor>"""
@@ -49,13 +49,13 @@ class LoadModules(Processor):
     def load(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         result = ibid.reloader.load_processor(plugin)
-        event.addresponse(result and u'%s reloaded' % plugin or u"Couldn't reload %s" % plugin)
+        event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", plugin)
 
     @match(r'^unload\s+(\S+)$')
     @authorise
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
-        event.addresponse(result and u'%s unloaded' % plugin or u"Couldn't unload %s" % plugin)
+        event.addresponse(result and u'%s unloaded' or u"Couldn't unload %s", plugin)
 
 help['die'] = u'Terminates the bot'
 class Die(Processor):

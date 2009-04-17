@@ -1,28 +1,21 @@
+from cgi import parse_qs
 import htmlentitydefs
 import re
 import simplejson
 from urllib import quote
 from urllib2 import urlopen, Request
+from urlparse import urlparse
 
 from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import ibid_version
+from ibid.utils import decode_htmlentities, ibid_version
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
 default_user_agent = 'Mozilla/5.0'
 default_referrer = "http://ibid.omnia.za.net/"
-
-def de_entity(text):
-    "Remove HTML entities, and replace with their characters"
-    replace = lambda match: unichr(int(match.group(1)))
-    text = re.sub("&#(\d+);", replace, text)
-
-    replace = lambda match: unichr(htmlentitydefs.name2codepoint[match.group(1)])
-    text = re.sub("&(\w+);", replace, text)
-    return text
 
 class GoogleAPISearch(Processor):
     u"""google [for] <term>
@@ -58,20 +51,29 @@ class GoogleAPISearch(Processor):
 
             title = item["titleNoFormatting"]
 
-            results.append(u'"%s" %s' % (de_entity(title), item["unescapedUrl"]))
+            results.append(u'"%s" %s' % (decode_htmlentities(title), item["unescapedUrl"]))
             
         if results:
-            event.addresponse(u', '.join(results))
+            event.addresponse(u'%s', u', '.join(results))
         else:
-            event.addresponse(u"Wow! Google couldn't find anything.")
+            event.addresponse(u"Wow! Google couldn't find anything")
 
     @match(r'^(?:rank|(?:google(?:fight|compare|cmp)))\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
     def googlefight(self, event, term1, term2):
         count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
         count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
-        event.addresponse(u'%s wins with %i hits, %s had %i hits' % 
-            (count1 > count2 and (term1, count1, term2, count2) or (term2, count2, term1, count1))
-        )
+        event.addresponse(u'%(firstterm)s wins with %(firsthits)i hits, %(secondterm)s had %(secondhits)i hits',
+            (count1 > count2 and {
+                'firstterm':  term1,
+                'firsthits':  count1,
+                'secondterm': term2,
+                'secondhits': count2,
+            } or {
+                'firstterm':  term2,
+                'firsthits':  count2,
+                'secondterm': term1,
+                'secondhits': count1,
+            }))
 
 # Unfortunatly google API search doesn't support all of google search's
 # features.
@@ -103,7 +105,7 @@ class GoogleScrapeSearch(Processor):
         if not font:
             event.addresponse(u'No result')
         else:
-            event.addresponse(font.b.string)
+            event.addresponse(u'%s', font.b.string)
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
@@ -111,12 +113,12 @@ class GoogleScrapeSearch(Processor):
 
         definitions = []
         for li in soup.findAll('li'):
-            definitions.append(de_entity(li.contents[0].strip()))
+            definitions.append(decode_htmlentities(li.contents[0].strip()))
 
         if definitions:
-            event.addresponse(u' :: '.join(definitions))
+            event.addresponse(u'%s', u' :: '.join(definitions))
         else:
-            event.addresponse(u"Are you making up words again?")
+            event.addresponse(u'Are you making up words again?')
 
     # Not supported by Google API: http://code.google.com/p/google-ajax-apis/issues/detail?id=24
     @match(r'^google(?:\.com?)?\.([a-z]{2})(?:\s+for)?\s+(.*)$')
@@ -128,18 +130,20 @@ class GoogleScrapeSearch(Processor):
         for item in items:
             try:
                 url = item.a['href']
+                if url.startswith(u"/aclk?"):
+                    url = parse_qs(urlparse(url).query)['q'][0]
                 title = u''.join([e.string for e in item.a.contents])
                 if title.startswith("Image results for"):
                     continue
-                results.append(u'"%s" %s' % (de_entity(title), url))
+                results.append(u'"%s" %s' % (decode_htmlentities(title), url))
             except Exception:
                 pass
             if len(results) >= 8:
                 break
 
         if results:
-            event.addresponse(u", ".join(results))
+            event.addresponse(u'%s', u', '.join(results))
         else:
-            event.addresponse(u"Wow! Google couldn't find anything.")
+            event.addresponse(u"Wow! Google couldn't find anything")
 
 # vi: set et sta sw=4 ts=4:

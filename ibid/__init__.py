@@ -11,7 +11,17 @@ import twisted.python.log
 import ibid.core
 from ibid.config import FileConfig
 
-sources = {}
+class InsensitiveDict(dict):
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.lower())
+
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key.lower(), value)
+
+    def __contains__(self, key):
+        return dict.__contains__(self, key.lower())
+
+sources = InsensitiveDict()
 config = {}
 dispatcher = None
 processors = []
@@ -81,9 +91,6 @@ class AuthException(IbidException):
     pass
 
 class SourceException(IbidException):
-    pass
-
-class ConfigException(Exception):
     pass
 
 # vi: set et sta sw=4 ts=4:

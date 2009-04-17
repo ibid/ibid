@@ -1,24 +1,36 @@
 #!/usr/bin/env python
 
 import logging
-import os
-import sqlalchemy
-from sys import argv, exit
+from optparse import OptionParser
+from os import getenv
+from sys import exit
 
 try:
     import readline
 except ImportError:
     pass
 
-if len(argv) < 2:
-    print 'Usage: %s plugin[s]' % (argv[0], )
-    exit(1)
+from twisted.python.modules import getModule
 
 import ibid
 import ibid.plugins
 from ibid.config import FileConfig
 from ibid.event import Event
 from ibid.models import Identity
+
+parser = OptionParser(usage="""%prog [options...] [plugins...]
+plugins is the list of plugins to load. A plugin name followed by a - will be disabled rather than loaded.""")
+parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
+        help="Only load the specified plugins, not the common base plugins")
+parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
+        help="Load all all configured plugins")
+
+(options, args) = parser.parse_args()
+
+if options.load_configured and not options.load_base:
+    parser.error("Incompatible combination: --configured and --only")
+
+# Setup Ibid core:
 
 def auth_responses(event, permission):
     return True
@@ -33,13 +45,35 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 
-plugins = argv[1:]
-if len(argv[1:]) == 1 and argv[1] == "--all":
-    plugins = ibid.config.get("load")
-for plugin in plugins:
-    ibid.reloader.load_processor(plugin)
+class TestSource(dict):
+    type = 'test'
 
-username = unicode(os.getenv('USER'))
+ibid.sources[u'test_source'] = TestSource()
+
+load = [plugin for plugin in args if not plugin.endswith("-")]
+noload = [plugin[:-1] for plugin in args if plugin.endswith("-")]
+
+if options.load_base:
+    load.extend(("admin", "config", "core", "help", "test"))
+
+if load:
+    if 'load' in ibid.config.plugins:
+        ibid.config.plugins['load'].extend(load)
+    else:
+        ibid.config.plugins['load'] = load
+
+if noload:
+    if 'noload' in ibid.config.plugins:
+        ibid.config.plugins['noload'].extend(noload)
+    else:
+        ibid.config.plugins['noload'] = noload
+
+if not options.load_configured:
+    ibid.config.plugins['autoload'] = False
+
+ibid.reloader.load_processors()
+
+username = unicode(getenv('USER'))
 if not username:
     username = u'tester'
 session = ibid.databases.ibid()
@@ -52,7 +86,7 @@ if not identity:
 identity_id = identity.id
 
 try:
-    encoding = os.getenv("LANG").split(".")[1]
+    encoding = getenv("LANG").split(".")[1]
 except:
     encoding = "ascii"
 
@@ -69,7 +103,7 @@ while True:
 
     try:
         event.message = unicode(raw_input('Query: '), encoding)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         break
 
     for processor in ibid.processors:
@@ -77,6 +111,7 @@ while True:
             processor.process(event)
         except Exception:
             log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+            event.complain = 'exception'
 
     for response in event.responses:
         if isinstance(response, dict):

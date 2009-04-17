@@ -26,7 +26,11 @@ class Fortune(Processor, RPC):
 
     @match(r'^fortune$')
     def handler(self, event):
-        event.addresponse(self.remote_fortune() or u"Couldn't execute fortune")
+        fortune = self.remote_fortune()
+        if fortune:
+            event.addresponse(u'%s', fortune)
+        else:
+            event.addresponse(u"Couldn't execute fortune")
 
     def remote_fortune(self):
         fortune = Popen(self.fortune, stdout=PIPE, stderr=PIPE)
@@ -34,6 +38,7 @@ class Fortune(Processor, RPC):
         code = fortune.wait()
 
         output = unicode_output(output.strip())
+        output = output.replace(u'\t', u' ').replace(u'\n', u' ')
 
         if code == 0:
             return output
@@ -49,9 +54,12 @@ class Nickometer(Processor):
     def handle_nickometer(self, event, nick, wreasons):
         nick = nick or event.sender['nick']
         score, reasons = nickometer(str(nick))
-        event.addresponse(u"%s is %s%% lame" % (nick, score))
+        event.addresponse(u"%(nick)s is %(score)s%% lame", {
+            'nick': nick,
+            'score': score,
+        })
         if wreasons:
-            event.addresponse(u', '.join(['%s (%s)' % reason for reason in reasons]))
+            event.addresponse(u'Because: %s', u', '.join(['%s (%s)' % reason for reason in reasons]))
 
 help['man'] = u'Retrieves information from manpages.'
 class Man(Processor):
@@ -88,9 +96,9 @@ class Man(Processor):
             output = output.splitlines()
             index = output.index('NAME')
             if index:
-                event.addresponse(output[index+1].strip())
+                event.addresponse(u'%s', output[index+1].strip())
             index = output.index('SYNOPSIS')
             if index:
-                event.addresponse(output[index+1].strip())
+                event.addresponse(u'%s', output[index+1].strip())
 
 # vi: set et sta sw=4 ts=4:

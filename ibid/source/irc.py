@@ -53,9 +53,10 @@ class Ircbot(irc.IRCClient):
     def _state_event(self, user, channel, action, kicker=None, message=None):
         event = self._create_event(u'state', user, channel)
         event.state = action
+        if message:
+            event.message = unicode(message, 'utf-8', 'replace')
         if kicker:
             event.kicker = unicode(kicker, 'utf-8', 'replace')
-            if message: event.message = unicode(message, 'utf-8', 'replace')
             self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
         else:
             self.factory.log.debug(u"%s has %s %s", user, action, channel)
@@ -88,7 +89,8 @@ class Ircbot(irc.IRCClient):
         self._state_event(user, channel, u'offline')
 
     def userQuit(self, user, channel):
-        self._state_event(user, channel, u'offline')
+        # Channel contains the quit message
+        self._state_event(user, '', u'offline', message=channel)
 
     def userKicked(self, kickee, channel, kicker, message):
         self._state_event(kickee, channel, u'kicked', kicker, message)

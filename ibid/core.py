@@ -4,6 +4,7 @@ import logging
 from os.path import join, expanduser
 
 from twisted.internet import reactor, threads
+from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -21,8 +22,12 @@ class Dispatcher(object):
                 processor.process(event)
             except Exception:
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+                event.complain = 'exception'
 
-        print event
+        log_level = logging.DEBUG
+        if event.type == u'clock' and not event.processed:
+            log_level -= 5
+        self.log.log(log_level, event)
 
         filtered = []
         for response in event['responses']:
@@ -33,11 +38,12 @@ class Dispatcher(object):
                 self.send(response)
 
         event.responses = filtered
-        self.log.debug(u"Returning event to %s source", event.source)
+        self.log.log(log_level, u"Returning event to %s source", event.source)
+
         return event
 
     def send(self, response):
-        source = response['source'].lower()
+        source = response['source']
         if source in ibid.sources:
             reactor.callFromThread(ibid.sources[source].send, response)
             self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
@@ -45,7 +51,11 @@ class Dispatcher(object):
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
         
     def dispatch(self, event):
-        self.log.debug(u"Received event from %s source", event.source)
+        log_level = logging.DEBUG
+        if event.type == u'clock':
+            log_level -= 5
+        self.log.log(log_level, u"Received event from %s source", event.source)
+
         return threads.deferToThread(self._process, event)
 
 class Reloader(object):
@@ -67,7 +77,7 @@ class Reloader(object):
             self.log.info(u"Reloaded reloader")
             return True
         except Exception, e:
-            self.log.error(u"Failed to reload reloader: %s", e.message)
+            self.log.error(u"Failed to reload reloader: %s", unicode(e))
             return False
         
     def load_source(self, name, service=None):
@@ -82,8 +92,8 @@ class Reloader(object):
             self.log.exception(u"Couldn't import %s and instantiate %s", module, factory)
             return
 
-        ibid.sources[name.lower()] = moduleclass(name)
-        ibid.sources[name.lower()].setServiceParent(service)
+        ibid.sources[name] = moduleclass(name)
+        ibid.sources[name].setServiceParent(service)
         self.log.info(u"Loaded %s source %s", type, name)
         return True
 
@@ -93,7 +103,6 @@ class Reloader(object):
                 self.load_source(source, service)
 
     def unload_source(self, name):
-        name = name.lower()
         if name not in ibid.sources:
             return False
 
@@ -114,17 +123,34 @@ class Reloader(object):
         self.load_source(source)
 
     def load_processors(self):
-        for processor in ibid.config['load']:
-            if not self.load_processor(processor):
-                print "Couldn't load processor %s" % processor
+        """Configuration:
+        [plugins]
+            load = List of plugins / plugin.Processors to load
+            noload = List of plugins / plugin.Processors to skip automatically loading
+            autoload = (Boolean) Load all plugins by default?
+        """
 
-    def load_processor(self, name):
-        object = name
-        if name in ibid.config.plugins and 'type' in ibid.config.plugins[name]:
-            object = ibid.config['plugins'][name]['type']
+        load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
+        noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
 
-        module = 'ibid.plugins.' + object.split('.')[0]
-        classname = 'ibid.plugins.' + object
+        all_plugins = set(plugin.split('.')[0] for plugin in load)
+        if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
+            all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
+        
+        for plugin in all_plugins:
+            load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
+            noload_processors = [p.split('.')[1] for p in noload if p.startswith(plugin + '.')]
+            if plugin not in noload or load_processors:
+                self.load_processor(plugin, noload=noload_processors, load=load_processors, load_all=(plugin in load), noload_all=(plugin in noload))
+
+    def load_processor(self, name, noload=[], load=[], load_all=False, noload_all=False):
+        """Load processor <name>.
+        Skip the Processors in noload.
+        Load the Processors in load.
+        If load_all, the autoload attribute on each Processor isn't checked.
+        If noload_all, only Processors in load are loaded.
+        """
+        module = 'ibid.plugins.' + name
         try:
             __import__(module)
             m = eval(module)
@@ -138,13 +164,16 @@ class Reloader(object):
             return False
 
         try:
-            if module == classname:
-                for classname, klass in inspect.getmembers(m, inspect.isclass):
-                    if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+            for classname, klass in inspect.getmembers(m, inspect.isclass):
+                if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
+                    if (klass.__name__ not in noload and (klass.__name__ in load
+                            or ((load_all or klass.autoload) and not noload_all))):
+                        self.log.debug("Loading Processor: %s.%s", name, klass.__name__)
                         ibid.processors.append(klass(name))
-            else:
-                moduleclass = eval(classname)
-                ibid.processors.append(moduleclass(name))
+                    else:
+                        self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
+
+            ibid.models.check_schema_versions(ibid.databases['ibid'])
                 
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
@@ -181,7 +210,7 @@ class Reloader(object):
             self.log.info(u'Reloaded auth')
             return True
         except Exception, e:
-            self.log.error(u"Couldn't reload auth: %s", e.message)
+            self.log.error(u"Couldn't reload auth: %s", unicode(e))
 
         return False
 
@@ -191,7 +220,7 @@ class Reloader(object):
         self.log.info(u"Notified all processors of config reload")
 
 def regexp(pattern, item):
-    return re.search(pattern, item) and True or False
+    return re.search(pattern, item, re.I) and True or False
 
 def sqlite_creator(database):
     from pysqlite2 import dbapi2 as sqlite
@@ -203,18 +232,39 @@ def sqlite_creator(database):
 
 class DatabaseManager(dict):
 
-    def __init__(self):
+    def __init__(self, check_schema_versions=True):
         self.log = logging.getLogger('core.databases')
         for database in ibid.config.databases.keys():
             self.load(database)
 
+        if check_schema_versions:
+            ibid.models.check_schema_versions(self['ibid'])
+
     def load(self, name):
         uri = ibid.config.databases[name]
         if uri.startswith('sqlite:///'):
-            engine = create_engine('sqlite:///', creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))), encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+            engine = create_engine('sqlite:///',
+                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
+                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True)
+            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+
+            if uri.startswith('mysql://'):
+                class MySQLModeListener(object):
+                    def connect(self, dbapi_con, con_record):
+                        dbapi_con.set_sql_mode("ANSI")
+                        mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
+                        c = dbapi_con.cursor()
+                        c.execute("SET storage_engine=%s;" % mysql_engine)
+                        c.close()
+
+                engine.pool.add_listener(MySQLModeListener())
+
+                engine.dialect.use_ansiquotes = True
+
         self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+
         self.log.info(u"Loaded %s database", name)
 
     def __getattr__(self, name):

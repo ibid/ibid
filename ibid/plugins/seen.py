@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.models import Base, Identity, Account
+from ibid.models import Base, VersionedSchema, Identity, Account,
 from ibid.utils import ago
 
 help = {'seen': u'Records when people were last seen.'}
@@ -23,6 +23,8 @@ class Sighting(Base):
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     identity = relation('Identity')
 
@@ -82,7 +84,7 @@ class Seen(Processor):
             account = session.query(Account).filter_by(username=who).first()
 
         if not identity and not account:
-            event.addresponse(u"I don't know who %s is" % who)
+            event.addresponse(u"I don't know who %s is", who)
             return
 
         messages = []
@@ -102,26 +104,26 @@ class Seen(Processor):
                     states.append(sighting)
 
         if len(messages) == 0 and len(states) == 0:
-            event.addresponse(u"I haven't seen %s" % who)
+            event.addresponse(u"I haven't seen %s", who)
             return
 
         messages.sort(key=lambda x: x.time, reverse=True)
         states.sort(key=lambda x: x.time, reverse=True)
 
-        reply = ''
+        reply = u''
         if len(messages) > 0:
             sighting = messages[0]
             delta = datetime.now() - sighting.time
             reply = u"%s was last seen %s ago in %s on %s" % (who, ago(delta), sighting.channel or 'private', sighting.identity.source)
-            reply = u'%s [%s]' % (reply, sighting.time.strftime(self.datetime_format))
+            reply += u' [%s]' % sighting.time.strftime(self.datetime_format)
 
         if len(states) > 0:
             sighting = states[0]
             if reply:
-                reply = reply + u', and'
+                reply += u', and'
             else:
                 reply = who
-            reply = reply + u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, sighting.time.strftime(self.datetime_format))
+            reply += u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, sighting.time.strftime(self.datetime_format))
 
         event.addresponse(reply)
         session.close()

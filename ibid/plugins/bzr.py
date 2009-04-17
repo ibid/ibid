@@ -1,5 +1,6 @@
 from cStringIO import StringIO
 from datetime import datetime
+import logging
 
 from bzrlib.branch import Branch
 from bzrlib import log
@@ -53,6 +54,7 @@ class Bazaar(Processor, RPC):
     launchpad_branches = Option('launchpad_branches', 'Branch paths in Launchpad mapped to names')
 
     def __init__(self, name):
+        self.log = logging.getLogger('plugins.bzr')
         Processor.__init__(self, name)
         RPC.__init__(self)
 
@@ -62,11 +64,12 @@ class Bazaar(Processor, RPC):
             try:
                 self.branches[name.lower()] = Branch.open(repository)
             except NotBranchError, e:
-                print str(e)
+                self.log.error(u'%s is not a branch', repository)
 
     @match(r'^(?:repos|repositories)$')
     def handle_repositories(self, event):
-        event.addresponse(', '.join(self.branches.keys()))
+        repositories = self.branches.keys()
+        event.addresponse(u'I know about: %s', u', '.join(sorted(repositories)))
 
     def remote_committed(self, repository, start, end=None):
         commits = self.get_commits(repository, start, end)
@@ -83,7 +86,7 @@ class Bazaar(Processor, RPC):
 
         for commit in commits:
             if commit:
-                event.addresponse(unicode(commit.strip()))
+                event.addresponse(u'%s', commit.strip())
 
     def get_commits(self, repository, start, end=None, full=None):
         branch = None
@@ -111,12 +114,15 @@ class Bazaar(Processor, RPC):
 
     @handler
     def launchpad(self, event):
-        if event.source.lower() not in ibid.sources \
-                or ibid.sources[event.source.lower()].type != 'smtp' \
+        if ibid.sources[event.source].type != 'smtp' \
                 or 'X-Launchpad-Branch' not in event.headers:
             return
 
         event.processed = True
+
+        if 'X-Launchpad-Branch' not in event.headers or 'X-Launchpad-Branch-Revision-Number' not in event.headers:
+            return
+
         if event.headers['X-Launchpad-Branch'] in self.launchpad_branches:
             self.remote_committed(self.launchpad_branches[event.headers['X-Launchpad-Branch']], int(event.headers['X-Launchpad-Branch-Revision-Number']))
 

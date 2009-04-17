@@ -1,6 +1,9 @@
 import re
 from datetime import datetime
 import logging
+from urllib2 import urlopen, URLError
+from urlparse import urljoin
+from html5lib import HTMLParser, treebuilders
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 from sqlalchemy.sql import func
@@ -9,7 +12,8 @@ from html2text import html2text_file
 
 import ibid
 from ibid.plugins import Processor, match, authorise
-from ibid.models import Base
+from ibid.models import Base, VersionedSchema
+from ibid.utils import cacheable_download, get_html_parse_tree
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -23,6 +27,8 @@ class Feed(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),
     useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
     
     feed = None
     entries = None
@@ -32,15 +38,11 @@ class Feed(Base):
         self.url = url
         self.identity_id = identity_id
         self.time = datetime.now()
-
-    def is_valid(self):
         self.update()
-        if self.feed['version']:
-            return True
-        return False
 
     def update(self):
-        self.feed = feedparser.parse(self.url)
+        feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (re.sub(r'\W+', '_', self.name), self.identity_id))
+        self.feed = feedparser.parse(feedfile)
         self.entries = self.feed['entries']
 
 class Manage(Processor):
@@ -58,26 +60,42 @@ class Manage(Processor):
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
 
         if feed:
-            event.addresponse(u"I already have the %s feed" % name)
-        else:
-            feed = Feed(unicode(name), unicode(url), event.identity)
+            event.addresponse(u"I already have the %s feed", name)
+            return
+        
+        valid = bool(feedparser.parse(url)["version"])
 
-        if feed.is_valid():
-            session.save(feed)
-            session.flush()
-            event.addresponse(True)
-            log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
-        else:
-            event.addresponse(u"Sorry, I could not add the %s feed. %s is not a valid feed" % (name,url))
+        if not valid:
+            soup = get_html_parse_tree(url)
+            for alternate in soup.findAll('link', {'rel': 'alternate',
+                    'type': re.compile(r'^application/(atom|rss)\+xml$'),
+                    'href': re.compile(r'.+')}):
+                newurl = urljoin(url, alternate["href"])
+                valid = bool(feedparser.parse(newurl)["version"])
 
-        session.close()
+                if valid:
+                    url = newurl
+                    break
+
+        if not valid:
+            event.addresponse(u"Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed", {
+                'name': name,
+                'url': url,
+            })
+            return
+
+        feed = Feed(unicode(name), unicode(url), event.identity)
+        session.save(feed)
+        session.flush()
+        event.addresponse(True)
+        log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
 
     @match(r'^(?:list\s+)?feeds$')
     def list(self, event):
         session = ibid.databases.ibid()
         feeds = session.query(Feed).all()
         if feeds:
-            event.addresponse(u', '.join([feed.name for feed in feeds]))
+            event.addresponse(u'I know about: %s', u', '.join(sorted([feed.name for feed in feeds])))
         else:
             event.addresponse(u"I don't know about any feeds")
 
@@ -88,7 +106,7 @@ class Manage(Processor):
         feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
 
         if not feed:
-            event.addresponse(u"I don't have the %s feed anyway" % name)
+            event.addresponse(u"I don't have the %s feed anyway", name)
         else:
             session.delete(feed)
             log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
@@ -112,7 +130,7 @@ class Retrieve(Processor):
         session.close()
 
         if not feed:
-            event.addresponse(u"I don't know about the %s feed" % name)
+            event.addresponse(u"I don't know about the %s feed", name)
             return
 
         feed.update()
@@ -120,7 +138,9 @@ class Retrieve(Processor):
             event.addresponse(u"I can't access that feed")
             return
 
-        event.addresponse(u', '.join(['%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in feed.entries[start:number+start]]))
+        articles = feed.entries[start:number+start]
+        articles = [u'%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
+        event.addresponse(u'%s', u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
@@ -129,7 +149,7 @@ class Retrieve(Processor):
         session.close()
 
         if not feed:
-            event.addresponse(u"I don't know about the %s feed" % name)
+            event.addresponse(u"I don't know about the %s feed", name)
             return
 
         feed.update() 
@@ -152,7 +172,7 @@ class Retrieve(Processor):
                     break
 
             if not article:
-                event.addresponse(u"Are you making up news again?")
+                event.addresponse(u'Are you making up news again?')
                 return
 
         if 'summary' in article:
@@ -163,6 +183,10 @@ class Retrieve(Processor):
             else:
                 summary = article.content[0].value
 
-        event.addresponse(u'"%s" %s : %s' % (html2text_file(article.title, None).strip(), article.link, summary))
+        event.addresponse(u'"%(title)s" %(link)s : %(summary)s', {
+            'title': html2text_file(article.title, None).strip(),
+            'link': article.link,
+            'summary': summary,
+        })
 
 # vi: set et sta sw=4 ts=4:

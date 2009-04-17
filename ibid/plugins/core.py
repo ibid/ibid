@@ -74,8 +74,7 @@ class Responses(Processor):
                 response['target'] = event.channel
             if 'source' not in response:
                 response['source'] = event.source
-            if 'action' in response and (response['source'].lower() not in ibid.sources \
-                    or ibid.sources[response['source'].lower()].type not in ('irc', 'silc')):
+            if 'action' in response and ibid.sources[response['source']].type not in ('irc', 'silc'):
                 response['reply'] = '* %s %s' % (ibid.config['botname'], response['reply'])
             converted.append(response)
 
@@ -115,15 +114,27 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    complaints = Option('complaints', 'Complaint responses', (u'Huh?', u'Sorry...', u'?', u'Excuse me?', u'*blink*', u'What?'))
-    notauthed = Option('notauthed', 'Complaint responses for auth failures', (u"I'm not your bitch", u"Just do it yourself", u"I'm not going to listen to you", u"You're not the boss of me"))
+    complaints = Option('complaints', 'Complaint responses', {
+        'nonsense': (
+            u'Huh?', u'Sorry...', u'?',
+            u'Excuse me?', u'*blink*', u'What?',
+        ),
+        'notauthed': (
+            u"I'm not your bitch", u"Just do it yourself",
+            u"I'm not going to listen to you", u"You're not the boss of me",
+        ),
+        'exception': (
+            u"I'm not feeling too well", u"That didn't go down very well. Burp.",
+            u"That didn't seem to agree with me",
+        ),
+    })
 
     @handler
     def complain(self, event):
-        if 'notauthed' in event:
-            event.addresponse(choice(self.notauthed))
+        if 'complain' in event:
+            event.addresponse(u'%s', choice(self.complaints[event.complain]))
         else:
-            event.addresponse(choice(self.complaints))
+            event.addresponse(u'%s', choice(self.complaints['nonsense']))
 
 class RateLimit(Processor):
 
@@ -141,7 +152,7 @@ class RateLimit(Processor):
             self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
-                    event.addresponse({'reply': u"Geez, give me some time to think!"})
+                    event.addresponse({'reply': u'Geez, give me some time to think!'})
                 else:
                     event.processed = True
 
@@ -159,6 +170,6 @@ class UnicodeWarning(Processor):
             for value in object:
                 self.process(value)
         elif isinstance(object, str):
-            self.log.warning(u"Found a non-unicode string: %s" % object)
+            self.log.warning(u'Found a non-unicode string: %s' % object)
 
 # vi: set et sta sw=4 ts=4:

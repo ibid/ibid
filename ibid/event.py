@@ -14,8 +14,11 @@ class Event(dict):
     def __setattr__(self, name, value):
         self[name] = value
 
-    def addresponse(self, response, processed=True):
-        self.responses.append(response)
+    def addresponse(self, response, params={}, processed=True):
+        if isinstance(response, unicode):
+            self.responses.append(response % params)
+        else:
+            self.responses.append(response)
 
         if processed:
             self.processed = True

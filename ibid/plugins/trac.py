@@ -77,15 +77,25 @@ class Tickets(Processor, RPC):
         ticket = self.get_ticket(int(number))
 
         if ticket:
-            event.addresponse(u'Ticket %s (%s %s %s in %s for %s) reported %s ago assigned to %s: "%s" %sticket/%s' % (ticket.id, ticket.status, ticket.priority, ticket.type, ticket.component, ticket.milestone, ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2), ticket.owner, ticket.summary, self.url, ticket.id))
+            event.addresponse(u'Ticket %(id)s (%(status)s %(priority)s %(type)s in %(component)s for %(milestone)s) '
+                u'reported %(ago)s ago assigned to %(owner)s: "%(summary)s" %(url)sticket/%(id)s', {
+                'id': ticket.id,
+                'status': ticket.status,
+                'priority': ticket.priority,
+                'type': ticket.type,
+                'component': ticket.component,
+                'milestone': ticket.milestone,
+                'ago': ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2),
+                'owner': ticket.owner,
+                'summary': ticket.summary, 
+                'url': self.url,
+            })
         else:
             event.addresponse(u"No such ticket")
 
     @match(r"^(?:(my|\S+?(?:'s))\s+)?(?:(open|closed|new|assigned)\s+)?tickets(?:\s+for\s+(.+?))?$")
     def handle_list(self, event, owner, status, milestone):
-        print milestone
         session = ibid.databases.trac()
-        print owner
 
         status = status or 'open'
         if status.lower() == 'open':
@@ -108,7 +118,7 @@ class Tickets(Processor, RPC):
         tickets = query.order_by(Ticket.id).all()
 
         if len(tickets) > 0:
-            event.addresponse(', '.join(['%s (%s): "%s"' % (ticket.id, ticket.owner, ticket.summary) for ticket in tickets]))
+            event.addresponse(u'%s', u', '.join(['%s (%s): "%s"' % (ticket.id, ticket.owner, ticket.summary) for ticket in tickets]))
         else:
             event.addresponse(u"No tickets found")
 
