@@ -10,7 +10,7 @@ from sqlalchemy import or_
 from pkg_resources import resource_exists, resource_string
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption
+from ibid.config import Option, IntOption, BoolOption, FloatOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
@@ -26,11 +26,16 @@ class Ircbot(irc.IRCClient):
         self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
+        self._timeout_deferred = reactor.callLater(self.factory.idle_timeout, self.factory.clientConnectionLost, self.factory, 'idle timeout')
         self.factory.log.info(u"Connected")
 
     def connectionLost(self, reason):
         self.factory.log.info(u"Disconnected (%s)", reason)
         irc.IRCClient.connectionLost(self, reason)
+
+    def dataReceived(self, data):
+        irc.IRCClient.dataReceived(self, data)
+        self._timeout_deferred.reset(self.factory.idle_timeout)
 
     def signedOn(self):
         if self.factory.modes:
@@ -155,6 +160,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
     channels = Option('channels', 'Channels to autojoin', [])
+    idle_timeout = FloatOption('idle_timeout', 'Seconds idle before disconnecting', 300)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
