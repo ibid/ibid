@@ -7,6 +7,16 @@ from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output
 
+try:
+    from ast import NodeTransformer, Pow, Name, Load, Call, copy_location, parse
+    transform_method='ast'
+
+except ImportError:
+    from compiler import ast, pycodegen, parse, misc, walk
+    class NodeTransformer(object):
+        pass
+    transform_method='compiler'
+
 help = {}
 log = logging.getLogger('math')
 
@@ -53,6 +63,26 @@ def limited_pow(*args):
             raise LimitException
     return pow(*args)
 
+class PowSubstitutionTransformer(NodeTransformer):
+    def visit_BinOp(self, node):
+        self.generic_visit(node)
+        if isinstance(node.op, Pow):
+            fnode = Name('pow', Load())
+            copy_location(fnode, node)
+            cnode = Call(fnode, [node.left, node.right], [], None, None)
+            copy_location(cnode, node)
+            return cnode
+        return node
+
+class PowSubstitutionWalker(object):
+    def visitPower(self, node, *args):
+        walk(node.left, self)
+        walk(node.right, self)
+        cnode = ast.CallFunc(ast.Name('pow'), [node.left, node.right], None, None)
+        node.left = cnode
+        # Little hack: instead of trying to turn node into a CallFunc, we just do pow(left, right)**1
+        node.right = ast.Const(1)
+
 class Calc(Processor):
     u"""[calc] <expression>"""
     feature = 'calc'
@@ -76,46 +106,18 @@ class Calc(Processor):
             if term in expression:
                 return
 
-        # Replace the power operator with our limited pow function
-        # Due to its binding, we try to match from right to left, but respect brackets
-        pow_re = re.compile(r'^(.*\)|(.*?)((?:[0-9.]+[eE]-?)?\d+))\s*\*\*\s*(\w*\(.*|[+-~]?\s*[0-9.]+(?:[eE]-?\d+)?)(.*?)$')
-        func_re = re.compile(r'^(.*?[\s(])(\w+)$')
-        while '**' in expression:
-            brleft, prefix, left, right, suffix = pow_re.match(expression).groups()
-            if left == None and prefix == None:
-                left = brleft
-                prefix = u''
-
-            if ')' in left:
-                brackets = 0
-                for pos, c in enumerate(reversed(left)):
-                    if c == ')':
-                        brackets += 1
-                    elif c == '(':
-                        brackets -= 1
-                        if brackets == 0:
-                            prefix, left = prefix + left[:-pos - 1], left[-pos - 1:]
-                            # The open bracket may have been preceeded by a function name
-                            m = func_re.match(prefix)
-                            if m:
-                                prefix, left = m.group(1), m.group(2) + left
-
-            if '(' in right:
-                brackets = 0
-                for pos, c in enumerate(right):
-                    if c == '(':
-                        brackets += 1
-                    elif c == ')':
-                        brackets -= 1
-                        if brackets == 0:
-                            right, suffix = right[:pos + 1], right[pos + 1:]
-
-            expression = u'%s pow(%s, %s) %s' % (prefix, left, right, suffix)
-
-        #log.debug('Normalised expression to %s', expression)
-
         try:
-            result = eval(expression, {'__builtins__': None}, self.safe)
+            ast = parse(expression, mode='eval')
+            if transform_method == 'ast':
+                ast = PowSubstitutionTransformer().visit(ast)
+                code = compile(ast, "<string>", 'eval')
+            else:
+                misc.set_filename('<string>', ast)
+                walk(ast, PowSubstitutionWalker())
+                code = pycodegen.ExpressionCodeGenerator(ast).getCode()
+
+            result = eval(code, {'__builtins__': None}, self.safe)
+
         except ZeroDivisionError, e:
             event.addresponse(u"I can't divide by zero.")
             return
