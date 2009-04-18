@@ -1,10 +1,13 @@
 import logging
+from os import kill
 import re
+from signal import SIGTERM
 from subprocess import Popen, PIPE
+from time import time, sleep
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, FloatOption
 from ibid.utils import file_in_path, unicode_output
 
 try:
@@ -27,6 +30,7 @@ class BC(Processor):
     feature = 'bc'
 
     bc = Option('bc', 'Path to bc executable', 'bc')
+    bc_timeout = FloatOption('bc_timeout', 'Maximum BC execution time (sec)', 2.0)
 
     def setup(self):
         if not file_in_path(self.bc):
@@ -35,7 +39,21 @@ class BC(Processor):
     @match(r'^bc\s+(.+)$')
     def calculate(self, event, expression):
         bc = Popen([self.bc, '-l'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, error = bc.communicate(expression.encode('utf-8') + '\n')
+        start_time = time()
+        bc.stdin.write(expression.encode('utf-8') + '\n')
+        bc.stdin.close()
+
+        while bc.poll() is None and time() - start_time < self.bc_timeout:
+            sleep(0.1)
+
+        if bc.poll() is None:
+            kill(bc.pid, SIGTERM)
+            event.addresponse(u'Sorry, that took too long. I stopped waiting')
+            return
+
+        output = bc.stdout.read()
+        error = bc.stderr.read()
+        
         code = bc.wait()
 
         if code == 0:
@@ -46,8 +64,8 @@ class BC(Processor):
             else:
                 error = unicode_output(error.strip())
                 error = error.split(":", 1)[1].strip()
-                error = error[0].lower() + error[1:]
-                event.addresponse(u"You can't %s", error)
+                error = error[0].lower() + error[1:].split('\n')[0]
+                event.addresponse(u"I'm sorry, I couldn't deal with the %s", error)
         else:
             event.addresponse(u"Error running bc")
             error = unicode_output(error.strip())
@@ -114,7 +132,7 @@ class Calc(Processor):
             ast = parse(expression, mode='eval')
             if transform_method == 'ast':
                 ast = PowSubstitutionTransformer().visit(ast)
-                code = compile(ast, "<string>", 'eval')
+                code = compile(ast, '<string>', 'eval')
             else:
                 misc.set_filename('<string>', ast)
                 walk(ast, PowSubstitutionWalker())
