@@ -63,6 +63,7 @@ def limited_pow(*args):
             raise LimitException
     return pow(*args)
 
+# ast method
 class PowSubstitutionTransformer(NodeTransformer):
     def visit_BinOp(self, node):
         self.generic_visit(node)
@@ -74,6 +75,7 @@ class PowSubstitutionTransformer(NodeTransformer):
             return cnode
         return node
 
+# compiler method
 class PowSubstitutionWalker(object):
     def visitPower(self, node, *args):
         walk(node.left, self)
@@ -107,6 +109,8 @@ class Calc(Processor):
                 return
 
         try:
+            # We need to remove all power operators and replace with our limited pow
+            # ast is the new method (Python >=2.6) compiler is the old 
             ast = parse(expression, mode='eval')
             if transform_method == 'ast':
                 ast = PowSubstitutionTransformer().visit(ast)
