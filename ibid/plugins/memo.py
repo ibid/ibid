@@ -36,8 +36,8 @@ class Memo(Base):
         self.private = private
         self.delivered = False
 
-Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
-Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)
+Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, backref='sender')
+Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
     u"""(tell|pm|privmsg|msg) <person> <message>"""
