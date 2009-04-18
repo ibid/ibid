@@ -36,7 +36,7 @@ class Ircbot(irc.IRCClient):
         irc.IRCClient.connectionLost(self, reason)
 
     def _idle_ping(self):
-        self.factory.log.debug(u'Sending idle PING')
+        self.factory.log.log(logging.DEBUG - 5, u'Sending idle PING')
         self._ping_deferred = None
         self._reconnect_deferred = reactor.callLater(self.factory.pong_timeout, self._timeout_reconnect)
         self.sendLine('PING foo')
@@ -47,7 +47,7 @@ class Ircbot(irc.IRCClient):
 
     def irc_PONG(self, prefix, params):
         if params[-1] == 'foo' and self._reconnect_deferred is not None:
-            self.factory.log.debug(u'Received PONG')
+            self.factory.log.log(logging.DEBUG - 5, u'Received PONG')
             self._reconnect_deferred.cancel()
             self._reconnect_deferred = None
             self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
