@@ -10,11 +10,12 @@ import ibid
 from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack
 
-parser = OptionParser(usage=u'%prog <filename>')
+parser = OptionParser(usage=u'%prog <factpack>')
+parser.add_option('-r', '--remove', action='store_true')
 options, args = parser.parse_args()
 
 if len(args) != 1:
-    parser.error(u'No filename specified')
+    parser.error(u'No factpack specified')
 
 filename = args[0]
 
@@ -25,6 +26,24 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 session = ibid.databases.ibid()
 session.begin()
+
+if options.remove:
+    factpack = session.query(Factpack).filter_by(name=filename).first()
+    if not factpack:
+        print >> stderr, u'Factpack not loaded'
+        exit(3)
+
+    for fname in session.query(FactoidName).filter_by(factpack=factpack.id).all():
+        session.delete(fname)
+    for fvalue in session.query(FactoidValue).filter_by(factpack=factpack.id).all():
+        session.delete(fvalue)
+
+    session.delete(factpack)
+    session.commit()
+    session.close()
+
+    print u"Factpack removed"
+    exit(0)
 
 if not exists(filename):
     print >> stderr, u"File doesn't exist"
@@ -60,6 +79,6 @@ for names, values in facts:
 
 session.commit()
 session.close()
-print "Done"
+print "Factpack imported"
 
 # vi: set et sta sw=4 ts=4:
