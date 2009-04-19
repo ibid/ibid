@@ -408,7 +408,7 @@ class Modify(Processor):
             session.close()
             event.addresponse(True)
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).+(?P=sep)[gir]*)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
     @authorise
     def modify(self, event, name, number, pattern, is_regex, operation, separator):
         session = ibid.databases.ibid()
