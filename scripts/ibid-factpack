@@ -34,14 +34,20 @@ if options.remove:
         print >> stderr, u'Factpack not loaded'
         exit(3)
 
+    extras = []
     for factoid in session.query(Factoid).filter_by(factpack=factpack.id).all():
         for part in factoid.names + factoid.values:
             if part.factpack or options.force:
                 session.delete(part)
             else:
-                print >> stderr, u'Factoids have been modified. Use -f to force removal.'
-                exit(6)
+                extras.append(hasattr(part, 'name') and part.name or part.value)
         session.delete(factoid)
+
+    if extras and not options.force:
+        print >> stderr, u'The following factoid entries have been added. Use -f to force removal.'
+        for extra in extras:
+            print extra
+        exit(6)
 
     session.delete(factpack)
     session.commit()
