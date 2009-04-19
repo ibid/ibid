@@ -228,8 +228,9 @@ class Search(Processor):
             is_regex = bool(m.group(2))
 
         session = ibid.databases.ibid()
-        count = session.query(FactoidValue.factoid_id, func.count(u'*').label('count')).group_by(FactoidValue.factoid_id).subquery()
-        query = session.query(Factoid, count.c.count).add_entity(FactoidName).join('names').join('values').outerjoin((count, Factoid.id==count.c.factoid_id))
+        query = session.query(Factoid)\
+                .join(Factoid.names).add_entity(FactoidName)\
+                .join(Factoid.values)
 
         if search_type.startswith('fact'):
             filter_on = (FactoidName.name,)
@@ -252,7 +253,7 @@ class Search(Processor):
         matches = query[start:start+limit]
 
         if matches:
-            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (fname.name, values) for factoid, values, fname in matches))
+            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (fname.name, len(factoid.values)) for factoid, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
