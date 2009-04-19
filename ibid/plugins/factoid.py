@@ -192,7 +192,8 @@ class Forget(Processor):
             return
 
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).join('names').filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+        factoid = session.query(Factoid).join(Factoid.names)\
+                .filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
@@ -337,7 +338,8 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
+        factoid = session.query(Factoid).join(Factoid.names)\
+                .filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if factoid:
             if correction:
                 identities = get_identities(event, session)
