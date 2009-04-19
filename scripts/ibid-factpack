@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from sys import argv, exit, stderr
-from os.path import basename
+from os.path import basename, exists
 from optparse import OptionParser
 
 from simplejson import loads
@@ -26,16 +26,21 @@ ibid.reloader.reload_databases()
 session = ibid.databases.ibid()
 session.begin()
 
+if not exists(filename):
+    print >> stderr, u"File doesn't exist"
+    exit(3)
+
 try:
     facts = loads(open(filename).read())
 except ValueError, e:
     print >> stderr, u"Invalid factpack"
+    exit(4)
 
 name = basename(filename).replace('.json', '')
 factpack = session.query(Factpack).filter_by(name=name).first()
 if factpack:
     print >> stderr, u'Factpack is already imported'
-    exit(1)
+    exit(5)
 
 factpack = Factpack(name)
 session.save(factpack)
