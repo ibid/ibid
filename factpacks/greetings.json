@@ -1,6 +1,7 @@
 [
 [["Hi", "Hello", "Hey", "Sup", "Afternoon", "Morning", "Evening"], ["<reply> Hello $who", "<reply> Howzit $who", "<reply> Sup $who", "<action> waves to $who"]],
 [["How are you"], ["<reply> $who: I'm doing well thanks", "<reply> $who: Same as yesterday"]],
-[["Thanks", "Thank yo"], ["<reply> $who: Sure", "<reply> $who: Okay :-]", "<reply> $who: No problem"]],
-[["Bye", "kbye"], ["<reply> kbye $who", "<reply> $who: Bye"]]
+[["Thanks", "Thank yo"], ["<reply> $who: Sure", "<reply> $who: Okay :-)", "<reply> $who: No problem"]],
+[["Bye", "kbye"], ["<reply> kbye $who", "<reply> $who: Bye"]],
+[["Botsnack"], ["<reply> $who: :-)", "<reply> Yummy!", "<action> munches", "<reply> *crunch*"]]
 ]
