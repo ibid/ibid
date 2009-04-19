@@ -4,6 +4,8 @@ from sys import argv, exit, stderr
 from os.path import basename
 from optparse import OptionParser
 
+from simplejson import loads
+
 import ibid
 from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack
@@ -24,10 +26,12 @@ ibid.reloader.reload_databases()
 session = ibid.databases.ibid()
 session.begin()
 
-locals = {}
-execfile(argv[1], {}, locals)
+try:
+    facts = loads(open(filename).read())
+except ValueError, e:
+    print >> stderr, u"Invalid factpack"
 
-name = basename(filename).replace('.py', '')
+name = basename(filename).replace('.json', '')
 factpack = session.query(Factpack).filter_by(name=name).first()
 if factpack:
     print >> stderr, u'Factpack is already imported'
@@ -37,7 +41,7 @@ factpack = Factpack(name)
 session.save(factpack)
 session.flush()
 
-for names, values in locals['facts']:
+for names, values in facts:
     factoid = Factoid()
     for name in names:
         fname = FactoidName(unicode(name), None)
