@@ -25,9 +25,14 @@ class FactoidName(Base):
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('factpack', Integer, ForeignKey('factpacks.id')),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class FactoidNameSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+
+    __table__.versioned_schema = FactoidNameSchema(__table__, 2)
 
     def __init__(self, name, identity_id, factoid_id=None):
         self.name = name
@@ -44,9 +49,14 @@ class FactoidValue(Base):
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('factpack', Integer, ForeignKey('factpacks.id')),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class FactoidValueSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+
+    __table__.versioned_schema = FactoidValueSchema(__table__, 2)
 
     def __init__(self, value, identity_id, factoid_id=None):
         self.value = value
@@ -69,6 +79,20 @@ class Factoid(Base):
 
     def __repr__(self):
         return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))
+
+class Factpack(Base):
+    __table__ = Table('factpacks', Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', Unicode(64)),
+    useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return u'<Factpack %s>' % (self.name,)
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
