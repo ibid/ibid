@@ -80,13 +80,17 @@ def escape_name(name):
 
 def get_factoid(session, name, number, pattern, is_regex, all=False):
     factoid = None
-    query = session.query(Factoid).add_entity(FactoidName).add_entity(FactoidValue).join('names').filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\').join('values')
+    # Reversed LIKE because factoid name contains SQL wildcards if factoid supports arguments
+    query = session.query(Factoid)\
+            .add_entity(FactoidName).join(Factoid.names)\
+            .add_entity(FactoidValue).join(Factoid.values)\
+            .filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
     if pattern:
         if is_regex:
             query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
         else:
             pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            query = query.filter(FactoidValue.value.like(pattern))
+            query = query.filter(FactoidValue.value.like(pattern, escape='\\'))
     if number:
         try:
             factoid = query.order_by(FactoidValue.id)[int(number)]
