@@ -34,10 +34,11 @@ class FactoidName(Base):
 
     __table__.versioned_schema = FactoidNameSchema(__table__, 2)
 
-    def __init__(self, name, identity_id, factoid_id=None):
+    def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
         self.factoid_id = factoid_id
         self.identity_id = identity_id
+        self.factpack = factpack
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
@@ -58,10 +59,11 @@ class FactoidValue(Base):
 
     __table__.versioned_schema = FactoidValueSchema(__table__, 2)
 
-    def __init__(self, value, identity_id, factoid_id=None):
+    def __init__(self, value, identity_id, factoid_id=None, factpack=None):
         self.value = value
         self.factoid_id = factoid_id
         self.identity_id = identity_id
+        self.factpack = factpack
 
     def __repr__(self):
         return u'<FactoidValue %s %s>' % (self.factoid_id, self.value)
@@ -70,12 +72,22 @@ class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('factpack', Integer, ForeignKey('factpacks.id')),
     useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     names = relation(FactoidName, cascade='all,delete', backref='factoid')
     values = relation(FactoidValue, cascade='all,delete', backref='factoid')
+
+    class FactoidSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+
+    __table__.versioned_schema = FactoidSchema(__table__, 2)
+
+    def __init__(self, factpack=None):
+        self.factpack = factpack
 
     def __repr__(self):
         return u"<Factoid %s = %s>" % (', '.join([name.name for name in self.names]), ', '.join([value.value for value in self.values]))

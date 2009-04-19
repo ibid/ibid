@@ -66,14 +66,12 @@ session.save(factpack)
 session.flush()
 
 for names, values in facts:
-    factoid = Factoid()
+    factoid = Factoid(factpack.id)
     for name in names:
-        fname = FactoidName(unicode(name), None)
-        fname.factpack = factpack.id
+        fname = FactoidName(unicode(name), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
-        fvalue = FactoidValue(unicode(value), None)
-        fvalue.factpack = factpack.id
+        fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
         factoid.values.append(fvalue)
     session.save(factoid)
 
