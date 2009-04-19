@@ -11,7 +11,8 @@ from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack
 
 parser = OptionParser(usage=u'%prog <factpack>')
-parser.add_option('-r', '--remove', action='store_true')
+parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
+parser.add_option('-f', '--force', action='store_true', help='Remove factoids which have been modified')
 options, args = parser.parse_args()
 
 if len(args) != 1:
@@ -33,10 +34,14 @@ if options.remove:
         print >> stderr, u'Factpack not loaded'
         exit(3)
 
-    for fname in session.query(FactoidName).filter_by(factpack=factpack.id).all():
-        session.delete(fname)
-    for fvalue in session.query(FactoidValue).filter_by(factpack=factpack.id).all():
-        session.delete(fvalue)
+    for factoid in session.query(Factoid).filter_by(factpack=factpack.id).all():
+        for part in factoid.names + factoid.values:
+            if part.factpack or options.force:
+                session.delete(part)
+            else:
+                print >> stderr, u'Factoids have been modified. Use -f to force removal.'
+                exit(6)
+        session.delete(factoid)
 
     session.delete(factpack)
     session.commit()
