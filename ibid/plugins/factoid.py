@@ -78,13 +78,24 @@ verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
-def get_factoid(session, name, number, pattern, is_regex, all=False):
+def get_factoid(session, name, number, pattern, is_regex, all=False, literal=False):
+    """session: SQLAlchemy session
+    name: Factoid name (can contain arguments unless literal query)
+    number: Return factoid[number] (or factoid[number:] for literal queries)
+    pattern: Return factoids matching this pattern (cannot be used in conjuction with number)
+    is_regex: Pattern is a real regex
+    all: Return a random factoid from the set if False
+    literal: Match factoid name literally (implies all)
+    """
     factoid = None
     # Reversed LIKE because factoid name contains SQL wildcards if factoid supports arguments
     query = session.query(Factoid)\
             .add_entity(FactoidName).join(Factoid.names)\
-            .add_entity(FactoidValue).join(Factoid.values)\
-            .filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
+            .add_entity(FactoidValue).join(Factoid.values)
+    if literal:
+        query = query.filter(func.lower(FactoidName.name)==escape_name(name).lower())
+    else:
+        query = query.filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
     if pattern:
         if is_regex:
             query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
@@ -93,27 +104,30 @@ def get_factoid(session, name, number, pattern, is_regex, all=False):
             query = query.filter(FactoidValue.value.like(pattern, escape='\\'))
     if number:
         try:
-            factoid = query.order_by(FactoidValue.id)[int(number)]
+            if literal:
+                return query.order_by(FactoidValue.id)[int(number):]
+            else:
+                factoid = query.order_by(FactoidValue.id)[int(number)]
         except IndexError:
             return
-    if all:
+    if all or literal:
         return factoid and [factoid] or query.all()
     else:
         return factoid or query.order_by(func.random()).first()
 
 class Utils(Processor):
-    u"""literal <name> [starting from <number>]"""
+    u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
-    @match(r'^literal\s+(.+?)(?:\s+start(?:ing)?\s+(?:from\s+)?(\d+))?$')
-    def literal(self, event, name, start):
-        start = start and int(start) or 0
+    @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
+    def literal(self, event, name, number, pattern, is_regex):
         session = ibid.databases.ibid()
-        factoid = session.query(Factoid).options(eagerload('values')).join('names').filter(func.lower(FactoidName.name)==escape_name(name).lower()).order_by(FactoidValue.id).first()
-        if factoid:
-            event.addresponse(u'%s', u', '.join([u'%s: %s' % (factoid.values.index(value), value.value) for value in factoid.values[start:]]))
-
+        factoids = get_factoid(session, name, number, pattern, is_regex, literal=True)
         session.close()
+        number = number and int(number) or 0
+        if factoids:
+            event.addresponse(u'%s', u', '.join(u'%i: %s'
+                % (index + number, value.value) for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
     u"""forget <name> [( #<number> | /<pattern>/[r] )]
@@ -127,7 +141,7 @@ class Forget(Processor):
     @authorise
     def forget(self, event, name, number, pattern, is_regex):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event, session)
@@ -364,7 +378,7 @@ class Modify(Processor):
     @authorise
     def append(self, event, name, number, pattern, is_regex, suffix):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
                 event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
@@ -396,7 +410,7 @@ class Modify(Processor):
     @authorise
     def modify(self, event, name, number, pattern, is_regex, operation, separator):
         session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, True)
+        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
                 event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
