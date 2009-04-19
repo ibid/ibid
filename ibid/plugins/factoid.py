@@ -78,6 +78,9 @@ verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
 
+def unescape_name(name):
+    return name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_')
+
 def get_factoid(session, name, number, pattern, is_regex, all=False, literal=False):
     """session: SQLAlchemy session
     name: Factoid name (can contain arguments unless literal query)
@@ -253,7 +256,7 @@ class Search(Processor):
         matches = query[start:start+limit]
 
         if matches:
-            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (fname.name, len(factoid.values)) for factoid, fname in matches))
+            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
@@ -319,7 +322,7 @@ class Get(Processor, RPC):
             if count:
                 return {'reply': reply}
 
-            reply = u'%s %s' % (fname.name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_'), reply)
+            reply = u'%s %s' % (unescape_name(fname.name), reply)
             return reply
 
 class Set(Processor):
