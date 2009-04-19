@@ -83,7 +83,7 @@ class Factoid(Base):
 class Factpack(Base):
     __table__ = Table('factpacks', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64)),
+    Column('name', Unicode(64), nullable=False, unique=True),
     useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)

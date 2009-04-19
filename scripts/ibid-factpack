@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from sys import argv, exit
+from sys import argv, exit, stderr
 from os.path import basename
 from optparse import OptionParser
 
@@ -28,6 +28,11 @@ locals = {}
 execfile(argv[1], {}, locals)
 
 name = basename(filename).replace('.py', '')
+factpack = session.query(Factpack).filter_by(name=name).first()
+if factpack:
+    print >> stderr, u'Factpack is already imported'
+    exit(1)
+
 factpack = Factpack(name)
 session.save(factpack)
 session.flush()
