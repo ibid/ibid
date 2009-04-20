@@ -8,7 +8,7 @@ from simplejson import loads
 
 import ibid
 from ibid.config import FileConfig
-from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack
+from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, escape_name
 
 parser = OptionParser(usage=u'%prog <factpack>')
 parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
@@ -79,7 +79,7 @@ session.flush()
 for names, values in facts:
     factoid = Factoid(factpack.id)
     for name in names:
-        fname = FactoidName(unicode(name), None, factpack=factpack.id)
+        fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
         fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
