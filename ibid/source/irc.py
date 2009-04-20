@@ -10,7 +10,7 @@ from sqlalchemy import or_
 from pkg_resources import resource_exists, resource_string
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption
+from ibid.config import Option, IntOption, BoolOption, FloatOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
@@ -18,6 +18,8 @@ from ibid.event import Event
 class Ircbot(irc.IRCClient):
 
     versionNum = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or ''
+    _ping_deferred = None
+    _reconnect_deferred = None
 
     def connectionMade(self):
         self.nickname = self.factory.nick.encode('utf-8')
@@ -26,11 +28,39 @@ class Ircbot(irc.IRCClient):
         self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
+        self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
         self.factory.log.info(u"Connected")
 
     def connectionLost(self, reason):
         self.factory.log.info(u"Disconnected (%s)", reason)
         irc.IRCClient.connectionLost(self, reason)
+
+    def _idle_ping(self):
+        self.factory.log.log(logging.DEBUG - 5, u'Sending idle PING')
+        self._ping_deferred = None
+        self._reconnect_deferred = reactor.callLater(self.factory.pong_timeout, self._timeout_reconnect)
+        self.sendLine('PING idle-ibid')
+
+    def _timeout_reconnect(self):
+        self.factory.log.info(u'Ping-Pong timeout. Reconnecting')
+        self.factory.clientConnectionLost(self.factory, 'pingpong timeout')
+
+    def irc_PONG(self, prefix, params):
+        if params[-1] == 'idle-ibid' and self._reconnect_deferred is not None:
+            self.factory.log.log(logging.DEBUG - 5, u'Received PONG')
+            self._reconnect_deferred.cancel()
+            self._reconnect_deferred = None
+            self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
+        
+    def dataReceived(self, data):
+        irc.IRCClient.dataReceived(self, data)
+        if self._ping_deferred is not None:
+            self._ping_deferred.reset(self.factory.ping_interval)
+
+    def sendLine(self, line):
+        irc.IRCClient.sendLine(self, line)
+        if self._ping_deferred is not None:
+            self._ping_deferred.reset(self.factory.ping_interval)
 
     def signedOn(self):
         if self.factory.modes:
@@ -155,6 +185,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
     channels = Option('channels', 'Channels to autojoin', [])
+    ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
+    pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
