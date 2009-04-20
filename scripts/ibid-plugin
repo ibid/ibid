@@ -50,6 +50,7 @@ ibid.reloader.reload_dispatcher()
 
 class TestSource(dict):
     type = 'test'
+    permissions = []
 
 ibid.sources[u'test_source'] = TestSource()
 

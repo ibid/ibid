@@ -38,8 +38,8 @@ class Memo(Base):
         self.private = private
         self.delivered = False
 
-Memo.sender = relation(Identity, primaryjoin=Memo.from_id==Identity.id)
-Memo.recipient = relation(Identity, primaryjoin=Memo.to_id==Identity.id)
+Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, backref='sender')
+Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
     u"""(tell|pm|privmsg|msg) <person> <message>"""
@@ -62,8 +62,10 @@ class Tell(Processor):
                 if not identity:
                     identity = account.identities[0]
         if not to:
-            event.addresponse(u"I don't know who %s is", who)
-            return
+            to = Identity(event.source, who)
+            session.save(to)
+            session.flush()
+            log.info(u"Created identity %s for %s on %s", to.id, to.identity, to.source)
 
         if permission(u'recvmemo', to.account and to.account.id or None, to.source) != 'yes':
             event.addresponse(u'Just tell %s yourself', who)
