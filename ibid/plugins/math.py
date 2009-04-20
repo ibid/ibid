@@ -1,12 +1,27 @@
+import logging
+from os import kill
 import re
+from signal import SIGTERM
 from subprocess import Popen, PIPE
+from time import time, sleep
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, FloatOption
 from ibid.utils import file_in_path, unicode_output
 
+try:
+    from ast import NodeTransformer, Pow, Name, Load, Call, copy_location, parse
+    transform_method='ast'
+
+except ImportError:
+    from compiler import ast, pycodegen, parse, misc, walk
+    class NodeTransformer(object):
+        pass
+    transform_method='compiler'
+
 help = {}
+log = logging.getLogger('math')
 
 help['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
@@ -15,6 +30,7 @@ class BC(Processor):
     feature = 'bc'
 
     bc = Option('bc', 'Path to bc executable', 'bc')
+    bc_timeout = FloatOption('bc_timeout', 'Maximum BC execution time (sec)', 2.0)
 
     def setup(self):
         if not file_in_path(self.bc):
@@ -23,7 +39,21 @@ class BC(Processor):
     @match(r'^bc\s+(.+)$')
     def calculate(self, event, expression):
         bc = Popen([self.bc, '-l'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, error = bc.communicate(expression.encode('utf-8') + '\n')
+        start_time = time()
+        bc.stdin.write(expression.encode('utf-8') + '\n')
+        bc.stdin.close()
+
+        while bc.poll() is None and time() - start_time < self.bc_timeout:
+            sleep(0.1)
+
+        if bc.poll() is None:
+            kill(bc.pid, SIGTERM)
+            event.addresponse(u'Sorry, that took too long. I stopped waiting')
+            return
+
+        output = bc.stdout.read()
+        error = bc.stderr.read()
+        
         code = bc.wait()
 
         if code == 0:
@@ -34,21 +64,52 @@ class BC(Processor):
             else:
                 error = unicode_output(error.strip())
                 error = error.split(":", 1)[1].strip()
-                error = error[0].lower() + error[1:]
-                event.addresponse(u"You can't %s", error)
+                error = error[0].lower() + error[1:].split('\n')[0]
+                event.addresponse(u"I'm sorry, I couldn't deal with the %s", error)
         else:
             event.addresponse(u"Error running bc")
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
 help['calc'] = u'Returns the anwser to mathematical expressions'
+class LimitException(Exception):
+    pass
+
+def limited_pow(*args):
+    for arg, limit in zip(args, (1e100, 200)):
+        if isinstance(arg, int) and (arg > limit or arg < -limit):
+            raise LimitException
+    return pow(*args)
+
+# ast method
+class PowSubstitutionTransformer(NodeTransformer):
+    def visit_BinOp(self, node):
+        self.generic_visit(node)
+        if isinstance(node.op, Pow):
+            fnode = Name('pow', Load())
+            copy_location(fnode, node)
+            cnode = Call(fnode, [node.left, node.right], [], None, None)
+            copy_location(cnode, node)
+            return cnode
+        return node
+
+# compiler method
+class PowSubstitutionWalker(object):
+    def visitPower(self, node, *args):
+        walk(node.left, self)
+        walk(node.right, self)
+        cnode = ast.CallFunc(ast.Name('pow'), [node.left, node.right], None, None)
+        node.left = cnode
+        # Little hack: instead of trying to turn node into a CallFunc, we just do pow(left, right)**1
+        node.right = ast.Const(1)
+
 class Calc(Processor):
     u"""[calc] <expression>"""
     feature = 'calc'
 
     priority = 500
 
-    extras = ('abs', 'pow', 'round', 'min', 'max')
+    extras = ('abs', 'round', 'min', 'max')
     banned = ('for', 'yield', 'lambda')
 
     # Create a safe dict to pass to eval() as locals
@@ -57,6 +118,7 @@ class Calc(Processor):
     del safe['__builtins__']
     for function in extras:
         safe[function] = eval(function)
+    safe['pow'] = limited_pow
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
@@ -65,7 +127,19 @@ class Calc(Processor):
                 return
 
         try:
-            result = eval(expression, {'__builtins__': None}, self.safe)
+            # We need to remove all power operators and replace with our limited pow
+            # ast is the new method (Python >=2.6) compiler is the old 
+            ast = parse(expression, mode='eval')
+            if transform_method == 'ast':
+                ast = PowSubstitutionTransformer().visit(ast)
+                code = compile(ast, '<string>', 'eval')
+            else:
+                misc.set_filename('<string>', ast)
+                walk(ast, PowSubstitutionWalker())
+                code = pycodegen.ExpressionCodeGenerator(ast).getCode()
+
+            result = eval(code, {'__builtins__': None}, self.safe)
+
         except ZeroDivisionError, e:
             event.addresponse(u"I can't divide by zero.")
             return
@@ -76,6 +150,9 @@ class Calc(Processor):
             if unicode(e) == u"math domain error":
                 event.addresponse(u"I can't do that: %s", unicode(e))
                 return
+        except LimitException, e:
+            event.addresponse(u"I'm afraid I'm not allowed to play with big numbers")
+            return
         except Exception, e:
             return
 
