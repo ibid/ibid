@@ -92,7 +92,7 @@ for permission in (
         u'accounts', u'sources', u'plugins',
         u'core', u'admin', u'config',
         u'saydo', u'factoid', u'factoidadmin',
-        u'karma', u'karmaadmin'):
+        u'karma', u'karmaadmin', u'eval'):
     perm = Permission(permission, u'auth')
     account.permissions.append(perm)
 
