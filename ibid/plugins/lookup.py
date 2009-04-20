@@ -391,7 +391,12 @@ class Weather(Processor):
         soup = self._get_page(place)
         tds = soup.table.table.findAll('td')
 
-        values = {'place': tds[0].findAll('b')[1].contents[0], 'time': tds[0].findAll('b')[0].contents[0]}
+        # HACK: Some cities include a windchill row, but others don't
+        if len(tds) == 39:
+            del tds[3]
+            del tds[4]
+
+        values = {'place': tds[0].findAll('b')[1].string, 'time': tds[0].findAll('b')[0].string}
         for index, td in enumerate(tds[2::2]):
             values[self.labels[index]] = self._text(td)
 
@@ -401,8 +406,8 @@ class Weather(Processor):
         soup = self._get_page(place)
         forecasts = []
 
-        for td in soup.findAll('table')[2].findAll('td', align='left'):
-            day = td.b.contents[0]
+        for td in soup.findAll('table')[0].findAll('td', align='left'):
+            day = td.b.string
             forecast = td.contents[2]
             forecasts.append(u'%s: %s' % (day, self._text(forecast)))
 
