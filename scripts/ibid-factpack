@@ -18,7 +18,7 @@ options, args = parser.parse_args()
 if len(args) != 1:
     parser.error(u'No factpack specified')
 
-filename = args[0]
+filename = unicode(args[0])
 
 ibid.options = {'base': '.'}
 ibid.config = FileConfig("ibid.ini")
