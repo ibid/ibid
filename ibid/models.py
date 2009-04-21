@@ -1,4 +1,5 @@
 import logging
+import re
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, __version__
 from sqlalchemy.orm import relation
@@ -33,6 +34,7 @@ class VersionedSchema(object):
     definition, it is better style to repeat the Column() specification as the
     column might be altered in a future version.
     """
+    foreign_key_re = re.compile(r'^FOREIGN KEY\(.*?\) (REFERENCES .*)$', re.I)
 
     def __init__(self, table, version):
         self.table = table
@@ -108,12 +110,25 @@ class VersionedSchema(object):
 
         log.debug(u"Adding column %s to table %s", col.name, table.name)
 
+        constraints = table.constraints.copy()
         table.append_column(col)
+        constraints = table.constraints - constraints
 
         sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
 
-        session.execute('ALTER TABLE "%s" ADD COLUMN %s;' % (table.name, description))
+        for constraint in constraints:
+            sg.traverse_single(constraint)
+
+        constraints = []
+        for constraint in [x.strip() for x in sg.buffer.getvalue().split(',')]:
+            m = self.foreign_key_re.match(constraint)
+            if m:
+                constraints.append(m.group(1))
+            else:
+                constraints.append(constraint)
+
+        session.execute('ALTER TABLE "%s" ADD COLUMN %s %s;' % (table.name, description, " ".join(constraints)))
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
