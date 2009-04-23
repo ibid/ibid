@@ -5,6 +5,7 @@ from os.path import basename, exists
 from optparse import OptionParser
 
 from simplejson import loads
+from sqlalchemy.sql import func
 
 import ibid
 from ibid.config import FileConfig
@@ -13,6 +14,7 @@ from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, e
 parser = OptionParser(usage=u'%prog <factpack>')
 parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
 parser.add_option('-f', '--force', action='store_true', help='Remove factoids which have been modified')
+parser.add_option('-s', '--skip', action='store_true', help='Skip factoids which already exist in the database')
 options, args = parser.parse_args()
 
 if len(args) != 1:
@@ -76,15 +78,24 @@ factpack = Factpack(name)
 session.save(factpack)
 session.flush()
 
+existing = []
 for names, values in facts:
     factoid = Factoid(factpack.id)
     for name in names:
+        if session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first():
+            existing.append(name)
         fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
         fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
         factoid.values.append(fvalue)
     session.save(factoid)
+
+if existing and not options.skip:
+    print >> stderr, u'The following factoids already exist in the database. Please remove them before importing this factpack, or use -s to skip them'
+    for name in existing:
+        print >> stderr, name
+    exit(6)
 
 session.commit()
 session.close()
