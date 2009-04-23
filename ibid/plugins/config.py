@@ -36,7 +36,10 @@ class Config(Processor):
                 config[part] = {}
             config = config[part]
 
-        config[key.split('.')[-1]] = value
+        if ',' in value:
+            config[key.split('.')[-1]] = [part.strip() for part in value.split(',')]
+        else:
+            config[key.split('.')[-1]] = value
         ibid.config.write()
         ibid.reloader.reload_config()
         log.info(u"Set %s to %s", key, value)
