@@ -63,6 +63,12 @@ class Ircbot(irc.IRCClient):
             self._ping_deferred.reset(self.factory.ping_interval)
 
     def signedOn(self):
+        names = ibid.config.plugins['core']['names']
+        if self.nickname not in names:
+            self.factory.log.info(u'Adding "%s" to plugins.core.names', self.nickname)
+            names.append(self.nickname)
+            ibid.config.plugins['core']['names'] = names
+            ibid.reloader.reload_config()
         if self.factory.modes:
             self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
         for channel in self.factory.channels:
