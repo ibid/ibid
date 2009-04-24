@@ -125,7 +125,7 @@ class IPCalc(Processor):
 
         return (code, output)
 
-    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3})(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
     def ipcalc_netmask(self, event, address, netmask):
         address = address
         if netmask:
@@ -154,7 +154,7 @@ class IPCalc(Processor):
             error = unicode_output(error.strip())
             event.addresponse(u'%s', error.replace(u'\n', u' '))
 
-    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3})\s*-\s*((?:\d{1,3}\.){3}\d{1,3})$')
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})\s*-\s*((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})$')
     def ipcalc_deggregate(self, event, frm, to):
         code, output = self.call_ipcalc([frm, '-', to])
 
