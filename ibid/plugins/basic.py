@@ -7,7 +7,7 @@ help = {}
 
 help['saydo'] = u'Says or does stuff in a channel.'
 class SayDo(Processor):
-    u"""(say|do) <channel> <text>"""
+    u"""(say|do) in <channel> [on <source>] <text>"""
     feature = 'saydo'
 
     permission = u'saydo'
