@@ -24,7 +24,7 @@ class Config(Processor):
         ibid.config.reload()
         ibid.config.merge(FileConfig(join(ibid.options['base'], 'local.ini')))
         ibid.reloader.reload_config()
-        event.addresponse(u'Configuration reread')
+        event.addresponse(True)
         log.info(u'Reread configuration file')
 
     @match(r'^set\s+config\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
@@ -44,7 +44,7 @@ class Config(Processor):
         ibid.reloader.reload_config()
         log.info(u"Set %s to %s", key, value)
 
-        event.addresponse(u'Done')
+        event.addresponse(True)
 
     @match(r'^get\s+config\s+(\S+?)$')
     def get(self, event, key):
