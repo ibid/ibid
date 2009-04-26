@@ -126,4 +126,15 @@ class TimeZone(Processor):
         result = frm_zone.localize(time).astimezone(to_zone)
         event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo})
 
+    @match(r'^time\s+in\s+(\S+)$')
+    def time(self, event, place):
+        try:
+            zone = timezone(place)
+        except UnknownTimeZoneError, e:
+            event.addresponse(u"I don't know about the %s timezone", (e.message,))
+            return
+
+        t = datetime.now(zone)
+        event.addresponse(u'It is %(time)s on %(date)s in %(zone)s', {'time': t.strftime('%H:%M:%S'), 'date': t.strftime('%A, %d %B'), 'zone': zone})
+
 # vi: set et sta sw=4 ts=4:
