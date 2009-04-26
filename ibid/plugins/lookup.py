@@ -131,13 +131,13 @@ class FMyLife(Processor):
         if dom.getElementsByTagName('error'):
             return
 
-        text = dom.getElementsByTagName('item')[0]
-        if text:
+        items = dom.getElementsByTagName('item')
+        if items: 
             url = u"http://www.fmylife.com/%s/%s" % (
-                text.getElementsByTagName('category')[0].childNodes[0].nodeValue,
-                text.getAttribute('id'),
+                items[0].getElementsByTagName('category')[0].childNodes[0].nodeValue,
+                items[0].getAttribute('id'),
             )
-            text = text.getElementsByTagName('text')[0].childNodes[0].nodeValue
+            text = items[0].getElementsByTagName('text')[0].childNodes[0].nodeValue
 
             return u'%s : %s' % (url, text)
 
