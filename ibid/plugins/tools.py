@@ -1,6 +1,9 @@
 import re
 from random import random, randint
 from subprocess import Popen, PIPE
+from datetime import datetime
+
+from pytz import timezone, UnknownTimeZoneError
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -106,5 +109,21 @@ class Units(Processor):
                 })
             else:
                 event.addresponse(u"I can't do that: %s", result)
+
+class TimeZone(Processor):
+    u"""convert <time> <timezone> to <timezone>"""
+
+    @match(r'^when\s+is\s+(\d+)[:h](\d+)\s+(\S+)\s+in\s+(\S+)$')
+    def convert(self, event, hour, minute, frm, to):
+        time = datetime.today().replace(hour=int(hour), minute=int(minute), second=0)
+        try:
+            frm_zone = timezone(frm)
+            to_zone = timezone(to)
+        except UnknownTimeZoneError, e:
+            event.addresponse(u"I don't know about the %s timezone", (e.message,))
+            return
+
+        result = frm_zone.localize(time).astimezone(to_zone)
+        event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo})
 
 # vi: set et sta sw=4 ts=4:
