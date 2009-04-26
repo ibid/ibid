@@ -112,7 +112,7 @@ class Lotto(Processor):
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
 class FMyLife(Processor):
-    u"""fml (<number> | random | <category> | flop | top | last)
+    u"""fml (<number> | [random] | <category> | flop | top | last)
     fml categories"""
 
     feature = "fml"
@@ -157,6 +157,10 @@ class FMyLife(Processor):
             event.addresponse(u'%s', quote)
         else:
             event.addresponse(u'No such quote')
+
+    @match(r'^fml$')
+    def fml_default(self, event):
+        event.addresponse(self.remote_get('random'))
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
