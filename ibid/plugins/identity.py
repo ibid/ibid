@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy.orm import eagerload
 from sqlalchemy.sql import func
+from sqlalchemy import IntegrityError
 
 import ibid
 from ibid.plugins import Processor, match, auth_responses
@@ -260,8 +261,11 @@ class Identify(Processor):
             if not identity:
                 identity = Identity(event.source, event.sender['id'])
                 session.save_or_update(identity)
-                session.flush()
-                log.info(u"Created identity %s for %s on %s", identity.id, identity.identity, identity.source)
+                try:
+                    session.flush()
+                    log.info(u"Created identity %s for %s on %s", identity.id, identity.identity, identity.source)
+                except IntegrityError:
+                    identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender['id'].lower()).one()
 
             event.identity = identity.id
             if identity.account:
