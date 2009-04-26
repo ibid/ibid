@@ -1,8 +1,10 @@
 from urllib2 import urlopen
 from urllib import urlencode, quote
+from urlparse import urljoin
 from time import time
 from datetime import datetime
 from simplejson import loads
+from xml.dom.minidom import parse
 import re
 
 import feedparser
@@ -110,27 +112,55 @@ class Lotto(Processor):
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
 class FMyLife(Processor):
-    u"""fml (<number>|random)"""
+    u"""fml (<number> | random | <category> | flop | top | last)
+    fml categories"""
 
     feature = "fml"
 
+    api_url = Option('fml_api_url', 'FML API URL base', 'http://api.betacie.com/')
+    api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
+    fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
+
     def remote_get(self, id):
-        soup = get_html_parse_tree('http://www.fmylife.com/' + str(id))
+        url = urljoin(self.api_url, 'view/%s?%s' % (
+            id.isalnum() and id + '/nocomment' or quote(id),
+            urlencode({'language': self.fml_lang, 'key': self.api_key}))
+        )
+        dom = parse(urlopen(url))
 
-        quote = soup.find('div', id='wrapper').div.p
-        if quote:
-            url = u"http://www.fmylife.com" + quote.find('a', 'fmllink')['href']
-            quote = u"".join(tag.contents[0] for tag in quote.findAll(True))
+        if dom.getElementsByTagName('error'):
+            return
 
-            return u'%s: "%s"' % (url, quote)
+        text = dom.getElementsByTagName('item')[0]
+        if text:
+            url = u"http://www.fmylife.com/%s/%s" % (
+                text.getElementsByTagName('category')[0].childNodes[0].nodeValue,
+                text.getAttribute('id'),
+            )
+            text = text.getElementsByTagName('text')[0].childNodes[0].nodeValue
 
-    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random)$')
+            return u'%s : %s' % (url, text)
+
+    def setup(self):
+        url = urljoin(self.api_url, 'view/categories?' + urlencode({'language': self.fml_lang, 'key': self.api_key}))
+        dom = parse(urlopen(url))
+        self.categories = [cat.getAttribute('code') for cat in dom.getElementsByTagName('categorie')]
+
+        self.fml.im_func.pattern = re.compile(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|%s)$' % (
+            '|'.join(self.categories),
+        ), re.I)
+
+    @handler
     def fml(self, event, id):
         quote = self.remote_get(id)
         if quote:
             event.addresponse(u'%s', quote)
         else:
             event.addresponse(u'No such quote')
+
+    @match(r'^fml\s+categories$')
+    def list_categories(self, event):
+        event.addresponse(u'Categories: %s', u', '.join(self.categories))
 
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 class Twitter(Processor):
@@ -147,8 +177,8 @@ class Twitter(Processor):
     services = Option('services', 'Micro blogging services', default)
 
     def setup(self):
-        self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % ('|'.join(self.services.keys()),))
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$' % ('|'.join(self.services.keys()),))
+        self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % ('|'.join(self.services.keys()),), re.I)
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$' % ('|'.join(self.services.keys()),), re.I)
 
     def remote_update(self, service, id):
         f = urlopen('%sstatuses/show/%s.json' % (self.services[service], id))
