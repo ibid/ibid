@@ -1,37 +1,107 @@
 #!/usr/bin/env python
 
-from sys import argv, exit
+from sys import argv, exit, stderr
+from os.path import basename, exists
+from optparse import OptionParser
+
+from simplejson import loads
+from sqlalchemy.sql import func
 
 import ibid
 from ibid.config import FileConfig
-from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
+from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, escape_name
 
-if len(argv) != 2:
-    print 'Usage: %s <factpack>' % (argv[0], )
-    exit(1)
+parser = OptionParser(usage=u'%prog <factpack>')
+parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
+parser.add_option('-f', '--force', action='store_true', help='Remove factoids which have been modified')
+parser.add_option('-s', '--skip', action='store_true', help='Skip factoids which already exist in the database')
+options, args = parser.parse_args()
 
+if len(args) != 1:
+    parser.error(u'No factpack specified')
+
+filename = unicode(args[0])
+
+ibid.options = {'base': '.'}
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_databases()
-
-locals = {}
-execfile(argv[1], {}, locals)
-
 session = ibid.databases.ibid()
+session.begin()
 
-for names, values in locals['facts']:
-    factoid = Factoid()
+if options.remove:
+    factpack = session.query(Factpack).filter_by(name=filename).first()
+    if not factpack:
+        print >> stderr, u'Factpack not loaded'
+        exit(3)
+
+    extras = []
+    for factoid in session.query(Factoid).filter_by(factpack=factpack.id).all():
+        for part in factoid.names + factoid.values:
+            if part.factpack or options.force:
+                session.delete(part)
+            else:
+                extras.append(hasattr(part, 'name') and part.name or part.value)
+        session.delete(factoid)
+
+    if extras and not options.force:
+        print >> stderr, u'The following factoid entries have been added. Use -f to force removal.'
+        for extra in extras:
+            print extra
+        exit(6)
+
+    session.delete(factpack)
+    session.commit()
+    session.close()
+
+    print u"Factpack removed"
+    exit(0)
+
+if not exists(filename):
+    print >> stderr, u"File doesn't exist"
+    exit(3)
+
+try:
+    facts = loads(open(filename).read())
+except ValueError, e:
+    print >> stderr, u"Invalid factpack"
+    exit(4)
+
+name = basename(filename).replace('.json', '')
+factpack = session.query(Factpack).filter_by(name=name).first()
+if factpack:
+    print >> stderr, u'Factpack is already imported'
+    exit(5)
+
+factpack = Factpack(name)
+session.save(factpack)
+session.flush()
+
+existing = []
+for names, values in facts:
+    factoid = Factoid(factpack.id)
     for name in names:
-        fname = FactoidName(unicode(name), None)
+        if session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first():
+            existing.append(name)
+            continue
+        fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
-        fvalue = FactoidValue(unicode(value), None)
+        fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
         factoid.values.append(fvalue)
-    session.save(factoid)
+    if len(factoid.names) > 0:
+        session.save(factoid)
 
-session.flush()
+if existing and not options.skip:
+    print >> stderr, u'The following factoids already exist in the database. Please remove them before importing this factpack, or use -s to skip them'
+    for name in existing:
+        print >> stderr, name
+    session.rollback()
+    exit(6)
+
+session.commit()
 session.close()
-print "Done"
+print "Factpack imported"
 
 # vi: set et sta sw=4 ts=4:

@@ -1,0 +1,5 @@
+[
+[["roshambo rock"], ["<reply> $who: You win! I chose scissors :-(", "<reply> $who: We drew! I also chose rock", "<reply> $who: I win! I chose paper"]],
+[["roshambo paper"], ["<reply> $who: You win! I chose rock :-(", "<reply> $who: We drew! I also chose paper", "<reply> $who: I win! I chose scissors"]],
+[["roshambo scissors"], ["<reply> $who: You win! I chose paper :-(", "<reply> $who: We drew! I also chose scissors", "<reply> $who: I win! I chose rock"]]
+]
