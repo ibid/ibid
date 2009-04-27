@@ -257,15 +257,25 @@ class Identify(Processor):
                 return
 
             session = ibid.databases.ibid()
-            identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender['id'].lower()).first()
+            identity = session.query(Identity)\
+                    .options(eagerload('account'))\
+                    .filter(func.lower(Identity.source) == event.source.lower())\
+                    .filter(func.lower(Identity.identity) == event.sender['id'].lower())\
+                    .first()
             if not identity:
                 identity = Identity(event.source, event.sender['id'])
                 session.save_or_update(identity)
                 try:
                     session.flush()
-                    log.info(u"Created identity %s for %s on %s", identity.id, identity.identity, identity.source)
+                    log.info(u'Created identity %s for %s on %s', identity.id, identity.identity, identity.source)
                 except IntegrityError:
-                    identity = session.query(Identity).options(eagerload('account')).filter(func.lower(Identity.source)==event.source.lower()).filter(func.lower(Identity.identity)==event.sender['id'].lower()).one()
+                    session.expunge(identity)
+                    log.debug(u'Race encountered creating identity for %s on %s', event.sender['id'], event.source)
+                    identity = session.query(Identity)\
+                            .options(eagerload('account'))\
+                            .filter(func.lower(Identity.source) == event.source.lower())\
+                            .filter(func.lower(Identity.identity) == event.sender['id'].lower())\
+                            .one()
 
             event.identity = identity.id
             if identity.account:
