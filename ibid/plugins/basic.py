@@ -7,15 +7,17 @@ help = {}
 
 help['saydo'] = u'Says or does stuff in a channel.'
 class SayDo(Processor):
-    u"""(say|do) <channel> <text>"""
+    u"""(say|do) in <channel> [on <source>] <text>"""
     feature = 'saydo'
 
     permission = u'saydo'
 
-    @match(r'^(say|do)\s+(\S+)\s+(.*)$')
+    @match(r'^(say|do)\s+(?:in\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$')
     @authorise
-    def saydo(self, event, action, where, what):
-        reply = {'target': where, 'reply': what}
+    def saydo(self, event, action, channel, source, what):
+        reply = {'target': channel, 'reply': what}
+        if source:
+            reply['source'] = source
         if action.lower() == u"do":
             reply['action'] = True
 
