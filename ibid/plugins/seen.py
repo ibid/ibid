@@ -1,14 +1,18 @@
 from datetime import datetime
+import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago
+
+log = logging.getLogger('plugins.seen')
 
 help = {'seen': u'Records when people were last seen.'}
 
@@ -61,8 +65,11 @@ class See(Processor):
         sighting.time = datetime.now()
         sighting.count = sighting.count + 1
 
-        session.save_or_update(sighting)
-        session.flush()
+        try:
+            session.save_or_update(sighting)
+            session.flush()
+        except IntegrityError:
+            log.debug('Race on seen update for identity %s', event.identity)
         session.close()
 
 class Seen(Processor):
