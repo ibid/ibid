@@ -396,12 +396,14 @@ class DCClient(LineReceiver):
                 else:
                     self.hub_motd += message + '\n'
             else:
-                self.privmsg(speaker, False, message)
+                if speaker != self.my_nickname:
+                    self.privmsg(speaker, False, message)
         elif line.startswith('* ') or line.startswith('** '):
             speaker, message = line.split(' ', 2)[1:]
             speaker = _decode_htmlent(speaker)
             message = _decode_htmlent(message)
-            self.action(speaker, False, message)
+            if speaker != self.my_nickname:
+                self.action(speaker, False, message)
         else:
             log.error('Unrecognised command received: %s', line)
             return
