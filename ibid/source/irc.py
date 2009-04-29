@@ -43,7 +43,7 @@ class Ircbot(irc.IRCClient):
 
     def _timeout_reconnect(self):
         self.factory.log.info(u'Ping-Pong timeout. Reconnecting')
-        self.factory.clientConnectionLost(self.factory, 'pingpong timeout')
+        self.transport.loseConnection()
 
     def irc_PONG(self, prefix, params):
         if params[-1] == 'idle-ibid' and self._reconnect_deferred is not None:
