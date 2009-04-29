@@ -320,12 +320,12 @@ class DCClient(LineReceiver):
         "I asked for an IP, here it is"
         #TODO
 
-    _to_re = re.compile(r'^.* From: (.*) \$<.*> (.*)$')
+    _to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$')
     def dc_To(self, params):
         m = self._to_re.match(params)
         
         if m is None:
-            self.error('Cannot parse message: %s', params)
+            log.error('Cannot parse message: %s', params)
             return
         
         self.privmsg(_decode_htmlent(m.group(1)), True, _decode_htmlent(m.group(2)))
