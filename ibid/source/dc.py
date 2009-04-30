@@ -133,8 +133,8 @@ class DCBot(dcwords.DCClient):
             target = None
 
         if 'action' in response and response['action']:
-            if self.factory.action_supported:
-                self.say(target, u'/me ' + message)
+            if self.factory.action_prefix and target is None:
+                self.say(target, u'%s %s' % (self.factory.action_prefix, message))
             else:
                 self.say(target, u'* %s %s' % (self.my_nickname, message))
 
@@ -174,7 +174,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     sharesize = IntOption('sharesize', 'DC Share Size (bytes)', 0)
     slots = IntOption('slots', 'DC Open Slots', 0)
     trust_hubauth = BoolOption('trust_hubauth', 'Trust the server to authenticate users', False)
-    action_supported = BoolOption('action_supported', 'Can the server handle /me?', False)
+    action_prefix = Option('action_prefix', 'Command for actions (i.e. +me)', None)
     banned_prefixes = Option('banned_prefixes', 'Prefixes not allowed in bot responses, i.e. !', '')
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
