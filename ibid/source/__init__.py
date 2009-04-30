@@ -4,6 +4,7 @@ import ibid
 
 class IbidSourceFactory(object):
 
+    supports = ()
     auth = ()
     permissions = ()
 

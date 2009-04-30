@@ -163,6 +163,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
     auth = ['hub', 'op']
+    supports = ('action',)
 
     port = IntOption('port', 'Server port number', 411)
     server = Option('server', 'Server hostname')
