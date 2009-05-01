@@ -194,7 +194,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:
-    maxDelay = IntOption('max_delay', 'Max seconds to wait inbetween reconnects', 120)
+    maxDelay = IntOption('max_delay', 'Max seconds to wait inbetween reconnects', 900)
+    factor = FloatOption('delay_factor', 'Factor to multiply delay inbetween reconnects by', 2)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
