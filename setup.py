@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+from os.path import exists
 from subprocess import Popen, PIPE
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 def bzr_revision():
+    if not exists('.bzr'):
+        return
+
     bzr = Popen(('bzr', 'tags', '--sort', 'time'), stdout=PIPE)
     output, error = bzr.communicate()
     code = bzr.wait()
@@ -46,7 +50,6 @@ setup(
     author_email='ibid@omnia.za.net',
     license='MIT',
     py_modules=['ibid'],
-    setup_requires=['setuptools_bzr'],
     install_requires=[
         'SQLAlchemy>=0.4.6',
         'wokkel>=0.4',
@@ -61,15 +64,13 @@ setup(
         #'ConfigObj>=4.5.3',
         #'validate>=0.3.2',
     ],
-    packages=find_packages(exclude=['lib']),
+    packages=['ibid', 'tracibid', 'lib', 'twisted'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
     },
-    scripts=['scripts/ibid', 'scripts/ibid-setup', 'scripts/ibid-factpack', 'scripts/ibid_pb', 'scripts/ibid_import'],
+    scripts=['scripts/ibid', 'scripts/ibid-setup', 'scripts/ibid-factpack', 'scripts/ibid_pb', 'scripts/ibid_import', 'scripts/ibid.tac', 'scripts/ibid-plugin'],
     include_package_data=True,
-    exclude_package_data={
-        'lib': ['*'],
-    }
+    zip_safe=False,
 )
 
 # vi: set et sta sw=4 ts=4:
