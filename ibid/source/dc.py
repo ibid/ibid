@@ -124,9 +124,11 @@ class DCBot(dcwords.DCClient):
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
 
-        if message[0] in self.factory.banned_prefixes:
-            self.factory.log.info(u'Suppressed banned response: %s', message)
-            return
+        if message:
+            for prefix in self.factory.banned_prefixes:
+                if message.startswith(prefix):
+                    self.factory.log.info(u'Suppressed banned response: %s', message)
+                    return
 
         target = response['target']
         if target == '$public':
