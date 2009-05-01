@@ -53,7 +53,7 @@ class DCBot(dcwords.DCClient):
 
     def dc_NickList(self, params):
         dcwords.DCClient.dc_NickList(self, params)
-        if self._reconnect_deferred is not None:
+        if self._reconnect_deferred:
             self.factory.log.log(logging.DEBUG - 5, u'Received PONG')
             self._reconnect_deferred.cancel()
             self._reconnect_deferred = None
@@ -61,12 +61,12 @@ class DCBot(dcwords.DCClient):
         
     def lineReceived(self, data):
         dcwords.DCClient.lineReceived(self, data)
-        if self._ping_deferred is not None:
+        if self._ping_deferred:
             self._ping_deferred.reset(self.factory.ping_interval)
 
     def sendLine(self, line):
         dcwords.DCClient.sendLine(self, line)
-        if self._ping_deferred is not None:
+        if self._ping_deferred:
             self._ping_deferred.reset(self.factory.ping_interval)
 
     def signedOn(self):
@@ -180,7 +180,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:
-    maxDelay = IntOption('max_delay', 'Max seconds to wait inbetween reconnects', 120)
+    maxDelay = IntOption('max_delay', 'Max seconds to wait inbetween reconnects', 900)
+    factor = FloatOption('delay_factor', 'Factor to multiply delay inbetween reconnects by', 2)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)

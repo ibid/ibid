@@ -158,7 +158,7 @@ class DCClient(LineReceiver):
 
         if 'QuickList' not in self.hub_supports:
             self.sendLine('$ValidateNick ' + _encode_htmlent(self.my_nickname))
-        elif self.my_password is not None:
+        elif self.my_password:
             self._sendMyINFO()
 
         if self.my_password is None:
@@ -215,7 +215,7 @@ class DCClient(LineReceiver):
         user.my_interest = _decode_htmlent(m.group(2))
         user.client = (m.group(3) and _decode_htmlent(m.group(3)) or None, None)
 
-        if m.group(4) is not None:
+        if m.group(4):
             for taglet in _decode_htmlent(m.group(4)).split(','):
                 try:
                     key, value = taglet.split(':', 1)
@@ -341,15 +341,15 @@ class DCClient(LineReceiver):
     def _sendMyINFO(self):
         "Tell the server all about me"
         tags = []
-        if self.version is not None:
+        if self.version:
             tags.append('V:' + self.version)
         if self.my_mode in _modes.keys():
             tags.append('M:' + _modes[self.my_mode])
-        if self.my_hubs is not None:
+        if self.my_hubs:
             tags.append('H:' + '/'.join(str(x) for x in self.my_hubs))
-        if self.my_slots is not None:
+        if self.my_slots:
             tags.append('S:%i' % self.my_slots)
-        if self.auto_open is not None:
+        if self.auto_open:
             tags.append('O:' + self.auto_open)
 
         tag = '%s %s' % (self.client, ','.join(tags))
