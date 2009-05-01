@@ -140,7 +140,8 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
             query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
         else:
             pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            query = query.filter(FactoidValue.value.like(pattern, escape='\\'))
+            # http://www.sqlalchemy.org/trac/ticket/1400: We can't use .like() in MySQL
+            query = query.filter('value LIKE :pattern ESCAPE :escape').params(pattern=pattern, escape='\\')
     if number:
         try:
             if literal:
