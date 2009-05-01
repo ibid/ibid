@@ -417,7 +417,14 @@ class Weather(Processor):
             places = []
             for td in soup.table.findAll('td'):
                 places.append(td.find('a', href=re.compile('.*html$')).string)
-            raise Weather.TooManyPlacesException(places)
+
+            # Cities with more than one airport give duplicate entries. We can take the first
+            if len([x for x in places if x == places[0]]) == len(places):
+                url = urljoin('http://m.wund.com/cgi-bin/findweather/getForecast',
+                        soup.table.find('td').find('a', href=re.compile('.*html$'))['href'])
+                soup = get_html_parse_tree(url)
+            else:
+                raise Weather.TooManyPlacesException(places)
 
         return soup
 
