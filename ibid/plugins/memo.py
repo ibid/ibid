@@ -168,7 +168,7 @@ class Messages(Processor):
         session = ibid.databases.ibid()
         memos = get_memos(session, event, True)
         if memos:
-            event.addresponse(u'%s', u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
+            event.addresponse(u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
         else:
             event.addresponse(u"Sorry, nobody loves you")
         session.close()

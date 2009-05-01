@@ -68,10 +68,10 @@ class Dvorak(Processor):
     
     @match(r'^(?:asdf|dvorak)\s+(.+)$')
     def convert_from_qwerty(self, event, text):
-        event.addresponse(u'%s', text.translate(self.typed_on_qwerty))
+        event.addresponse(text.translate(self.typed_on_qwerty))
     
     @match(r'^(?:aoeu|qwerty)\s+(.+)$')
     def convert_from_dvorak(self, event, text):
-        event.addresponse(u'%s', text.translate(self.typed_on_dvorak))
+        event.addresponse(text.translate(self.typed_on_dvorak))
 
 # vi: set et sta sw=4 ts=4:

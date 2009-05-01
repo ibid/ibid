@@ -28,7 +28,7 @@ class Fortune(Processor, RPC):
     def handler(self, event):
         fortune = self.remote_fortune()
         if fortune:
-            event.addresponse(u'%s', fortune)
+            event.addresponse(fortune)
         else:
             event.addresponse(u"Couldn't execute fortune")
 
@@ -96,9 +96,9 @@ class Man(Processor):
             output = output.splitlines()
             index = output.index('NAME')
             if index:
-                event.addresponse(u'%s', output[index+1].strip())
+                event.addresponse(output[index+1].strip())
             index = output.index('SYNOPSIS')
             if index:
-                event.addresponse(u'%s', output[index+1].strip())
+                event.addresponse(output[index+1].strip())
 
 # vi: set et sta sw=4 ts=4:

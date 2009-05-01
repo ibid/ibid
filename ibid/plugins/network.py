@@ -74,7 +74,7 @@ class Ping(Processor):
         if code == 0:
             output = unicode_output(output)
             output = u' '.join(output.splitlines()[-2:])
-            event.addresponse(u'%s', output)
+            event.addresponse(output)
         else:
             error = unicode_output(error).replace(u'\n', u' ').replace(u'ping:', u'', 1).strip()
             event.addresponse(u'Error: %s', error)
@@ -100,7 +100,7 @@ class Tracepath(Processor):
         if code == 0:
             output = unicode_output(output)
             for line in output.splitlines():
-                event.addresponse(u'%s', line)
+                event.addresponse(line)
         else:
             error = unicode_output(error.strip())
             event.addresponse(u'Error: %s', error.replace(u'\n', u' '))
@@ -152,7 +152,7 @@ class IPCalc(Processor):
                     response)
         else:
             error = unicode_output(error.strip())
-            event.addresponse(u'%s', error.replace(u'\n', u' '))
+            event.addresponse(error.replace(u'\n', u' '))
 
     @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})\s*-\s*((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})$')
     def ipcalc_deggregate(self, event, frm, to):
@@ -165,6 +165,6 @@ class IPCalc(Processor):
                 event.addresponse(u'Deaggregates to: %s', u', '.join(output.splitlines()[1:]))
         else:
             error = unicode_output(error.strip())
-            event.addresponse(u'%s', error.replace(u'\n', u' '))
+            event.addresponse(error.replace(u'\n', u' '))
 
 # vi: set et sta sw=4 ts=4:

@@ -54,7 +54,7 @@ class GoogleAPISearch(Processor):
             results.append(u'"%s" %s' % (decode_htmlentities(title), item["unescapedUrl"]))
             
         if results:
-            event.addresponse(u'%s', u', '.join(results))
+            event.addresponse(u', '.join(results))
         else:
             event.addresponse(u"Wow! Google couldn't find anything")
 
@@ -105,7 +105,7 @@ class GoogleScrapeSearch(Processor):
         if not font:
             event.addresponse(u'No result')
         else:
-            event.addresponse(u'%s', font.b.string)
+            event.addresponse(font.b.string)
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
@@ -116,7 +116,7 @@ class GoogleScrapeSearch(Processor):
             definitions.append(decode_htmlentities(li.contents[0].strip()))
 
         if definitions:
-            event.addresponse(u'%s', u' :: '.join(definitions))
+            event.addresponse(u' :: '.join(definitions))
         else:
             event.addresponse(u'Are you making up words again?')
 
@@ -142,7 +142,7 @@ class GoogleScrapeSearch(Processor):
                 break
 
         if results:
-            event.addresponse(u'%s', u', '.join(results))
+            event.addresponse(u', '.join(results))
         else:
             event.addresponse(u"Wow! Google couldn't find anything")
 

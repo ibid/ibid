@@ -54,6 +54,6 @@ class Config(Processor):
                 event.addresponse(u'No such option')
                 return
             config = config[part]
-        event.addresponse(u'%s', config)
+        event.addresponse(config)
         
 # vi: set et sta sw=4 ts=4:

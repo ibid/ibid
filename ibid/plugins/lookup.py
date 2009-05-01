@@ -56,7 +56,7 @@ class Bash(Processor):
         else:
             for line in quote.contents:
                 if str(line) != '<br />':
-                    event.addresponse(u'%s', line.strip())
+                    event.addresponse(line.strip())
 
 help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
@@ -70,7 +70,7 @@ class LastFm(Processor):
         if songs['bozo']:
             event.addresponse(u'No such user')
         else:
-            event.addresponse(u'%s', u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
+            event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
 class Lotto(Processor):
@@ -154,7 +154,7 @@ class FMyLife(Processor):
     def fml(self, event, id):
         quote = self.remote_get(id)
         if quote:
-            event.addresponse(u'%s', quote)
+            event.addresponse(quote)
         else:
             event.addresponse(u'No such quote')
 
@@ -336,7 +336,7 @@ class Currency(Processor):
                 results.append(u'%s uses %s (%s)' % (place, name, code))
 
         if results:
-            event.addresponse(u'%s', u', '.join(results))
+            event.addresponse(u', '.join(results))
         else:
             event.addresponse(u'No currencies found')
 
@@ -458,18 +458,18 @@ class Weather(Processor):
                 'exception': u'; '.join(e.args[0]),
             })
         except Weather.WeatherException, e:
-            event.addresponse(u'%s', unicode(e))
+            event.addresponse(unicode(e))
 
     @match(r'^forecast\s+(?:for\s+)?(.+)$')
     def forecast(self, event, place):
         try:
-            event.addresponse(u'%s', u', '.join(self.remote_forecast(place)))
+            event.addresponse(u', '.join(self.remote_forecast(place)))
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
                 'exception': u'; '.join(e.args[0]),
             })
         except Weather.WeatherException, e:
-            event.addresponse(u'%s', unicode(e))
+            event.addresponse(unicode(e))
 
 # vi: set et sta sw=4 ts=4:

@@ -165,7 +165,7 @@ class Utils(Processor):
         session.close()
         number = number and int(number) or 0
         if factoids:
-            event.addresponse(u'%s', u', '.join(u'%i: %s'
+            event.addresponse(u', '.join(u'%i: %s'
                 % (index + number, value.value) for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
@@ -292,7 +292,7 @@ class Search(Processor):
         matches = query[start:start+limit]
 
         if matches:
-            event.addresponse(u'%s', u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
+            event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 

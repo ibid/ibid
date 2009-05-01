@@ -140,7 +140,7 @@ class Retrieve(Processor):
 
         articles = feed.entries[start:number+start]
         articles = [u'%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
-        event.addresponse(u'%s', u', '.join(articles))
+        event.addresponse(u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):

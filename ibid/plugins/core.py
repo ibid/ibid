@@ -132,9 +132,9 @@ class Complain(Processor):
     @handler
     def complain(self, event):
         if 'complain' in event:
-            event.addresponse(u'%s', choice(self.complaints[event.complain]))
+            event.addresponse(choice(self.complaints[event.complain]))
         else:
-            event.addresponse(u'%s', choice(self.complaints['nonsense']))
+            event.addresponse(choice(self.complaints['nonsense']))
 
 class RateLimit(Processor):
 

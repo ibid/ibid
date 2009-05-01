@@ -27,7 +27,7 @@ class Dict(Processor):
             return
 
         if definitions:
-            event.addresponse(u'%s', u', '.join([d.getdefstr() for d in definitions]))
+            event.addresponse(u', '.join([d.getdefstr() for d in definitions]))
         else:
             event.addresponse(u"I don't have a definition for that. Is it even a word?")
 
@@ -64,7 +64,7 @@ class Dict(Processor):
         connection = Connection(self.server, self.port)
         dictionaries = connection.getdbdescs()
         if dictionary in dictionaries:
-            event.addresponse(u'%s', dictionaries[dictionary])
+            event.addresponse(dictionaries[dictionary])
         else:
             event.addresponse(u"I don't have that dictionary")
 
@@ -73,7 +73,7 @@ class Dict(Processor):
         connection = Connection(self.server, self.port)
         strategies = connection.getstratdescs()
         if strategy in strategies:
-            event.addresponse(u'%s', strategies[strategy])
+            event.addresponse(strategies[strategy])
         else:
             event.addresponse(u"I don't have that strategy")
 
