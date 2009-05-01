@@ -92,7 +92,7 @@ class Aptitude(Processor):
             if provided:
                 event.addresponse(u'Virtual package provided by %s', provided)
             elif description:
-                event.addresponse(u'%s', description)
+                event.addresponse(description)
             else:
                 raise Exception("We couldn't successfully parse aptitude's output")
         else:

@@ -91,7 +91,7 @@ class Units(Processor):
         result = output.splitlines()[0].strip()
 
         if code == 0:
-            event.addresponse(u'%s', result)
+            event.addresponse(result)
         elif code == 1:
             if result == "conformability error":
                 event.addresponse(u"I don't think %(from)s can be converted to %(to)s", {

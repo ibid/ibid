@@ -86,7 +86,7 @@ class Bazaar(Processor, RPC):
 
         for commit in commits:
             if commit:
-                event.addresponse(u'%s', commit.strip())
+                event.addresponse(commit.strip())
 
     def get_commits(self, repository, start, end=None, full=None):
         branch = None

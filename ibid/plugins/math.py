@@ -60,7 +60,7 @@ class BC(Processor):
             if output:
                 output = unicode_output(output.strip())
                 output = output.replace('\\\n', '')
-                event.addresponse(u'%s', output)
+                event.addresponse(output)
             else:
                 error = unicode_output(error.strip())
                 error = error.split(":", 1)[1].strip()
@@ -157,7 +157,7 @@ class Calc(Processor):
             return
 
         if isinstance(result, (int, long, float, complex)):
-            event.addresponse(u'%s', result)
+            event.addresponse(result)
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
@@ -280,7 +280,7 @@ class BaseConvert(Processor):
         try:
             number = self._from_base(number, base_from)
         except ValueError, e:
-            event.addresponse(u'%s', unicode(e))
+            event.addresponse(unicode(e))
             return
         
         event.addresponse(u'That is %(result)s in %(base)s', {
@@ -348,7 +348,7 @@ class BaseConvert(Processor):
             if len(buf) > 0:
                 output += process_buf(buf)
         except ValueError, e:
-            event.addresponse(u'%s', unicode(e))
+            event.addresponse(unicode(e))
             return
         
         event.addresponse(u'That is "%s"', output)
