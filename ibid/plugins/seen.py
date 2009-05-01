@@ -59,7 +59,7 @@ class See(Processor):
         if 'channel' in event:
             sighting.channel = 'public' in event and event.public and event.channel or None
         if event.type == 'message':
-            sighting.value = event.public and event.message or None
+            sighting.value = event.public and event.message['raw'] or None
         elif event.type == 'state':
             sighting.value = event.state
         sighting.time = datetime.now()

@@ -48,8 +48,8 @@ class AddAuth(Processor):
 
         if method.lower() == 'password':
             password = hash(credential)
-            event.message = event.message[:-len(credential)] + password
-            event.message_raw = event.message_raw[:event.message_raw.rfind(credential)] + password + event.message_raw[event.message_raw.rfind(credential)+len(credential):]
+            event.message['clean'] = event.message['clean'][:-len(credential)] + password
+            event.message['raw'] = event.message['raw'][:event.message['raw'].rfind(credential)] + password + event.message['raw'][event.message['raw'].rfind(credential)+len(credential):]
             credential = password
 
         credential = Credential(method, credential, source, account.id)

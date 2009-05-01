@@ -68,7 +68,7 @@ class Delicious():
             'tags' : tags,
             'replace' : u'yes',
             'dt' : date,
-            'extended' : event.message_raw,
+            'extended' : event.message['raw'],
             }
 
         self._set_auth(username,password)

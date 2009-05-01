@@ -26,9 +26,9 @@ class Knab(Processor):
 
     @handler
     def handler(self, event):
-        event.input = event.message
-        event.oldinput = event.message_raw
-        event.withpunc = event.message_raw
+        event.input = event.message['clean']
+        event.oldinput = event.message['raw']
+        event.withpunc = event.message['raw']
         self.processor.Process(event)
 
         responses = []

@@ -12,7 +12,7 @@ class SayDo(Processor):
 
     permission = u'saydo'
 
-    @match(r'^(say|do)\s+(?:in\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$')
+    @match(r'^(say|do)\s+(?:in\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$', 'deaddressed')
     @authorise
     def saydo(self, event, action, channel, source, what):
         reply = {'target': channel, 'reply': what}
@@ -37,7 +37,7 @@ class RedirectCommand(Processor):
         event.redirect_target = channel
         if source:
             event.redirect_source = source
-        event.message = command
+        event.message['clean'] = command
 
 class Redirect(Processor):
     feature = 'redirect'

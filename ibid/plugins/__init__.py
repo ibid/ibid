@@ -49,7 +49,7 @@ class Processor(object):
             if hasattr(method, 'handler'):
                 found = True
                 if hasattr(method, 'pattern'):
-                    match = method.pattern.search(event.message)
+                    match = method.pattern.search(event.message[method.message_version])
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
                             method(event, *match.groups())
@@ -71,13 +71,15 @@ options = {
 
 def handler(function):
     function.handler = True
+    function.message_version = 'clean'
     return function
 
-def match(regex):
+def match(regex, version='clean'):
     pattern = re.compile(regex, re.I)
     def wrap(function):
         function.handler = True
         function.pattern = pattern
+        function.message_version = version
         return function
     return wrap
 

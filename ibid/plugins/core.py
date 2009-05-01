@@ -25,14 +25,15 @@ class Addressed(Processor):
             event.addressed = False
 
         for pattern in self.patterns:
-            matches = pattern.search(event.message)
+            matches = pattern.search(event.message['stripped'])
             if matches:
-                new_message = pattern.sub('', event.message)
+                new_message = pattern.sub('', event.message['stripped'])
                 if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(self.verbs):
                     return
 
                 event.addressed = matches.group(1)
-                event.message = new_message
+                event.message['clean'] = new_message
+                event.message['deaddressed'] = pattern.sub('', event.message['raw'])
 
 class Strip(Processor):
 
@@ -42,9 +43,9 @@ class Strip(Processor):
 
     @handler
     def handle_strip(self, event):
-        if 'message_raw' not in event:
-            event.message_raw = event.message
-        event.message = self.pattern.search(event.message).group(1)
+        if isinstance(event.message, basestring):
+            event.message = {'raw': event.message}
+            event.message['clean'] = event.message['stripped'] = self.pattern.search(event.message['raw']).group(1)
 
 class Ignore(Processor):
 
