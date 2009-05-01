@@ -75,6 +75,7 @@ class Tell(Processor):
         session.save_or_update(memo)
         session.flush()
         log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
+        event.memo = memo.id
         session.close()
         memo_cache.clear()
 
@@ -99,6 +100,10 @@ class Deliver(Processor):
         memos = get_memos(session, event)
 
         for memo in memos:
+            # Don't deliver if the user just sent a memo to themself
+            if 'memo' in event and event.memo == memo.id:
+                continue
+
             if memo.private:
                 message = u'By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago' % {
                     'sender': memo.sender.identity,
@@ -122,7 +127,9 @@ class Deliver(Processor):
 
         session.flush()
         session.close()
-        memo_cache[event.identity] = None
+
+        if 'memo' not in event:
+            memo_cache[event.identity] = None
 
 class Notify(Processor):
     feature = 'memo'
