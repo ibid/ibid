@@ -187,7 +187,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
-        if not self.trust_hubauth:
+        if not self.trust_hubauth and 'hub' in self.auth:
             self.auth.remove('hub')
 
     def setServiceParent(self, service):
