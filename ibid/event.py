@@ -15,7 +15,7 @@ class Event(dict):
         self[name] = value
 
     def addresponse(self, response, params={}, processed=True):
-        if isinstance(response, unicode):
+        if isinstance(response, basestring) and params:
             self.responses.append(response % params)
         else:
             self.responses.append(response)
