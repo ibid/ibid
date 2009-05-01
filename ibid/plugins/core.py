@@ -44,8 +44,9 @@ class Strip(Processor):
     @handler
     def handle_strip(self, event):
         if isinstance(event.message, basestring):
-            event.message = {'raw': event.message}
-            event.message['clean'] = event.message['stripped'] = self.pattern.search(event.message['raw']).group(1)
+            event.message = {'raw': event.message, 'deaddressed': event.message,}
+            event.message['clean'] = event.message['stripped'] \
+                    = self.pattern.search(event.message['raw']).group(1)
 
 class Ignore(Processor):
 
