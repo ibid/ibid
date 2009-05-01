@@ -149,7 +149,7 @@ class Calc(Processor):
         except ValueError, e:
             if unicode(e) == u"math domain error":
                 event.addresponse(u"I can't do that: %s", unicode(e))
-                return
+            return
         except LimitException, e:
             event.addresponse(u"I'm afraid I'm not allowed to play with big numbers")
             return
