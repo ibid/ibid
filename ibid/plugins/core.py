@@ -33,6 +33,7 @@ class Addressed(Processor):
 
                 event.addressed = matches.group(1)
                 event.message['clean'] = new_message
+                event.message['deaddressed'] = pattern.sub('', event.message['raw'])
 
 class Strip(Processor):
 
