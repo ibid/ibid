@@ -49,7 +49,7 @@ class Processor(object):
             if hasattr(method, 'handler'):
                 found = True
                 if hasattr(method, 'pattern'):
-                    match = method.pattern.search(event.message)
+                    match = method.pattern.search(event.message['clean'])
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
                             method(event, *match.groups())

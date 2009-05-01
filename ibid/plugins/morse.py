@@ -74,9 +74,9 @@ class Morse(Processor):
 
     @match(r'^morse\s*(.*)$')
     def morse(self, event, message):
-        if "message_raw" in event:
+        if "message['raw']" in event:
             try:
-                message = self._raw_match_re.match(event.message_raw).group(1)
+                message = self._raw_match_re.match(event.message['raw']).group(1)
             except AttributeError: # Didn't match
                 return
 

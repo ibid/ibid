@@ -78,7 +78,7 @@ class Log(Processor):
 
     def process(self, event):
         if event.type == 'message':
-            self.log_message(self.get_logfile(event.source, event.channel, event.time), event.source, event.channel, event.sender, event.time, event.message_raw)
+            self.log_message(self.get_logfile(event.source, event.channel, event.time), event.source, event.channel, event.sender, event.time, event.message['raw'])
 
         elif event.type == 'state':
             self.log_presence(self.get_logfile(event.source, event.channel, time()), event.source, event.channel, event.sender, time(), event.state)
