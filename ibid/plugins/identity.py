@@ -43,7 +43,14 @@ class Accounts(Processor):
         session.flush()
         log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
 
-        if not admin:
+        if admin:
+            identity = session.query(Identity).filter_by(identity=username, source=event.source.lower()).first()
+            if identity:
+                identity.account_id = account.id
+                session.save_or_update(identity)
+                session.flush()
+                log.info(u"Attached identity %s (%s on %s) to account %s (%s)", identity.id, identity.identity, identity.source, account.id, account.username)
+        else:
             identity = session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
             session.save_or_update(identity)
