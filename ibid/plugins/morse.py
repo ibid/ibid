@@ -63,7 +63,6 @@ class Morse(Processor):
         '=': "-...-",
     }
     _rtable = dict((v, k) for k, v in _table.items())
-    _raw_match_re = re.compile(r'^.*?morse\s+(.+)$')
 
     def _text2morse(self, text):
         return u" ".join(self._table.get(c.upper(), c) for c in text)
@@ -72,14 +71,8 @@ class Morse(Processor):
         toks = morse.split(u' ')
         return u"".join(self._rtable.get(t, u' ') for t in toks)
 
-    @match(r'^morse\s*(.*)$')
+    @match(r'^morse\s*(.*)$', 'deaddressed')
     def morse(self, event, message):
-        if "message['raw']" in event:
-            try:
-                message = self._raw_match_re.match(event.message['raw']).group(1)
-            except AttributeError: # Didn't match
-                return
-
         if message.replace(u'-', u'').replace(u'.', u'').strip() == u'':
             event.addresponse(u'Decodes as %s', self._morse2text(message))
         else:
