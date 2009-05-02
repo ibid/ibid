@@ -157,7 +157,7 @@ class Calc(Processor):
             return
 
         if isinstance(result, (int, long, float, complex)):
-            event.addresponse(result)
+            event.addresponse(unicode(result))
 
 help['base'] = 'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
