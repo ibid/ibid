@@ -95,7 +95,7 @@ class Auth(object):
         return False
 
     def authorise(self, event, name):
-        value = permission(name, event.account, event.source)
+        value = permission(name, event.account, event.source, event.session)
         self.log.info(u"Checking %s permission for %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], value)
 
         if value == 'yes':

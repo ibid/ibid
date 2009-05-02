@@ -66,6 +66,11 @@ class See(Processor):
         sighting.count = sighting.count + 1
 
         event.session.save_or_update(sighting)
+        try:
+            event.session.commit()
+        except:
+            event.session.rollback()
+            log.debug(u'Race encountered updating seen for %s on %s', event.sender['id'], event.source)
 
 class Seen(Processor):
     u"""seen <who>"""

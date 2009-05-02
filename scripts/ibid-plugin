@@ -14,7 +14,6 @@ except ImportError:
     pass
 
 from twisted.python.modules import getModule
-from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 import ibid.plugins
@@ -126,7 +125,7 @@ while True:
         if 'session' in event:
             try:
                 event.session.commit()
-            except IntegrityError:
+            except:
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
                 event.session.rollback()
