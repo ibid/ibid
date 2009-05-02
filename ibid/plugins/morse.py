@@ -73,7 +73,7 @@ class Morse(Processor):
 
     @match(r'^morse\s*(.*)$', 'deaddressed')
     def morse(self, event, message):
-        if message.replace(u'-', u'').replace(u'.', u'').strip() == u'':
+        if not (set(message) - set(u'-./ \t\n')):
             event.addresponse(u'Decodes as %s', self._morse2text(message))
         else:
             event.addresponse(u'Encodes as %s', self._text2morse(message))
