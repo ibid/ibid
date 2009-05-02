@@ -141,6 +141,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
     supports = ('action',)
+    auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)
     server = Option('server', 'Server hostname')
@@ -151,7 +152,6 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     email = Option('email', 'eMail Address', 'http://ibid.omnia.za.net/')
     sharesize = IntOption('sharesize', 'DC Share Size (bytes)', 0)
     slots = IntOption('slots', 'DC Open Slots', 0)
-    implicit_auth = BoolOption('implicit_auth', 'Trust the server to authenticate users', False)
     action_prefix = Option('action_prefix', 'Command for actions (i.e. +me)', None)
     banned_prefixes = Option('banned_prefixes', 'Prefixes not allowed in bot responses, i.e. !', '')
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
@@ -164,9 +164,6 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
-        self.auth = ['op']
-        if self.implicit_auth:
-            self.auth.append('implicit')
 
     def setServiceParent(self, service):
         if service:
