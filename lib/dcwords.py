@@ -23,6 +23,16 @@ class User(object):
             setattr(self, key, None)
 
 class DCClient(LineReceiver):
+
+    # Configuration:
+
+    # Attempt to keep the connection alive with periodic $GetNickLists
+    # if idle (rare on a busy server)
+    keepalive = True
+    ping_interval = 180
+    pong_timeout = 180
+
+    # Client information (mostly simply provided to server)
     my_nickname = 'foo'
     my_password = None
     my_interest = ''
@@ -51,6 +61,8 @@ class DCClient(LineReceiver):
 
     # State:
     finished_handshake = False
+    _ping_deferred = None
+    _reconnect_deferred = None
 
     # Callbacks:
     def yourHost(self, name, topic, tagline, motd):
@@ -287,6 +299,12 @@ class DCClient(LineReceiver):
             self.userQuit(nick)
             del self.hub_users[nick]
 
+        if self._reconnect_deferred:
+            log.log(logging.DEBUG - 5, u'Received PONG')
+            self._reconnect_deferred.cancel()
+            self._reconnect_deferred = None
+            self._ping_deferred = reactor.callLater(self.ping_interval, self._idle_ping)
+
     def dc_ConnectToMe(self, params):
         "Someone wants to connect to me"
         #TODO
@@ -365,14 +383,32 @@ class DCClient(LineReceiver):
             self.my_sharesize,
         ))
 
+    def _idle_ping(self):
+        "Fired when idle and keepalive is enabled"
+        log.log(logging.DEBUG - 5, u'Sending idle PING')
+        self._ping_deferred = None
+        self._reconnect_deferred = reactor.callLater(self.pong_timeout, self._timeout_reconnect)
+        self.sendLine('$GetNickList')
+
+    def _timeout_reconnect(self):
+        "Fired when pong never recived"
+        info(u'Ping-Pong timeout. Reconnecting')
+        self.transport.loseConnection()
+
     # Low Level Protocol:
     def connectionMade(self):
-        pass
+        if self.keepalive:
+            self._ping_deferred = reactor.callLater(self.ping_interval, self._idle_ping)
     
     def sendLine(self, line):
+        if self._ping_deferred:
+            self._ping_deferred.reset(self.ping_interval)
         return LineReceiver.sendLine(self, line)
     
     def lineReceived(self, line):
+        if self._ping_deferred:
+            self._ping_deferred.reset(self.ping_interval)
+
         if line.strip() == '':
             return
         elif line[0] == '$':

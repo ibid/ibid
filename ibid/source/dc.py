@@ -18,10 +18,11 @@ class DCBot(dcwords.DCClient):
     version = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or 'dev'
     client = 'Ibid' 
 
-    _ping_deferred = None
-    _reconnect_deferred = None
-
     def connectionMade(self):
+        self.keepalive = True
+        self.ping_interval = self.factory.ping_interval
+        self.pong_timeout = self.factory.pong_timeout
+
         self.my_nickname = self.factory.nick
         self.my_password = self.factory.password
         self.my_interest = self.factory.interest
@@ -29,45 +30,20 @@ class DCBot(dcwords.DCClient):
         self.my_email = self.factory.email
         self.my_sharesize = self.factory.sharesize
         self.my_slots = self.factory.slots
+
         dcwords.DCClient.connectionMade(self)
+
         self.factory.resetDelay()
         self.factory.send = self.send
         self.factory.proto = self
+
         self.auth_callbacks = {}
-        self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
+
         self.factory.log.info(u"Connected")
 
     def connectionLost(self, reason):
         self.factory.log.info(u"Disconnected (%s)", reason)
         dcwords.DCClient.connectionLost(self, reason)
-
-    def _idle_ping(self):
-        self.factory.log.log(logging.DEBUG - 5, u'Sending idle PING')
-        self._ping_deferred = None
-        self._reconnect_deferred = reactor.callLater(self.factory.pong_timeout, self._timeout_reconnect)
-        self.sendLine('$GetNickList')
-
-    def _timeout_reconnect(self):
-        self.factory.log.info(u'Ping-Pong timeout. Reconnecting')
-        self.transport.loseConnection()
-
-    def dc_NickList(self, params):
-        dcwords.DCClient.dc_NickList(self, params)
-        if self._reconnect_deferred:
-            self.factory.log.log(logging.DEBUG - 5, u'Received PONG')
-            self._reconnect_deferred.cancel()
-            self._reconnect_deferred = None
-            self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
-        
-    def lineReceived(self, data):
-        dcwords.DCClient.lineReceived(self, data)
-        if self._ping_deferred:
-            self._ping_deferred.reset(self.factory.ping_interval)
-
-    def sendLine(self, line):
-        dcwords.DCClient.sendLine(self, line)
-        if self._ping_deferred:
-            self._ping_deferred.reset(self.factory.ping_interval)
 
     def signedOn(self):
         names = ibid.config.plugins['core']['names']
