@@ -17,7 +17,8 @@ log = logging.getLogger('plugins.identity')
 
 help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
-    u"""create account <name>"""
+    u"""create account <name>
+    delete (my account|account <name>)"""
     feature = 'accounts'
 
     @match(r'^create\s+account\s+(.+)$')
@@ -52,6 +53,41 @@ class Accounts(Processor):
 
         identify_cache.clear()
         session.close()
+        event.addresponse(True)
+
+    @match(r'^delete\s+(?:(my)\s+account|account\s+(.+))$')
+    def account(self, event, own, username):
+        session = ibid.databases.ibid()
+        admin = False
+
+        if own:
+            if event.account:
+                account = session.query(Account).filter_by(id=event.account).first()
+            else:
+                event.addresponse(u"You don't have an account")
+                return
+        else:
+            if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
+                admin = True
+            account = session.query(Account).filter_by(username=username).first()
+            if not account:
+                if admin:
+                    event.addresponse(u"Sorry, no such account")
+                return
+            elif not admin and username != account.username:
+                return
+        
+        identities = session.query(Identity).filter_by(account_id=account.id).all()
+        session.begin()
+        for identity in identities:
+            identity.account_id = None
+            session.save_or_update(identity)
+            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)", identity.id, identity.identity, identity.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
+
+        session.delete(account)
+        session.commit()
+
+        log.info(u"Deleted account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
         event.addresponse(True)
 
 chars = string.letters + string.digits
