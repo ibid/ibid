@@ -81,7 +81,7 @@ class Accounts(Processor):
                 if admin:
                     event.addresponse(u"Sorry, no such account")
                 return
-            elif not admin and username != account.username:
+            elif not admin or username != account.username:
                 return
         
         identities = session.query(Identity).filter_by(account_id=account.id).all()
