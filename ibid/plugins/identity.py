@@ -17,11 +17,11 @@ log = logging.getLogger('plugins.identity')
 
 help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
-    u"""create account <name>
+    u"""create account [<name>]
     delete (my account|account <name>)"""
     feature = 'accounts'
 
-    @match(r'^create\s+account\s+(.+)$')
+    @match(r'^create\s+account(?:\s+(.+))?$')
     def account(self, event, username):
         session = ibid.databases.ibid()
         admin = False
@@ -34,12 +34,12 @@ class Accounts(Processor):
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
-        account = session.query(Account).filter_by(username=username).first()
+        account = session.query(Account).filter_by(username=(username or event.identity)).first()
         if account:
             event.addresponse(u'There is already an account called "%s". Please choose a different name', account.username)
             return
 
-        account = Account(username)
+        account = Account(username or event.identity)
         session.save_or_update(account)
         session.flush()
         log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
