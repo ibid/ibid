@@ -35,12 +35,16 @@ class Accounts(Processor):
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
-        account = session.query(Account).filter_by(username=(username or event.identity)).first()
+        if not username:
+            identity = session.query(Identity).get(event.identity)
+            username = identity.identity
+
+        account = session.query(Account).filter_by(username=username).first()
         if account:
             event.addresponse(u'There is already an account called "%s". Please choose a different name', account.username)
             return
 
-        account = Account(username or event.identity)
+        account = Account(username)
         session.save_or_update(account)
         session.flush()
         log.info(u"Created account %s (%s) by %s/%s (%s)",
