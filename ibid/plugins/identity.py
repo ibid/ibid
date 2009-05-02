@@ -84,15 +84,7 @@ class Accounts(Processor):
             elif not admin or username != account.username:
                 return
         
-        identities = session.query(Identity).filter_by(account_id=account.id).all()
         session.begin()
-        for identity in identities:
-            identity.account_id = None
-            session.save_or_update(identity)
-            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)",
-                    identity.id, identity.identity, identity.source, account.id, account.username,
-                    event.account, event.identity, event.sender['connection'])
-
         session.delete(account)
         session.commit()
         identify_cache.clear()
