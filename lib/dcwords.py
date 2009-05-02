@@ -2,6 +2,7 @@
 # Copyright 2009 Stefano Rivera <scripts@rivera.za.net>
 # Released under the MIT license
 
+# Speaks NMDC protocol. Not widely tested.
 # Assumes the hub uses UTF-8. Client interface uses unicode()
 # Currently only implements chat, not file transfer
 # a chatroom of None == public chat
@@ -56,7 +57,8 @@ class DCClient(LineReceiver):
         "Called with information about the server"
 
     def bounce(self, destination):
-        "Called wit hinformation about where the client should reconnect"
+        """Called with information about where the client should reconnect
+        or None, if the server is trying to get rid of us"""
 
     def isupport(self, options):
         "Called with extenisons the server supports"
@@ -103,10 +105,6 @@ class DCClient(LineReceiver):
         "Return to normal away status"
         self.away = 'normal'
         self._sendMyINFO()
-
-    def whois(self, user):
-        "Find out about a user"
-        #TODO
 
     # Code:
     # High Level Protocol:
@@ -310,7 +308,7 @@ class DCClient(LineReceiver):
 
     def dc_ForceMove(self, params):
         "Redirecting elsewhere"
-        self.bounce(_decode_htmlent(params))
+        self.bounce(params and _decode_htmlent(params) or None)
 
     def dc_UserCommand(self, params):
         "Menu of Hub specific commands"
@@ -322,6 +320,7 @@ class DCClient(LineReceiver):
 
     _to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$')
     def dc_To(self, params):
+        "Received a private message"
         m = self._to_re.match(params)
         
         if m is None:
