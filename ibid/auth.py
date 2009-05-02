@@ -78,7 +78,7 @@ class Auth(object):
             if hasattr(ibid.sources[event.source], 'auth_%s' % method):
                 function = getattr(ibid.sources[event.source], 'auth_%s' % method)
             elif hasattr(self, method):
-                function = getattr(self, method, event.session)
+                function = getattr(self, method)
             else:
                 self.log.warning(u"Couldn't find authentication method %s", method)
                 continue
@@ -105,14 +105,14 @@ class Auth(object):
 
         return False
 
-    def implicit(self, event, credential=None, session=None):
+    def implicit(self, event, credential=None):
         return True
 
-    def password(self, event, password, session):
+    def password(self, event, password):
         if password is None:
             return False
 
-        for credential in session.query(Credential) \
+        for credential in event.session.query(Credential) \
                 .filter_by(method=u'password') \
                 .filter_by(account_id=event.account) \
                 .filter(or_(Credential.source == event.source, Credential.source == None)).all():
