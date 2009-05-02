@@ -64,7 +64,7 @@ setup(
         #'ConfigObj>=4.5.3',
         #'validate>=0.3.2',
     ],
-    packages=['ibid', 'tracibid', 'lib', 'twisted'],
+    packages=['ibid', 'tracibid', 'lib', 'twisted', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
     },
