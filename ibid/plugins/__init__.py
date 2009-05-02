@@ -83,7 +83,7 @@ def match(regex):
 
 def auth_responses(event, permission):
     if not ibid.auth.authorise(event, permission):
-        event.complain = 'notauthed'
+        event.complain = u'notauthed'
         return False
 
     return True
