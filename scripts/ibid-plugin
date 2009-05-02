@@ -129,12 +129,15 @@ while True:
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
                 event.session.rollback()
+                event.session.close()
                 del event['session']
 
     for response in event.responses:
         if isinstance(response, dict):
             response = response['reply']
         print 'Response: %s' % response
+
+    event.session.close()
 
 if readline:
     readline.write_history_file('.history')
