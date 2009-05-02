@@ -164,7 +164,6 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    auth = ['hub', 'op']
     supports = ('action',)
 
     port = IntOption('port', 'Server port number', 411)
@@ -176,7 +175,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     email = Option('email', 'eMail Address', 'http://ibid.omnia.za.net/')
     sharesize = IntOption('sharesize', 'DC Share Size (bytes)', 0)
     slots = IntOption('slots', 'DC Open Slots', 0)
-    trust_hubauth = BoolOption('trust_hubauth', 'Trust the server to authenticate users', False)
+    implicit_auth = BoolOption('implicit_auth', 'Trust the server to authenticate users', False)
     action_prefix = Option('action_prefix', 'Command for actions (i.e. +me)', None)
     banned_prefixes = Option('banned_prefixes', 'Prefixes not allowed in bot responses, i.e. !', '')
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
@@ -189,8 +188,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
-        if not self.trust_hubauth and 'hub' in self.auth:
-            self.auth.remove('hub')
+        self.auth = ['op']
+        if not self.implicit_auth:
+            self.auth.append('implicit')
 
     def setServiceParent(self, service):
         if service:
@@ -207,10 +207,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         self.proto.transport.loseConnection()
         return True
 
-    def auth_hub(self, event, credential):
-        return True
-
-    def _irc_auth_callback(self, nick, result):
+    def _dc_auth_callback(self, nick, result):
         self._auth[nick] = result
 
     def auth_op(self, event, credential):
@@ -218,7 +215,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         if nick in self.proto.hub_users and self.proto.hub_users[nick].op in (True, False):
             return self.proto.hub_users[nick].op
 
-        reactor.callFromThread(self.proto.authenticate, nick, self._irc_auth_callback)
+        reactor.callFromThread(self.proto.authenticate, nick, self._dc_auth_callback)
         for i in xrange(150):
             if nick in self._auth:
                 break
