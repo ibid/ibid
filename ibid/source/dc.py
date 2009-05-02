@@ -165,7 +165,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
         self.auth = ['op']
-        if not self.implicit_auth:
+        if self.implicit_auth:
             self.auth.append('implicit')
 
     def setServiceParent(self, service):
