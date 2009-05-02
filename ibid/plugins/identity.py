@@ -255,6 +255,7 @@ class Identify(Processor):
                     log.info(u'Created identity %s for %s on %s', identity.id, identity.identity, identity.source)
                 except:
                     event.session.rollback()
+                    del event['session']
                     log.debug(u'Race encountered creating identity for %s on %s', event.sender['id'], event.source)
                     identity = event.session.query(Identity) \
                             .options(eagerload('account')) \

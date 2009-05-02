@@ -31,6 +31,7 @@ class Dispatcher(object):
                     self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                     event.complain = u'exception'
                     event.session.rollback()
+                    del event['session']
 
         log_level = logging.DEBUG
         if event.type == u'clock' and not event.processed:

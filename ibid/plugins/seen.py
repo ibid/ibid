@@ -70,6 +70,7 @@ class See(Processor):
             event.session.commit()
         except:
             event.session.rollback()
+            del event['session']
             log.debug(u'Race encountered updating seen for %s on %s', event.sender['id'], event.source)
 
 class Seen(Processor):
