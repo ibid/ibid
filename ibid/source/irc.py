@@ -237,8 +237,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
 
     def auth_hostmask(self, event, credential = None):
-        session = ibid.databases.ibid()
-        for credential in session.query(Credential).filter_by(method=u'hostmask').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
+        for credential in event.session.query(Credential) \
+                .filter_by(method=u'hostmask').filter_by(account_id=event.account) \
+                .filter(or_(Credential.source == event.source, Credential.source == None)).all():
             if fnmatch(event.sender['connection'], credential.credential):
                 return True
 

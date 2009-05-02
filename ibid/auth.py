@@ -23,11 +23,11 @@ def hash(password, salt=None):
         salt = ''.join([choice(chars) for i in xrange(8)])
     return unicode(salt + sha1(salt + password).hexdigest())
 
-def permission(name, account, source):
+def permission(name, account, source, session):
     if account:
-        session = ibid.databases.ibid()
-        permission = session.query(Permission).filter_by(account_id=account).filter_by(name=name).first()
-        session.close()
+        permission = session.query(Permission) \
+                .filter_by(account_id=account) \
+                .filter_by(name=name).first()
 
         if permission:
             return permission.value
@@ -78,7 +78,7 @@ class Auth(object):
             if hasattr(ibid.sources[event.source], 'auth_%s' % method):
                 function = getattr(ibid.sources[event.source], 'auth_%s' % method)
             elif hasattr(self, method):
-                function = getattr(self, method)
+                function = getattr(self, method, event.session)
             else:
                 self.log.warning(u"Couldn't find authentication method %s", method)
                 continue
@@ -105,15 +105,17 @@ class Auth(object):
 
         return False
 
-    def implicit(self, event, credential = None):
+    def implicit(self, event, credential=None, session=None):
         return True
 
-    def password(self, event, password):
+    def password(self, event, password, session):
         if password is None:
             return False
 
-        session = ibid.databases.ibid()
-        for credential in session.query(Credential).filter_by(method=u'password').filter_by(account_id=event.account).filter(or_(Credential.source == event.source, Credential.source == None)).all():
+        for credential in session.query(Credential) \
+                .filter_by(method=u'password') \
+                .filter_by(account_id=event.account) \
+                .filter(or_(Credential.source == event.source, Credential.source == None)).all():
             if hash(password, credential.credential) == credential.credential:
                 return True
 

@@ -1,3 +1,4 @@
+import ibid
 
 class Event(dict):
 
@@ -9,6 +10,8 @@ class Event(dict):
         self.processed = False
 
     def __getattr__(self, name):
+        if name == 'session' and 'session' not in self:
+            self['session'] = ibid.databases.ibid()
         return self[name]
 
     def __setattr__(self, name, value):

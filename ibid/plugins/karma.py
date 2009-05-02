@@ -59,8 +59,8 @@ class Set(Processor):
         if subject.lower() in self.ignore:
             return
 
-        session = ibid.databases.ibid()
-        karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
+        karma = event.session.query(Karma) \
+                .filter(func.lower(Karma.subject) == subject.lower()).first()
         if not karma:
             karma = Karma(subject)
 
@@ -82,12 +82,9 @@ class Set(Processor):
         if karma.value == 0 and karma.changes <= self.importance:
             change = u'Forgotten (unimportant)'
 
-            session.delete(karma)
+            event.session.delete(karma)
         else:
-            session.save_or_update(karma)
-
-        session.flush()
-        session.close()
+            event.session.save_or_update(karma)
 
         log.info(u"%s karma for '%s' by %s/%s (%s) because: %s", change, subject, event.account, event.identity, event.sender['connection'], reason)
 
@@ -103,8 +100,8 @@ class Get(Processor):
 
     @match(r'^karma\s+(?:for\s+)?(.+)$')
     def handle_karma(self, event, subject):
-        session = ibid.databases.ibid()
-        karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
+        karma = event.session.query(Karma) \
+                .filter(func.lower(Karma.subject) == subject.lower()).first()
         if not karma:
             event.addresponse(u'nobody cares, dude')
         elif karma.value == 0:
@@ -114,17 +111,16 @@ class Get(Processor):
                 'subject': subject,
                 'value': karma.value,
             })
-        session.close()
 
     @match(r'^(reverse\s+)?karmaladder$')
     def ladder(self, event, reverse):
-        session = ibid.databases.ibid()
-        karmas = session.query(Karma).order_by(reverse and Karma.value.asc() or Karma.value.desc()).limit(30).all()
+        karmas = event.session.query(Karma) \
+                .order_by(reverse and Karma.value.asc() or Karma.value.desc()) \
+                .limit(30).all()
         if karmas:
             event.addresponse(', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
         else:
             event.addresponse(u"I don't really care about anything")
-        session.close()
 
 class Forget(Processor):
     u"""forget karma for <subject> [[reason]]"""
@@ -138,15 +134,13 @@ class Forget(Processor):
     @match(r'^forget\s+karma\s+for\s+(.+?)(?:\s*[[{(]+\s*(.+?)\s*[\]})]+)?$')
     @authorise
     def forget(self, event, subject, reason):
-        session = ibid.databases.ibid()
-        karma = session.query(Karma).filter(func.lower(Karma.subject)==subject.lower()).first()
+        karma = event.session.query(Karma) \
+                .filter(func.lower(Karma.subject) == subject.lower()).first()
         if not karma:
             karma = Karma(subject)
             event.addresponse(u"I was pretty ambivalent about %s, anyway", subject)
 
-        session.delete(karma)
-        session.flush()
-        session.close()
+        event.session.delete(karma)
 
         log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s", subject, event.account, event.identity, event.sender['connection'], reason)
         event.addresponse(True)

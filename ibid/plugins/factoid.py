@@ -160,9 +160,7 @@ class Utils(Processor):
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     def literal(self, event, name, number, pattern, is_regex):
-        session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, literal=True)
-        session.close()
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, literal=True)
         number = number and int(number) or 0
         if factoids:
             event.addresponse(u', '.join(u'%i: %s'
@@ -179,12 +177,11 @@ class Forget(Processor):
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     @authorise
     def forget(self, event, name, number, pattern, is_regex):
-        session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
-            identities = get_identities(event, session)
-            factoid = session.query(Factoid).get(factoids[0][0].id)
+            identities = get_identities(event)
+            factoid = event.session.query(Factoid).get(factoids[0][0].id)
 
             if (number or pattern):
                 if len(factoids) > 1:
@@ -194,30 +191,28 @@ class Forget(Processor):
                 if factoids[0][2].identity_id not in identities and not factoidadmin:
                     return
 
-                if session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
+                if event.session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
-                    session.delete(factoid)
+                    event.session.delete(factoid)
                 else:
                     log.info(u"Deleting value %s of factoid %s (%s) by %s/%s (%s)", factoids[0][2].id, factoid.id, factoids[0][2].value, event.account, event.identity, event.sender['connection'])
-                    session.delete(factoids[0][2])
+                    event.session.delete(factoids[0][2])
 
             else:
                 if factoids[0][1].identity_id not in identities and not factoidadmin:
                     return
 
-                if session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
+                if event.session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0 and not factoidadmin:
                         return
                     log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
-                    session.delete(factoid)
+                    event.session.delete(factoid)
                 else:
                     log.info(u"Deleting name %s of factoid %s (%s) by %s/%s (%s)", factoids[0][1].id, factoid.id, factoids[0][1].name, event.account, event.identity, event.sender['connection'])
-                    session.delete(factoids[0][1])
+                    event.session.delete(factoids[0][1])
 
-            session.flush()
-            session.close()
             event.addresponse(True)
         else:
             event.addresponse(u"I didn't know about %s anyway", name)
@@ -230,15 +225,12 @@ class Forget(Processor):
             event.addresponse(u"That makes no sense, they *are* the same")
             return
 
-        session = ibid.databases.ibid()
-        factoid = session.query(Factoid).join(Factoid.names)\
+        factoid = event.session.query(Factoid).join(Factoid.names)\
                 .filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
-            session.save_or_update(factoid)
-            session.flush()
-            session.close()
+            event.session.save_or_update(factoid)
             event.addresponse(True)
             log.info(u"Added name '%s' to factoid %s by %s/%s (%s)", name.name, factoid.id, event.account, event.identity, event.sender['connection'])
         else:
@@ -266,8 +258,7 @@ class Search(Processor):
             pattern = m.group(1)
             is_regex = bool(m.group(2))
 
-        session = ibid.databases.ibid()
-        query = session.query(Factoid)\
+        query = event.session.query(Factoid)\
                 .join(Factoid.names).add_entity(FactoidName)\
                 .join(Factoid.values)
 
@@ -320,9 +311,7 @@ class Get(Processor, RPC):
             event.addresponse(response)
 
     def remote_get(self, name, number=None, pattern=None, is_regex=None, event={}):
-        session = ibid.databases.ibid()
-        factoid = get_factoid(session, name, number, pattern, is_regex)
-        session.close()
+        factoid = get_factoid(event.session, name, number, pattern, is_regex)
 
         if factoid:
             (factoid, fname, fvalue) = factoid
@@ -377,17 +366,15 @@ class Set(Processor):
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
         verb = verb1 and verb1 or verb2
 
-        session = ibid.databases.ibid()
-        factoid = session.query(Factoid).join(Factoid.names)\
+        factoid = event.session.query(Factoid).join(Factoid.names)\
                 .filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
         if factoid:
             if correction:
-                identities = get_identities(event, session)
+                identities = get_identities(event)
                 if not auth_responses(event, u'factoidadmin') and len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0:
                     return
                 for fvalue in factoid.values:
-                    session.delete(fvalue)
-                session.flush()
+                    event.session.delete(fvalue)
             elif not addition:
                 event.addresponse(u'I already know stuff about %s', name)
                 return
@@ -402,9 +389,7 @@ class Set(Processor):
         fvalue = FactoidValue(unicode(value), event.identity)
         factoid.values.append(fvalue)
         log.info(u"Added value '%s' to factoid %s by %s/%s (%s)", fvalue.value, factoid.id, event.account, event.identity, event.sender['connection'])
-        session.save_or_update(factoid)
-        session.flush()
-        session.close()
+        event.session.save_or_update(factoid)
         event.addresponse(True)
 
 class Modify(Processor):
@@ -419,8 +404,7 @@ class Modify(Processor):
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$')
     @authorise
     def append(self, event, name, number, pattern, is_regex, suffix):
-        session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
                 event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
@@ -433,7 +417,7 @@ class Modify(Processor):
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
             factoidadmin = auth_responses(event, u'factoidadmin')
-            identities = get_identities(event, session)
+            identities = get_identities(event)
             factoid = factoids[0]
 
             if factoid[2].identity_id not in identities and not factoidadmin:
@@ -443,16 +427,13 @@ class Modify(Processor):
                     suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
             factoid[2].value += suffix
 
-            session.save_or_update(factoid[2])
-            session.flush()
-            session.close()
+            event.session.save_or_update(factoid[2])
             event.addresponse(True)
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
     @authorise
     def modify(self, event, name, number, pattern, is_regex, operation, separator):
-        session = ibid.databases.ibid()
-        factoids = get_factoid(session, name, number, pattern, is_regex, all=True)
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
                 event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
@@ -465,7 +446,7 @@ class Modify(Processor):
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
             factoidadmin = auth_responses(event, u'factoidadmin')
-            identities = get_identities(event, session)
+            identities = get_identities(event)
             factoid = factoids[0]
 
             if factoid[2].identity_id not in identities and not factoidadmin:
@@ -537,9 +518,7 @@ class Modify(Processor):
             log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
                     operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
-            session.save_or_update(factoid[2])
-            session.flush()
-            session.close()
+            event.session.save_or_update(factoid[2])
             event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:

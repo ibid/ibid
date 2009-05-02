@@ -28,7 +28,6 @@ ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
 ibid.reloader.reload_databases()
 session = ibid.databases.ibid()
-session.begin()
 
 if options.remove:
     factpack = session.query(Factpack).filter_by(name=filename).first()
@@ -76,7 +75,6 @@ if factpack:
 
 factpack = Factpack(name)
 session.save(factpack)
-session.flush()
 
 existing = []
 for names, values in facts:

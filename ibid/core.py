@@ -7,6 +7,7 @@ from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 import auth
@@ -23,6 +24,14 @@ class Dispatcher(object):
             except Exception:
                 self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
+
+            if 'session' in event:
+                try:
+                    event.session.commit()
+                except IntegrityError:
+                    self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+                    event.complain = u'exception'
+                    event.session.rollback()
 
         log_level = logging.DEBUG
         if event.type == u'clock' and not event.processed:
@@ -263,7 +272,7 @@ class DatabaseManager(dict):
 
                 engine.dialect.use_ansiquotes = True
 
-        self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+        self[name] = scoped_session(sessionmaker(bind=engine))
 
         self.log.info(u"Loaded %s database", name)
 

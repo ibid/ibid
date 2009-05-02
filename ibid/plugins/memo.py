@@ -8,7 +8,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import Option
-from ibid.plugins.auth import permission
+from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago
@@ -51,10 +51,12 @@ class Tell(Processor):
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
     @authorise
     def tell(self, event, how, who, memo):
-        session = ibid.databases.ibid()
-        to = session.query(Identity).filter(func.lower(Identity.identity)==who.lower()).filter_by(source=event.source).first()
+        to = event.session.query(Identity) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .filter_by(source=event.source).first()
         if not to:
-            account = session.query(Account).filter(func.lower(Account.username)==who.lower()).first()
+            account = event.session.query(Account) \
+                    .filter(func.lower(Account.username) == who.lower()).first()
             if account:
                 for identity in account.identities:
                     if identity.source == event.source:
@@ -63,27 +65,27 @@ class Tell(Processor):
                     identity = account.identities[0]
         if not to:
             to = Identity(event.source, who)
-            session.save(to)
-            session.flush()
+            event.session.save(to)
             log.info(u"Created identity %s for %s on %s", to.id, to.identity, to.source)
 
-        if permission(u'recvmemo', to.account and to.account.id or None, to.source) != 'yes':
+        if permission(u'recvmemo', to.account and to.account.id or None, to.source, event.session) != 'yes':
             event.addresponse(u'Just tell %s yourself', who)
             return
 
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
-        session.save_or_update(memo)
-        session.flush()
+        event.session.save_or_update(memo)
         log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         event.memo = memo.id
-        session.close()
         memo_cache.clear()
 
         event.addresponse(True)
 
-def get_memos(session, event, delivered=False):
-    identities = get_identities(event, session)
-    return session.query(Memo).filter_by(delivered=delivered).filter(Memo.to_id.in_(identities)).order_by(Memo.time.asc()).all()
+def get_memos(event, delivered=False):
+    identities = get_identities(event)
+    return event.session.query(Memo) \
+            .filter_by(delivered=delivered) \
+            .filter(Memo.to_id.in_(identities)) \
+            .order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
     feature = 'memo'
@@ -96,8 +98,7 @@ class Deliver(Processor):
         if event.identity in memo_cache:
             return
 
-        session = ibid.databases.ibid()
-        memos = get_memos(session, event)
+        memos = get_memos(event)
 
         for memo in memos:
             # Don't deliver if the user just sent a memo to themself
@@ -122,11 +123,8 @@ class Deliver(Processor):
                 })
 
             memo.delivered = True
-            session.save_or_update(memo)
+            event.session.save_or_update(memo)
             log.info(u"Delivered memo %s to %s (%s)", memo.id, event.identity, event.sender['connection'])
-
-        session.flush()
-        session.close()
 
         if 'memo' not in event:
             memo_cache[event.identity] = None
@@ -146,15 +144,12 @@ class Notify(Processor):
         if event.identity in memo_cache:
             return
 
-        session = ibid.databases.ibid()
-        memos = get_memos(session, event)
+        memos = get_memos(event)
 
         if len(memos) > 0:
             event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
             memo_cache[event.identity] = None
-
-        session.close()
 
 class Messages(Processor):
     u"""my messages
@@ -165,18 +160,15 @@ class Messages(Processor):
 
     @match(r'^my\s+messages$')
     def messages(self, event):
-        session = ibid.databases.ibid()
-        memos = get_memos(session, event, True)
+        memos = get_memos(event, True)
         if memos:
             event.addresponse(u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
         else:
             event.addresponse(u"Sorry, nobody loves you")
-        session.close()
 
     @match(r'^message\s+(\d+)$')
     def message(self, event, number):
-        session = ibid.databases.ibid()
-        memos = get_memos(session, event, True)
+        memos = get_memos(event, True)
         memo = memos[int(number)]
         event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
             'sender': memo.sender.identity,
@@ -184,7 +176,5 @@ class Messages(Processor):
             'time': memo.time.strftime(self.datetime_format),
             'message': memo.memo,
         })
-        session.close()
-
 
 # vi: set et sta sw=4 ts=4:
