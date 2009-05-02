@@ -52,7 +52,7 @@ setup(
     py_modules=['ibid'],
     install_requires=[
         'SQLAlchemy>=0.4.6',
-        'wokkel>=0.4',
+        'wokkel==0.4',
         'jinja',
         'html2text',
         #'pinder',
@@ -64,6 +64,7 @@ setup(
         #'ConfigObj>=4.5.3',
         #'validate>=0.3.2',
     ],
+    dependency_links=['http://wokkel.ik.nu/downloads'],
     packages=['ibid', 'tracibid', 'lib', 'twisted', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],

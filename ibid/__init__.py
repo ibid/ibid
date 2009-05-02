@@ -3,7 +3,6 @@ import logging.config
 from os.path import join, dirname, expanduser, exists
 
 import sys
-sys.path.append('%s/../lib/wokkel.egg' % dirname(__file__))
 sys.path.insert(0, '%s/../lib' % dirname(__file__))
 
 import twisted.python.log
