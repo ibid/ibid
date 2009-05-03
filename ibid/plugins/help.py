@@ -27,7 +27,7 @@ class Help(Processor):
                     if feature not in features:
                         features.append(feature)
 
-        event.addresponse(u'Features: %s', u' '.join(sorted(features)))
+        event.addresponse(u'Features: %s', u' '.join(sorted(features)) or u'none')
 
     @match(r'^help\s+(.+)$')
     def help(self, event, feature):

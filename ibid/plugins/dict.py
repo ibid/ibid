@@ -51,7 +51,7 @@ class Dict(Processor):
     def handle_dictionaries(self, event):
         connection = Connection(self.server, self.port)
         dictionaries = connection.getdbdescs()
-        event.addresponse(u'Dictionaries: %s', u', '.join(sorted(dictionaries.keys())))
+        event.addresponse(u'Dictionaries: %s', u', '.join(sorted(dictionaries.keys())) or u'none')
 
     @match(r'^strater?gies$')
     def handle_strategies(self, event):
