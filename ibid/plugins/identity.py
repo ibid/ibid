@@ -14,7 +14,8 @@ identify_cache = {}
 
 log = logging.getLogger('plugins.identity')
 
-help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
+help['accounts'] = u'An account represents a person. ' \
+        'An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
     u"""create account <name>"""
     feature = 'accounts'
@@ -34,18 +35,23 @@ class Accounts(Processor):
 
         account = event.session.query(Account).filter_by(username=username).first()
         if account:
-            event.addresponse(u'There is already an account called "%s". Please choose a different name', account.username)
+            event.addresponse(u'There is already an account called "%s". ' \
+                    'Please choose a different name', account.username)
             return
 
         account = Account(username)
         event.session.save_or_update(account)
-        log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
+        event.session.flush()
+        log.info(u"Created account %s (%s) by %s/%s (%s)",
+                account.id, account.username, event.account, event.identity, event.sender['connection'])
 
         if not admin:
             identity = event.session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
             session.save_or_update(identity)
-            log.info(u"Attached identity %s (%s on %s) to account %s (%s)", identity.id, identity.identity, identity.source, account.id, account.username)
+            event.session.flush()
+            log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                    identity.id, identity.identity, identity.source, account.id, account.username)
 
         identify_cache.clear()
         event.addresponse(True)
@@ -72,20 +78,30 @@ class Identities(Processor):
                 account = event.session.query(Account).filter_by(id=event.account).first()
             else:
                 username = event.sender['id']
+
                 account = event.session.query(Account).filter_by(username=username).first()
+
                 if account:
                     event.addresponse(u'I tried to create the account %s for you, but it already exists. '
                         u"Please use 'create account <name>'", username)
                     return
+
                 account = Account(username)
                 event.session.save_or_update(account)
+
                 currentidentity = event.session.query(Identity).filter_by(id=event.identity).first()
                 currentidentity.account_id = account.id
                 event.session.save_or_update(currentidentity)
+
                 identify_cache.clear()
+
                 event.addresponse(u"I've created the account %s for you", username)
-                log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
-                log.info(u"Attached identity %s (%s on %s) to account %s (%s)", currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
+
+                event.session.flush()
+                log.info(u"Created account %s (%s) by %s/%s (%s)",
+                        account.id, account.username, event.account, event.identity, event.sender['connection'])
+                log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                        currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
 
         else:
             if not auth_responses(event, 'accounts'):
@@ -100,7 +116,8 @@ class Identities(Processor):
                 .filter(func.lower(Identity.identity) == identity.lower()) \
                 .filter(func.lower(Identity.source) == source.lower()).first()
         if ident and ident.account:
-            event.addresponse(u'This identity is already attached to account %s', ident.account.username)
+            event.addresponse(u'This identity is already attached to account %s',
+                    ident.account.username)
             return
 
         if source not in ibid.sources:
@@ -116,16 +133,22 @@ class Identities(Processor):
             if event.public:
                 response['target'] = event.sender['id']
             event.addresponse(response)
-            log.info(u"Sent token %s to %s/%s (%s)", token, event.account, event.identity, event.sender['connection'])
+            log.info(u"Sent token %s to %s/%s (%s)",
+                    token, event.account, event.identity, event.sender['connection'])
 
         else:
             if not ident:
                 ident = Identity(source, identity)
             ident.account_id = account.id
             event.session.save_or_update(ident)
+
             identify_cache.clear()
             event.addresponse(True)
-            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)", ident.id, ident.identity, ident.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
+
+            event.session.flush()
+            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)",
+                    ident.id, ident.identity, ident.source, account.id, account.username,
+                    event.account, event.identity, event.sender['connection'])
 
     @match(r'^(\S{16})$')
     def token(self, event, token):
@@ -149,7 +172,11 @@ class Identities(Processor):
 
             del self.tokens[token]
             event.addresponse(u'Identity added')
-            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s", identity.id, identity.identity, identity.source, account_id, event.account, event.identity, event.sender['connection'], token)
+
+            event.session.flush()
+            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s",
+                    identity.id, identity.identity, identity.source, account_id, event.account,
+                    event.identity, event.sender['connection'], token)
 
     @match(r'^remove\s+identity\s+(.+?)\s+on\s+(\S+)(?:\s+from\s+(\S+))?$')
     def remove(self, event, user, source, username):
@@ -174,7 +201,9 @@ class Identities(Processor):
             event.session.save_or_update(identity)
             identify_cache.clear()
             event.addresponse(True)
-            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)", identity.id, identity.identity, identity.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
+            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)",
+                    identity.id, identity.identity, identity.source, account.id,
+                    account.username, event.account, event.identity, event.sender['connection'])
 
 class Attributes(Processor):
     u"""set (my|<account>) <name> to <value>"""
@@ -203,7 +232,9 @@ class Attributes(Processor):
         account.attributes.append(Attribute(name, value))
         event.session.save_or_update(account)
         event.addresponse(True)
-        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender['connection'])
+        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)",
+                name, value, account.id, account.username, event.account,
+                event.identity, event.sender['connection'])
 
 class Describe(Processor):
     u"""who (am I|is <username>)"""

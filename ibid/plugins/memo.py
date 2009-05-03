@@ -66,6 +66,8 @@ class Tell(Processor):
         if not to:
             to = Identity(event.source, who)
             event.session.save(to)
+
+            event.session.flush()
             log.info(u"Created identity %s for %s on %s", to.id, to.identity, to.source)
 
         if permission(u'recvmemo', to.account and to.account.id or None, to.source, event.session) != 'yes':
@@ -74,7 +76,10 @@ class Tell(Processor):
 
         memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
         event.session.save_or_update(memo)
-        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s", memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
+
+        event.session.flush()
+        log.info(u"Stored memo %s for %s (%s) from %s (%s): %s",
+                memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         event.memo = memo.id
         memo_cache.clear()
 
@@ -124,7 +129,8 @@ class Deliver(Processor):
 
             memo.delivered = True
             event.session.save_or_update(memo)
-            log.info(u"Delivered memo %s to %s (%s)", memo.id, event.identity, event.sender['connection'])
+            log.info(u"Delivered memo %s to %s (%s)",
+                    memo.id, event.identity, event.sender['connection'])
 
         if 'memo' not in event:
             memo_cache[event.identity] = None

@@ -382,6 +382,7 @@ class Set(Processor):
             factoid = Factoid()
             fname = FactoidName(escape_name(unicode(name)), event.identity)
             factoid.names.append(fname)
+            event.session.flush()
             log.info(u"Created factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
 
         if not reply_re.match(value) and not action_re.match(value):

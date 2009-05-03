@@ -47,12 +47,15 @@ class AddAuth(Processor):
         if method.lower() == 'password':
             password = hash(credential)
             event.message['clean'] = event.message['clean'][:-len(credential)] + password
-            event.message['raw'] = event.message['raw'][:event.message['raw'].rfind(credential)] + password + event.message['raw'][event.message['raw'].rfind(credential)+len(credential):]
+            event.message['raw'] = event.message['raw'][:event.message['raw'].rfind(credential)] \
+                    + password + event.message['raw'][event.message['raw'].rfind(credential)+len(credential):]
             credential = password
 
         credential = Credential(method, credential, source, account.id)
         event.session.save_or_update(credential)
-        log.info(u"Added %s credential %s for account %s (%s) on %s by account %s", method, credential.credential, account.id, account.username, source, event.account)
+        event.session.flush()
+        log.info(u"Added %s credential %s for account %s (%s) on %s by account %s",
+                method, credential.credential, account.id, account.username, source, event.account)
 
         event.addresponse(True)
 
@@ -106,7 +109,9 @@ class Permissions(Processor):
             permission.value = value
             event.session.save_or_update(permission)
 
-        log.info(u"%s %s permission for account %s (%s) by account %s", actions[action.lower()], name, account.id, account.username, event.account)
+        event.session.flush()
+        log.info(u"%s %s permission for account %s (%s) by account %s",
+                actions[action.lower()], name, account.id, account.username, event.account)
 
         event.addresponse(True)
 

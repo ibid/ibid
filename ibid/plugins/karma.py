@@ -86,7 +86,8 @@ class Set(Processor):
         else:
             event.session.save_or_update(karma)
 
-        log.info(u"%s karma for '%s' by %s/%s (%s) because: %s", change, subject, event.account, event.identity, event.sender['connection'], reason)
+        log.info(u"%s karma for '%s' by %s/%s (%s) because: %s",
+                change, subject, event.account, event.identity, event.sender['connection'], reason)
 
         if self.reply:
             event.addresponse(True)
@@ -142,7 +143,8 @@ class Forget(Processor):
 
         event.session.delete(karma)
 
-        log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s", subject, event.account, event.identity, event.sender['connection'], reason)
+        log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s",
+                subject, event.account, event.identity, event.sender['connection'], reason)
         event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:
