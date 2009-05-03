@@ -327,7 +327,7 @@ class Account(Base):
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
 
-    identities = relation(Identity, backref='account', cascade='all, delete-orphan')
+    identities = relation(Identity, backref='account', cascade='all')
     attributes = relation(Attribute, cascade='all, delete-orphan')
     permissions = relation(Permission, cascade='all, delete-orphan')
     credentials = relation(Credential, cascade='all, delete-orphan')
