@@ -34,8 +34,9 @@ class Dispatcher(object):
                     event.session.close()
                     del event['session']
 
-        event.session.close()
-        del event['session']
+        if 'session' in event:
+            event.session.close()
+            del event['session']
 
         log_level = logging.DEBUG
         if event.type == u'clock' and not event.processed:
