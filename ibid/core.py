@@ -21,14 +21,16 @@ class Dispatcher(object):
             try:
                 processor.process(event)
             except Exception:
-                self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+                self.log.exception(u"Exception occured in %s processor of %s plugin",
+                        processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
 
             if 'session' in event and (event.session.dirty or event.session.deleted):
                 try:
                     event.session.commit()
                 except:
-                    self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+                    self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                            processor.__class__.__name__, processor.name)
                     event.complain = u'exception'
                     event.session.rollback()
                     event.session.close()
