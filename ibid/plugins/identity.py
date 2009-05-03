@@ -22,7 +22,6 @@ class Accounts(Processor):
 
     @match(r'^create\s+account\s+(.+)$')
     def account(self, event, username):
-        session = ibid.databases.ibid()
         admin = False
 
         if event.account:

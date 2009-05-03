@@ -10,7 +10,6 @@ from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
 
-import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree

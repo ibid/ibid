@@ -6,7 +6,6 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeTe
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
-import ibid
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities

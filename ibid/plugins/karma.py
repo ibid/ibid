@@ -4,7 +4,6 @@ import logging
 from sqlalchemy import Column, Integer, Unicode, DateTime, Table
 from sqlalchemy.sql import func
 
-import ibid
 from ibid.plugins import Processor, match, handler, authorise
 from ibid.config import Option, BoolOption, IntOption
 from ibid.models import Base, VersionedSchema

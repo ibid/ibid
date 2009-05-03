@@ -5,7 +5,6 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeTe
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
-import ibid
 from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import Option
 from ibid.auth import permission
