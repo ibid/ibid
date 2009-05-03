@@ -485,8 +485,22 @@ _raway.update({
 # Small testing framework:
 def main():
     logging.basicConfig(level=logging.NOTSET)
+    class TestClient(DCClient):
+        def privmsg(self, user, private, message):
+            if 'test' in message:
+                self.say(private and user or None, '%s said %s' % (user, message))
+                self.say(None, '+me waves a test message')
+        
+        def sendLine(self, line):
+            log.debug('> %s', line)
+            DCClient.sendLine(self, line)
+
+        def lineReceived(self, line):
+            log.debug('< %s', line)
+            DCClient.lineReceived(self, line)
+
     class DCFactory(protocol.ClientFactory):
-        protocol = DCClient
+        protocol = TestClient
 
         def clientConnectionLost(self, connector, reason):
             log.info('Lost')
