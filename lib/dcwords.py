@@ -455,7 +455,8 @@ def _decode_htmlent(message):
     "DC uses HTML entities to encode non-ASCII text. Decode." 
     replace = lambda match: unichr(int(match.group(1)))
     message = unicode(message, 'utf-8', 'replace')
-    return re.sub(r'&#(\d+);', replace, message)
+    message = re.sub(r'&#(\d+);', replace, message)
+    return re.sub(r'/%DCN(\d{3})%/', replace, message)
 
 _modes = {
     'active': 'A',
