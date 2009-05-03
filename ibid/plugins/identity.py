@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy.orm import eagerload
 from sqlalchemy.sql import func
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 from ibid.plugins import Processor, match, auth_responses
@@ -283,7 +284,7 @@ class Identify(Processor):
                 try:
                     event.session.commit()
                     log.info(u'Created identity %s for %s on %s', identity.id, identity.identity, identity.source)
-                except:
+                except IntegrityError:
                     event.session.rollback()
                     event.session.close()
                     del event['session']

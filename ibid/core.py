@@ -7,6 +7,7 @@ from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 import auth
@@ -28,7 +29,7 @@ class Dispatcher(object):
             if 'session' in event and (event.session.dirty or event.session.deleted):
                 try:
                     event.session.commit()
-                except:
+                except IntegrityError:
                     self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
                             processor.__class__.__name__, processor.name)
                     event.complain = u'exception'

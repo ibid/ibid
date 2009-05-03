@@ -4,6 +4,7 @@ import logging
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
+from sqlalchemy.exceptions import IntegrityError
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -67,7 +68,7 @@ class See(Processor):
         event.session.save_or_update(sighting)
         try:
             event.session.commit()
-        except:
+        except IntegrityError:
             event.session.rollback()
             event.session.close()
             del event['session']
