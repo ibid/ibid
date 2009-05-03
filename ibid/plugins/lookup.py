@@ -55,8 +55,9 @@ class Bash(Processor):
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be")
         else:
             for line in quote.contents:
-                if str(line) != '<br />':
-                    event.addresponse(line.strip())
+                line = unicode(line).strip()
+                if line != u'<br />':
+                    event.addresponse(line)
 
 help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
