@@ -332,9 +332,11 @@ class Currency(Processor):
 
         search = re.compile(place, re.I)
         results = []
-        for code, (place, name) in self.currencies.iteritems():
-            if search.search(place):
-                results.append(u'%s uses %s (%s)' % (place, name, code))
+        for code, (places, name) in self.currencies.iteritems():
+            for place in places:
+                if search.search(place):
+                    results.append(u'%s uses %s (%s)' % (place, name, code))
+                    break
 
         if results:
             event.addresponse(u', '.join(results))
