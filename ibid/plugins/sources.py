@@ -48,10 +48,10 @@ class Info(Processor):
         for name, source in ibid.sources.items():
             url = source.url()
             sources.append(url and u'%s (%s)' % (name, url) or name)
-        event.addresponse(u'Sources: %s', u', '.join(sorted(sources)))
+        event.addresponse(u'Sources: %s', u', '.join(sorted(sources)) or u'none')
 
     @match(r'^list\s+configured\s+sources$')
     def listall(self, event):
-        event.addresponse(u'Configured sources: %s', u', '.join(sorted(ibid.config.sources.keys())))
+        event.addresponse(u'Configured sources: %s', u', '.join(sorted(ibid.config.sources.keys())) or u'none')
 
 # vi: set et sta sw=4 ts=4:

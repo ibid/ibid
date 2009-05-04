@@ -17,7 +17,7 @@ class ListPLugins(Processor):
             if processor.name not in plugins:
                 plugins.append(processor.name)
 
-        event.addresponse(u'Plugins: %s', u', '.join(sorted(plugins)))
+        event.addresponse(u'Plugins: %s', u', '.join(sorted(plugins)) or u'none')
 
 help['core'] = u'Reloads core modules.'
 class ReloadCoreModules(Processor):

@@ -55,8 +55,9 @@ class Bash(Processor):
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be")
         else:
             for line in quote.contents:
-                if str(line) != '<br />':
-                    event.addresponse(line.strip())
+                line = unicode(line).strip()
+                if line != u'<br />':
+                    event.addresponse(line)
 
 help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
@@ -331,9 +332,11 @@ class Currency(Processor):
 
         search = re.compile(place, re.I)
         results = []
-        for code, (place, name) in self.currencies.iteritems():
-            if search.search(place):
-                results.append(u'%s uses %s (%s)' % (place, name, code))
+        for code, (places, name) in self.currencies.iteritems():
+            for place in places:
+                if search.search(place):
+                    results.append(u'%s uses %s (%s)' % (place, name, code))
+                    break
 
         if results:
             event.addresponse(u', '.join(results))
@@ -417,7 +420,14 @@ class Weather(Processor):
             places = []
             for td in soup.table.findAll('td'):
                 places.append(td.find('a', href=re.compile('.*html$')).string)
-            raise Weather.TooManyPlacesException(places)
+
+            # Cities with more than one airport give duplicate entries. We can take the first
+            if len([x for x in places if x == places[0]]) == len(places):
+                url = urljoin('http://m.wund.com/cgi-bin/findweather/getForecast',
+                        soup.table.find('td').find('a', href=re.compile('.*html$'))['href'])
+                soup = get_html_parse_tree(url)
+            else:
+                raise Weather.TooManyPlacesException(places)
 
         return soup
 

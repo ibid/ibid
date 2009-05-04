@@ -69,7 +69,10 @@ class Bazaar(Processor, RPC):
     @match(r'^(?:repos|repositories)$')
     def handle_repositories(self, event):
         repositories = self.branches.keys()
-        event.addresponse(u'I know about: %s', u', '.join(sorted(repositories)))
+        if repositories:
+            event.addresponse(u'I know about: %s', u', '.join(sorted(repositories)))
+        else:
+            event.addresponse(u"I don't know about any repositories")
 
     def remote_committed(self, repository, start, end=None):
         commits = self.get_commits(repository, start, end)

@@ -15,8 +15,8 @@ class Addressed(Processor):
     verbs = Option('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
-        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I),
-                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I)
+        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
+                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I | re.DOTALL)
                         ]
 
     @handler
@@ -39,7 +39,7 @@ class Strip(Processor):
 
     priority = -1600
     addressed = False
-    pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$')
+    pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$', re.DOTALL)
 
     @handler
     def handle_strip(self, event):

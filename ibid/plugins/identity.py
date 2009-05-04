@@ -18,11 +18,13 @@ log = logging.getLogger('plugins.identity')
 help['accounts'] = u'An account represents a person. ' \
         'An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
-    u"""create account <name>"""
+    u"""create account [<name>]
+    delete (my account|account <name>)
+    rename (my account|account <name>) to <name>"""
     feature = 'accounts'
 
-    @match(r'^create\s+account\s+(.+)$')
-    def account(self, event, username):
+    @match(r'^create\s+account(?:\s+(.+))?$')
+    def new_account(self, event, username):
         admin = False
 
         if event.account:
@@ -32,6 +34,10 @@ class Accounts(Processor):
                 account = event.session.query(Account).filter_by(id=event.account).first()
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
+
+        if not username:
+            identity = event.session.query(Identity).get(event.identity)
+            username = identity.identity
 
         account = event.session.query(Account).filter_by(username=username).first()
         if account:
@@ -45,15 +51,83 @@ class Accounts(Processor):
         log.info(u"Created account %s (%s) by %s/%s (%s)",
                 account.id, account.username, event.account, event.identity, event.sender['connection'])
 
-        if not admin:
+        if admin:
+            identity = event.session.query(Identity) \
+                    .filter_by(identity=username, source=event.source.lower()).first()
+            if identity:
+                identity.account_id = account.id
+                event.session.save_or_update(identity)
+                event.session.flush()
+                log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                        identity.id, identity.identity, identity.source, account.id, account.username)
+        else:
             identity = event.session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
-            session.save_or_update(identity)
+            event.session.save_or_update(identity)
             event.session.flush()
             log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                     identity.id, identity.identity, identity.source, account.id, account.username)
 
         identify_cache.clear()
+        event.addresponse(True)
+
+    @match(r'^delete\s+(?:(my)\s+account|account\s+(.+))$')
+    def del_account(self, event, own, username):
+        admin = False
+
+        if own:
+            if event.account:
+                account = event.session.query(Account).filter_by(id=event.account).first()
+            else:
+                event.addresponse(u"You don't have an account")
+                return
+        else:
+            if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
+                admin = True
+            account = event.session.query(Account).filter_by(username=username).first()
+            if not account:
+                if admin:
+                    event.addresponse(u"Sorry, no such account")
+                return
+            elif not admin or username != account.username:
+                return
+        
+        event.session.delete(account)
+        identify_cache.clear()
+
+        log.info(u"Deleted account %s (%s) by %s/%s (%s)",
+                account.id, account.username, event.account, event.identity, event.sender['connection'])
+        event.addresponse(True)
+
+    @match(r'^rename\s+(?:(my)\s+account|account\s+(.+))\s+to\s+(.+)$')
+    def ren_account(self, event, own, username, newname):
+        admin = False
+
+        if own:
+            if event.account:
+                account = event.session.query(Account).filter_by(id=event.account).first()
+            else:
+                event.addresponse(u"You don't have an account")
+                return
+        else:
+            if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
+                admin = True
+            account = event.session.query(Account).filter_by(username=username).first()
+            if not account:
+                if admin:
+                    event.addresponse(u"Sorry, no such account")
+                return
+            elif not admin and username != account.username:
+                return
+        
+        oldname = account.username
+        account.username = newname
+
+        event.session.save_or_update(account)
+        identify_cache.clear()
+
+        log.info(u"Renamed account %s (%s) to %s by %s/%s (%s)",
+                account.id, oldname, account.username, event.account, event.identity, event.sender['connection'])
         event.addresponse(True)
 
 chars = string.letters + string.digits
