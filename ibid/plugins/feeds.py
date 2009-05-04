@@ -66,16 +66,19 @@ class Manage(Processor):
         valid = bool(feedparser.parse(url)["version"])
 
         if not valid:
-            soup = get_html_parse_tree(url)
-            for alternate in soup.findAll('link', {'rel': 'alternate',
-                    'type': re.compile(r'^application/(atom|rss)\+xml$'),
-                    'href': re.compile(r'.+')}):
-                newurl = urljoin(url, alternate["href"])
-                valid = bool(feedparser.parse(newurl)["version"])
+            try:
+                soup = get_html_parse_tree(url)
+                for alternate in soup.findAll('link', {'rel': 'alternate',
+                        'type': re.compile(r'^application/(atom|rss)\+xml$'),
+                        'href': re.compile(r'.+')}):
+                    newurl = urljoin(url, alternate["href"])
+                    valid = bool(feedparser.parse(newurl)["version"])
 
-                if valid:
-                    url = newurl
-                    break
+                    if valid:
+                        url = newurl
+                        break
+            except:
+                pass
 
         if not valid:
             event.addresponse(u"Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed", {
