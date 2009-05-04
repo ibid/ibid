@@ -336,7 +336,7 @@ class DCClient(LineReceiver):
         "I asked for an IP, here it is"
         #TODO
 
-    _to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$')
+    _to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$', re.DOTALL)
     def dc_To(self, params):
         "Received a private message"
         m = self._to_re.match(params)
