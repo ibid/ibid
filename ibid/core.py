@@ -257,6 +257,7 @@ class DatabaseManager(dict):
                         mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
                         c = dbapi_con.cursor()
                         c.execute("SET storage_engine=%s;" % mysql_engine)
+                        c.execute("SET time_zone='+0:00';")
                         c.close()
 
                 engine.pool.add_listener(MySQLModeListener())
