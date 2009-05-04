@@ -133,7 +133,7 @@ class Permissions(Processor):
                 return
 
         permissions = sorted(u'%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions)
-        event.addresponse(u'Permissions: %s', u', '.join(permissions))
+        event.addresponse(u'Permissions: %s', u', '.join(permissions) or u'none')
 
     @match(r'^list\s+permissions$')
     def list_permissions(self, event):
@@ -146,7 +146,7 @@ class Permissions(Processor):
                     if permission not in permissions:
                         permissions.append(permission)
 
-        event.addresponse(u'Permissions: %s', u', '.join(sorted(permissions)))
+        event.addresponse(u'Permissions: %s', u', '.join(sorted(permissions)) or u'none')
 
 class Auth(Processor):
     u"""auth <credential>"""
