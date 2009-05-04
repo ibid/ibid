@@ -75,7 +75,7 @@ def handler(function):
     return function
 
 def match(regex, version='clean'):
-    pattern = re.compile(regex, re.I)
+    pattern = re.compile(regex, re.I | re.DOTALL)
     def wrap(function):
         function.handler = True
         function.pattern = pattern
