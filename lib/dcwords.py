@@ -284,6 +284,12 @@ class DCClient(LineReceiver):
         "List of connected users received"
         self._state_Connected()
 
+        if self._reconnect_deferred is not None:
+            log.log(logging.DEBUG - 5, u'Received PONG')
+            self._reconnect_deferred.cancel()
+            self._reconnect_deferred = None
+            self._ping_deferred = reactor.callLater(self.ping_interval, self._idle_ping)
+
         oldlist = set(self.hub_users.keys())
 
         for nick in params.split('$$'):
@@ -298,12 +304,6 @@ class DCClient(LineReceiver):
         for nick in oldlist:
             self.userQuit(nick)
             del self.hub_users[nick]
-
-        if self._reconnect_deferred:
-            log.log(logging.DEBUG - 5, u'Received PONG')
-            self._reconnect_deferred.cancel()
-            self._reconnect_deferred = None
-            self._ping_deferred = reactor.callLater(self.ping_interval, self._idle_ping)
 
     def dc_ConnectToMe(self, params):
         "Someone wants to connect to me"
@@ -392,7 +392,7 @@ class DCClient(LineReceiver):
 
     def _timeout_reconnect(self):
         "Fired when pong never recived"
-        info(u'Ping-Pong timeout. Reconnecting')
+        log.info(u'Ping-Pong timeout. Reconnecting')
         self.transport.loseConnection()
 
     # Low Level Protocol:
