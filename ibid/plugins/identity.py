@@ -47,7 +47,7 @@ class Accounts(Processor):
 
         account = Account(username)
         event.session.save_or_update(account)
-        event.session.flush()
+        event.session.commit()
         log.info(u"Created account %s (%s) by %s/%s (%s)",
                 account.id, account.username, event.account, event.identity, event.sender['connection'])
 
@@ -57,14 +57,14 @@ class Accounts(Processor):
             if identity:
                 identity.account_id = account.id
                 event.session.save_or_update(identity)
-                event.session.flush()
+                event.session.commit()
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                         identity.id, identity.identity, identity.source, account.id, account.username)
         else:
             identity = event.session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
             event.session.save_or_update(identity)
-            event.session.flush()
+            event.session.commit()
             log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                     identity.id, identity.identity, identity.source, account.id, account.username)
 
@@ -93,6 +93,7 @@ class Accounts(Processor):
                 return
         
         event.session.delete(account)
+        event.session.commit()
         identify_cache.clear()
 
         log.info(u"Deleted account %s (%s) by %s/%s (%s)",
@@ -124,6 +125,7 @@ class Accounts(Processor):
         account.username = newname
 
         event.session.save_or_update(account)
+        event.session.commit()
         identify_cache.clear()
 
         log.info(u"Renamed account %s (%s) to %s by %s/%s (%s)",
@@ -171,7 +173,7 @@ class Identities(Processor):
 
                 event.addresponse(u"I've created the account %s for you", username)
 
-                event.session.flush()
+                event.session.commit()
                 log.info(u"Created account %s (%s) by %s/%s (%s)",
                         account.id, account.username, event.account, event.identity, event.sender['connection'])
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
@@ -215,11 +217,11 @@ class Identities(Processor):
                 ident = Identity(source, identity)
             ident.account_id = account.id
             event.session.save_or_update(ident)
+            event.session.commit()
 
             identify_cache.clear()
-            event.addresponse(True)
 
-            event.session.flush()
+            event.addresponse(True)
             log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)",
                     ident.id, ident.identity, ident.source, account.id, account.username,
                     event.account, event.identity, event.sender['connection'])
@@ -245,9 +247,10 @@ class Identities(Processor):
             identify_cache.clear()
 
             del self.tokens[token]
+            event.session.commit()
+
             event.addresponse(u'Identity added')
 
-            event.session.flush()
             log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s",
                     identity.id, identity.identity, identity.source, account_id, event.account,
                     event.identity, event.sender['connection'], token)
@@ -273,7 +276,10 @@ class Identities(Processor):
         else:
             identity.account_id = None
             event.session.save_or_update(identity)
+            event.session.commit()
+
             identify_cache.clear()
+
             event.addresponse(True)
             log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)",
                     identity.id, identity.identity, identity.source, account.id,
@@ -305,6 +311,8 @@ class Attributes(Processor):
 
         account.attributes.append(Attribute(name, value))
         event.session.save_or_update(account)
+        event.session.commit()
+
         event.addresponse(True)
         log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)",
                 name, value, account.id, account.username, event.account,

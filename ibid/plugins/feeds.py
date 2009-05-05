@@ -88,6 +88,7 @@ class Manage(Processor):
 
         feed = Feed(unicode(name), unicode(url), event.identity)
         event.session.save(feed)
+        event.session.commit()
         event.addresponse(True)
         log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
 
@@ -109,6 +110,7 @@ class Manage(Processor):
             event.addresponse(u"I don't have the %s feed anyway", name)
         else:
             event.session.delete(feed)
+            event.session.commit()
             log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
             event.addresponse(True)
 

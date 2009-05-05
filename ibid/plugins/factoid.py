@@ -194,11 +194,16 @@ class Forget(Processor):
                 if event.session.query(FactoidValue).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.names)) > 0 and not factoidadmin:
                         return
-                    log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     event.session.delete(factoid)
+                    event.session.commit()
+                    log.info(u"Deleted factoid %s (%s) by %s/%s (%s)",
+                            factoid.id, name, event.account, event.identity, event.sender['connection'])
                 else:
-                    log.info(u"Deleting value %s of factoid %s (%s) by %s/%s (%s)", factoids[0][2].id, factoid.id, factoids[0][2].value, event.account, event.identity, event.sender['connection'])
                     event.session.delete(factoids[0][2])
+                    event.session.commit()
+                    log.info(u"Deleted value %s of factoid %s (%s) by %s/%s (%s)",
+                            factoids[0][2].id, factoid.id, factoids[0][2].value,
+                            event.account, event.identity, event.sender['connection'])
 
             else:
                 if factoids[0][1].identity_id not in identities and not factoidadmin:
@@ -207,11 +212,17 @@ class Forget(Processor):
                 if event.session.query(FactoidName).filter_by(factoid_id=factoid.id).count() == 1:
                     if len(filter(lambda x: x.identity_id not in identities, factoid.values)) > 0 and not factoidadmin:
                         return
-                    log.info(u"Deleting factoid %s (%s) by %s/%s (%s)", factoid.id, name, event.account, event.identity, event.sender['connection'])
                     event.session.delete(factoid)
+                    event.session.commit()
+                    log.info(u"Deleted factoid %s (%s) by %s/%s (%s)",
+                            factoid.id, name, event.account, event.identity,
+                            event.sender['connection'])
                 else:
-                    log.info(u"Deleting name %s of factoid %s (%s) by %s/%s (%s)", factoids[0][1].id, factoid.id, factoids[0][1].name, event.account, event.identity, event.sender['connection'])
                     event.session.delete(factoids[0][1])
+                    event.session.commit()
+                    log.info(u"Deleted name %s of factoid %s (%s) by %s/%s (%s)",
+                            factoids[0][1].id, factoid.id, factoids[0][1].name,
+                            event.account, event.identity, event.sender['connection'])
 
             event.addresponse(True)
         else:
@@ -231,6 +242,7 @@ class Forget(Processor):
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
             event.session.save_or_update(factoid)
+            event.session.commit()
             event.addresponse(True)
             log.info(u"Added name '%s' to factoid %s by %s/%s (%s)", name.name, factoid.id, event.account, event.identity, event.sender['connection'])
         else:
@@ -382,14 +394,16 @@ class Set(Processor):
             factoid = Factoid()
             fname = FactoidName(escape_name(unicode(name)), event.identity)
             factoid.names.append(fname)
-            event.session.flush()
+            event.session.commit()
             log.info(u"Created factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
         fvalue = FactoidValue(unicode(value), event.identity)
         factoid.values.append(fvalue)
-        log.info(u"Added value '%s' to factoid %s by %s/%s (%s)", fvalue.value, factoid.id, event.account, event.identity, event.sender['connection'])
+        event.session.commit()
+        log.info(u"Added value '%s' to factoid %s by %s/%s (%s)",
+                fvalue.value, factoid.id, event.account, event.identity, event.sender['connection'])
         event.session.save_or_update(factoid)
         event.addresponse(True)
 
@@ -424,11 +438,13 @@ class Modify(Processor):
             if factoid[2].identity_id not in identities and not factoidadmin:
                 return
 
-            log.info(u"Appending '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
-                    suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account, event.identity, event.sender['connection'])
             factoid[2].value += suffix
-
             event.session.save_or_update(factoid[2])
+            event.session.commit()
+
+            log.info(u"Appended '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
+                    suffix, factoid[2].id, factoid[0].id, factoid[2].value, event.account,
+                    event.identity, event.sender['connection'])
             event.addresponse(True)
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
@@ -516,10 +532,12 @@ class Modify(Processor):
                     event.addresponse(u"That operation makes no sense. Try something like y/abcdef/ABCDEF/")
                     return
 
+            event.session.save_or_update(factoid[2])
+            event.session.commit()
+
             log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
                     operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
-            event.session.save_or_update(factoid[2])
             event.addresponse(True)
 
 # vi: set et sta sw=4 ts=4:

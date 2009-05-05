@@ -53,7 +53,7 @@ class AddAuth(Processor):
 
         credential = Credential(method, credential, source, account.id)
         event.session.save_or_update(credential)
-        event.session.flush()
+        event.session.commit()
         log.info(u"Added %s credential %s for account %s (%s) on %s by account %s",
                 method, credential.credential, account.id, account.username, source, event.account)
 
@@ -109,7 +109,7 @@ class Permissions(Processor):
             permission.value = value
             event.session.save_or_update(permission)
 
-        event.session.flush()
+        event.session.commit()
         log.info(u"%s %s permission for account %s (%s) by account %s",
                 actions[action.lower()], name, account.id, account.username, event.account)
 

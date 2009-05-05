@@ -123,6 +123,10 @@ while True:
             log.exception(u"Exception occured in %s processor of %s plugin",
                     processor.__class__.__name__, processor.name)
             event.complain = 'exception'
+            if 'session' in event:
+                event.session.rollback()
+                event.session.close()
+                del event['session']
 
         if 'session' in event:
             try:

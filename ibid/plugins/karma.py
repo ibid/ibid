@@ -84,6 +84,7 @@ class Set(Processor):
             event.session.delete(karma)
         else:
             event.session.save_or_update(karma)
+        event.session.commit()
 
         log.info(u"%s karma for '%s' by %s/%s (%s) because: %s",
                 change, subject, event.account, event.identity, event.sender['connection'], reason)
@@ -141,6 +142,7 @@ class Forget(Processor):
             event.addresponse(u"I was pretty ambivalent about %s, anyway", subject)
 
         event.session.delete(karma)
+        event.session.commit()
 
         log.info(u"Forgot karma for '%s' by %s/%s (%s) because: %s",
                 subject, event.account, event.identity, event.sender['connection'], reason)
