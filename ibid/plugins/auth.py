@@ -5,7 +5,7 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.models import Credential, Permission, Account
-from ibid.auth import hash, permission
+from ibid.auth import hash
 
 help = {}
 
@@ -21,7 +21,6 @@ class AddAuth(Processor):
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
     def handler(self, event, user, source, method, credential):
 
-        session = ibid.databases.ibid()
         if user.lower() == 'me':
             if not event.account:
                 event.addresponse(u"I don't know who you are")
@@ -29,15 +28,14 @@ class AddAuth(Processor):
             if not ibid.auth.authenticate(event):
                 event.complain = 'notauthed'
                 return
-            account = session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).filter_by(id=event.account).first()
 
         else:
             if not auth_responses(event, 'admin'):
                 return
-            account = session.query(Account).filter_by(username=user).first()
+            account = event.session.query(Account).filter_by(username=user).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", user)
-                session.close()
                 return
 
         if source:
@@ -49,14 +47,15 @@ class AddAuth(Processor):
         if method.lower() == 'password':
             password = hash(credential)
             event.message['clean'] = event.message['clean'][:-len(credential)] + password
-            event.message['raw'] = event.message['raw'][:event.message['raw'].rfind(credential)] + password + event.message['raw'][event.message['raw'].rfind(credential)+len(credential):]
+            event.message['raw'] = event.message['raw'][:event.message['raw'].rfind(credential)] \
+                    + password + event.message['raw'][event.message['raw'].rfind(credential)+len(credential):]
             credential = password
 
         credential = Credential(method, credential, source, account.id)
-        session.save_or_update(credential)
-        session.flush()
-        log.info(u"Added %s credential %s for account %s (%s) on %s by account %s", method, credential.credential, account.id, account.username, source, event.account)
-        session.close()
+        event.session.save_or_update(credential)
+        event.session.commit()
+        log.info(u"Added %s credential %s for account %s (%s) on %s by account %s",
+                method, credential.credential, account.id, account.username, source, event.account)
 
         event.addresponse(True)
 
@@ -73,17 +72,17 @@ class Permissions(Processor):
     @authorise
     def grant(self, event, action, name, username, auth):
 
-        session = ibid.databases.ibid()
-        account = session.query(Account).filter_by(username=username).first()
+        account = event.session.query(Account).filter_by(username=username).first()
         if not account:
             event.addresponse(u"I don't know who %s is", username)
-            session.close()
             return
 
-        permission = session.query(Permission).filter_by(account_id=account.id).filter(func.lower(Permission.name)==name.lower()).first()
+        permission = event.session.query(Permission) \
+                .filter_by(account_id=account.id) \
+                .filter(func.lower(Permission.name) == name.lower()).first()
         if action.lower() == 'remove':
             if permission:
-                session.delete(permission)
+                event.session.delete(permission)
             else:
                 event.addresponse(u"%s doesn't have that permission anyway", username)
                 return
@@ -108,26 +107,25 @@ class Permissions(Processor):
                 return
 
             permission.value = value
-            session.save_or_update(permission)
+            event.session.save_or_update(permission)
 
-        session.flush()
-        log.info(u"%s %s permission for account %s (%s) by account %s", actions[action.lower()], name, account.id, account.username, event.account)
-        session.close()
+        event.session.commit()
+        log.info(u"%s %s permission for account %s (%s) by account %s",
+                actions[action.lower()], name, account.id, account.username, event.account)
 
         event.addresponse(True)
 
     @match(r'^permissions(?:\s+for\s+(\S+))?$')
     def list(self, event, username):
-        session = ibid.databases.ibid()
         if not username:
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).filter_by(id=event.account).first()
         else:
             if not auth_responses(event, u'accounts'):
                 return
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return

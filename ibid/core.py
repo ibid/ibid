@@ -7,6 +7,7 @@ from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 import auth
@@ -20,9 +21,29 @@ class Dispatcher(object):
         for processor in ibid.processors:
             try:
                 processor.process(event)
-            except Exception:
-                self.log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+            except:
+                self.log.exception(u"Exception occured in %s processor of %s plugin",
+                        processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
+                if 'session' in event:
+                    event.session.rollback()
+                    event.session.close()
+                    del event['session']
+
+            if 'session' in event and (event.session.dirty or event.session.deleted):
+                try:
+                    event.session.commit()
+                except IntegrityError:
+                    self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                            processor.__class__.__name__, processor.name)
+                    event.complain = u'exception'
+                    event.session.rollback()
+                    event.session.close()
+                    del event['session']
+
+        if 'session' in event:
+            event.session.close()
+            del event['session']
 
         log_level = logging.DEBUG
         if event.type == u'clock' and not event.processed:
@@ -264,7 +285,7 @@ class DatabaseManager(dict):
 
                 engine.dialect.use_ansiquotes = True
 
-        self[name] = scoped_session(sessionmaker(bind=engine, transactional=False, autoflush=True))
+        self[name] = scoped_session(sessionmaker(bind=engine))
 
         self.log.info(u"Loaded %s database", name)
 

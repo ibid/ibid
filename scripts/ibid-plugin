@@ -14,6 +14,7 @@ except ImportError:
     pass
 
 from twisted.python.modules import getModule
+from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 import ibid.plugins
@@ -80,14 +81,18 @@ ibid.reloader.load_processors()
 username = unicode(getenv('USER'))
 if not username:
     username = u'tester'
+
 session = ibid.databases.ibid()
+
 identity = session.query(Identity).filter_by(identity=username).first()
 if not identity:
     identity = Identity(u'test_source',username)
     session.save(identity)
-    session.flush()
+    session.commit()
     identity = session.query(Identity).filter_by(identity=username).first()
 identity_id = identity.id
+
+session.close()
 
 try:
     encoding = getenv("LANG").split(".")[1]
@@ -115,13 +120,31 @@ while True:
         try:
             processor.process(event)
         except Exception:
-            log.exception(u"Exception occured in %s processor of %s plugin", processor.__class__.__name__, processor.name)
+            log.exception(u"Exception occured in %s processor of %s plugin",
+                    processor.__class__.__name__, processor.name)
             event.complain = 'exception'
+            if 'session' in event:
+                event.session.rollback()
+                event.session.close()
+                del event['session']
+
+        if 'session' in event:
+            try:
+                event.session.commit()
+            except IntegrityError:
+                self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                        processor.__class__.__name__, processor.name)
+                event.complain = u'exception'
+                event.session.rollback()
+                event.session.close()
+                del event['session']
 
     for response in event.responses:
         if isinstance(response, dict):
             response = response['reply']
         print 'Response: %s' % response
+
+    event.session.close()
 
 if readline:
     readline.write_history_file('.history')

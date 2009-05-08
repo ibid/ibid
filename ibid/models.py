@@ -61,7 +61,6 @@ class VersionedSchema(object):
             metadata.tables[dependancy].versioned_schema.upgrade_schema(sessionmaker)
 
         self.upgrade_session = session = sessionmaker()
-        trans = session.begin()
 
         schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).first()
 
@@ -79,8 +78,7 @@ class VersionedSchema(object):
                 for version in range(schema.version + 1, self.version + 1):
                     log.info(u"Upgrading table %s to version %i", self.table.name, version)
 
-                    trans.commit()
-                    trans = session.begin()
+                    session.commit()
 
                     getattr(self, 'upgrade_%i_to_%i' % (version - 1, version))()
 
@@ -88,10 +86,10 @@ class VersionedSchema(object):
                     session.save_or_update(schema)
                 del self.upgrade_reflected_model
 
-            trans.commit()
+            session.commit()
 
         except:
-            trans.rollback()
+            session.rollback()
             raise
 
         session.close()
@@ -236,7 +234,7 @@ class Schema(Base):
                 schema = Schema(unicode(self.table.name), self.version)
                 session.save_or_update(schema)
 
-            session.flush()
+            session.commit()
             session.close()
 
     __table__.versioned_schema = SchemaSchema(__table__, 1)

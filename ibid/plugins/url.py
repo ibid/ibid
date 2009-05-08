@@ -114,11 +114,8 @@ class Grab(Processor):
             else:
                 url = 'http://%s' % url
 
-        session = ibid.databases.ibid()
         u = URL(url, event.channel, event.identity)
-        session.save_or_update(u)
-        session.flush()
-        session.close()
+        event.session.save_or_update(u)
 
         if self.username != None:
             self.delicious.add_post(self.username, self.password, event, url)

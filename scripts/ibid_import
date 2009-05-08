@@ -63,7 +63,9 @@ def identify(session, user, source, created, create=True):
         return None
     user = decode(user)
     
-    identity = session.query(Identity).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+    identity = session.query(Identity) \
+            .filter(func.lower(Identity.identity) == user.lower()) \
+            .filter(func.lower(Identity.source) == source.lower()).first()
     if not identity:
         identity = Identity(source, user)
         identity.created = created
@@ -231,5 +233,6 @@ if __name__ == '__main__':
     print 'Done'
 
     knab.close()
+    ibid.close()
 
 # vi: set et sta sw=4 ts=4:

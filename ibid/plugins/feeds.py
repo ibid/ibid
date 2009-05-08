@@ -10,7 +10,6 @@ from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
 
-import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree
@@ -56,8 +55,8 @@ class Manage(Processor):
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
     @authorise
     def add(self, event, url, name):
-        session = ibid.databases.ibid()
-        feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
+        feed = event.session.query(Feed) \
+                .filter(func.lower(Feed.name) == name.lower()).first()
 
         if feed:
             event.addresponse(u"I already have the %s feed", name)
@@ -88,15 +87,14 @@ class Manage(Processor):
             return
 
         feed = Feed(unicode(name), unicode(url), event.identity)
-        session.save(feed)
-        session.flush()
+        event.session.save(feed)
+        event.session.commit()
         event.addresponse(True)
         log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
 
     @match(r'^(?:list\s+)?feeds$')
     def list(self, event):
-        session = ibid.databases.ibid()
-        feeds = session.query(Feed).all()
+        feeds = event.session.query(Feed).all()
         if feeds:
             event.addresponse(u'I know about: %s', u', '.join(sorted([feed.name for feed in feeds])))
         else:
@@ -105,18 +103,16 @@ class Manage(Processor):
     @match(r'^remove\s+(.+?)\s+feed$')
     @authorise
     def remove(self, event, name):
-        session = ibid.databases.ibid()
-        feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
+        feed = event.session.query(Feed) \
+                .filter(func.lower(Feed.name) == name.lower()).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
         else:
-            session.delete(feed)
+            event.session.delete(feed)
+            event.session.commit()
             log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
-            session.flush()
             event.addresponse(True)
-
-        session.close()
 
 class Retrieve(Processor):
     u"""latest [ <count> ] articles from <name> [ starting at <number> ]
@@ -128,9 +124,8 @@ class Retrieve(Processor):
         number = number and int(number) or 10
         start = start and int(start) or 0
 
-        session = ibid.databases.ibid()
-        feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
-        session.close()
+        feed = event.session.query(Feed) \
+                .filter(func.lower(Feed.name) == name.lower()).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)
@@ -147,9 +142,8 @@ class Retrieve(Processor):
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
-        session = ibid.databases.ibid()
-        feed = session.query(Feed).filter(func.lower(Feed.name)==name.lower()).first()
-        session.close()
+        feed = event.session.query(Feed) \
+                .filter(func.lower(Feed.name) == name.lower()).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)

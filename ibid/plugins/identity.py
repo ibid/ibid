@@ -15,7 +15,8 @@ identify_cache = {}
 
 log = logging.getLogger('plugins.identity')
 
-help['accounts'] = u'An account represents a person. An account has one or more identities, which is a user on a specific source.'
+help['accounts'] = u'An account represents a person. ' \
+        'An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
     u"""create account [<name>]
     delete (my account|account <name>)
@@ -24,66 +25,66 @@ class Accounts(Processor):
 
     @match(r'^create\s+account(?:\s+(.+))?$')
     def new_account(self, event, username):
-        session = ibid.databases.ibid()
         admin = False
 
         if event.account:
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
             else:
-                account = session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).filter_by(id=event.account).first()
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
         if not username:
-            identity = session.query(Identity).get(event.identity)
+            identity = event.session.query(Identity).get(event.identity)
             username = identity.identity
 
-        account = session.query(Account).filter_by(username=username).first()
+        account = event.session.query(Account).filter_by(username=username).first()
         if account:
-            event.addresponse(u'There is already an account called "%s". Please choose a different name', account.username)
+            event.addresponse(u'There is already an account called "%s". ' \
+                    'Please choose a different name', account.username)
             return
 
         account = Account(username)
-        session.save_or_update(account)
-        session.flush()
+        event.session.save_or_update(account)
+        event.session.commit()
         log.info(u"Created account %s (%s) by %s/%s (%s)",
                 account.id, account.username, event.account, event.identity, event.sender['connection'])
 
         if admin:
-            identity = session.query(Identity).filter_by(identity=username, source=event.source.lower()).first()
+            identity = event.session.query(Identity) \
+                    .filter_by(identity=username, source=event.source.lower()).first()
             if identity:
                 identity.account_id = account.id
-                session.save_or_update(identity)
-                session.flush()
-                log.info(u"Attached identity %s (%s on %s) to account %s (%s)", identity.id, identity.identity, identity.source, account.id, account.username)
+                event.session.save_or_update(identity)
+                event.session.commit()
+                log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                        identity.id, identity.identity, identity.source, account.id, account.username)
         else:
-            identity = session.query(Identity).filter_by(id=event.identity).first()
+            identity = event.session.query(Identity).filter_by(id=event.identity).first()
             identity.account_id = account.id
-            session.save_or_update(identity)
-            session.flush()
+            event.session.save_or_update(identity)
+            event.session.commit()
             log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                     identity.id, identity.identity, identity.source, account.id, account.username)
 
         identify_cache.clear()
-        session.close()
         event.addresponse(True)
 
     @match(r'^delete\s+(?:(my)\s+account|account\s+(.+))$')
     def del_account(self, event, own, username):
-        session = ibid.databases.ibid()
         admin = False
 
         if own:
             if event.account:
-                account = session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).filter_by(id=event.account).first()
             else:
                 event.addresponse(u"You don't have an account")
                 return
         else:
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 if admin:
                     event.addresponse(u"Sorry, no such account")
@@ -91,9 +92,8 @@ class Accounts(Processor):
             elif not admin or username != account.username:
                 return
         
-        session.begin()
-        session.delete(account)
-        session.commit()
+        event.session.delete(account)
+        event.session.commit()
         identify_cache.clear()
 
         log.info(u"Deleted account %s (%s) by %s/%s (%s)",
@@ -102,19 +102,18 @@ class Accounts(Processor):
 
     @match(r'^rename\s+(?:(my)\s+account|account\s+(.+))\s+to\s+(.+)$')
     def ren_account(self, event, own, username, newname):
-        session = ibid.databases.ibid()
         admin = False
 
         if own:
             if event.account:
-                account = session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).filter_by(id=event.account).first()
             else:
                 event.addresponse(u"You don't have an account")
                 return
         else:
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 if admin:
                     event.addresponse(u"Sorry, no such account")
@@ -125,11 +124,9 @@ class Accounts(Processor):
         oldname = account.username
         account.username = newname
 
-        session.save_or_update(account)
+        event.session.save_or_update(account)
+        event.session.commit()
         identify_cache.clear()
-
-        session.flush()
-        session.close()
 
         log.info(u"Renamed account %s (%s) to %s by %s/%s (%s)",
                 account.id, oldname, account.username, event.account, event.identity, event.sender['connection'])
@@ -149,44 +146,54 @@ class Identities(Processor):
 
     @match(r'^(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)$')
     def identity(self, event, username, identity, source):
-        session = ibid.databases.ibid()
         admin = False
         identity = identity.replace(' ', '')
 
         if username.upper() == 'I':
             if event.account:
-                account = session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).filter_by(id=event.account).first()
             else:
                 username = event.sender['id']
-                account = session.query(Account).filter_by(username=username).first()
+
+                account = event.session.query(Account).filter_by(username=username).first()
+
                 if account:
                     event.addresponse(u'I tried to create the account %s for you, but it already exists. '
                         u"Please use 'create account <name>'", username)
                     return
+
                 account = Account(username)
-                session.save_or_update(account)
-                session.flush()
-                currentidentity = session.query(Identity).filter_by(id=event.identity).first()
+                event.session.save_or_update(account)
+
+                currentidentity = event.session.query(Identity).filter_by(id=event.identity).first()
                 currentidentity.account_id = account.id
-                session.save_or_update(currentidentity)
-                session.flush()
+                event.session.save_or_update(currentidentity)
+
                 identify_cache.clear()
+
                 event.addresponse(u"I've created the account %s for you", username)
-                log.info(u"Created account %s (%s) by %s/%s (%s)", account.id, account.username, event.account, event.identity, event.sender['connection'])
-                log.info(u"Attached identity %s (%s on %s) to account %s (%s)", currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
+
+                event.session.commit()
+                log.info(u"Created account %s (%s) by %s/%s (%s)",
+                        account.id, account.username, event.account, event.identity, event.sender['connection'])
+                log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                        currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
 
         else:
             if not auth_responses(event, 'accounts'):
                 return
             admin = True
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
 
-        ident = session.query(Identity).filter(func.lower(Identity.identity)==identity.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+        ident = event.session.query(Identity) \
+                .filter(func.lower(Identity.identity) == identity.lower()) \
+                .filter(func.lower(Identity.source) == source.lower()).first()
         if ident and ident.account:
-            event.addresponse(u'This identity is already attached to account %s', ident.account.username)
+            event.addresponse(u'This identity is already attached to account %s',
+                    ident.account.username)
             return
 
         if source not in ibid.sources:
@@ -202,22 +209,26 @@ class Identities(Processor):
             if event.public:
                 response['target'] = event.sender['id']
             event.addresponse(response)
-            log.info(u"Sent token %s to %s/%s (%s)", token, event.account, event.identity, event.sender['connection'])
+            log.info(u"Sent token %s to %s/%s (%s)",
+                    token, event.account, event.identity, event.sender['connection'])
 
         else:
             if not ident:
                 ident = Identity(source, identity)
             ident.account_id = account.id
-            session.save_or_update(ident)
-            session.flush()
+            event.session.save_or_update(ident)
+            event.session.commit()
+
             identify_cache.clear()
+
             event.addresponse(True)
-            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)", ident.id, ident.identity, ident.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
+            log.info(u"Attached identity %s (%s on %s) to account %s (%s) by %s/%s (%s)",
+                    ident.id, ident.identity, ident.source, account.id, account.username,
+                    event.account, event.identity, event.sender['connection'])
 
     @match(r'^(\S{16})$')
     def token(self, event, token):
         if token in self.tokens:
-            session = ibid.databases.ibid()
             (account_id, user, source) = self.tokens[token]
             if event.source.lower() != source.lower() or event.sender['id'].lower() != user.lower():
                 event.addresponse(u'You need to send me this token from %(name)s on %(source)s', {
@@ -226,45 +237,53 @@ class Identities(Processor):
                 })
                 return
 
-            identity = session.query(Identity).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+            identity = event.session.query(Identity) \
+                    .filter(func.lower(Identity.identity) == user.lower()) \
+                    .filter(func.lower(Identity.source) == source.lower()).first()
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
-            session.save_or_update(identity)
-            session.flush()
-            session.close()
+            event.session.save_or_update(identity)
             identify_cache.clear()
 
             del self.tokens[token]
+            event.session.commit()
+
             event.addresponse(u'Identity added')
-            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s", identity.id, identity.identity, identity.source, account_id, event.account, event.identity, event.sender['connection'], token)
+
+            log.info(u"Attached identity %s (%s on %s) to account %s by %s/%s (%s) with token %s",
+                    identity.id, identity.identity, identity.source, account_id, event.account,
+                    event.identity, event.sender['connection'], token)
 
     @match(r'^remove\s+identity\s+(.+?)\s+on\s+(\S+)(?:\s+from\s+(\S+))?$')
     def remove(self, event, user, source, username):
-        session = ibid.databases.ibid()
-
         if not username:
-            account = session.query(Account).get(event.account)
+            account = event.session.query(Account).get(event.account)
         else:
             if not auth_responses(event, 'accounts'):
                 return
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
 
-        identity = session.query(Identity).filter_by(account_id=account.id).filter(func.lower(Identity.identity)==user.lower()).filter(func.lower(Identity.source)==source.lower()).first()
+        identity = event.session.query(Identity) \
+                .filter_by(account_id=account.id) \
+                .filter(func.lower(Identity.identity) == user.lower()) \
+                .filter(func.lower(Identity.source) == source.lower()).first()
         if not identity:
             event.addresponse(u"I don't know about that identity")
         else:
             identity.account_id = None
-            session.save_or_update(identity)
-            session.flush()
-            identify_cache.clear()
-            event.addresponse(True)
-            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)", identity.id, identity.identity, identity.source, account.id, account.username, event.account, event.identity, event.sender['connection'])
+            event.session.save_or_update(identity)
+            event.session.commit()
 
-        session.close()
+            identify_cache.clear()
+
+            event.addresponse(True)
+            log.info(u"Removed identity %s (%s on %s) from account %s (%s) by %s/%s (%s)",
+                    identity.id, identity.identity, identity.source, account.id,
+                    account.username, event.account, event.identity, event.sender['connection'])
 
 class Attributes(Processor):
     u"""set (my|<account>) <name> to <value>"""
@@ -272,13 +291,12 @@ class Attributes(Processor):
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
     def attribute(self, event, username, name, value):
-        session = ibid.databases.ibid()
 
         if username.lower() == 'my':
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).filter_by(id=event.account).first()
             if not account:
                 event.addresponse(u"%s doesn't exist. Please use 'add account' first", username)
                 return
@@ -286,17 +304,19 @@ class Attributes(Processor):
         else:
             if not auth_responses(event, 'accounts'):
                 return
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
 
         account.attributes.append(Attribute(name, value))
-        session.save_or_update(account)
-        session.flush()
-        session.close()
+        event.session.save_or_update(account)
+        event.session.commit()
+
         event.addresponse(True)
-        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)", name, value, account.id, account.username, event.account, event.identity, event.sender['connection'])
+        log.info(u"Added attribute '%s' = '%s' to account %s (%s) by %s/%s (%s)",
+                name, value, account.id, account.username, event.account,
+                event.identity, event.sender['connection'])
 
 class Describe(Processor):
     u"""who (am I|is <username>)"""
@@ -304,19 +324,18 @@ class Describe(Processor):
 
     @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
     def describe(self, event, username):
-        session = ibid.databases.ibid()
         if username.upper() == 'I':
             if not event.account:
-                identity = session.query(Identity).get(event.identity)
+                identity = event.session.query(Identity).get(event.identity)
                 event.addresponse(u"%(name)s on %(source)s", {
                     'name': identity.identity,
                     'source': identity.source,
                 })
                 return
-            account = session.query(Account).get(event.account)
+            account = event.session.query(Account).get(event.account)
 
         else:
-            account = session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account).filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
@@ -325,7 +344,6 @@ class Describe(Processor):
             'accountname': account.username,
             'identities': u', '.join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
-        session.close()
 
 class Identify(Processor):
 
@@ -337,25 +355,26 @@ class Identify(Processor):
                 (event.identity, event.account) = identify_cache[(event.source, event.sender['connection'])]
                 return
 
-            session = ibid.databases.ibid()
-            identity = session.query(Identity)\
-                    .options(eagerload('account'))\
-                    .filter(func.lower(Identity.source) == event.source.lower())\
-                    .filter(func.lower(Identity.identity) == event.sender['id'].lower())\
+            identity = event.session.query(Identity) \
+                    .options(eagerload('account')) \
+                    .filter(func.lower(Identity.source) == event.source.lower()) \
+                    .filter(func.lower(Identity.identity) == event.sender['id'].lower()) \
                     .first()
             if not identity:
                 identity = Identity(event.source, event.sender['id'])
-                session.save_or_update(identity)
+                event.session.save_or_update(identity)
                 try:
-                    session.flush()
+                    event.session.commit()
                     log.info(u'Created identity %s for %s on %s', identity.id, identity.identity, identity.source)
                 except IntegrityError:
-                    session.expunge(identity)
+                    event.session.rollback()
+                    event.session.close()
+                    del event['session']
                     log.debug(u'Race encountered creating identity for %s on %s', event.sender['id'], event.source)
-                    identity = session.query(Identity)\
-                            .options(eagerload('account'))\
-                            .filter(func.lower(Identity.source) == event.source.lower())\
-                            .filter(func.lower(Identity.identity) == event.sender['id'].lower())\
+                    identity = event.session.query(Identity) \
+                            .options(eagerload('account')) \
+                            .filter(func.lower(Identity.source) == event.source.lower()) \
+                            .filter(func.lower(Identity.identity) == event.sender['id'].lower()) \
                             .one()
 
             event.identity = identity.id
@@ -365,29 +384,9 @@ class Identify(Processor):
                 event.account = None
             identify_cache[(event.source, event.sender['connection'])] = (event.identity, event.account)
 
-            session.close()
-
-def identify(source, user):
-
-    session = ibid.databases.ibid()
-
-    identity = session.query(Identity).filter(func.lower(Identity.source)==source.lower()).filter(func.lower(Identity.identity)==user.lower()).first()
-    account = session.query(Account).filter_by(username=user).first()
-
-    if not account and not identity:
-        return None
-    if not account:
-        return identity
-    if not identity or identity in account.identities:
-        return account
-    return (account, identity)
-
-def get_identities(event, session=None):
-    if not session:
-        session = ibid.databases.ibid()
-
+def get_identities(event):
     if event.account:
-        account = session.query(Account).get(event.account)
+        account = event.session.query(Account).get(event.account)
         return [identity.id for identity in account.identities]
     else:
         return (event.identity,)

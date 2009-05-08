@@ -83,7 +83,6 @@ if pass1 != pass2:
     exit(1)
 
 session = Session()
-session.begin()
 account = Account(identity)
 identity = Identity(source, identity)
 account.identities.append(identity)

@@ -6,7 +6,6 @@ from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 from sqlalchemy.exceptions import IntegrityError
 
-import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.models import Base, VersionedSchema, Identity, Account
@@ -51,8 +50,9 @@ class See(Processor):
         if event.type != 'message' and event.type != 'state':
             return
 
-        session = ibid.databases.ibid()
-        sighting = session.query(Sighting).filter_by(identity_id=event.identity).filter_by(type=event.type).first()
+        sighting = event.session.query(Sighting) \
+                .filter_by(identity_id=event.identity) \
+                .filter_by(type=event.type).first()
         if not sighting:
             sighting = Sighting(event.identity, event.type)
 
@@ -65,12 +65,15 @@ class See(Processor):
         sighting.time = datetime.now()
         sighting.count = sighting.count + 1
 
+        event.session.save_or_update(sighting)
         try:
-            session.save_or_update(sighting)
-            session.flush()
+            event.session.commit()
         except IntegrityError:
-            log.debug('Race on seen update for identity %s', event.identity)
-        session.close()
+            event.session.rollback()
+            event.session.close()
+            del event['session']
+            log.debug(u'Race encountered updating seen for %s on %s',
+                    event.sender['id'], event.source)
 
 class Seen(Processor):
     u"""seen <who>"""
@@ -81,14 +84,15 @@ class Seen(Processor):
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):
 
-        session = ibid.databases.ibid()
         account = None
-        identity = session.query(Identity).filter(func.lower(Identity.source)==(source and source or event.source).lower()).filter(func.lower(Identity.identity)==who.lower()).first()
+        identity = event.session.query(Identity) \
+                .filter(func.lower(Identity.source) == (source and source or event.source).lower()) \
+                .filter(func.lower(Identity.identity) == who.lower()).first()
         if identity and identity.account and not source:
             account = identity.account
 
         if not identity and not source:
-            account = session.query(Account).filter_by(username=who).first()
+            account = event.session.query(Account).filter_by(username=who).first()
 
         if not identity and not account:
             event.addresponse(u"I don't know who %s is", who)
@@ -98,13 +102,15 @@ class Seen(Processor):
         states = []
         if account:
             for identity in account.identities:
-                for sighting in session.query(Sighting).filter_by(identity_id=identity.id).all():
+                for sighting in event.session.query(Sighting) \
+                        .filter_by(identity_id=identity.id).all():
                     if sighting.type == 'message':
                         messages.append(sighting)
                     else:
                         states.append(sighting)
         else:
-            for sighting in session.query(Sighting).filter_by(identity_id=identity.id).all():
+            for sighting in event.session.query(Sighting) \
+                    .filter_by(identity_id=identity.id).all():
                 if sighting.type == 'message':
                     messages.append(sighting)
                 else:
@@ -133,6 +139,5 @@ class Seen(Processor):
             reply += u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, sighting.time.strftime(self.datetime_format))
 
         event.addresponse(reply)
-        session.close()
 
 # vi: set et sta sw=4 ts=4:
