@@ -1,8 +1,9 @@
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
 from urlparse import urljoin
 from time import time
 from datetime import datetime
+from random import choice
 from simplejson import loads
 from xml.dom.minidom import parse
 import re
@@ -122,6 +123,12 @@ class FMyLife(Processor):
     api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
+    failure_messages = (
+            u'Today, I tried to get a quote for %(nick)s but failed. FML',
+            u'Today, FML is down. FML',
+            u"Sorry, it's broken, the FML admins must having a really bad day",
+    )
+
     def remote_get(self, id):
         url = urljoin(self.api_url, 'view/%s?%s' % (
             id.isalnum() and id + '/nocomment' or quote(id),
@@ -153,7 +160,12 @@ class FMyLife(Processor):
 
     @handler
     def fml(self, event, id):
-        quote = self.remote_get(id)
+        try:
+            quote = self.remote_get(id)
+        except HTTPError:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
+
         if quote:
             event.addresponse(quote)
         else:
@@ -161,7 +173,11 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        event.addresponse(self.remote_get('random'))
+        try:
+            event.addresponse(self.remote_get('random'))
+        except HTTPError:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
