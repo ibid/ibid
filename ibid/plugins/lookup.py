@@ -156,7 +156,7 @@ class FMyLife(Processor):
         try:
             quote = self.remote_get(id)
         except HTTPError:
-            event.addresponse(u"Sorry, it's broken, the FML admins must having a really bad day")
+            event.addresponse(u"Today, I tried to get a quote for %s but failed. FML." % event.sender['nick'])
             return
 
         if quote:
@@ -166,7 +166,11 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        event.addresponse(self.remote_get('random'))
+        try:
+            event.addresponse(self.remote_get('random'))
+        except HTTPError:
+            event.addresponse(u"Today, I tried to get a quote for %s but failed. FML." % event.sender['nick'])
+            return
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
