@@ -1,4 +1,4 @@
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
 from urlparse import urljoin
 from time import time
@@ -153,7 +153,12 @@ class FMyLife(Processor):
 
     @handler
     def fml(self, event, id):
-        quote = self.remote_get(id)
+        try:
+            quote = self.remote_get(id)
+        except HTTPError:
+            event.addresponse(u"Sorry, it's broken, the FML admins must having a really bad day")
+            return
+
         if quote:
             event.addresponse(quote)
         else:
