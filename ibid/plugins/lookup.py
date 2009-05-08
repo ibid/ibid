@@ -3,6 +3,7 @@ from urllib import urlencode, quote
 from urlparse import urljoin
 from time import time
 from datetime import datetime
+from random import choice
 from simplejson import loads
 from xml.dom.minidom import parse
 import re
@@ -122,6 +123,12 @@ class FMyLife(Processor):
     api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
+    failure_messages = (
+            u'Today, I tried to get a quote for %(nick)s but failed. FML',
+            u'Today, FML is down. FML',
+            u"Sorry, it's broken, the FML admins must having a really bad day",
+    )
+
     def remote_get(self, id):
         url = urljoin(self.api_url, 'view/%s?%s' % (
             id.isalnum() and id + '/nocomment' or quote(id),
@@ -156,7 +163,7 @@ class FMyLife(Processor):
         try:
             quote = self.remote_get(id)
         except HTTPError:
-            event.addresponse(u"Today, I tried to get a quote for %s but failed. FML." % event.sender['nick'])
+            event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
         if quote:
@@ -169,7 +176,7 @@ class FMyLife(Processor):
         try:
             event.addresponse(self.remote_get('random'))
         except HTTPError:
-            event.addresponse(u"Today, I tried to get a quote for %s but failed. FML." % event.sender['nick'])
+            event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
     @match(r'^fml\s+categories$')
