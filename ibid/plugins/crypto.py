@@ -1,6 +1,7 @@
 from crypt import crypt
-import hashlib
 import base64
+import hashlib
+import re
 
 from ibid.plugins import Processor, match
 
@@ -36,6 +37,7 @@ class Rot13(Processor):
 
     @match(r'^rot13\s+(.+)$')
     def rot13(self, event, string):
-        event.addresponse(string.encode('rot13'))
+        repl = lambda x: x.group(0).encode('rot13')
+        event.addresponse(re.sub('[a-zA-Z]+', repl, string))
 
 # vi: set et sta sw=4 ts=4:
