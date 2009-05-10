@@ -228,19 +228,33 @@ class Twitter(Processor):
 
     @handler
     def update(self, event, service, id):
-        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service.lower(), int(id)))
+        try:
+            event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service.lower(), int(id)))
+        except HTTPError, e:
+            if e.code == 403:
+                event.addresponse(u'That %s is private', service.lower() == 'twitter' and 'tweet' or service.lower())
+            elif e.code == 404:
+                event.addresponse(u'No such %s', service.lower() == 'twitter' and 'tweet' or service.lower())
+            else:
+                event.addresponse(u'I can only see the Fail Whale')
 
     @handler
     def latest(self, event, service, user):
-        event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service.lower(), user))
+        try:
+            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service.lower(), user))
+        except HTTPError, e:
+            if e.code == 404:
+                event.addresponse(u'No such microblogger')
+            else:
+                event.addresponse(u'I can only see the Fail Whale')
 
     @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
-        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update('twitter', int(id)))
+        self.update(event, u'twitter', id)
 
     @match(r'^https?://(?:www\.)?identi.ca/notice/(\d+)$')
     def identica(self, event, id):
-        event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update('identi.ca', int(id)))
+        self.update(event, u'identica', id)
 
 help['currency'] = u'Converts amounts between currencies.'
 class Currency(Processor):
