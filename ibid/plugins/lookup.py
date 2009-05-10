@@ -190,61 +190,65 @@ class Twitter(Processor):
 
     feature = "microblog"
 
-    default = { 'twitter': 'http://twitter.com/',
-                'tweet': 'http://twitter.com/',
-                'identica': 'http://identi.ca/api/',
-                'identi.ca': 'http://identi.ca/api/',
-              }
+    default = {
+        'twitter':   {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
+        'tweet':     {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
+        'identica':  {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
+        'identi.ca': {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
+        'dent':      {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
+    }
     services = Option('services', 'Micro blogging services', default)
 
     def setup(self):
-        self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % ('|'.join(self.services.keys()),), re.I)
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$' % ('|'.join(self.services.keys()),), re.I)
+        self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % '|'.join(self.services.keys()), re.I)
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$'
+                % '|'.join(self.services.keys()), re.I)
 
     def remote_update(self, service, id):
-        f = urlopen('%sstatuses/show/%s.json' % (self.services[service], id))
+        f = urlopen('%sstatuses/show/%s.json' % (service['endpoint'], id))
         status = loads(f.read())
         f.close()
 
         return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
-        service_url = self.services[service]
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service_url, user))
+        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service['endpoint'], user))
         statuses = loads(f.read())
         f.close()
         latest = statuses[0]
 
-        if "twitter" in service_url:
-            url = "%s%s/status/%i" % (service_url, latest["user"]["screen_name"], latest["id"])
-        elif service_url.endswith("/api/"):
-            url = "%s/notice/%i" % (service_url[:-5], latest["id"])
+        if service['api'] == 'twitter':
+            url = '%s%s/status/%i' % (service['endpoint'], latest['user']['screen_name'], latest['id'])
+        elif service['api'] == 'laconica':
+            url = '%s/notice/%i' % (service['endpoint'].split('/api/', 1)[0], latest['id'])
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - datetime.strptime(latest["created_at"], '%a %b %d %H:%M:%S +0000 %Y'), 1),
+            'ago': ago(datetime.utcnow() - datetime.strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y'), 1),
             'url': url,
         }
 
     @handler
-    def update(self, event, service, id):
+    def update(self, event, service_name, id):
+        service = self.services[service_name.lower()]
         try:
-            event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service.lower(), int(id)))
+            event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service, int(id)))
         except HTTPError, e:
             if e.code == 403:
-                event.addresponse(u'That %s is private', service.lower() == 'twitter' and 'tweet' or service.lower())
+                event.addresponse(u'That %s is private', service['name'])
             elif e.code == 404:
-                event.addresponse(u'No such %s', service.lower() == 'twitter' and 'tweet' or service.lower())
+                event.addresponse(u'No such %s', service['name'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
 
     @handler
-    def latest(self, event, service, user):
+    def latest(self, event, service_name, user):
+        service = self.services[service_name.lower()]
         try:
-            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service.lower(), user))
+            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service, user))
         except HTTPError, e:
             if e.code == 404:
-                event.addresponse(u'No such microblogger')
+                event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
 
