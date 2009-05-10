@@ -401,8 +401,8 @@ class Set(Processor):
             fname = FactoidName(escape_name(unicode(name)), event.identity)
             factoid.names.append(fname)
             event.session.save_or_update(factoid)
-            event.session.commit()
-            log.info(u"Created factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
+            event.session.flush()
+            log.info(u"Creating factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
 
         if not reply_re.match(value) and not action_re.match(value):
             value = '%s %s' % (verb, value)
