@@ -287,7 +287,7 @@ class Currency(Processor):
         self.currencies['XOF'][1] = u'Francs'
 
 
-    def _resolve_currency(self, name):
+    def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
 
         if name.upper() in self.currencies:
@@ -296,7 +296,7 @@ class Currency(Processor):
         name = self.strip_currency_re.match(name).group(1).lower()
 
         # TLD -> country name
-        if len(name) == 2 and name.upper() in self.country_codes:
+        if rough and len(name) == 2 and name.upper() in self.country_codes:
            name = self.country_codes[name.upper()].lower()
         
         # Currency Name
@@ -318,10 +318,12 @@ class Currency(Processor):
         if not self.country_codes:
             self.country_codes = get_country_codes()
 
-        canonical_frm = self._resolve_currency(frm)
-        canonical_to = self._resolve_currency(to)
+        rough = command.lower() == 'exchange'
+
+        canonical_frm = self._resolve_currency(frm, rough)
+        canonical_to = self._resolve_currency(to, rough)
         if not canonical_frm or not canonical_to:
-            if command.lower() == "exchange":
+            if rough:
                 event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
             return
 
