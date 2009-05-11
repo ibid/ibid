@@ -37,7 +37,7 @@ class Fortune(Processor, RPC):
         output, error = fortune.communicate()
         code = fortune.wait()
 
-        output = unicode_output(output.strip())
+        output = unicode_output(output.strip(), 'replace')
         output = output.replace(u'\t', u' ').replace(u'\n', u' ')
 
         if code == 0:
