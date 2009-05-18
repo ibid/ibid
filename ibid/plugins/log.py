@@ -17,13 +17,13 @@ class Log(Processor):
     log = Option('log', 'Log file to log messages to. Can contain substitutions.',
             'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log')
     message_format = Option('message_format', 'Format string for messages',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(sender_nick)s> %(message)s')
+            u'%(year)d-%(month)02d-%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(sender_nick)s> %(message)s')
     action_format = Option('action_format', 'Format string for actions',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d  * %(sender_nick)s %(message)s')
+            u'%(year)d-%(month)02d-%(day)02d %(hour)02d:%(minute)02d:%(second)02d  * %(sender_nick)s %(message)s')
     notice_format = Option('notice_format', 'Format string for notices',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d -%(sender_nick)s- %(message)s')
+            u'%(year)d-%(month)02d-%(day)02d %(hour)02d:%(minute)02d:%(second)02d -%(sender_nick)s- %(message)s')
     presence_format = Option('presence_format', 'Format string for presence events',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(sender_nick)s (%(sender_connection)s) is now %(state)s')
+            u'%(year)d-%(month)02d-%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(sender_nick)s (%(sender_connection)s) is now %(state)s')
     logs = {}
 
     def get_logfile(self, source, channel, when):
