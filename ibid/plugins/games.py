@@ -145,7 +145,7 @@ class Shootout(Processor):
                 )), {
                     'winner': shooter,
                     'loser': enemy,
-                    'part': choice(damage > 50 and self.vitals or self.extremities),
+                    'part': choice(self.extremities),
                 })
             
         else:
