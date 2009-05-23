@@ -434,7 +434,7 @@ class DCClient(LineReceiver):
                 if speaker != self.my_nickname:
                     self.privmsg(speaker, False, message)
         elif line.startswith('* ') or line.startswith('** '):
-            action = line.split(' ', 1)[1:].split(' ', 1)
+            action = line.split(' ', 1)[1].split(' ', 1)
             speaker = _decode_htmlent(action[0])
             message = len(action) > 1 and _decode_htmlent(action[1]) or u''
             if speaker != self.my_nickname:
