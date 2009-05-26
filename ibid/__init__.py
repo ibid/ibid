@@ -47,15 +47,13 @@ def setup(opts, service=None):
         options[key] = value
     options['base'] = dirname(options['config'])
 
+    # Get Twisted to log to Python logging
+    twisted.python.log.startLoggingWithObserver(twisted_log)
+
     # Undo Twisted logging's redirection of stdout and stderr
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
     logging.basicConfig(level=logging.INFO)
-
-    # Get Twisted to log to Python logging
-    for observer in twisted.python.log.theLogPublisher.observers:
-        twisted.python.log.removeObserver(observer)
-    twisted.python.log.addObserver(twisted_log)
 
     if not exists(options['config']):
         raise IbidException('Cannot find configuration file %s' % options['config'])
