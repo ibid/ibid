@@ -88,7 +88,6 @@ class Delicious():
             title = etree.findtext('head/title')
             return title
         except Exception:
-            log.exception(u"Delicious logic - error determining the title for url %s", url)
             return url
 
     def _set_auth(self, username, password):
