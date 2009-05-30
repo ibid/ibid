@@ -45,7 +45,12 @@ class GoogleAPISearch(Processor):
 
     @match(r'^google\s+(?:for\s+)?(.+?)$')
     def search(self, event, query):
-        items = self._google_api_search(query)
+        try:
+            items = self._google_api_search(query)
+        except BadStatusLine:
+            event.addresponse(u"Google appears to be broken (or more likely, my connection to it)")
+            return
+
         results = []
         for item in items["responseData"]["results"]:
 
@@ -60,8 +65,13 @@ class GoogleAPISearch(Processor):
 
     @match(r'^(?:rank|(?:google(?:fight|compare|cmp)))\s+(?:for\s+)?(.+?)\s+and\s+(.+?)$')
     def googlefight(self, event, term1, term2):
-        count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
-        count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        try:
+            count1 = int(self._google_api_search(term1, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+            count2 = int(self._google_api_search(term2, "small")["responseData"]["cursor"].get("estimatedResultCount", 0))
+        except BadStatusLine:
+            event.addresponse(u"Google appears to be broken (or more likely, my connection to it)")
+            return
+
         event.addresponse(u'%(firstterm)s wins with %(firsthits)i hits, %(secondterm)s had %(secondhits)i hits',
             (count1 > count2 and {
                 'firstterm':  term1,
