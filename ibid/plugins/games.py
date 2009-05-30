@@ -110,7 +110,7 @@ class Shootout(Processor):
         
         enemy = [duel[name][1] for name in duel.keys() if name != shooter.lower()][0]
         enemyk = enemy.lower()
-        chance, power = self.weapons[weapon]
+        chance, power = self.weapons[weapon.lower()]
 
         if random() < chance:
             damage = gauss(power, power/2.0)
