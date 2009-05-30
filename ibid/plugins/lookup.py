@@ -7,12 +7,15 @@ from random import choice
 from simplejson import loads
 from xml.dom.minidom import parse
 import re
+import logging
 
 import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, cacheable_download
+
+log = logging.getLogger('plugins.lookup')
 
 help = {}
 
@@ -270,7 +273,6 @@ class Currency(Processor):
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
-    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
@@ -299,11 +301,13 @@ class Currency(Processor):
                             currency[0].append(place)
                     else:
                         self.currencies[code] = [[place], name.strip()]
+
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
         self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
         self.currencies['XOF'][1] = u'Francs'
 
+    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
