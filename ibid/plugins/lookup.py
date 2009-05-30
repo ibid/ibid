@@ -315,7 +315,12 @@ class Currency(Processor):
         if name.upper() in self.currencies:
             return name.upper()
 
-        name = self.strip_currency_re.match(name).group(1).lower()
+        m = self.strip_currency_re.match(name)
+        
+        if m is None:
+            return False
+
+        name = m.group(1).lower()
 
         # TLD -> country name
         if rough and len(name) == 2 and name.upper() in self.country_codes:
