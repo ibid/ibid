@@ -489,7 +489,7 @@ class Weather(Processor):
 
         for td in table.findAll('td', align='left'):
             day = td.b.string
-            forecast = td.contents[2]
+            forecast = u' '.join([self._text(line) for line in td.contents[2:]])
             forecasts.append(u'%s: %s' % (day, self._text(forecast)))
 
         return forecasts
