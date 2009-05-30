@@ -1,6 +1,9 @@
 from time import sleep
 import logging
 
+from twisted.internet import reactor
+
+import ibid
 from ibid.plugins import Processor, match
 from ibid.config import IntOption
 from ibid.utils import ibid_version
@@ -13,33 +16,46 @@ class Coffee(Processor):
     u"""coffee (on|please)"""
     feature = 'coffee'
 
-    pot = None
+    pots = {}
 
     time = IntOption('coffee_time', u'Brewing time in seconds', 240)
     cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
     
+    def coffee_announce(self, source, channel):
+        try:
+            ibid.dispatcher.send({
+                'reply': u"Coffee's ready for %s!" % u', '.join(self.pots[(source, channel)]),
+                'source': source,
+                'target': channel,
+            })
+            del self.pots[(source, channel)]
+        except:
+            log.exception('Coffee callback')
+
     @match(r'^coffee\s+on$')
     def coffee_on(self, event):
-        # Hi ... race condition.
-        if self.pot:
+        if (event.source, event.channel) in self.pots:
             event.addresponse(u"There's already a pot on")
             return
         
-        self.pot = [event.sender['nick']]
-        sleep(self.time)
-        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pot))
-        self.pot = None
+        self.pots[(event.source, event.channel)] = [event.sender['nick']]
+        reactor.callLater(float(self.time), self.coffee_announce, event.source, event.channel)
+
+        event.addresponse({'action': True, 'reply': u'flips the salt-timer'})
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
-        if not self.pot:
+        if (event.source, event.channel) not in self.pots:
             event.addresponse(u"There isn't a pot on")
 
-        elif len(self.pot) >= self.cups:
+        elif len(self.pots[(event.source, event.channel)]) >= self.cups:
             event.addresponse(u"Sorry, there aren't any more cups left")
 
+        elif event.sender['nick'] in self.pots[(event.source, event.channel)]:
+            event.addresponse(u"Now now, we don't want anyone getting caffine overdoses")
+
         else:
-            self.pot.append(event.sender['nick'])
+            self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
 
 help['version'] = u"Show the Ibid version currently running"
