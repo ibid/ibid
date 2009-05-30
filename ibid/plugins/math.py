@@ -159,7 +159,7 @@ class Calc(Processor):
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
 
-help['base'] = 'Convert numbers between bases (radixes)'
+help['base'] = u'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
     u"""[convert] <number> [from base <number>] to base <number>
     [convert] ascii <text> to base <number>
