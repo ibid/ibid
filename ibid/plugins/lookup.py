@@ -469,7 +469,7 @@ class Weather(Processor):
 
     def remote_weather(self, place):
         soup = self._get_page(place)
-        tds = soup.table.table.findAll('td')
+        tds = [x.table for x in soup.findAll('table') if x.table][0].findAll('td')
 
         # HACK: Some cities include a windchill row, but others don't
         if len(tds) == 39:
@@ -485,8 +485,9 @@ class Weather(Processor):
     def remote_forecast(self, place):
         soup = self._get_page(place)
         forecasts = []
+        table = [table for table in soup.findAll('table') if table.findAll('td', align='left')][0]
 
-        for td in soup.findAll('table')[0].findAll('td', align='left'):
+        for td in table.findAll('td', align='left'):
             day = td.b.string
             forecast = td.contents[2]
             forecasts.append(u'%s: %s' % (day, self._text(forecast)))
