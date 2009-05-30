@@ -1,10 +1,12 @@
 from time import sleep
+import logging
 
 from ibid.plugins import Processor, match
 from ibid.config import IntOption
 from ibid.utils import ibid_version
 
 help = {}
+log = logging.getLogger('plugins.misc')
 
 help['coffee'] = u"Times coffee brewing and reserves cups for people"
 class Coffee(Processor):
