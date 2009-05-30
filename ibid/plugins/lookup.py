@@ -5,7 +5,7 @@ from time import time
 from datetime import datetime
 from random import choice
 from simplejson import loads
-from xml.dom.minidom import parse
+from xml.etree.cElementTree import parse
 import re
 
 import feedparser
@@ -134,25 +134,25 @@ class FMyLife(Processor):
             id.isalnum() and id + '/nocomment' or quote(id),
             urlencode({'language': self.fml_lang, 'key': self.api_key}))
         )
-        dom = parse(urlopen(url))
+        tree = parse(urlopen(url))
 
-        if dom.getElementsByTagName('error'):
+        if tree.find('.//error'):
             return
 
-        items = dom.getElementsByTagName('item')
-        if items: 
+        item = tree.find('.//item')
+        if item:
             url = u"http://www.fmylife.com/%s/%s" % (
-                items[0].getElementsByTagName('category')[0].childNodes[0].nodeValue,
-                items[0].getAttribute('id'),
+                item.find('category').text,
+                item.get('id'),
             )
-            text = items[0].getElementsByTagName('text')[0].childNodes[0].nodeValue
+            text = item.find('text').text
 
             return u'%s : %s' % (url, text)
 
     def setup(self):
         url = urljoin(self.api_url, 'view/categories?' + urlencode({'language': self.fml_lang, 'key': self.api_key}))
-        dom = parse(urlopen(url))
-        self.categories = [cat.getAttribute('code') for cat in dom.getElementsByTagName('categorie')]
+        tree = parse(urlopen(url))
+        self.categories = [x.get('code') for x in tree.findall('.//categorie')]
 
         self.fml.im_func.pattern = re.compile(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|%s)$' % (
             '|'.join(self.categories),
