@@ -84,7 +84,7 @@ class Dispatcher(object):
     def call_later(self, delay, callable, oldevent, *args, **kw):
         "Run callable after delay seconds. Pass args and kw to it"
 
-        event = Event(oldevent.source, 'delayed')
+        event = Event(oldevent.source, u'delayed')
         event.sender = oldevent.sender
         event.channel = oldevent.channel
         event.public = oldevent.public
