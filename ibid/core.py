@@ -91,12 +91,13 @@ class Dispatcher(object):
         return reactor.callLater(delay, threads.deferToThread, self.delayed_call, callable, event, *args, **kw)
 
     def delayed_call(self, callable, event, *args, **kw):
+        # Twisted doesn't catch exceptions here, so we must do it ourselves
         try:
             callable(event, *args, **kw)
             self._process(event)
             reactor.callFromThread(self.delayed_response, event)
         except:
-            logging.exception(u'Call Later')
+            self.log.exception(u'Call Later')
 
     def delayed_response(self, event):
         for response in event.responses:
