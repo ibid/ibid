@@ -89,7 +89,8 @@ class Permissions(Processor):
 
         else:
             if not permission:
-                permission = Permission(name, account_id=account.id)
+                permission = Permission(name)
+                account.permissions.append(permission)
 
             if action.lower() == 'revoke':
                 value = 'no'
