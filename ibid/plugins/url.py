@@ -87,7 +87,8 @@ class Delicious():
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title
-        except Exception:
+        except Exception, e:
+            log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
 
     def _set_auth(self, username, password):
