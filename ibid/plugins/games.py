@@ -62,6 +62,14 @@ class Shootout(Processor):
             event.addresponse(u"Is %s schizophrenic?", a)
             return
 
+        if a.lower() in ibid.config.plugins['core']['names']:
+            event.addresponse(choice((
+                u"I'm a peaceful bot",
+                u"The ref can't take part in the battle",
+                u"You just want me to die. No way",
+            )))
+            return
+
         duel = self.Duel()
         self.duels[(event.source, event.channel)] = duel
 
