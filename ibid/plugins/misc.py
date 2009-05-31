@@ -27,7 +27,12 @@ class Coffee(Processor):
     @match(r'^coffee\s+on$')
     def coffee_on(self, event):
         if (event.source, event.channel) in self.pots:
-            event.addresponse(u"There's already a pot on")
+            if len(self.pots[(event.source, event.channel)]) >= self.cups:
+                event.addresponse(u"There's already a pot on, and it's all reserved")
+            elif event.sender['nick'] in self.pots[(event.source, event.channel)]:
+                event.addresponse(u"You already have a pot on the go")
+            else:
+                event.addresponse(u"There's already a pot on. If you ask nicely, maybe you can have a cup")
             return
         
         self.pots[(event.source, event.channel)] = [event.sender['nick']]
