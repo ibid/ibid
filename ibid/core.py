@@ -10,6 +10,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exceptions import IntegrityError
 
 import ibid
+from ibid.event import Event
+
 import auth
 
 class Dispatcher(object):
@@ -78,6 +80,27 @@ class Dispatcher(object):
         self.log.log(log_level, u"Received event from %s source", event.source)
 
         return threads.deferToThread(self._process, event)
+
+    def call_later(self, delay, callable, oldevent, *args, **kw):
+        "Run callable after delay seconds. Pass args and kw to it"
+
+        event = Event(oldevent.source, 'delayed')
+        event.sender = oldevent.sender
+        event.channel = oldevent.channel
+        event.public = oldevent.public
+        reactor.callLater(delay, threads.deferToThread, self.delayed_call, callable, event, *args, **kw)
+
+    def delayed_call(self, callable, event, *args, **kw):
+        try:
+            callable(event, *args, **kw)
+            self._process(event)
+            reactor.callFromThread(self.delayed_response, event)
+        except:
+            logging.exception(u'Call Later')
+
+    def delayed_response(self, event):
+        for response in event.responses:
+            ibid.sources[event.source].send(response)
 
 class Reloader(object):
 

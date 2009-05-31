@@ -1,8 +1,6 @@
 from time import sleep
 import logging
 
-from twisted.internet import reactor
-
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import IntOption
@@ -21,16 +19,9 @@ class Coffee(Processor):
     time = IntOption('coffee_time', u'Brewing time in seconds', 240)
     cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
     
-    def coffee_announce(self, source, channel):
-        try:
-            ibid.dispatcher.send({
-                'reply': u"Coffee's ready for %s!" % u', '.join(self.pots[(source, channel)]),
-                'source': source,
-                'target': channel,
-            })
-            del self.pots[(source, channel)]
-        except:
-            log.exception('Coffee callback')
+    def coffee_announce(self, event):
+        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pots[(event.source, event.channel)]))
+        del self.pots[(event.source, event.channel)]
 
     @match(r'^coffee\s+on$')
     def coffee_on(self, event):
@@ -39,7 +30,7 @@ class Coffee(Processor):
             return
         
         self.pots[(event.source, event.channel)] = [event.sender['nick']]
-        reactor.callLater(float(self.time), self.coffee_announce, event.source, event.channel)
+        ibid.dispatcher.call_later(self.time, self.coffee_announce, event)
 
         event.addresponse({'action': True, 'reply': u'flips the salt-timer'})
     
