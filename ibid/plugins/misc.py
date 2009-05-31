@@ -1,5 +1,6 @@
-from time import sleep
 import logging
+from random import choice
+from time import sleep
 
 import ibid
 from ibid.plugins import Processor, match
@@ -32,7 +33,15 @@ class Coffee(Processor):
         self.pots[(event.source, event.channel)] = [event.sender['nick']]
         ibid.dispatcher.call_later(self.time, self.coffee_announce, event)
 
-        event.addresponse({'action': True, 'reply': u'flips the salt-timer'})
+        event.addresponse({
+            'action': True,
+            'reply': choice((
+                u'puts the kettle on',
+                u'starts grinding coffee',
+                u'flips the salt-timer',
+                u'washes some mugs',
+            )),
+        })
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
