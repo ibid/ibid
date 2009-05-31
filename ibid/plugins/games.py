@@ -104,14 +104,6 @@ class Shootout(Processor):
     def fire(self, event, weapon):
         shooter = event.sender['nick']
         if (event.source, event.channel) not in self.duels:
-            event.addresponse({
-                'action': True,
-                'reply': choice((
-                    u"hopes %s has a licence for that weapon" % shooter,
-                    u"arrests %s for firing a weapon in a public place" % shooter,
-                    u"will not allow accidental weapon discharges during peace time. Fined ZAR 200",
-                )),
-            })
             return
 
         duel = self.duels[(event.source, event.channel)]
