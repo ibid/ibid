@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeTe
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
+import ibid
 from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import Option
 from ibid.auth import permission
@@ -50,6 +51,10 @@ class Tell(Processor):
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
     @authorise
     def tell(self, event, how, who, memo):
+        if [True for name in ibid.config.plugins['core']['names'] if name.lower() == who.lower()]:
+            event.addresponse(u"I can't deliver messages to myself")
+            return
+
         to = event.session.query(Identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
                 .filter_by(source=event.source).first()
