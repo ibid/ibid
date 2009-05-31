@@ -88,7 +88,7 @@ class Dispatcher(object):
         event.sender = oldevent.sender
         event.channel = oldevent.channel
         event.public = oldevent.public
-        reactor.callLater(delay, threads.deferToThread, self.delayed_call, callable, event, *args, **kw)
+        return reactor.callLater(delay, threads.deferToThread, self.delayed_call, callable, event, *args, **kw)
 
     def delayed_call(self, callable, event, *args, **kw):
         try:
