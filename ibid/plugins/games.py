@@ -98,7 +98,7 @@ class Shootout(Processor):
         )))
 
     def setup(self):
-        self.fire.im_func.pattern = re.compile(r'^(%s)$' % '|'.join(self.weapons.keys()), re.I | re.DOTALL)
+        self.fire.im_func.pattern = re.compile(r'^(%s)(?:[\s,.!:;].*)?$' % '|'.join(self.weapons.keys()), re.I | re.DOTALL)
 
     @handler
     def fire(self, event, weapon):
