@@ -62,7 +62,7 @@ class Shootout(Processor):
             event.addresponse(u"Is %s schizophrenic?", a)
             return
 
-        if a.lower() in ibid.config.plugins['core']['names']:
+        if [True for name in ibid.config.plugins['core']['names'] if name.lower() in (a.lower(), b.lower())]:
             event.addresponse(choice((
                 u"I'm a peaceful bot",
                 u"The ref can't take part in the battle",
