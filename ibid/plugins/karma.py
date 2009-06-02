@@ -32,8 +32,8 @@ class Set(Processor):
     u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
     feature = 'karma'
 
-    # Clashes with morse
-    priority = 10
+    # Clashes with morse & math
+    priority = 510
 
     permission = u'karma'
 
