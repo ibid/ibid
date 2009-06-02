@@ -1,5 +1,6 @@
 from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
+from httplib import BadStatusLine
 from urlparse import urljoin
 from time import time
 from datetime import datetime
@@ -171,6 +172,9 @@ class FMyLife(Processor):
         except HTTPError:
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
+        except BadStatusLine:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
 
         if quote:
             event.addresponse(quote)
@@ -184,6 +188,8 @@ class FMyLife(Processor):
         except FMLException:
             event.addresponse(choice(self.failure_messages) % event.sender)
         except HTTPError:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+        except BadStatusLine:
             event.addresponse(choice(self.failure_messages) % event.sender)
 
     @match(r'^fml\s+categories$')
