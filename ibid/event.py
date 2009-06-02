@@ -18,7 +18,10 @@ class Event(dict):
         self[name] = value
 
     def addresponse(self, response, params={}, processed=True):
-        if isinstance(response, basestring) and params:
+        if response is None:
+            # We want to detect this now, so we know which plugin is to blame
+            raise Exception("Can't have a None response")
+        elif isinstance(response, basestring) and params:
             self.responses.append(response % params)
         else:
             self.responses.append(response)

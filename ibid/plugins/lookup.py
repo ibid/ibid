@@ -129,6 +129,9 @@ class FMyLife(Processor):
             u"Sorry, it's broken, the FML admins must having a really bad day",
     )
 
+    class FMLException(Exception):
+        pass
+
     def remote_get(self, id):
         url = urljoin(self.api_url, 'view/%s?%s' % (
             id.isalnum() and id + '/nocomment' or quote(id),
@@ -137,12 +140,12 @@ class FMyLife(Processor):
         tree = parse(urlopen(url))
 
         if tree.find('.//error'):
-            return
+            raise FMLException(tree.findtext('.//error'))
 
         item = tree.find('.//item')
         if item:
             url = u"http://www.fmylife.com/%s/%s" % (
-                item.find('category').text,
+                item.findtext('category'),
                 item.get('id'),
             )
             text = item.find('text').text
@@ -162,6 +165,9 @@ class FMyLife(Processor):
     def fml(self, event, id):
         try:
             quote = self.remote_get(id)
+        except FMLException:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
         except HTTPError:
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
@@ -175,9 +181,10 @@ class FMyLife(Processor):
     def fml_default(self, event):
         try:
             event.addresponse(self.remote_get('random'))
+        except FMLException:
+            event.addresponse(choice(self.failure_messages) % event.sender)
         except HTTPError:
             event.addresponse(choice(self.failure_messages) % event.sender)
-            return
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
