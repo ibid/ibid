@@ -81,6 +81,12 @@ def limited_pow(*args):
             raise LimitException
     return pow(*args)
 
+# Factorial is only available in 2.6:
+try:
+    from math import factorial
+except ImportError:
+    factorial = lambda x: x == 0 and 1 or reduce(lambda a, b: a * b, xrange(1, x + 1))
+
 def limited_factorial(x):
     if x >= 500:
         raise LimitException
