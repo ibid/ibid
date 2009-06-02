@@ -76,9 +76,18 @@ class LimitException(Exception):
     pass
 
 def limited_pow(*args):
-    for arg, limit in zip(args, (1e100, 200)):
-        if isinstance(arg, int) and (arg > limit or arg < -limit):
-            raise LimitException
+    "We don't want users to DOS the bot. Pow is the most dangerous function. Limit it"
+
+    # Are all the arguments ints?
+    if not [True for arg in args if not isinstance(arg, int) and not isinstance(arg, long)]:
+        try:
+            answer = pow(float(args[0]), float(args[1]))
+            if answer > 1e+300:
+                raise LimitException
+
+        except OverflowError, e:
+            raise LimitException(e)
+
     return pow(*args)
 
 # Factorial is only available in 2.6:
