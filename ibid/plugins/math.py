@@ -81,6 +81,11 @@ def limited_pow(*args):
             raise LimitException
     return pow(*args)
 
+def limited_factorial(x):
+    if x >= 500:
+        raise LimitException
+    return factorial(x)
+
 # ast method
 class PowSubstitutionTransformer(NodeTransformer):
     def visit_BinOp(self, node):
@@ -119,6 +124,7 @@ class Calc(Processor):
     for function in extras:
         safe[function] = eval(function)
     safe['pow'] = limited_pow
+    safe['factorial'] = limited_factorial
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
