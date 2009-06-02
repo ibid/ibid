@@ -234,7 +234,7 @@ class Twitter(Processor):
         try:
             event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service, int(id)))
         except HTTPError, e:
-            if e.code == 403:
+            if e.code in (401, 403):
                 event.addresponse(u'That %s is private', service['name'])
             elif e.code == 404:
                 event.addresponse(u'No such %s', service['name'])
@@ -247,7 +247,9 @@ class Twitter(Processor):
         try:
             event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service, user))
         except HTTPError, e:
-            if e.code == 404:
+            if e.code in (401, 403):
+                event.addresponse(u"Sorry, %s's feed is private", user)
+            elif e.code == 404:
                 event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
