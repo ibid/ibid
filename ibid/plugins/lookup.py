@@ -117,6 +117,9 @@ class Lotto(Processor):
         })
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
+class FMLException(Exception):
+    pass
+
 class FMyLife(Processor):
     u"""fml (<number> | [random] | <category> | flop | top | last)
     fml categories"""
@@ -132,9 +135,6 @@ class FMyLife(Processor):
             u'Today, FML is down. FML',
             u"Sorry, it's broken, the FML admins must having a really bad day",
     )
-
-    class FMLException(Exception):
-        pass
 
     def remote_get(self, id):
         url = urljoin(self.api_url, 'view/%s?%s' % (
