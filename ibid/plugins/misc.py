@@ -1,43 +1,66 @@
+import logging
+from random import choice
 from time import sleep
 
+import ibid
 from ibid.plugins import Processor, match
 from ibid.config import IntOption
 from ibid.utils import ibid_version
 
 help = {}
+log = logging.getLogger('plugins.misc')
 
 help['coffee'] = u"Times coffee brewing and reserves cups for people"
 class Coffee(Processor):
     u"""coffee (on|please)"""
     feature = 'coffee'
 
-    pot = None
+    pots = {}
 
     time = IntOption('coffee_time', u'Brewing time in seconds', 240)
     cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
     
+    def coffee_announce(self, event):
+        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pots[(event.source, event.channel)]))
+        del self.pots[(event.source, event.channel)]
+
     @match(r'^coffee\s+on$')
     def coffee_on(self, event):
-        # Hi ... race condition.
-        if self.pot:
-            event.addresponse(u"There's already a pot on")
+        if (event.source, event.channel) in self.pots:
+            if len(self.pots[(event.source, event.channel)]) >= self.cups:
+                event.addresponse(u"There's already a pot on, and it's all reserved")
+            elif event.sender['nick'] in self.pots[(event.source, event.channel)]:
+                event.addresponse(u"You already have a pot on the go")
+            else:
+                event.addresponse(u"There's already a pot on. If you ask nicely, maybe you can have a cup")
             return
         
-        self.pot = [event.sender['nick']]
-        sleep(self.time)
-        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pot))
-        self.pot = None
+        self.pots[(event.source, event.channel)] = [event.sender['nick']]
+        ibid.dispatcher.call_later(self.time, self.coffee_announce, event)
+
+        event.addresponse({
+            'action': True,
+            'reply': choice((
+                u'puts the kettle on',
+                u'starts grinding coffee',
+                u'flips the salt-timer',
+                u'washes some mugs',
+            )),
+        })
     
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
-        if not self.pot:
+        if (event.source, event.channel) not in self.pots:
             event.addresponse(u"There isn't a pot on")
 
-        elif len(self.pot) >= self.cups:
+        elif len(self.pots[(event.source, event.channel)]) >= self.cups:
             event.addresponse(u"Sorry, there aren't any more cups left")
 
+        elif event.sender['nick'] in self.pots[(event.source, event.channel)]:
+            event.addresponse(u"Now now, we don't want anyone getting caffine overdoses")
+
         else:
-            self.pot.append(event.sender['nick'])
+            self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
 
 help['version'] = u"Show the Ibid version currently running"
