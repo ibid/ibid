@@ -85,7 +85,12 @@ def limited_pow(*args):
 try:
     from math import factorial
 except ImportError:
-    factorial = lambda x: x == 0 and 1 or reduce(lambda a, b: a * b, xrange(1, x + 1))
+    def factorial(x):
+        if not isinstance(x, int) or x < 0:
+            raise ValueError
+        if x == 0:
+            return 1
+        return reduce(lambda a, b: a * b, xrange(1, x + 1))
 
 def limited_factorial(x):
     if x >= 500:
