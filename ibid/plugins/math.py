@@ -71,7 +71,7 @@ class BC(Processor):
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
-help['calc'] = u'Returns the anwser to mathematical expressions'
+help['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
 class LimitException(Exception):
     pass
 
