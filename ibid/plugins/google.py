@@ -1,5 +1,6 @@
 from cgi import parse_qs
 import htmlentitydefs
+from httplib import BadStatusLine
 import re
 import simplejson
 from urllib import quote
