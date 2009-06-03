@@ -149,7 +149,7 @@ class Notify(Processor):
 
     @handler
     def state(self, event):
-        if event.state not in ('joined', 'available'):
+        if event.state != 'online':
             return
 
         if event.identity in memo_cache:
