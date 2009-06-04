@@ -94,7 +94,7 @@ class Shootout(Processor):
             u'aaaand ... go!',
             u'5 ... 4 ... 3 ... 2 ... 1 ... fire!',
             u'match on!',
-            u'read ... aim ... fire!'
+            u'ready ... aim ... fire!'
         )))
 
     def setup(self):
