@@ -543,11 +543,11 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
-help['tvrage'] = u'Retrieves TV show information from tvrage.com.'
-class TVRage(Processor):
-    u"""tvrage <show>"""
+help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
+class TVShow(Processor):
+    u"""tvshow <show>"""
 
-    feature = "tvrage"
+    feature = "tvshow"
         
     def remote_tvrage(self, show):
         info_url = "http://services.tvrage.com/tools/quickinfo.php?%s"
@@ -563,17 +563,17 @@ class TVRage(Processor):
         
         return dict(show_info)
     
-    @match(r"^tvrage(?:\.com)?\s+([\w -]+)$")
-    def tvrage(self, event, show):
-        s = self._retrieve_info(show)
+    @match(r"""^tvshow\s+([\w-+=*()"!#$':; ,<>?.\\]+)$""")
+    def tvshow(self, event, show):
+        s = self.remote_tvrage(show)
         if not s:
-            event.addresponse(u"I'm sorry, I'm unable to retrieve the info.")
+            event.addresponse(u"I'm sorry, but I was unable to retrieve the info.")
             return
         
         message = u"Show: %(Show Name)s. URL: %(Show URL)s. " \
                     u"Premiered: %(Premiered)s. Latest Episode: %(Latest Episode)s. " \
                     u"Next Episode: %(Next Episode)s. Airtime: %(Airtime)s on %(Network)s. " \
-                    u"Status :: %(Status)s. Genres: %(Genres)s."
+                    u"Status: %(Status)s. Genres: %(Genres)s."
                     
         event.addresponse(message %s)
 
