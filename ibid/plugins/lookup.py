@@ -543,4 +543,38 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
+help['tvrage'] = u'Retrieves TV show information from tvrage.com.'
+class TVRage(Processor):
+    u"""tvrage <show>"""
+
+    feature = "tvrage"
+        
+    def remote_tvrage(self, show):
+        info_url = "http://services.tvrage.com/tools/quickinfo.php?%s"
+        
+        try:
+            info = urlopen(info_url % urlencode({'show': show}))
+        except Exception, e:
+            return
+        
+        info = info.read().decode("ISO-8859-1")
+        info = info[5:].splitlines()        
+        show_info = [i.split('@') for i in info]
+        
+        return dict(show_info)
+    
+    @match(r"^tvrage(?:\.com)?\s+([\w -]+)$")
+    def tvrage(self, event, show):
+        s = self._retrieve_info(show)
+        if not s:
+            event.addresponse(u"I'm sorry, I'm unable to retrieve the info.")
+            return
+        
+        message = u"Show: %(Show Name)s. URL: %(Show URL)s. " \
+                    u"Premiered: %(Premiered)s. Latest Episode: %(Latest Episode)s. " \
+                    u"Next Episode: %(Next Episode)s. Airtime: %(Airtime)s on %(Network)s. " \
+                    u"Status :: %(Status)s. Genres: %(Genres)s."
+                    
+        event.addresponse(message %s)
+
 # vi: set et sta sw=4 ts=4:
