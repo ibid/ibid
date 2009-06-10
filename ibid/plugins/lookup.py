@@ -2,7 +2,7 @@ from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
 from httplib import BadStatusLine
 from urlparse import urljoin
-from time import time
+from time import time, strptime, strftime
 from datetime import datetime
 from random import choice
 from simplejson import loads
@@ -559,9 +559,31 @@ class TVShow(Processor):
         
         info = info.read().decode("ISO-8859-1")
         info = info[5:].splitlines()        
-        show_info = [i.split('@') for i in info]
-        
-        return dict(show_info)
+        show_info = [i.split('@', 1) for i in info]
+        show_dict = dict(show_info)
+
+        if show_dict.has_key("Next Episode") and show_dict.has_key("Latest Episode"): #Show is airing.
+            next_ep, next_name, next_date = show_dict["Next Episode"].split("^")
+            next_date = strftime("%d %B %Y", strptime(next_date, "%b/%d/%Y"))
+            show_dict["Next Episode"] = '%s - "%s" - %s' %(next_ep, next_name, next_date)
+
+            prev_ep, prev_name, prev_date = show_dict["Latest Episode"].split("^")
+            prev_date = strftime("%d %B %Y", strptime(prev_date, "%b/%d/%Y"))
+            show_dict["Latest Episode"] = '%s - "%s" - %s' %(prev_ep, prev_name, prev_date)
+        elif show_dict.has_key("Next Episode"): #Show is premiering.
+            show_dict["Latest Episode"] = "None"
+
+            next_ep, next_name, next_date = show_dict["Next Episode"].split("^")
+            next_date = strftime("%d %B %Y", strptime(next_date, "%b/%d/%Y"))
+            show_dict["Next Episode"] = '%s - "%s" - %s' %(next_ep, next_name, next_date)
+        else: #Show has ended.
+            prev_ep, prev_name, prev_date = show_dict["Latest Episode"].split("^")
+            prev_date = strftime("%d %B %Y", strptime(prev_date, "%b/%d/%Y"))
+            show_dict["Latest Episode"] = '%s - "%s" - %s' %(prev_ep, prev_name, prev_date)
+
+            show_dict["Next Episode"] = "None"
+
+        return show_dict
     
     @match(r"""^tvshow\s+([\w-+=*()"!#$':; ,<>?.\\]+)$""")
     def tvshow(self, event, show):
@@ -570,10 +592,10 @@ class TVShow(Processor):
             event.addresponse(u"I'm sorry, but I was unable to retrieve the info.")
             return
         
-        message = u"Show: %(Show Name)s. URL: %(Show URL)s. " \
+        message = u"Show: %(Show Name)s. Genres: %(Genres)s. " \
                     u"Premiered: %(Premiered)s. Latest Episode: %(Latest Episode)s. " \
                     u"Next Episode: %(Next Episode)s. Airtime: %(Airtime)s on %(Network)s. " \
-                    u"Status: %(Status)s. Genres: %(Genres)s."
+                    u"Status: %(Status)s. URL: %(Show URL)s."
                     
         event.addresponse(message %s)
 
