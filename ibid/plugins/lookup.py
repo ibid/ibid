@@ -564,7 +564,7 @@ class TVShow(Processor):
 
         #check if there are actual airdates for Latest and Next Episode. None for Next
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
-        for field in ("Latest Episode", "Next Episode")
+        for field in ("Latest Episode", "Next Episode"):
             if field in show_dict:
                 ep, name, date = show_dict[field].split("^", 2)
                 date = strftime("%d %B %Y", strptime(date, "%b/%d/%Y"))
@@ -581,7 +581,7 @@ class TVShow(Processor):
         message = u"Show: %(Show Name)s. Premiered: %(Premiered)s. " \
                     u"Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. " \
                     u"Airtime: %(Airtime)s on %(Network)s.  Genres: %(Genres)s." \
-                    u"Status: %(Status)s. More information available at %(Show URL)s."
+                    u"Status: %(Status)s. - %(Show URL)s"
                     
         event.addresponse(message, retr_info)
 
