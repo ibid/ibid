@@ -557,37 +557,45 @@ class TVShow(Processor):
         info = info.read()
         info = info.decode("ISO-8859-1")
         if info.startswith("No Show Results Were Found"):
-            return info
+            return
         info = info[5:].splitlines()        
         show_info = [i.split('@', 1) for i in info]
         show_dict = dict(show_info)
 
         #check if there are actual airdates for Latest and Next Episode. None for Next
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
-        for field in ("Latest Episode", "Next Episode"):
+        for field in ("Latest Episode", "Next Episode", "Show Name", "Premiered", \
+                        "Airtime", "Network", "Genres", "Status", "Show URL"):
             if field in show_dict:
-                format_b = "%b/%d/%Y"
-                format_a = "%d %B %Y"
-                ep, name, date = show_dict[field].split("^", 2)
-                if date.count("/") < 2:
-                    format_b = "%b/%Y"
-                    format_a = "%B %Y"
-                date = strftime(format_a, strptime(date, format_b))
-                show_dict[field] = '%s - "%s" - %s' %(ep, name, date)
+                if field in ("Latest Episode", "Next Episode"):
+                    format_b = "%b/%d/%Y"
+                    format_a = "%d %B %Y"
+                    ep, name, date = show_dict[field].split("^", 2)
+                    if date.count("/") < 2:
+                        format_b = "%b/%Y"
+                        format_a = "%B %Y"
+                    date = strftime(format_a, strptime(date, format_b))
+                    show_dict[field] = '%s - "%s" - %s' %(ep, name, date)
+                else:
+                    pass
             else:
                 show_dict[field] = "None"
-                
-         return show_dict
+        
+        return show_dict
     
-    @match(r"""^tvshow\s+(.+)$""")
+    @match(r'^tvshow\s+(.+)$')
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
         
         message = u"Show: %(Show Name)s. Premiered: %(Premiered)s. " \
                     u"Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. " \
-                    u"Airtime: %(Airtime)s on %(Network)s.  Genres: %(Genres)s." \
+                    u"Airtime: %(Airtime)s on %(Network)s.  Genres: %(Genres)s. " \
                     u"Status: %(Status)s. - %(Show URL)s"
                     
+        if not retr_info:
+            message = u"I'm sorry, but no show results were found for '%(show)s'."
+            retr_info = dict([('show', show)])
+        
         event.addresponse(message, retr_info)
 
 # vi: set et sta sw=4 ts=4:
