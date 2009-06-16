@@ -552,10 +552,7 @@ class TVShow(Processor):
     def remote_tvrage(self, show):
         info_url = "http://services.tvrage.com/tools/quickinfo.php?%s"
         
-        try:
-            info = urlopen(info_url % urlencode({'show': show}))
-        except HTTPError, e:
-            return
+        info = urlopen(info_url % urlencode({'show': show}))
         
         info = info.read()
         info = info.decode("ISO-8859-1")
@@ -567,28 +564,19 @@ class TVShow(Processor):
 
         #check if there are actual airdates for Latest and Next Episode. None for Next
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
-        if "Latest Episode" in show_dict:
-            prev_ep, prev_name, prev_date = show_dict["Latest Episode"].split("^", 2)
-            prev_date = strftime("%d %B %Y", strptime(prev_date, "%b/%d/%Y"))
-            show_dict["Latest Episode"] = '%s - "%s" - %s' %(prev_ep, prev_name, prev_date)
-        else:
-            show_dict["Latest Episode"] = "None"
-            
-        if "Next Episode" in show_dict:
-            next_ep, next_name, next_date = show_dict["Next Episode"].split("^", 2)
-            next_date = strftime("%d %B %Y", strptime(next_date, "%b/%d/%Y"))
-            show_dict["Next Episode"] = '%s - "%s" - %s' %(next_ep, next_name, next_date)
-        else:
-            show_dict["Next Episode"] = "None"
-
-        return show_dict
+        for field in ("Latest Episode", "Next Episode")
+            if field in show_dict:
+                ep, name, date = show_dict[field].split("^", 2)
+                date = strftime("%d %B %Y", strptime(date, "%b/%d/%Y"))
+                show_dict[field] = '%s - "%s" - %s' %(ep, name, date)
+            else:
+                show_dict[field] = "None"
+                
+         return show_dict
     
     @match(r"""^tvshow\s+(.+)$""")
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
-        if not retr_info:
-            event.addresponse(u"I'm sorry, but I was unable to retrieve the info.")
-            return
         
         message = u"Show: %(Show Name)s. Premiered: %(Premiered)s. " \
                     u"Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. " \
