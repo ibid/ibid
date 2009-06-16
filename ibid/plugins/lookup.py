@@ -566,8 +566,13 @@ class TVShow(Processor):
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
         for field in ("Latest Episode", "Next Episode"):
             if field in show_dict:
+                format_b = "%b/%d/%Y"
+                format_a = "%d %B %Y"
                 ep, name, date = show_dict[field].split("^", 2)
-                date = strftime("%d %B %Y", strptime(date, "%b/%d/%Y"))
+                if date.count("/") < 2:
+                    format_b = "%b/%Y"
+                    format_a = "%B %Y"
+                date = strftime(format_a, strptime(date, format_b))
                 show_dict[field] = '%s - "%s" - %s' %(ep, name, date)
             else:
                 show_dict[field] = "None"
