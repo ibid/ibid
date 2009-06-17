@@ -252,7 +252,7 @@ class Forget(Processor):
                     name.name, factoid.id, factoid.names[0].name,
                     event.account, event.identity, event.sender['connection'])
         else:
-            event.addresponse(u"I don't know about %s", name)
+            event.addresponse(u"I don't know about %s", source)
 
 class Search(Processor):
     u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
