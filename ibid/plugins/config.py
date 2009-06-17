@@ -27,7 +27,7 @@ class Config(Processor):
         event.addresponse(True)
         log.info(u'Reread configuration file')
 
-    @match(r'^(set\s+config|config\s+set)\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
+    @match(r'^(?:set\s+config|config\s+set)\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
     @authorise
     def set(self, event, key, value):
         config = ibid.config
@@ -46,7 +46,7 @@ class Config(Processor):
 
         event.addresponse(True)
 
-    @match(r'^(get\s+config|config\s+get)\s+(\S+?)$')
+    @match(r'^(?:get\s+config|config\s+get)\s+(\S+?)$')
     def get(self, event, key):
         config = ibid.config
         for part in key.split('.'):
