@@ -377,7 +377,9 @@ class Set(Processor):
     permission = u'factoid'
     
     def setup(self):
-        self.set_factoid.im_func.pattern = re.compile(r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+(.+?)$' % '|'.join(self.verbs), re.I)
+        self.set_factoid.im_func.pattern = re.compile(
+            r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+((?(3).+|(?!.*=\S+=).+))$'
+            % '|'.join(self.verbs), re.I)
 
     @handler
     @authorise
