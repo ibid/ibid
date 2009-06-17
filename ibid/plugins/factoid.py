@@ -298,7 +298,8 @@ class Search(Processor):
         else:
             query = query.filter(or_(filter_op(filter_on[0], pattern), filter_op(filter_on[1], pattern)))
 
-        matches = query[start:start+limit]
+        # Pre-evalute the iterable or the if statement will be True in SQLAlchemy 0.4 [Bug #383286]
+        matches = [match for match in query[start:start+limit]]
 
         if matches:
             event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
