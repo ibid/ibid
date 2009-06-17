@@ -1,6 +1,7 @@
 from random import choice
 import re
 
+import ibid
 from ibid.plugins import Processor, match, handler, authorise
 
 help = {}
@@ -34,9 +35,12 @@ class RedirectCommand(Processor):
     @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
     @authorise
     def redirect(self, event, channel, source, command):
-        event.redirect_target = channel
         if source:
+            if source.lower() not in ibid.sources:
+                event.addresponse(u'No such source: %s', source)
+                return
             event.redirect_source = source
+        event.redirect_target = channel
         event.message['clean'] = command
 
 class Redirect(Processor):
