@@ -57,7 +57,7 @@ class Coffee(Processor):
             event.addresponse(u"Sorry, there aren't any more cups left")
 
         elif event.sender['nick'] in self.pots[(event.source, event.channel)]:
-            event.addresponse(u"Now now, we don't want anyone getting caffine overdoses")
+            event.addresponse(u"Now now, we don't want anyone getting caffeine overdoses")
 
         else:
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
