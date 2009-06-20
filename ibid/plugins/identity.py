@@ -31,7 +31,7 @@ class Accounts(Processor):
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
             else:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
@@ -61,7 +61,7 @@ class Accounts(Processor):
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                         identity.id, identity.identity, identity.source, account.id, account.username)
         else:
-            identity = event.session.query(Identity).filter_by(id=event.identity).first()
+            identity = event.session.query(Identity).get(event.identity)
             identity.account_id = account.id
             event.session.save_or_update(identity)
             event.session.commit()
@@ -77,7 +77,7 @@ class Accounts(Processor):
 
         if own:
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
                 event.addresponse(u"You don't have an account")
                 return
@@ -106,7 +106,7 @@ class Accounts(Processor):
 
         if own:
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
                 event.addresponse(u"You don't have an account")
                 return
@@ -151,7 +151,7 @@ class Identities(Processor):
 
         if username.upper() == 'I':
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
                 username = event.sender['id']
 
@@ -165,7 +165,7 @@ class Identities(Processor):
                 account = Account(username)
                 event.session.save_or_update(account)
 
-                currentidentity = event.session.query(Identity).filter_by(id=event.identity).first()
+                currentidentity = event.session.query(Identity).get(event.identity)
                 currentidentity.account_id = account.id
                 event.session.save_or_update(currentidentity)
 
@@ -296,7 +296,7 @@ class Attributes(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = event.session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).get(event.account)
             if not account:
                 event.addresponse(u"%s doesn't exist. Please use 'add account' first", username)
                 return
