@@ -242,9 +242,15 @@ class Forget(Processor):
             event.addresponse(u"That makes no sense, they *are* the same")
             return
 
-        factoid = event.session.query(Factoid).join(Factoid.names)\
+        factoid = event.session.query(Factoid).join(Factoid.names) \
                 .filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
+            target_factoid = event.session.query(FactoidName) \
+                    .filter(func.lower(FactoidName.name)==escape_name(target).lower()).first()
+            if target_factoid:
+                event.addresponse(u"I already know stuff about %s", target)
+                return
+
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
             event.session.save_or_update(factoid)
