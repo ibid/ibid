@@ -430,7 +430,7 @@ class Modify(Processor):
     permissions = (u'factoidadmin',)
     priority = 890
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$', version='deaddressed')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=(.+)$', version='deaddressed')
     @authorise
     def append(self, event, name, number, pattern, is_regex, suffix):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
