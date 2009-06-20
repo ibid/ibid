@@ -2,7 +2,7 @@ from time import localtime, strftime, time
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, Index, or_
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
@@ -20,7 +20,7 @@ log = logging.getLogger('plugins.factoid')
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False),
+    Column('name', Unicode(128), nullable=False, unique=True),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
@@ -30,8 +30,10 @@ class FactoidName(Base):
     class FactoidNameSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+        def upgrade_2_to_3(self):
+            Index('name', self.table.c.name, unique=True).create(bind=self.upgrade_session.bind)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 2)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 3)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
