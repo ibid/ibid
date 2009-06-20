@@ -158,7 +158,7 @@ class Utils(Processor):
     u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
-    @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
+    @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$', version='deaddressed')
     def literal(self, event, name, number, pattern, is_regex):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, literal=True)
         number = number and int(number) or 0
@@ -174,7 +174,7 @@ class Forget(Processor):
     permission = u'factoid'
     permissions = (u'factoidadmin',)
 
-    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
+    @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$', version='deaddressed')
     @authorise
     def forget(self, event, name, number, pattern, is_regex):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
@@ -232,7 +232,7 @@ class Forget(Processor):
         else:
             event.addresponse(u"I didn't know about %s anyway", name)
 
-    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
+    @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$', version='deaddressed')
     @authorise
     def alias(self, event, target, source):
 
@@ -263,7 +263,8 @@ class Search(Processor):
 
     regex_re = re.compile(r'^/(.*)/(r?)$')
 
-    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$',
+            version='deaddressed')
     def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
         start = start and int(start) or 0
@@ -322,6 +323,7 @@ class Get(Processor, RPC):
 
     def setup(self):
         self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.message_version = 'deaddressed'
 
     @handler
     def get(self, event, verb, name, number, pattern, is_regex):
@@ -381,6 +383,7 @@ class Set(Processor):
         self.set_factoid.im_func.pattern = re.compile(
             r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+((?(3).+|(?!.*=\S+=).+))$'
             % '|'.join(self.verbs), re.I)
+        self.set_factoid.im_func.message_version = 'deaddressed'
 
     @handler
     @authorise
@@ -427,7 +430,7 @@ class Modify(Processor):
     permissions = (u'factoidadmin',)
     priority = 890
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$', version='deaddressed')
     @authorise
     def append(self, event, name, number, pattern, is_regex, suffix):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
