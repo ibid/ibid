@@ -42,7 +42,8 @@ Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, back
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg) <person> <message>"""
+    u"""(tell|pm|privmsg|msg) <person> <message>
+    forget my message for <person>"""
     feature = 'memo'
 
     permission = u'sendmemo'
@@ -88,6 +89,23 @@ class Tell(Processor):
         memo_cache.clear()
 
         event.addresponse(True)
+
+    @match(r'^forget\s+(?:my\s+)(?:memo|message|msg)\s+(?:for|to)\s+(.+)$')
+    @authorise
+    def forget(self, event, who):
+        memo = event.session.query(Memo) \
+                .filter_by(delivered=False) \
+                .filter_by(from_id=event.identity) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .order_by(Memo.time.desc()).first()
+        if memo:
+            event.session.delete(memo)
+            event.session.commit()
+            log.info(u"Cancelled memo %s for %s (%s) from %s (%s): %s",
+                    memo.id, memo.to_id, who, event.identity, event.sender['connection'], memo.memo)
+            event.addresponse(True)
+        else:
+            event.addresponse(u"You don't have any outstanding messages for %s", who)
 
 def get_memos(event, delivered=False):
     identities = get_identities(event)
