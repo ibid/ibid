@@ -16,6 +16,7 @@ from ibid.utils import ago
 help = {'memo': u'Keeps messages for people.'}
 
 nomemos_cache = set()
+notified_overlimit_cache = set()
 
 log = logging.getLogger('plugins.memo')
 
@@ -109,6 +110,7 @@ class Tell(Processor):
                 memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         event.memo = memo.id
         nomemos_cache.clear()
+        notified_overlimit_cache.discard(to.id)
 
         event.addresponse(True)
 
@@ -167,6 +169,14 @@ class Deliver(Processor):
         memos = get_memos(event)
 
         if len(memos) > self.public_limit and event.public:
+            if event.identity not in notified_overlimit_cache:
+                public = [True for memo in memos if not memo.private]
+                message = u'By the way, you have a pile of memos waiting for you, too many to read out in public. PM me'
+                if public:
+                    event.addresponse(message)
+                else:
+                    event.addresponse({'reply': message, 'target': event.sender['id']})
+                notified_overlimit_cache.add(event.identity)
             return
 
         for memo in memos:
