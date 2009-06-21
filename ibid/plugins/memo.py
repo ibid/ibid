@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
@@ -128,12 +128,17 @@ class Deliver(Processor):
     addressed = False
     processed = True
 
+    public_limit = IntOption('public_limit', 'Maximum number of memos to read out in public (flood-protection)', 2)
+
     @handler
     def deliver(self, event):
         if event.identity in memo_cache:
             return
 
         memos = get_memos(event)
+
+        if len(memos) > self.public_limit and event.public:
+            return
 
         for memo in memos:
             # Don't deliver if the user just sent a memo to themself
@@ -173,6 +178,8 @@ class Notify(Processor):
     addressed = False
     processed = True
 
+    public_limit = IntOption('public_limit', 'Maximum number of memos to read out in public (flood-protection)', 2)
+
     @handler
     def state(self, event):
         if event.state != 'online':
@@ -183,7 +190,9 @@ class Notify(Processor):
 
         memos = get_memos(event)
 
-        if len(memos) > 0:
+        if len(memos) > self.public_limit:
+            event.addresponse({'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos), 'target': event.sender['id']})
+        elif len(memos) > 0:
             event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
             memo_cache[event.identity] = None
