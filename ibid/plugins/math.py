@@ -92,7 +92,7 @@ def limited_pow(*args):
 
 # Factorial is only available in 2.6:
 try:
-    from math import factorial
+    from .. math import factorial
 except ImportError:
     def factorial(x):
         if not isinstance(x, int) or x < 0:
