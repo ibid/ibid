@@ -42,34 +42,43 @@ Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, back
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg) <person> <message>
-    forget my message for <person>"""
+    u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
+    forget my message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
+    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
     @authorise
-    def tell(self, event, how, who, memo):
-        if [True for name in ibid.config.plugins['core']['names'] if name.lower() == who.lower()]:
+    def tell(self, event, how, who, source, memo):
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+
+        if source.lower() == event.source and \
+                [True for name in ibid.config.plugins['core']['names'] if name.lower() == who.lower()]:
             event.addresponse(u"I can't deliver messages to myself")
             return
 
         to = event.session.query(Identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
-                .filter_by(source=event.source).first()
+                .filter_by(source=source).first()
         if not to:
             account = event.session.query(Account) \
                     .filter(func.lower(Account.username) == who.lower()).first()
             if account:
                 for identity in account.identities:
-                    if identity.source == event.source:
+                    if identity.source == source:
                         to = identity
                 if not identity:
                     identity = account.identities[0]
         if not to:
-            to = Identity(event.source, who)
+            if source not in ibid.sources:
+                event.addresponse(u'I am not connected to %s', source)
+                return
+            to = Identity(source, who)
             event.session.save(to)
             event.session.commit()
 
@@ -90,15 +99,22 @@ class Tell(Processor):
 
         event.addresponse(True)
 
-    @match(r'^(?:delete|forget)\s+(?:my\s+)?(?:last\s+)?(?:memo|message|msg)\s+(?:for|to)\s+(.+)$')
+    @match(r'^(?:delete|forget)\s+(?:my\s+)?(?:last\s+)?(?:memo|message|msg)\s+(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
     @authorise
-    def forget(self, event, who):
+    def forget(self, event, who, source):
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+
         memos = event.session.query(Memo) \
                 .filter_by(delivered=False) \
                 .filter_by(from_id=event.identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
+                .filter(Identity.source == source) \
                 .order_by(Memo.time.desc())
         memos, memo = memos.count(), memos.first()
+
         if memo:
             event.session.delete(memo)
             event.session.commit()
