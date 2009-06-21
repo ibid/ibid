@@ -1,6 +1,7 @@
-from time import localtime, strftime, time
-import re
 import logging
+from random import choice
+import re
+from time import localtime, strftime, time
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.orm import relation, eagerload
@@ -16,6 +17,9 @@ help = {'factoids': u'Factoids are arbitrary pieces of information stored by a k
                     u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
 log = logging.getLogger('plugins.factoid')
+
+default_verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
+default_interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
 
 def strip_name(unstripped):
     return re.match(r'^\s*(.*?)[?!.]*\s*$', unstripped, re.DOTALL).group(1)
@@ -111,7 +115,6 @@ class Factpack(Base):
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 escape_like_re = re.compile(r'([%_\\])')
-verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
@@ -316,9 +319,11 @@ class Get(Processor, RPC):
     u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
-    verbs = verbs
     priority = 900
-    interrogatives = Option('interrogatives', 'Question words to strip', ('what', 'wtf', 'where', 'when', 'who', "what's", "who's"))
+
+    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+
     date_format = Option('date_format', 'Format string for dates', '%Y/%m/%d')
     time_format = Option('time_format', 'Format string for times', '%H:%M:%S')
 
@@ -382,7 +387,9 @@ class Set(Processor):
     u"""<name> (<verb>|=<verb>=) [also] <value>"""
     feature = 'factoids'
 
-    verbs = verbs
+    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+
     priority = 910
     permission = u'factoid'
     
@@ -398,6 +405,14 @@ class Set(Processor):
         verb = verb1 and verb1 or verb2
 
         name = strip_name(name)
+
+        if name.lower() in self.interrogatives:
+            event.addresponse(choice((
+                u"I'm afraid I have no idea",
+                u"Not a clue, sorry",
+                u"Erk, dunno",
+            )))
+            return
 
         factoid = event.session.query(Factoid).join(Factoid.names)\
                 .filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
