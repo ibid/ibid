@@ -15,7 +15,8 @@ from ibid.utils import ago
 
 help = {'memo': u'Keeps messages for people.'}
 
-memo_cache = {}
+nomemos_cache = set()
+
 log = logging.getLogger('plugins.memo')
 
 class Memo(Base):
@@ -107,7 +108,7 @@ class Tell(Processor):
         log.info(u"Stored memo %s for %s (%s) from %s (%s): %s",
                 memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         event.memo = memo.id
-        memo_cache.clear()
+        nomemos_cache.clear()
 
         event.addresponse(True)
 
@@ -160,7 +161,7 @@ class Deliver(Processor):
 
     @handler
     def deliver(self, event):
-        if event.identity in memo_cache:
+        if event.identity in nomemos_cache:
             return
 
         memos = get_memos(event)
@@ -197,7 +198,7 @@ class Deliver(Processor):
                     memo.id, event.identity, event.sender['connection'])
 
         if 'memo' not in event:
-            memo_cache[event.identity] = None
+            nomemos_cache.add(event.identity)
 
 class Notify(Processor):
     feature = 'memo'
@@ -213,7 +214,7 @@ class Notify(Processor):
         if event.state != 'online':
             return
 
-        if event.identity in memo_cache:
+        if event.identity in nomemos_cache:
             return
 
         memos = get_memos(event)
@@ -223,7 +224,7 @@ class Notify(Processor):
         elif len(memos) > 0:
             event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
-            memo_cache[event.identity] = None
+            nomemos_cache.add(event.identity)
 
 class Messages(Processor):
     u"""my messages
