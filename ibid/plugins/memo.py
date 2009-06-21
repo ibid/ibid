@@ -173,7 +173,7 @@ class Deliver(Processor):
                 public = [True for memo in memos if not memo.private]
                 message = u'By the way, you have a pile of memos waiting for you, too many to read out in public. PM me'
                 if public:
-                    event.addresponse(message)
+                    event.addresponse(u'%s: ' + message, event.sender['nick'])
                 else:
                     event.addresponse({'reply': message, 'target': event.sender['id']})
                 notified_overlimit_cache.add(event.identity)
