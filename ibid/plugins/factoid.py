@@ -327,7 +327,10 @@ class Get(Processor, RPC):
         RPC.__init__(self)
 
     def setup(self):
-        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:%s\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(
+                r'^(?:(?:%s)\s+(?:(?:%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$'
+                  % ('|'.join(self.interrogatives),
+                '|'.join(self.verbs)), re.I)
 
     @handler
     def get(self, event, name, number, pattern, is_regex):
