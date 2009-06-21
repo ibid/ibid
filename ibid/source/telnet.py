@@ -54,11 +54,16 @@ class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
 
     def setServiceParent(self, service=None):
         if service:
-            return internet.TCPServer(self.port, self).setServiceParent(service)
+            self.listener = internet.TCPServer(self.port, self).setServiceParent(service)
+            return self.listener
         else:
-            reactor.listenTCP(self.port, self)
+            self.listener = reactor.listenTCP(self.port, self)
 
     def connect(self):
         return self.setServiceParent(None)
+
+    def disconnect(self):
+        self.listener.stopListening()
+        return True
 
 # vi: set et sta sw=4 ts=4:
