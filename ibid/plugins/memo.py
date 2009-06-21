@@ -90,20 +90,28 @@ class Tell(Processor):
 
         event.addresponse(True)
 
-    @match(r'^forget\s+(?:my\s+)(?:memo|message|msg)\s+(?:for|to)\s+(.+)$')
+    @match(r'^(?:delete|forget)\s+(?:my\s+)?(?:last\s+)?(?:memo|message|msg)\s+(?:for|to)\s+(.+)$')
     @authorise
     def forget(self, event, who):
-        memo = event.session.query(Memo) \
+        memos = event.session.query(Memo) \
                 .filter_by(delivered=False) \
                 .filter_by(from_id=event.identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
-                .order_by(Memo.time.desc()).first()
+                .order_by(Memo.time.desc())
+        memos, memo = memos.count(), memos.first()
         if memo:
             event.session.delete(memo)
             event.session.commit()
             log.info(u"Cancelled memo %s for %s (%s) from %s (%s): %s",
                     memo.id, memo.to_id, who, event.identity, event.sender['connection'], memo.memo)
-            event.addresponse(True)
+            if memos > 1:
+                event.addresponse(
+                        u"Forgotten your most recent memo for %(to)s, but you still have %(count)i pending", {
+                            'to': who,
+                            'count': memos - 1,
+                })
+            else:
+                event.addresponse(True)
         else:
             event.addresponse(u"You don't have any outstanding messages for %s", who)
 
