@@ -135,7 +135,7 @@ class Calc(Processor):
     priority = 500
 
     extras = ('abs', 'round', 'min', 'max')
-    banned = ('for', 'yield', 'lambda')
+    banned = ('for', 'yield', 'lambda', '__')
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
