@@ -52,6 +52,7 @@ class Tell(Processor):
     @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
     @authorise
     def tell(self, event, how, who, source, memo):
+        source_specified = bool(source)
         if not source:
             source = event.source
         else:
@@ -65,7 +66,8 @@ class Tell(Processor):
         to = event.session.query(Identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
                 .filter_by(source=source).first()
-        if not to:
+
+        if not to and not source_specified:
             account = event.session.query(Account) \
                     .filter(func.lower(Account.username) == who.lower()).first()
             if account:
@@ -74,6 +76,16 @@ class Tell(Processor):
                         to = identity
                 if not identity:
                     identity = account.identities[0]
+
+        if not to and not source_specified:
+            event.addresponse(
+                    u"I don't know who %(who)s is. "
+                    u"Say '%(who)s on %(source)s' and I'll take your word that %(who)s exists", {
+                    'who': who,
+                    'source': source,
+            })
+            return
+
         if not to:
             if source not in ibid.sources:
                 event.addresponse(u'I am not connected to %s', source)
