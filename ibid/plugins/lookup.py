@@ -181,8 +181,10 @@ class FMyLife(Processor):
 
         if quote:
             event.addresponse(quote)
-        else:
+        elif id.isdigit():
             event.addresponse(u'No such quote')
+        else:
+            event.addresponse(choice(self.failure_messages) % event.sender)
 
     @match(r'^fml$')
     def fml_default(self, event):
