@@ -186,14 +186,7 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        try:
-            event.addresponse(self.remote_get('random'))
-        except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-        except BadStatusLine:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+        self.fml(event, 'random')
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
