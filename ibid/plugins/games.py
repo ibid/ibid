@@ -80,7 +80,7 @@ class Shootout(Processor):
         delay = self.delay and max(gauss(self.delay, self.delay / 2), 0) or 0.0
 
         if self.delay:
-            ibid.dispatcher.call_later(delay, self.start_duel, event)
+            duel.start_callback = ibid.dispatcher.call_later(delay, self.start_duel, event)
             event.addresponse(True)
         else:
             self.start_duel(event)
@@ -135,6 +135,8 @@ class Shootout(Processor):
             })
             del self.duels[(event.source, event.channel)]
             duel.timeout.cancel()
+            if duel.start_callback:
+                duel.start_callback.cancel()
             return
 
         chance, power = self.weapons[weapon.lower()]
