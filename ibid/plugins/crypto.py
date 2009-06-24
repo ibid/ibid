@@ -22,15 +22,23 @@ class Hash(Processor):
     def handle_crypt(self, event, string, salt):
         event.addresponse(unicode(crypt(string, salt)))
 
-help['base64'] = u'Encodes and decodes base 16, 32 and 64.'
+help['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
 class Base64(Processor):
     u"""b(16|32|64)(encode|decode) <string>"""
     feature = 'base64'
 
     @match(r'^b(16|32|64)(enc|dec)(?:ode)?\s+(.+?)$')
     def base64(self, event, base, operation, string):
-        func = getattr(base64, 'b%s%sode' % (base, operation.lower()))
-        event.addresponse(unicode(func(string)))
+        operation = operation.lower()
+        func = getattr(base64, 'b%s%sode' % (base, operation))
+        if operation == 'dec':
+            bytes = func(string)
+            try:
+                event.addresponse(u"Assuming UTF-8: '%s'", unicode(bytes, 'utf-8', 'strict'))
+            except UnicodeDecodeError:
+                event.addresponse(u'Not UTF-8: %s', unicode(repr(bytes)))
+        else:
+            event.addresponse(unicode(func(string.encode('utf-8'))))
 
 help['rot13'] = u'Transforms a string with ROT13.'
 class Rot13(Processor):
