@@ -13,13 +13,14 @@ class Hash(Processor):
     crypt <string> <salt>"""
     feature = 'hash'
 
-    @match(r'^(md5|sha1|sha224|sha256|sha384|sha512)\s+(.+?)$')
+    @match(r'^(md5|sha1|sha224|sha256|sha384|sha512)(?:sum)?\s+(.+?)$')
     def hash(self, event, hash, string):
-        event.addresponse(eval('hashlib.%s' % hash.lower())(string).hexdigest())
+        func = getattr(hashlib, hash.lower())
+        event.addresponse(unicode(func(string).hexdigest()))
 
     @match(r'^crypt\s+(.+)\s+(\S+)$')
     def handle_crypt(self, event, string, salt):
-        event.addresponse(crypt(string, salt))
+        event.addresponse(unicode(crypt(string, salt)))
 
 help['base64'] = u'Encodes and decodes base 16, 32 and 64.'
 class Base64(Processor):
@@ -28,7 +29,8 @@ class Base64(Processor):
 
     @match(r'^b(16|32|64)(enc|dec)(?:ode)?\s+(.+?)$')
     def base64(self, event, base, operation, string):
-        event.addresponse(eval('base64.b%s%sode' % (base, operation.lower()))(string))
+        func = getattr(base64, 'b%s%sode' % (base, operation.lower()))
+        event.addresponse(unicode(func(string)))
 
 help['rot13'] = u'Transforms a string with ROT13.'
 class Rot13(Processor):
