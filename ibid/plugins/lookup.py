@@ -587,7 +587,9 @@ class Distance(Processor):
         if js['totalResultsCount'] == 0:
             event.addresponse(u"I don't know of anywhere even remotely like '%s'", place)
         else:
-            event.addresponse(u"I can find: %s", (u"; ".join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) for p in js['geonames'][0:min(10,js['totalResultsCount'])]])))
+            event.addresponse(u"I can find: %s", 
+                    (u"; ".join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
+                        for p in js['geonames'][0:min(10,js['totalResultsCount'])]])))
 
     @match(r'^(?:(?:how\s*far)|distance)(?:\s+in\s+(\S+?))?\s+between\s+(\S.+?)\s+and\s+(\S.+?)\s*$')
     def distance(self, event, unit, src, dst):
@@ -595,26 +597,30 @@ class Distance(Processor):
         if unit and unit not in self.unit_names:
             event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
                 'badunit': unit, 
-                'knownunits': u", ".join([u"%s (%s)" % (unit, self.unit_names[unit]) for unit in self.unit_names]),
+                'knownunits': 
+                    u", ".join([u"%s (%s)" % (unit, self.unit_names[unit]) 
+                        for unit in self.unit_names]),
             })
             return
-        else:
-            if unit:
-                unit_names = [unit]
+        if unit:
+            unit_names = [unit]
         
-        (srcp, dstp) = (self.get_place(src), self.get_place(dst))
+        srcp, dstp = self.get_place(src), self.get_place(dst)
         if not srcp or not dstp:
-            event.addresponse(u"I don't know of anywhere called %s", (u" or ".join(["'%s'" % place[0] for place in [(src, srcp), (dst, dstp)] if not place[1]])))
+            event.addresponse(u"I don't know of anywhere called %s", 
+                    (u" or ".join(["'%s'" % place[0] 
+                        for place in (src, srcp), (dst, dstp) if not place[1]])))
             return
         
         dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
-                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + sin(srcp['lat'])*sin(dstp['lat']))
+                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + 
+                    sin(srcp['lat'])*sin(dstp['lat']))
         
         event.addresponse(u"Approximate distance, as the bot flies, between %(srcname)s and %(dstname)s is: %(distance)s", {
             'srcname': srcp['name'],
             'dstname': dstp['name'],
-            'distance': ", ".join([u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) for unit in unit_names]),
+            'distance': ", ".join([u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) 
+                for unit in unit_names]),
         })
 
 # vi: set et sta sw=4 ts=4:
-
