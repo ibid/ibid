@@ -557,19 +557,20 @@ class Distance(Processor):
     
     geo_url = 'http://ws.geonames.org/searchJSON?q=%s&maxRows=%d'
 
-    default_unit_names = {'mi': "miles",
-            'nm': "nautical miles",
-            'km': "kilometres"}
-    default_radius_values = {'mi': 3963.1,
-            'nm': 3443.9,
-            'km': 6378}
+    default_unit_names = {
+            'km': "kilometres",
+            'mi': "miles",
+            'nm': "nautical miles"}
+    default_radius_values = {
+            'km': 6378,
+            'mi': 3963.1,
+            'nm': 3443.9}
 
     unit_names = Option('unit_names', 'Names of units in which to specify distances', default_unit_names)
     radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
 
     def get_place(self, place):
         js = loads(urlopen(self.geo_url % (place, 1)).read())
-        print js
         if js['totalResultsCount'] == 0:
             return None
         info = js['geonames'][0]
@@ -577,7 +578,7 @@ class Distance(Processor):
                 'lng': radians(info['lng']),
                 'lat': radians(info['lat'])}
     
-    @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\d+)?\s*(\S.+?)\s*$')
+    @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
     def placesearch(self, event, place):
         js = loads(urlopen(self.geo_url % (place, 10)).read())
         print js
@@ -590,11 +591,11 @@ class Distance(Processor):
     def distance(self, event, unit, src, dst):
         (srcp, dstp) = (self.get_place(src), self.get_place(dst))
         if not srcp or not dstp:
-            event.addresponse("I don't know of anywhere called %s" % (" or ".join(["'%s'" % place for place in [srcp, dstp] if not place])))
+            event.addresponse("I don't know of anywhere called %s" % (" or ".join(["'%s'" % place[0] for place in [(src, srcp), (dst, dstp)] if not place[1]])))
             return
         
         dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
-                    cos(srcp['lng']) * sin(srcp['lat']) * cos(dstp['lng']) * sin(dstp['lat']) + sin(srcp['lat'])*sin(dstp['lat']))
+                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + sin(srcp['lat'])*sin(dstp['lat']))
         
         unit_names = self.unit_names
         if unit and unit not in self.unit_names:
@@ -607,12 +608,10 @@ class Distance(Processor):
         else:
             if unit:
                 unit_names = [unit]
-        print unit_names
         response = u"Approximate distance, as the bot flies, between %%(srcname)s and %%(dstname)s is: %s" % ", ".join(["%%(%svalue)s %%(%sname)s" % (unit, unit) for unit in unit_names])
         responsevals = {'srcname': srcp['name'], 'dstname': dstp['name']}
         for unit in unit_names:
-            responsevals.update({'%sname' % unit: self.unit_names[unit], '%svalue' % unit: self.radius_values[unit]*dist})
-        print "'%s', '%s'" % (response, responsevals)
+            responsevals.update({'%sname' % unit: self.unit_names[unit], '%svalue' % unit: "%.02f" % (self.radius_values[unit]*dist)})
         
         event.addresponse(response, responsevals)
 
