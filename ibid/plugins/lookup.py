@@ -7,6 +7,7 @@ from datetime import datetime
 from random import choice
 from simplejson import loads
 from xml.etree.cElementTree import parse
+from .. math import acos, sin, cos, radians
 import re
 import logging
 
@@ -542,5 +543,77 @@ class Weather(Processor):
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
+
+help['distance'] = u"Returns the distance between two places"
+class Distance(Processor):
+    u"""distance [in <unit>] between <source> and <destination>
+    place search for <placename>"""
+
+    # For Mathematics, see:
+    # http://www.mathforum.com/library/drmath/view/51711.html
+    # http://mathworld.wolfram.com/GreatCircle.html
+
+    feature = 'distance'
+    
+    geo_url = 'http://ws.geonames.org/searchJSON?q=%s&maxRows=%d'
+
+    default_unit_names = {'mi': "miles",
+            'nm': "nautical miles",
+            'km': "kilometres"}
+    default_radius_values = {'mi': 3963.1,
+            'nm': 3443.9,
+            'km': 6378}
+
+    unit_names = Option('unit_names', 'Names of units in which to specify distances', default_unit_names)
+    radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
+
+    def get_place(self, place):
+        js = loads(urlopen(self.geo_url % (place, 1)).read())
+        print js
+        if js['totalResultsCount'] == 0:
+            return None
+        info = js['geonames'][0]
+        return {'name': "%s, %s, %s" % (info['name'], info['adminName1'], info['countryName']),
+                'lng': radians(info['lng']),
+                'lat': radians(info['lat'])}
+    
+    @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\d+)?\s*(\S.+?)\s*$')
+    def placesearch(self, event, place):
+        js = loads(urlopen(self.geo_url % (place, 10)).read())
+        print js
+        if js['totalResultsCount'] == 0:
+            event.addresponse("I don't know of anywhere even remotely like '%s'" % place)
+        else:
+            event.addresponse("I can find: %s" % ("; ".join(["%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) for p in js['geonames'][0:min(10,js['totalResultsCount'])]])))
+
+    @match(r'^(?:(?:how\s*far)|distance)(?:\s+in\s+(\S+?))?\s+between\s+(\S.+?)\s+and\s+(\S.+?)\s*$')
+    def distance(self, event, unit, src, dst):
+        (srcp, dstp) = (self.get_place(src), self.get_place(dst))
+        if not srcp or not dstp:
+            event.addresponse("I don't know of anywhere called %s" % (" or ".join(["'%s'" % place for place in [srcp, dstp] if not place])))
+            return
+        
+        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
+                    cos(srcp['lng']) * sin(srcp['lat']) * cos(dstp['lng']) * sin(dstp['lat']) + sin(srcp['lat'])*sin(dstp['lat']))
+        
+        unit_names = self.unit_names
+        if unit and unit not in self.unit_names:
+            response = u"I don't know the unit '%%(badunit)s'. I know about: %s" % ", ".join(["%%(%sname)s (%%(%sabbrev)s)" % (unit, unit) for unit in self.unit_names])
+            responsevals = {}
+            for unit in self.unit_names:
+                responsevals.update({"%sname" % unit: self.unit_names[unit], "%sabbrev" % unit: unit})
+            event.addresponse(response, responsevals)
+            return
+        else:
+            if unit:
+                unit_names = [unit]
+        print unit_names
+        response = u"Approximate distance, as the bot flies, between %%(srcname)s and %%(dstname)s is: %s" % ", ".join(["%%(%svalue)s %%(%sname)s" % (unit, unit) for unit in unit_names])
+        responsevals = {'srcname': srcp['name'], 'dstname': dstp['name']}
+        for unit in unit_names:
+            responsevals.update({'%sname' % unit: self.unit_names[unit], '%svalue' % unit: self.radius_values[unit]*dist})
+        print "'%s', '%s'" % (response, responsevals)
+        
+        event.addresponse(response, responsevals)
 
 # vi: set et sta sw=4 ts=4:
