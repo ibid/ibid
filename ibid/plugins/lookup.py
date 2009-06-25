@@ -581,7 +581,6 @@ class Distance(Processor):
     @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
     def placesearch(self, event, place):
         js = loads(urlopen(self.geo_url % (place, 10)).read())
-        print js
         if js['totalResultsCount'] == 0:
             event.addresponse("I don't know of anywhere even remotely like '%s'" % place)
         else:
