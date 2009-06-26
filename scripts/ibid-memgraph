@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import csv
+import gzip
+import optparse
+import os
+import os.path
+import sys
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+parser = optparse.OptionParser(usage="""%prog logfile
+logfile is a memory log file (possibly gzipped)
+""")
+
+(options, args) = parser.parse_args()
+
+if len(args) != 1:
+    sys.stderr.write("Log file required\n")
+    sys.exit(2)
+
+if args[0].endswith('.gz'):
+    f = gzip.open(args[0], 'rb')
+else:
+    f = file(args[0], 'rb')
+
+reader = csv.reader(f)
+data = np.array([row[1:] for row in reader], dtype=float)
+
+fig = plt.figure()
+ax_obj = fig.add_subplot(111)
+ax_obj.plot(data[:,0], data[:,1], 'b-', label='Objects')
+ax_obj.set_xlabel('time (s)')
+ax_obj.set_ylabel('objects', color='b')
+for tl in ax_obj.get_yticklabels():
+    tl.set_color('b')
+
+ax_mem = ax_obj.twinx()
+ax_mem.plot(data[:,0], data[:,2], 'r-', label='VM Size')
+ax_mem.plot(data[:,0], data[:,3], 'g-', label='VM RSS')
+ax_mem.plot(data[:,0], data[:,3], 'y-', label='VM Data')
+ax_mem.set_ylabel('memory (kB)')
+
+plt.legend()
+plt.show()
+
+# vi: set et sta sw=4 ts=4:
