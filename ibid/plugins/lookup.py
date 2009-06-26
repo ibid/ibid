@@ -589,7 +589,7 @@ class Distance(Processor):
         else:
             event.addresponse(u"I can find: %s", 
                     (u"; ".join(u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
-                        for p in js['geonames'][0:min(10,js['totalResultsCount'])])))
+                        for p in js['geonames'][:10])))
 
     @match(r'^(?:(?:how\s*far)|distance)(?:\s+in\s+(\S+?))?\s+between\s+(\S.+?)\s+and\s+(\S.+?)\s*$')
     def distance(self, event, unit, src, dst):
