@@ -13,6 +13,10 @@ import matplotlib.pyplot as plt
 parser = optparse.OptionParser(usage="""%prog logfile
 logfile is a memory log file (possibly gzipped)
 """)
+parser.add_option('-o', '--output', dest='output',
+        help='Output to filename rather than interactive')
+parser.add_option('-d', '--dpi', dest='dpi',
+        help='Output DPI')
 
 (options, args) = parser.parse_args()
 
@@ -30,19 +34,27 @@ data = np.array([row[1:] for row in reader], dtype=float)
 
 fig = plt.figure()
 ax_obj = fig.add_subplot(111)
-ax_obj.plot(data[:,0], data[:,1], 'b-', label='Objects')
 ax_obj.set_xlabel('time (s)')
-ax_obj.set_ylabel('objects', color='b')
+ax_mem = ax_obj.twinx()
+ax_mem.grid(True)
+
+ax_obj.plot(data[:,0], data[:,1]/1000, 'b-', label='Objects (k)')
+ax_obj.set_ylabel('Objects (k)', color='b')
+
 for tl in ax_obj.get_yticklabels():
     tl.set_color('b')
 
-ax_mem = ax_obj.twinx()
-ax_mem.plot(data[:,0], data[:,2], 'r-', label='VM Size')
-ax_mem.plot(data[:,0], data[:,3], 'g-', label='VM RSS')
-ax_mem.plot(data[:,0], data[:,3], 'y-', label='VM Data')
-ax_mem.set_ylabel('memory (kB)')
+ax_mem.plot(data[:,0], data[:,2]/1024, 'r-', label='VM Size')
+ax_mem.plot(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
 
-plt.legend()
-plt.show()
+ax_mem.set_ylabel('Memory (MiB)')
+
+plt.legend(loc='best')
+plt.title('Ibid Memory Usage')
+
+if options.output:
+    plt.savefig(options.output, dpi=options.dpi)
+else:
+    plt.show()
 
 # vi: set et sta sw=4 ts=4:
