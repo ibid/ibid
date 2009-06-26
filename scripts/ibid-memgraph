@@ -11,12 +11,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 parser = optparse.OptionParser(usage="""%prog logfile
-logfile is a memory log file (possibly gzipped)
-""")
-parser.add_option('-o', '--output', dest='output',
+logfile is a memory log file (possibly gzipped)""")
+parser.add_option('-o', '--output', dest='output', metavar='FILE',
         help='Output to filename rather than interactive')
 parser.add_option('-d', '--dpi', dest='dpi',
         help='Output DPI')
+parser.add_option('-b', '--botname', dest='botname', default='Ibid', metavar='NAME',
+        help='Bot Name (Graph Title)')
 
 (options, args) = parser.parse_args()
 
@@ -50,7 +51,7 @@ ax_mem.plot(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
 ax_mem.set_ylabel('Memory (MiB)')
 
 plt.legend(loc='best')
-plt.title('Ibid Memory Usage')
+plt.title(options.botname + ' Memory Usage')
 
 if options.output:
     plt.savefig(options.output, dpi=options.dpi)
