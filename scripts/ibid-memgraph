@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
 import csv
+from datetime import datetime
 import gzip
 import optparse
 import os
 import os.path
 import sys
 
-import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pyplot
+from matplotlib.dates import date2num
+import numpy
 
 parser = optparse.OptionParser(usage="""%prog logfile
 logfile is a memory log file (possibly gzipped)""")
@@ -31,31 +33,33 @@ else:
     f = file(args[0], 'rb')
 
 reader = csv.reader(f)
-data = np.array([row[1:] for row in reader], dtype=float)
+data = numpy.array([(date2num(datetime.strptime(row[0], '%Y-%m-%dT%H:%M:%S.%f')), row[2], row[3], row[4]) for row in reader], dtype=float)
 
-fig = plt.figure()
+fig = pyplot.figure()
 ax_obj = fig.add_subplot(111)
 ax_obj.set_xlabel('time (s)')
 ax_mem = ax_obj.twinx()
 ax_mem.grid(True)
 
-ax_obj.plot(data[:,0], data[:,1]/1000, 'b-', label='Objects (k)')
+ax_obj.plot_date(data[:,0], data[:,1]/1000, 'b-', label='Objects (k)')
 ax_obj.set_ylabel('Objects (k)', color='b')
 
 for tl in ax_obj.get_yticklabels():
     tl.set_color('b')
 
-ax_mem.plot(data[:,0], data[:,2]/1024, 'r-', label='VM Size')
-ax_mem.plot(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
+ax_mem.plot_date(data[:,0], data[:,2]/1024, 'r-', label='VM Size')
+ax_mem.plot_date(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
 
 ax_mem.set_ylabel('Memory (MiB)')
 
-plt.legend(loc='best')
-plt.title(options.botname + ' Memory Usage')
+pyplot.legend(loc='best')
+pyplot.title(options.botname + ' Memory Usage')
+
+fig.autofmt_xdate()
 
 if options.output:
-    plt.savefig(options.output, dpi=options.dpi)
+    pyplot.savefig(options.output, dpi=options.dpi)
 else:
-    plt.show()
+    pyplot.show()
 
 # vi: set et sta sw=4 ts=4:
