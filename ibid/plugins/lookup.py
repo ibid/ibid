@@ -5,7 +5,6 @@ from urlparse import urljoin
 from time import time
 from datetime import datetime
 from random import choice
-from simplejson import loads
 from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
 import re
@@ -15,7 +14,8 @@ import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, cacheable_download
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
+        cacheable_download, json_webservice, JSONException
 
 log = logging.getLogger('plugins.lookup')
 
@@ -216,22 +216,27 @@ class Twitter(Processor):
     }
     services = Option('services', 'Micro blogging services', default)
 
+    class NoSuchUserException(Exception):
+        pass
+
     def setup(self):
         self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % '|'.join(self.services.keys()), re.I)
         self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$'
                 % '|'.join(self.services.keys()), re.I)
 
     def remote_update(self, service, id):
-        f = urlopen('%sstatuses/show/%s.json' % (service['endpoint'], id))
-        status = loads(f.read())
-        f.close()
+        status = json_webservice('%sstatuses/show/%s.json' % (service['endpoint'], id))
 
         return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service['endpoint'], user))
-        statuses = loads(f.read())
-        f.close()
+        statuses = json_webservice(
+                '%sstatuses/user_timeline/%s.json' % (service['endpoint'], user.encode('utf-8')),
+                {'count': 1})
+
+        if not statuses:
+            raise self.NoSuchUserException(user)
+
         latest = statuses[0]
 
         if service['api'] == 'twitter':
@@ -270,6 +275,8 @@ class Twitter(Processor):
                 event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
+        except self.NoSuchUserException, e:
+                event.addresponse(u'No such %s', service['user'])
 
     @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
@@ -555,8 +562,6 @@ class Distance(Processor):
 
     feature = 'distance'
     
-    geo_url = 'http://ws.geonames.org/searchJSON?'
-
     default_unit_names = {
             'km': "kilometres",
             'mi': "miles",
@@ -570,7 +575,7 @@ class Distance(Processor):
     radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
     
     def get_place_data(self, place, num):
-        return loads(urlopen(self.geo_url + urlencode({'q': place.encode('utf-8'), 'maxRows': num})).read())
+        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
 
     def get_place(self, place):
         js = self.get_place_data(place, 1)

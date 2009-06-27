@@ -1,5 +1,4 @@
 from datetime import datetime
-from simplejson import loads
 import logging
 
 from sqlalchemy import Table, MetaData
