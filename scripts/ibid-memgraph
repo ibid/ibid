@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import gzip
 import optparse
 import sys
 
@@ -14,8 +15,6 @@ parser.add_option('-o', '--output', dest='output', metavar='FILE',
         help='Output to filename rather than interactive')
 parser.add_option('-d', '--dpi', dest='dpi',
         help='Output DPI')
-parser.add_option('-b', '--botname', dest='botname', default='Ibid', metavar='NAME',
-        help='Bot Name (Graph Title)')
 
 (options, args) = parser.parse_args()
 
@@ -23,11 +22,21 @@ if len(args) != 1:
     sys.stderr.write("Log file required\n")
     sys.exit(2)
 
+f = args[0].endswith('.gz') and gzip.GzipFile(args[0], 'r') or file(args[0], 'r')
+header = f.readline().strip()
+f.close()
+if not header.startswith('Ibid Memory Log v2: '):
+    sys.stderr.write("Incorrect file format\n")
+    sys.exit(1)
+
+botname = header.split(':', 1)[1].strip()
+
 data = numpy.loadtxt(args[0],
         dtype=float,
         delimiter=',',
+        skiprows=1,
         converters={0: lambda x: date2num(dateutil.parser.parse(x))},
-        usecols=(0, 2, 3, 4))
+)
 
 fig = pyplot.figure()
 ax_obj = fig.add_subplot(111)
@@ -47,7 +56,7 @@ ax_mem.plot_date(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
 ax_mem.set_ylabel('Memory (MiB)')
 
 pyplot.legend(loc='best')
-pyplot.title(options.botname + ' Memory Usage')
+pyplot.title(botname + ' Memory Usage')
 
 fig.autofmt_xdate()
 
