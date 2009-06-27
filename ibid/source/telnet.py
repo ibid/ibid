@@ -7,6 +7,7 @@ from twisted.application import internet
 import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+from ibid.config import IntOption
 
 class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
@@ -45,7 +46,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
 
-    port = 3000
+    port = IntOption('port', 'Port number to listen on', 3000)
 
     def __init__(self, name, *args, **kwargs):
         #protocol.ServerFactory.__init__(self, *args, **kwargs)
