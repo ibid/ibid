@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-import csv
-from datetime import datetime
-import gzip
 import optparse
-import os
-import os.path
 import sys
 
+import dateutil
 import matplotlib.pyplot as pyplot
 from matplotlib.dates import date2num
 import numpy
@@ -27,13 +23,11 @@ if len(args) != 1:
     sys.stderr.write("Log file required\n")
     sys.exit(2)
 
-if args[0].endswith('.gz'):
-    f = gzip.open(args[0], 'rb')
-else:
-    f = file(args[0], 'rb')
-
-reader = csv.reader(f)
-data = numpy.array([(date2num(datetime.strptime(row[0], '%Y-%m-%dT%H:%M:%S.%f')), row[2], row[3], row[4]) for row in reader], dtype=float)
+data = numpy.loadtxt(args[0],
+        dtype=float,
+        delimiter=',',
+        converters={0: lambda x: date2num(dateutil.parser.parse(x))},
+        usecols=(0, 2, 3, 4))
 
 fig = pyplot.figure()
 ax_obj = fig.add_subplot(111)
