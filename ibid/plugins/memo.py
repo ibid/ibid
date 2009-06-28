@@ -45,7 +45,7 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backr
 
 class Tell(Processor):
     u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
-    forget my message for <person> [on <source>]"""
+    forget my last message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
@@ -238,7 +238,8 @@ class Notify(Processor):
 
 class Messages(Processor):
     u"""my messages
-    message <number>"""
+    message <number>
+    my messages for <name> [on <source>]"""
     feature = 'memo'
 
     datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
@@ -250,6 +251,32 @@ class Messages(Processor):
             event.addresponse(u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
         else:
             event.addresponse(u"Sorry, nobody loves you")
+
+    @match(r'^my\s+messages\s+(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
+    def messages_for(self, event, who, source):
+        identities = get_identities(event)
+
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+
+        memos = event.session.query(Memo) \
+                .filter_by(delivered=False) \
+                .filter(Memo.from_id.in_(identities)) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .filter(Identity.source == source) \
+                .order_by(Memo.time.desc()).all()
+
+        if memos:
+            event.addresponse(u'Last: ' + u', '.join(
+                '%s (%s)' % (memo.memo, memo.time.strftime(self.datetime_format)) for memo in memos
+            ))
+        else:
+            event.addresponse(u"Sorry, all your memos to %(who)s on %(source)s are already delivered", {
+                'who': who,
+                'source': source,
+            })
 
     @match(r'^message\s+(\d+)$')
     def message(self, event, number):
