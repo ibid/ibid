@@ -26,9 +26,9 @@ class MemoryLog(Processor):
     feature = 'memory'
 
     mem_filename = Option('mem_filename', 'Memory log filename', 'logs/memory.log')
-    mem_interval = IntOption('mem_interval', 'Interval between memory stat logging', 1)
+    mem_interval = IntOption('mem_interval', 'Interval between memory stat logging', 0)
     obj_filename = Option('obj_filename', 'Object Statistics log filename', 'logs/objstats.log')
-    obj_interval = IntOption('obj_interval', 'Interval between logging object statistics', 1)
+    obj_interval = IntOption('obj_interval', 'Interval between logging object statistics', 0)
 
     def setup(self):
         fns = []
