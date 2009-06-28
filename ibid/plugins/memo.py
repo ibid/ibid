@@ -230,7 +230,10 @@ class Notify(Processor):
         memos = get_memos(event)
 
         if len(memos) > self.public_limit:
-            event.addresponse({'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos), 'target': event.sender['id']})
+            event.addresponse({
+                    'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos),
+                    'target': event.sender['id'],
+            })
         elif len(memos) > 0:
             event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
@@ -248,7 +251,13 @@ class Messages(Processor):
     def messages(self, event):
         memos = get_memos(event, True)
         if memos:
-            event.addresponse(u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
+            event.addresponse(u', '.join(
+                '%s: %s (%s)' % (
+                    memos.index(memo),
+                    memo.sender.identity,
+                    memo.time.strftime(self.datetime_format)
+                ) for memo in memos
+            ))
         else:
             event.addresponse(u"Sorry, nobody loves you")
 
