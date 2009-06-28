@@ -39,6 +39,8 @@ data = numpy.loadtxt(args[0],
 )
 
 fig = pyplot.figure()
+fig.autofmt_xdate()
+
 ax_obj = fig.add_subplot(111)
 ax_obj.set_xlabel('time (s)')
 ax_mem = ax_obj.twinx()
@@ -58,7 +60,12 @@ ax_mem.set_ylabel('Memory (MiB)')
 pyplot.legend(loc='best')
 pyplot.title(botname + ' Memory Usage')
 
-fig.autofmt_xdate()
+# autofmt_xdate doesn't work perfectly in twinx
+for label in ax_obj.get_xticklabels():
+    label.set_ha('right')
+    label.set_rotation(30)
+for label in ax_mem.get_xticklabels():
+    label.set_visible(False)
 
 if options.output:
     pyplot.savefig(options.output, dpi=options.dpi)
