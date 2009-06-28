@@ -24,17 +24,20 @@ class Hash(Processor):
 
 help['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
 class Base64(Processor):
-    u"""b(16|32|64)(encode|decode) <string>"""
+    u"""base(16|32|64) (encode|decode) <string>"""
     feature = 'base64'
 
-    @match(r'^b(16|32|64)(enc|dec)(?:ode)?\s+(.+?)$')
+    @match(r'^b(?:ase)?(16|32|64)\s*(enc|dec)(?:ode)?\s+(.+?)$')
     def base64(self, event, base, operation, string):
         operation = operation.lower()
         func = getattr(base64, 'b%s%sode' % (base, operation))
         if operation == 'dec':
-            bytes = func(string)
             try:
+                bytes = func(string)
                 event.addresponse(u"Assuming UTF-8: '%s'", unicode(bytes, 'utf-8', 'strict'))
+            except TypeError, e:
+                event.addresponse(u"Invalid base%(base)s: %(error)s",
+                        {'base': base, 'error': unicode(e)})
             except UnicodeDecodeError:
                 event.addresponse(u'Not UTF-8: %s', unicode(repr(bytes)))
         else:
