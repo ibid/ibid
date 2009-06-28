@@ -290,7 +290,14 @@ class Messages(Processor):
     @match(r'^message\s+(\d+)$')
     def message(self, event, number):
         memos = get_memos(event, True)
-        memo = memos[int(number)]
+
+        number = int(number)
+        if number >= len(memos):
+            event.addresponse(u'Sorry, no such message in your archive')
+            return
+
+        memo = memos[number]
+
         event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
             'sender': memo.sender.identity,
             'source': memo.sender.source,
