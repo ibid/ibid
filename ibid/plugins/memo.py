@@ -122,11 +122,18 @@ class Tell(Processor):
         else:
             source = source.lower()
 
+        # Join on column x isn't possible in SQLAlchemy 0.4:
+        identities_to = event.session.query(Identity) \
+                .filter_by(source=source) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .all()
+
+        identities_to = [identity.id for identity in identities_to]
+
         memos = event.session.query(Memo) \
                 .filter_by(delivered=False) \
                 .filter_by(from_id=event.identity) \
-                .filter(func.lower(Identity.identity) == who.lower()) \
-                .filter(Identity.source == source) \
+                .filter(Memo.to_id.in_(identities_to)) \
                 .order_by(Memo.time.desc())
         memos, memo = memos.count(), memos.first()
 
@@ -270,11 +277,18 @@ class Messages(Processor):
         else:
             source = source.lower()
 
+        # Join on column x isn't possible in SQLAlchemy 0.4:
+        identities_to = event.session.query(Identity) \
+                .filter_by(source=source) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .all()
+
+        identities_to = [identity.id for identity in identities_to]
+
         memos = event.session.query(Memo) \
                 .filter_by(delivered=False) \
                 .filter(Memo.from_id.in_(identities)) \
-                .filter(func.lower(Identity.identity) == who.lower()) \
-                .filter(Identity.source == source) \
+                .filter(Memo.to_id.in_(identities_to)) \
                 .order_by(Memo.time.desc()).all()
 
         if memos:
