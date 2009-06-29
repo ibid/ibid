@@ -182,19 +182,14 @@ class FMyLife(Processor):
 
         if quote:
             event.addresponse(quote)
-        else:
+        elif id.isdigit():
             event.addresponse(u'No such quote')
+        else:
+            event.addresponse(choice(self.failure_messages) % event.sender)
 
     @match(r'^fml$')
     def fml_default(self, event):
-        try:
-            event.addresponse(self.remote_get('random'))
-        except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-        except BadStatusLine:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+        self.fml(event, 'random')
 
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
@@ -218,7 +213,7 @@ class Twitter(Processor):
 
     def setup(self):
         self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % '|'.join(self.services.keys()), re.I)
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$'
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?@?(\S+)$'
                 % '|'.join(self.services.keys()), re.I)
 
     def remote_update(self, service, id):
