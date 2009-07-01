@@ -143,7 +143,7 @@ class Duel(Processor):
         del self.duels[(event.source, event.channel)]
 
         event.addresponse(choice((
-            u"%(recipient)s appears to has fled the country during the night",
+            u"%(recipient)s appears to have fled the country during the night",
             u"%(recipient)s refuses to meet your challenge and accepts dishonour",
             u"Your challenge was not met. I suggest anger management councelling",
         )), {
