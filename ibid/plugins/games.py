@@ -150,7 +150,7 @@ class Duel(Processor):
             'recipient': duel.names[duel.recipient],
         })
 
-    @match(r'^(?:ok|yes|I\s+do|I\s+accept(?:\s+.*\s+challenge\s+.*)?)$')
+    @match(r'^.*\b(?:ok|yes|I\s+do|sure|accept|hit\s+me)\b.*$')
     def confirm(self, event):
         if not event.addressed:
             return
