@@ -214,6 +214,11 @@ class Duel(Processor):
     @match(r'^draw(?:s\s+h(?:is|er)\s+.*|\s+my\s+.*)?$')
     def draw(self, event):
         if (event.source, event.channel) not in self.duels:
+            if event.addressed:
+                event.addresponse(choice((
+                    u"We do not permit drawn weapons here",
+                    u"You may only draw a weapon on the field of honour",
+                )))
             return
 
         duel = self.duels[(event.source, event.channel)]
@@ -221,15 +226,16 @@ class Duel(Processor):
         shooter = event.sender['nick']
         if shooter.lower() not in duel.names:
             event.addresponse(choice((
-                u"We do not permit drawn weapons here",
-                u"You may only draw a weapon on the field of honour",
-            )))
+                u"Spectators are not permitted to draw weapons",
+                u"Do you think you are %(fighter)s?",
+            )), {'fighter': choice(duel.names.values())})
             return
 
         if not duel.started:
             event.addresponse(choice((
                 u"Now now, not so fast!",
                 u"Did I say go yet?",
+                u"Put that AWAY!",
             )))
             return
 
