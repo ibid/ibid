@@ -160,11 +160,12 @@ class Duel(Processor):
 
         duel = self.duels[(event.source, event.channel)]
 
-        if event.sender['nick'].lower() not in duel.names:
+        confirmer = event.sender['nick'].lower()
+        if confirmer not in duel.names or duel.confirmed or confirmer != duel.recipient:
             return
 
         # Correct capitalisation
-        duel.names[event.sender['nick'].lower()] = event.sender['nick']
+        duel.names[confirmer] = event.sender['nick']
 
         duel.confirmed = True
         duel.cancel_callback.cancel()
