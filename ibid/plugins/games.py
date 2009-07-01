@@ -33,6 +33,8 @@ class Shootout(Processor):
     ))
 
     weapons = Option('weapons', 'Weapons that can be used: name: (chance, damage)', {
+        u'bam': (0.75, 50),
+        u'pew': (0.75, 50),
         u'bang': (0.75, 70),
         u'kapow': (0.75, 90),
         u'pewpew': (0.75, 110),
@@ -40,7 +42,7 @@ class Shootout(Processor):
     })
 
     timeout = FloatOption('timeout', 'How long is a duel on for', 10.0)
-    extratime = FloatOption('extratime', 'How much more time to grant after every shot fire', 1.0)
+    extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
     delay = FloatOption('delay', 'Countdown time', 3.0)
 
     duels = {}
