@@ -48,7 +48,7 @@ class Duel(Processor):
 
     draw_required = BoolOption('draw_required', 'Must you draw your weapon before firing?', True)
     accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
-    start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 120)
+    start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
     timeout = FloatOption('timeout', 'How long is a duel on for', 10.0)
     extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
 
@@ -190,7 +190,7 @@ class Duel(Processor):
             'aggressor': duel.names[duel.aggressor],
             'recipient': duel.names[duel.recipient],
             'starttime': starttime.time().isoformat(),
-            'timezone': time.timezone()[0],
+            'timezone': time.tzname[0],
             'delay': (starttime - now).seconds,
         }})
 
@@ -290,9 +290,9 @@ class Duel(Processor):
                 'enemy': duel.names[enemy],
             }})
             del self.duels[(event.source, event.channel)]
-            if duel.cancel_callback:
+            if duel.cancel_callback.active():
                 duel.cancel_callback.cancel()
-            if duel.start_callback:
+            if duel.start_callback.active():
                 duel.start_callback.cancel()
             return
 
