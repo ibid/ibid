@@ -2,7 +2,7 @@ import datetime
 import logging
 from random import choice, gauss, random
 import re
-from time import sleep
+import time
 
 import ibid
 from ibid.plugins import Processor, match, handler
@@ -170,9 +170,9 @@ class Duel(Processor):
         duel.cancel_callback.cancel()
         
         now = datetime.datetime.now()
-        starttime = now + datetime.timedelta(seconds=self.start_delay)
+        starttime = now + datetime.timedelta(seconds=self.start_delay + ((30 - now.second) % 30))
         starttime = datetime.datetime(starttime.year, starttime.month, starttime.day,
-                starttime.hour, starttime.minute)
+                starttime.hour, starttime.minute, starttime.second)
         delay = starttime - now
         delay = delay.seconds + (delay.microseconds / 10.**6)
 
@@ -180,7 +180,7 @@ class Duel(Processor):
 
         event.addresponse({'reply': (
             u"%(aggressor)s, %(recipient)s: "
-            u"The duel shall begin on the stroke of %(starttime)s (in %(delay)s seconds). "
+            u"The duel shall begin on the stroke of %(starttime)s %(timezone)s (in %(delay)s seconds). "
             + choice((
                 u"You may clean your pistols.",
                 u"Prepare yourselves.",
@@ -190,6 +190,7 @@ class Duel(Processor):
             'aggressor': duel.names[duel.aggressor],
             'recipient': duel.names[duel.recipient],
             'starttime': starttime.time().isoformat(),
+            'timezone': time.timezone()[0],
             'delay': (starttime - now).seconds,
         }})
 
