@@ -202,12 +202,12 @@ class Duel(Processor):
         duel.timeout_callback = ibid.dispatcher.call_later(self.timeout, self.end, event)
 
         event.addresponse({'reply':
-            u"%s, %s: %s" % (duel.aggressor, duel.recipient, choice((
+            u"%s, %s: %s" % tuple(duel.names.values() + [choice((
             u'aaaand ... go!',
             u'5 ... 4 ... 3 ... 2 ... 1 ... fire!',
             u'match on!',
             u'ready ... aim ... fire!'
-        )))})
+        ))])})
 
     def setup(self):
         self.fire.im_func.pattern = re.compile(
