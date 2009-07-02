@@ -145,7 +145,7 @@ class Duel(Processor):
         event.addresponse(choice((
             u"%(recipient)s appears to have fled the country during the night",
             u"%(recipient)s refuses to meet your challenge and accepts dishonour",
-            u"Your challenge was not met. I suggest anger management councelling",
+            u"Your challenge was not met. I suggest anger management counselling",
         )), {
             'recipient': duel.names[duel.recipient],
         })
@@ -273,7 +273,7 @@ class Duel(Processor):
         if not duel.started or not duel.confirmed:
             if self.draw_required:
                 message = choice((
-                    u"%(shooter)s tried to escape his duel by shooting himself in the foot. The duel has been cancelled, but his honour is forfiet",
+                    u"%(shooter)s tried to escape his duel by shooting himself in the foot. The duel has been cancelled, but his honour is forfeit",
                     u"%(shooter)s shot himself while preparing for his duel. The funeral will be held on the weekend",
                 ))
             elif not duel.started:
@@ -324,7 +324,7 @@ class Duel(Processor):
                 elif duel.hp[recipient] <= 0.0:
                     message += choice((
                         u"Combined with his other injuries, he didn't stand a chance",
-                        u"He died during field surgary",
+                        u"He died during field surgery",
                     ))
                 else:
                     message += choice((
