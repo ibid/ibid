@@ -289,11 +289,12 @@ class Messages(Processor):
                 .filter_by(delivered=False) \
                 .filter(Memo.from_id.in_(identities)) \
                 .filter(Memo.to_id.in_(identities_to)) \
-                .order_by(Memo.time.desc()).all()
+                .order_by(Memo.time.asc()).all()
 
         if memos:
-            event.addresponse(u'Last: ' + u', '.join(
-                '%s (%s)' % (memo.memo, memo.time.strftime(self.datetime_format)) for memo in memos
+            event.addresponse(u'Pending: ' + u', '.join(
+                '%i: %s (%s)' % (i, memo.memo, memo.time.strftime(self.datetime_format))
+                for i, memo in enumerate(memos)
             ))
         else:
             event.addresponse(u"Sorry, all your memos to %(who)s on %(source)s are already delivered", {
