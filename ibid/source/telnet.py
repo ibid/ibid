@@ -19,6 +19,12 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     def telnet_User(self, line):
         self.user = unicode(line.strip(), 'utf-8', 'replace')
+        if ' ' in self.user:
+            self.transport.write('Sorry, no spaces allowed in usernames\r\n')
+            self.factory.log.info(u"Rejected connection from %s", self.user)
+            self.transport.loseConnection()
+            return
+
         self.factory.log.info(u"Connection established with %s", self.user)
         return 'Query'
 

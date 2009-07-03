@@ -22,8 +22,8 @@ class Log(Processor):
         when = localtime(when)
         if ibid.sources[source].type == 'jabber':
             channel = channel.split('/')[0]
-        filename = self.log %   {   'source': source,
-                                    'channel': channel,
+        filename = self.log %   {   'source': source.replace('/', '-'),
+                                    'channel': channel.replace('/', '-'),
                                     'year': when[0],
                                     'month': when[1],
                                     'day': when[2],
