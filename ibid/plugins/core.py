@@ -85,6 +85,7 @@ class Responses(Processor):
 class Address(Processor):
 
     processed = True
+    addressed = False
     acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
     refusals = Option('refusals', 'Responses for negative acknowledgements',
