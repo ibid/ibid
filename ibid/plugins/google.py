@@ -2,7 +2,6 @@ from cgi import parse_qs
 import htmlentitydefs
 from httplib import BadStatusLine
 import re
-import simplejson
 from urllib import quote
 from urllib2 import urlopen, Request
 from urlparse import urlparse
@@ -11,7 +10,7 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import decode_htmlentities, ibid_version
+from ibid.utils import decode_htmlentities, ibid_version, json_webservice
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
@@ -27,22 +26,20 @@ class GoogleAPISearch(Processor):
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
 
-    google_api_url = "http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s"
-
     def _google_api_search(self, query, resultsize="large"):
-        url = self.google_api_url % quote(query)
-        url += "&rsz=%s" % resultsize
+        params = {
+            'v': '1.0',
+            'q': query,
+            'rsz': resultsize,
+        }
         if self.api_key:
-            url += '&key=%s' % quote(key)
-        req = Request(url, headers={
+            params['key'] = self.api_key
+
+        headers={
             'user-agent': "Ibid/%s" % ibid_version() or "dev",
             'referrer': self.referrer,
-        })
-        f = urlopen(req)
-        result = f.read()
-        f.close()
-        result = simplejson.loads(result)
-        return result
+        }
+        return json_webservice('http://ajax.googleapis.com/ajax/services/search/web', params, headers)
 
     @match(r'^google\s+(?:for\s+)?(.+?)$')
     def search(self, event, query):

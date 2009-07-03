@@ -7,11 +7,11 @@ from pkg_resources import resource_exists, resource_string
 import re
 from StringIO import StringIO
 import time
+from urllib import urlencode
 import urllib2
 import zlib
 
-from html5lib import HTMLParser, treebuilders
-
+import simplejson
 from html5lib import HTMLParser, treebuilders
 from xml.etree import cElementTree
 from BeautifulSoup import BeautifulSoup
@@ -162,4 +162,26 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
 
     return parser.parse(data, encoding = encoding)
 
+class JSONException(Exception):
+    pass
+
+def json_webservice(url, params={}, headers={}):
+    "Request data from a JSON webservice, and deserialise"
+
+    for key in params:
+        if isinstance(params[key], unicode):
+            params[key] = params[key].encode('utf-8')
+
+    if params:
+        url += '?' + urlencode(params)
+
+    req = urllib2.Request(url, headers=headers)
+    f = urllib2.urlopen(req)
+    data = f.read()
+    f.close()
+    try:
+        return simplejson.loads(data)
+    except ValueError, e:
+        raise JSONException(e)
+    
 # vi: set et sta sw=4 ts=4:
