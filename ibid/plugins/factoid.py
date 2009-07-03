@@ -1,6 +1,7 @@
-from time import localtime, strftime, time
-import re
 import logging
+from random import choice
+import re
+from time import localtime, strftime, time
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.orm import relation, eagerload
@@ -16,6 +17,12 @@ help = {'factoids': u'Factoids are arbitrary pieces of information stored by a k
                     u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
 log = logging.getLogger('plugins.factoid')
+
+default_verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
+default_interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
+
+def strip_name(unstripped):
+    return re.match(r'^\s*(.*?)[?!.]*\s*$', unstripped, re.DOTALL).group(1)
 
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
@@ -108,7 +115,6 @@ class Factpack(Base):
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 escape_like_re = re.compile(r'([%_\\])')
-verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can', 'should', 'would')
 
 def escape_name(name):
     return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
@@ -236,6 +242,8 @@ class Forget(Processor):
     @authorise
     def alias(self, event, target, source):
 
+        target = strip_name(target)
+
         if target.lower() == source.lower():
             event.addresponse(u"That makes no sense, they *are* the same")
             return
@@ -263,7 +271,8 @@ class Search(Processor):
 
     regex_re = re.compile(r'^/(.*)/(r?)$')
 
-    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$')
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$',
+            version='deaddressed')
     def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
         start = start and int(start) or 0
@@ -310,9 +319,11 @@ class Get(Processor, RPC):
     u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
-    verbs = verbs
     priority = 900
-    interrogatives = Option('interrogatives', 'Question words to strip', ('what', 'wtf', 'where', 'when', 'who', "what's", "who's"))
+
+    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+
     date_format = Option('date_format', 'Format string for dates', '%Y/%m/%d')
     time_format = Option('time_format', 'Format string for times', '%H:%M:%S')
 
@@ -321,10 +332,13 @@ class Get(Processor, RPC):
         RPC.__init__(self)
 
     def setup(self):
-        self.get.im_func.pattern = re.compile(r'^(?:(?:%s)\s+(?:(%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$' % ('|'.join(self.interrogatives), '|'.join(self.verbs)), re.I)
+        self.get.im_func.pattern = re.compile(
+                r'^(?:(?:%s)\s+(?:(?:%s)\s+)?)?(.+?)(?:\s+#(\d+))?(?:\s+/(.+?)/(r?))?$'
+                  % ('|'.join(self.interrogatives),
+                '|'.join(self.verbs)), re.I)
 
     @handler
-    def get(self, event, verb, name, number, pattern, is_regex):
+    def get(self, event, name, number, pattern, is_regex):
         response = self.remote_get(name, number, pattern, is_regex, event)
         if response:
             event.addresponse(response)
@@ -373,7 +387,9 @@ class Set(Processor):
     u"""<name> (<verb>|=<verb>=) [also] <value>"""
     feature = 'factoids'
 
-    verbs = verbs
+    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+
     priority = 910
     permission = u'factoid'
     
@@ -381,11 +397,22 @@ class Set(Processor):
         self.set_factoid.im_func.pattern = re.compile(
             r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+((?(3).+|(?!.*=\S+=).+))$'
             % '|'.join(self.verbs), re.I)
+        self.set_factoid.im_func.message_version = 'deaddressed'
 
     @handler
     @authorise
     def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
         verb = verb1 and verb1 or verb2
+
+        name = strip_name(name)
+
+        if name.lower() in self.interrogatives:
+            event.addresponse(choice((
+                u"I'm afraid I have no idea",
+                u"Not a clue, sorry",
+                u"Erk, dunno",
+            )))
+            return
 
         factoid = event.session.query(Factoid).join(Factoid.names)\
                 .filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
@@ -427,9 +454,10 @@ class Modify(Processor):
     permissions = (u'factoidadmin',)
     priority = 890
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=\s?(.+)$')
+    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=(.+)$', version='deaddressed')
     @authorise
     def append(self, event, name, number, pattern, is_regex, suffix):
+        name = strip_name(name)
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
