@@ -16,11 +16,11 @@ class Hash(Processor):
     @match(r'^(md5|sha1|sha224|sha256|sha384|sha512)(?:sum)?\s+(.+?)$')
     def hash(self, event, hash, string):
         func = getattr(hashlib, hash.lower())
-        event.addresponse(unicode(func(string).hexdigest()))
+        event.addresponse(unicode(func(string.encode('utf-8')).hexdigest()))
 
     @match(r'^crypt\s+(.+)\s+(\S+)$')
     def handle_crypt(self, event, string, salt):
-        event.addresponse(unicode(crypt(string, salt)))
+        event.addresponse(unicode(crypt(string.encode('utf-8'), salt.encode('utf-8'))))
 
 help['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
 class Base64(Processor):
