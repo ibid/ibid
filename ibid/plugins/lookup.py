@@ -195,6 +195,55 @@ class FMyLife(Processor):
     def list_categories(self, event):
         event.addresponse(u'Categories: %s', u', '.join(self.categories))
 
+help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
+class TextsFromLastNight(Processor):
+    u"""tfln [(random|<number>)]
+    tfln (worst|best) [(today|this week|this month)]"""
+
+    feature = 'tfln'
+
+    def get_tfln(self, section):
+        tree = get_html_parse_tree('http://www.textsfromlastnight.com/%s/' % section.lower())
+        div = tree.find('div', attrs={'class': 'post_wrap'})
+        if div:
+            id = int(div.get('id').split('_', 1)[1])
+            quote = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            return (id, quote)
+
+    @match(r'^tfln'
+            r'(?:\s+(random|worst|best|\d+))'
+            r'?(?:\s+(today|(?:this\s+)?week|(?:this\s+)?month))?$')
+    def tfln(self, event, number=u'random', timeframe=None):
+        if number.lower() in (u'worst', u'best'):
+            number += u'-nights'
+            if timeframe:
+                if timeframe.lower().endswith(u'week'):
+                    number += u'/this-week'
+                elif timeframe.lower().endswith(u'month'):
+                    number += u'/this-month'
+        elif number.isdigit():
+            number = 'view/%s' % number
+
+        quote = self.get_tfln(number)
+
+        if not quote:
+            event.addresponse(u'No such quote')
+        else:
+            id, quote = quote
+            if len(quote) > 1:
+                event.addresponse(u'http://www.textsfromlastnight.com/view/%i :', id)
+                for line in quote:
+                    event.addresponse(line)
+            else:
+                event.addresponse(u'http://www.textsfromlastnight.com/view/%(id)i : %(quote)s', {
+                    'id': id,
+                    'quote': quote[0],
+                })
+
+    @match(r'^http://www.textsfromlastnight.com/view/(\d+)$')
+    def tfln_url(self, event, id):
+        self.tfln(event, id)
+
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 class Twitter(Processor):
     u"""latest (tweet|identica) from <name>
