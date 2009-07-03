@@ -249,7 +249,7 @@ class Notify(Processor):
 class Messages(Processor):
     u"""my messages
     message <number>
-    my messages for <name> [on <source>]"""
+    my messages for <person> [on <source>]"""
     feature = 'memo'
 
     datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
