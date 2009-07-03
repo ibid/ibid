@@ -45,7 +45,7 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backr
 
 class Tell(Processor):
     u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
-    forget my last message for <person> [on <source>]"""
+    forget my (first|last|<n>th) message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
@@ -114,13 +114,27 @@ class Tell(Processor):
 
         event.addresponse(True)
 
-    @match(r'^(?:delete|forget)\s+(?:my\s+)?(?:last\s+)?(?:memo|message|msg)\s+(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
+    @match(r'^(?:delete|forget)\s+(?:my\s+)?'
+            r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
+            r'(?:memo|message|msg)\s+'
+            r'(?(1)|#?(\d+)\s+)?' # 2nd way
+            r'(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
     @authorise
-    def forget(self, event, who, source):
+    def forget(self, event, num1, num2, who, source):
         if not source:
             source = event.source
         else:
             source = source.lower()
+        number = num1 or num2 or 'last'
+        number = number.lower()
+        if number.isdigit():
+            number = int(number)
+        elif number == 'first':
+            number = 0
+        elif number == 'last':
+            number = -1
+        else:
+            number = int(number[:-2])
 
         # Join on column x isn't possible in SQLAlchemy 0.4:
         identities_to = event.session.query(Identity) \
@@ -134,24 +148,46 @@ class Tell(Processor):
                 .filter_by(delivered=False) \
                 .filter_by(from_id=event.identity) \
                 .filter(Memo.to_id.in_(identities_to)) \
-                .order_by(Memo.time.desc())
-        memos, memo = memos.count(), memos.first()
+                .order_by(Memo.time.asc())
+        count = memos.count()
 
-        if memo:
-            event.session.delete(memo)
-            event.session.commit()
-            log.info(u"Cancelled memo %s for %s (%s) from %s (%s): %s",
-                    memo.id, memo.to_id, who, event.identity, event.sender['connection'], memo.memo)
-            if memos > 1:
-                event.addresponse(
-                        u"Forgotten your most recent memo for %(to)s, but you still have %(count)i pending", {
-                            'to': who,
-                            'count': memos - 1,
+        if not count:
+            event.addresponse(
+                    u"You don't have any outstanding messages for %(who)s on %(source)s", {
+                        'who': who,
+                        'source': source,
                 })
-            else:
-                event.addresponse(True)
+            return
+
+        if abs(number) > count:
+            event.addresponse(
+                    u"That memo does not exist, you only have %(count)i outstanding memos for %(who)s on %(source)s", {
+                        'count': count,
+                        'who': who,
+                        'source': source,
+            })
+            return
+
+        if number == -1:
+            number = count - 1
+
+        memo = memos[number]
+
+        event.session.delete(memo)
+        event.session.commit()
+        log.info(u"Cancelled memo %s for %s (%s) from %s (%s): %s",
+                memo.id, memo.to_id, who, event.identity, event.sender['connection'], memo.memo)
+
+        if count > 1:
+            event.addresponse(
+                    u"Forgotten memo %(number)i for %(who)s on %(source)s, but you still have %(count)i pending", {
+                        'number': number,
+                        'who': who,
+                        'source': source,
+                        'count': count - 1,
+            })
         else:
-            event.addresponse(u"You don't have any outstanding messages for %s", who)
+            event.addresponse(True)
 
 def get_memos(event, delivered=False):
     identities = get_identities(event)
