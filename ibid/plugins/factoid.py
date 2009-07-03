@@ -3,7 +3,7 @@ from random import choice
 import re
 from time import localtime, strftime, time
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, Index, or_
 from sqlalchemy.orm import relation, eagerload
 from sqlalchemy.sql import func
 
@@ -27,7 +27,7 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False),
+    Column('name', Unicode(128), nullable=False, unique=True),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
@@ -37,8 +37,10 @@ class FactoidName(Base):
     class FactoidNameSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+        def upgrade_2_to_3(self):
+            Index('name', self.table.c.name, unique=True).create(bind=self.upgrade_session.bind)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 2)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 3)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -248,9 +250,15 @@ class Forget(Processor):
             event.addresponse(u"That makes no sense, they *are* the same")
             return
 
-        factoid = event.session.query(Factoid).join(Factoid.names)\
+        factoid = event.session.query(Factoid).join(Factoid.names) \
                 .filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
         if factoid:
+            target_factoid = event.session.query(FactoidName) \
+                    .filter(func.lower(FactoidName.name)==escape_name(target).lower()).first()
+            if target_factoid:
+                event.addresponse(u"I already know stuff about %s", target)
+                return
+
             name = FactoidName(escape_name(unicode(target)), event.identity)
             factoid.names.append(name)
             event.session.save_or_update(factoid)
