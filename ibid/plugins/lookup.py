@@ -4,7 +4,7 @@ from httplib import BadStatusLine
 from urlparse import urljoin
 from time import time
 from datetime import datetime
-from random import choice
+from random import choice, shuffle, randint
 from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
 import re
@@ -194,6 +194,131 @@ class FMyLife(Processor):
     @match(r'^fml\s+categories$')
     def list_categories(self, event):
         event.addresponse(u'Categories: %s', u', '.join(self.categories))
+
+help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
+class TextsFromLastNight(Processor):
+    u"""tfln [(random|<number>)]
+    tfln (worst|best) [(today|this week|this month)]"""
+
+    feature = 'tfln'
+
+    random_pool = []
+
+    def get_tfln(self, section):
+        tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
+        for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
+            id = int(div.get('id').split('_', 1)[1])
+            quote = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            yield id, quote
+
+    @match(r'^tfln'
+            r'(?:\s+(random|worst|best|\d+))?'
+            r'(?:this\s+)?(?:\s+(today|week|month))?$')
+    def tfln(self, event, number, timeframe=None):
+        number = number is None and u'random' or number.lower()
+
+        if number in (u'worst', u'best'):
+            number += u'-nights'
+            if timeframe.lower() in (u'week', u'month'):
+                number += u'this-' + timeframe.lower()
+        elif number.isdigit():
+            number = 'view/%s' % number
+
+        if number == u'random':
+            if not self.random_pool:
+                self.random_pool = [quote for quote in self.get_tfln(number)]
+                shuffle(self.random_pool)
+
+            quote = self.random_pool.pop()
+        else:
+            try:
+                quote = self.get_tfln(number).next()
+            except StopIteration:
+                event.addresponse(u'No such quote')
+                return
+
+        id, body = quote
+        if len(body) > 1:
+            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
+            for line in body:
+                event.addresponse(line)
+        else:
+            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
+                'id': id,
+                'body': body[0],
+            })
+
+    @match(r'^(?:http://)?(?:www\.)?textsfromlastnight\.com/view/(\d+)$')
+    def tfln_url(self, event, id):
+        self.tfln(event, id)
+
+help["mlia"] = u"Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com"
+class MyLifeIsAverage(Processor):
+    u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
+    mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
+
+    feature = 'mlia'
+
+    random_pool = {}
+    pages = {}
+
+    def find_stories(self, url):
+        if isinstance(url, basestring):
+            tree = get_html_parse_tree(url, treetype='etree')
+        else:
+            tree = url
+
+        storycol = [div for div in tree.findall('.//div') if div.get(u'id') in (u'leftcol', u'leftcol-wide')][0]
+        stories = [div for div in storycol.findall('div') if div.get(u'class') in (u'stories', u'stories-wide')]
+
+        for story in stories:
+            body = story.findtext('div/span/span').strip()
+            id = int(story.findtext('div/div/span/a')[1:])
+            yield id, body
+
+    @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
+    def mlia(self, event, site, query):
+        site = site.lower()
+        query = query is None and u'random' or query.lower()
+        url = {
+                'mlia': 'http://mylifeisaverage.com/',
+                'mlig': 'http://mylifeisg.com/',
+            }[site]
+
+        if query == u'random' or query is None:
+            if not self.random_pool.get(site):
+                tree = get_html_parse_tree(
+                        url + 'index.php?' + urlencode({'page': randint(1, self.pages.get(site, 1))}),
+                        treetype='etree')
+                self.random_pool[site] = [quote for quote in self.find_stories(tree)]
+                shuffle(self.random_pool[site])
+
+                pagination = [div for div in tree.findall('.//div') if div.get(u'class') == u'pagination'][0]
+                self.pages[site] = sorted(int(a.text) for a in pagination.findall('.//a') if a.text.isdigit())[-1]
+
+            quote = self.random_pool[site].pop()
+
+        else:
+            try:
+                if query.isdigit():
+                    quote = self.find_stories(url + 'story.php?' + urlencode({'id': query})).next()
+                else:
+                    quote = self.find_stories(url + 'index.php?' + urlencode({'part': query})).next()
+
+            except StopIteration:
+                event.addresponse(u'No such quote')
+                return
+
+        id, body = quote
+        event.addresponse(u'%(url)sstory.php?id=%(id)i : %(body)s', {
+            'url': url,
+            'id': id,
+            'body': body,
+        })
+
+    @match(r'^(?:http://)?(?:www\.)?mylifeis(average|g)\.com/story\.php\?id=(\d+)$')
+    def mlia_url(self, event, site, id):
+        self.mlia(event, 'mli' + site[0].lower(), id)
 
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 class Twitter(Processor):
