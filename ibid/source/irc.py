@@ -104,6 +104,9 @@ class Ircbot(irc.IRCClient):
     def noticed(self, user, channel, msg):
         self._message_event(u'notice', user, channel, msg)
 
+    def action(self, user, channel, msg):
+        self._message_event(u'action', user, channel, msg)
+
     def _message_event(self, msgtype, user, channel, msg):
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
