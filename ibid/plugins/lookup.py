@@ -202,19 +202,21 @@ class TextsFromLastNight(Processor):
 
     feature = 'tfln'
 
+    random_pool = []
+
     def get_tfln(self, section):
         tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
-        div = tree.find('div', attrs={'class': 'post_wrap'})
-        if div:
+        for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
             id = int(div.get('id').split('_', 1)[1])
             quote = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
-            return (id, quote)
+            yield id, quote
 
     @match(r'^tfln'
             r'(?:\s+(random|worst|best|\d+))?'
             r'(?:this\s+)?(?:\s+(today|week|month))?$')
     def tfln(self, event, number, timeframe=None):
         number = number is None and u'random' or number.lower()
+
         if number in (u'worst', u'best'):
             number += u'-nights'
             if timeframe.lower() in (u'week', u'month'):
@@ -222,21 +224,29 @@ class TextsFromLastNight(Processor):
         elif number.isdigit():
             number = 'view/%s' % number
 
-        quote = self.get_tfln(number)
+        if number == u'random':
+            if not self.random_pool:
+                self.random_pool = [quote for quote in self.get_tfln(number)]
+                shuffle(self.random_pool)
 
-        if not quote:
-            event.addresponse(u'No such quote')
+            quote = self.random_pool.pop()
         else:
-            id, body = quote
-            if len(body) > 1:
-                event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
-                for line in body:
-                    event.addresponse(line)
-            else:
-                event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
-                    'id': id,
-                    'body': body[0],
-                })
+            try:
+                quote = self.get_tfln(number).next()
+            except StopIteration:
+                event.addresponse(u'No such quote')
+                return
+
+        id, body = quote
+        if len(body) > 1:
+            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
+            for line in body:
+                event.addresponse(line)
+        else:
+            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
+                'id': id,
+                'body': body[0],
+            })
 
     @match(r'^(?:http://)?(?:www\.)?textsfromlastnight\.com/view/(\d+)$')
     def tfln_url(self, event, id):
