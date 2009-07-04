@@ -328,7 +328,7 @@ class Get(Processor, RPC):
     u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
 
-    priority = 900
+    priority = 200
 
     interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
@@ -461,7 +461,7 @@ class Modify(Processor):
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)
-    priority = 890
+    priority = 190
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=(.+)$', version='deaddressed')
     @authorise
