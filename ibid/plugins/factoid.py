@@ -179,6 +179,7 @@ class Forget(Processor):
     <name> is the same as <other name>"""
     feature = 'factoids'
 
+    priority = 10
     permission = u'factoid'
     permissions = (u'factoidadmin',)
 

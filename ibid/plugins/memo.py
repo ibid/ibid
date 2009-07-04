@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
@@ -15,7 +15,9 @@ from ibid.utils import ago
 
 help = {'memo': u'Keeps messages for people.'}
 
-memo_cache = {}
+nomemos_cache = set()
+notified_overlimit_cache = set()
+
 log = logging.getLogger('plugins.memo')
 
 class Memo(Base):
@@ -42,33 +44,55 @@ Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, back
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg) <person> <message>"""
+    u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
+    forget my (first|last|<n>th) message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:(?:that|to)\s+)?(.+)$')
+    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
     @authorise
-    def tell(self, event, how, who, memo):
-        if [True for name in ibid.config.plugins['core']['names'] if name.lower() == who.lower()]:
+    def tell(self, event, how, who, source, memo):
+        source_specified = bool(source)
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+
+        if source.lower() == event.source and \
+                [True for name in ibid.config.plugins['core']['names'] if name.lower() == who.lower()]:
             event.addresponse(u"I can't deliver messages to myself")
             return
 
         to = event.session.query(Identity) \
                 .filter(func.lower(Identity.identity) == who.lower()) \
-                .filter_by(source=event.source).first()
-        if not to:
+                .filter_by(source=source).first()
+
+        if not to and not source_specified:
             account = event.session.query(Account) \
                     .filter(func.lower(Account.username) == who.lower()).first()
             if account:
                 for identity in account.identities:
-                    if identity.source == event.source:
+                    if identity.source == source:
                         to = identity
                 if not identity:
                     identity = account.identities[0]
+
+        if not to and not source_specified:
+            event.addresponse(
+                    u"I don't know who %(who)s is. "
+                    u"Say '%(who)s on %(source)s' and I'll take your word that %(who)s exists", {
+                    'who': who,
+                    'source': source,
+            })
+            return
+
         if not to:
-            to = Identity(event.source, who)
+            if source not in ibid.sources:
+                event.addresponse(u'I am not connected to %s', source)
+                return
+            to = Identity(source, who)
             event.session.save(to)
             event.session.commit()
 
@@ -85,9 +109,85 @@ class Tell(Processor):
         log.info(u"Stored memo %s for %s (%s) from %s (%s): %s",
                 memo.id, to.id, who, event.identity, event.sender['connection'], memo.memo)
         event.memo = memo.id
-        memo_cache.clear()
+        nomemos_cache.clear()
+        notified_overlimit_cache.discard(to.id)
 
         event.addresponse(True)
+
+    @match(r'^(?:delete|forget)\s+(?:my\s+)?'
+            r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
+            r'(?:memo|message|msg)\s+'
+            r'(?(1)|#?(\d+)\s+)?' # 2nd way
+            r'(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
+    @authorise
+    def forget(self, event, num1, num2, who, source):
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+        number = num1 or num2 or 'last'
+        number = number.lower()
+        if number.isdigit():
+            number = int(number)
+        elif number == 'first':
+            number = 0
+        elif number == 'last':
+            number = -1
+        else:
+            number = int(number[:-2])
+
+        # Join on column x isn't possible in SQLAlchemy 0.4:
+        identities_to = event.session.query(Identity) \
+                .filter_by(source=source) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .all()
+
+        identities_to = [identity.id for identity in identities_to]
+
+        memos = event.session.query(Memo) \
+                .filter_by(delivered=False) \
+                .filter_by(from_id=event.identity) \
+                .filter(Memo.to_id.in_(identities_to)) \
+                .order_by(Memo.time.asc())
+        count = memos.count()
+
+        if not count:
+            event.addresponse(
+                    u"You don't have any outstanding messages for %(who)s on %(source)s", {
+                        'who': who,
+                        'source': source,
+                })
+            return
+
+        if abs(number) > count:
+            event.addresponse(
+                    u"That memo does not exist, you only have %(count)i outstanding memos for %(who)s on %(source)s", {
+                        'count': count,
+                        'who': who,
+                        'source': source,
+            })
+            return
+
+        if number == -1:
+            number = count - 1
+
+        memo = memos[number]
+
+        event.session.delete(memo)
+        event.session.commit()
+        log.info(u"Cancelled memo %s for %s (%s) from %s (%s): %s",
+                memo.id, memo.to_id, who, event.identity, event.sender['connection'], memo.memo)
+
+        if count > 1:
+            event.addresponse(
+                    u"Forgotten memo %(number)i for %(who)s on %(source)s, but you still have %(count)i pending", {
+                        'number': number,
+                        'who': who,
+                        'source': source,
+                        'count': count - 1,
+            })
+        else:
+            event.addresponse(True)
 
 def get_memos(event, delivered=False):
     identities = get_identities(event)
@@ -102,12 +202,25 @@ class Deliver(Processor):
     addressed = False
     processed = True
 
+    public_limit = IntOption('public_limit', 'Maximum number of memos to read out in public (flood-protection)', 2)
+
     @handler
     def deliver(self, event):
-        if event.identity in memo_cache:
+        if event.identity in nomemos_cache:
             return
 
         memos = get_memos(event)
+
+        if len(memos) > self.public_limit and event.public:
+            if event.identity not in notified_overlimit_cache:
+                public = [True for memo in memos if not memo.private]
+                message = u'By the way, you have a pile of memos waiting for you, too many to read out in public. PM me'
+                if public:
+                    event.addresponse(u'%s: ' + message, event.sender['nick'])
+                else:
+                    event.addresponse({'reply': message, 'target': event.sender['id']})
+                notified_overlimit_cache.add(event.identity)
+            return
 
         for memo in memos:
             # Don't deliver if the user just sent a memo to themself
@@ -138,7 +251,7 @@ class Deliver(Processor):
                     memo.id, event.identity, event.sender['connection'])
 
         if 'memo' not in event:
-            memo_cache[event.identity] = None
+            nomemos_cache.add(event.identity)
 
 class Notify(Processor):
     feature = 'memo'
@@ -147,24 +260,32 @@ class Notify(Processor):
     addressed = False
     processed = True
 
+    public_limit = IntOption('public_limit', 'Maximum number of memos to read out in public (flood-protection)', 2)
+
     @handler
     def state(self, event):
         if event.state != 'online':
             return
 
-        if event.identity in memo_cache:
+        if event.identity in nomemos_cache:
             return
 
         memos = get_memos(event)
 
-        if len(memos) > 0:
+        if len(memos) > self.public_limit:
+            event.addresponse({
+                    'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos),
+                    'target': event.sender['id'],
+            })
+        elif len(memos) > 0:
             event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
         else:
-            memo_cache[event.identity] = None
+            nomemos_cache.add(event.identity)
 
 class Messages(Processor):
     u"""my messages
-    message <number>"""
+    message <number>
+    my messages for <person> [on <source>]"""
     feature = 'memo'
 
     datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
@@ -173,14 +294,61 @@ class Messages(Processor):
     def messages(self, event):
         memos = get_memos(event, True)
         if memos:
-            event.addresponse(u', '.join(['%s: %s (%s)' % (memos.index(memo), memo.sender.identity, memo.time.strftime(self.datetime_format)) for memo in memos]))
+            event.addresponse(u', '.join(
+                '%s: %s (%s)' % (
+                    memos.index(memo),
+                    memo.sender.identity,
+                    memo.time.strftime(self.datetime_format)
+                ) for memo in memos
+            ))
         else:
             event.addresponse(u"Sorry, nobody loves you")
+
+    @match(r'^my\s+messages\s+(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
+    def messages_for(self, event, who, source):
+        identities = get_identities(event)
+
+        if not source:
+            source = event.source
+        else:
+            source = source.lower()
+
+        # Join on column x isn't possible in SQLAlchemy 0.4:
+        identities_to = event.session.query(Identity) \
+                .filter_by(source=source) \
+                .filter(func.lower(Identity.identity) == who.lower()) \
+                .all()
+
+        identities_to = [identity.id for identity in identities_to]
+
+        memos = event.session.query(Memo) \
+                .filter_by(delivered=False) \
+                .filter(Memo.from_id.in_(identities)) \
+                .filter(Memo.to_id.in_(identities_to)) \
+                .order_by(Memo.time.asc()).all()
+
+        if memos:
+            event.addresponse(u'Pending: ' + u', '.join(
+                '%i: %s (%s)' % (i, memo.memo, memo.time.strftime(self.datetime_format))
+                for i, memo in enumerate(memos)
+            ))
+        else:
+            event.addresponse(u"Sorry, all your memos to %(who)s on %(source)s are already delivered", {
+                'who': who,
+                'source': source,
+            })
 
     @match(r'^message\s+(\d+)$')
     def message(self, event, number):
         memos = get_memos(event, True)
-        memo = memos[int(number)]
+
+        number = int(number)
+        if number >= len(memos):
+            event.addresponse(u'Sorry, no such message in your archive')
+            return
+
+        memo = memos[number]
+
         event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
             'sender': memo.sender.identity,
             'source': memo.sender.source,
