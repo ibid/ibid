@@ -716,8 +716,10 @@ class Distance(Processor):
                     (u"; ".join(u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
                         for p in js['geonames'][:10])))
 
-    @match(r'^(?:(?:how\s*far)|distance)(?:\s+in\s+(\S+?))?\s+between\s+(\S.+?)\s+and\s+(\S.+?)\s*$')
-    def distance(self, event, unit, src, dst):
+    @match(r'^(?:how\s*far|distance)(?:\s+in\s+(\S+))?\s+'
+            r'(?:(between)|from)' # Between ... and ... | from ... to ...
+            r'\s+(\S.+?)\s+(?(2)and|to)\s+(\S.+?)\s*$')
+    def distance(self, event, unit, ignore, src, dst):
         unit_names = self.unit_names
         if unit and unit not in self.unit_names:
             event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
