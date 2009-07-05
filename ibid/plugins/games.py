@@ -55,7 +55,7 @@ class Duel(Processor):
     draw_required = BoolOption('draw_required', 'Must you draw your weapon before firing?', True)
     accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
     start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
-    timeout = FloatOption('timeout', 'How long is a duel on for', 10.0)
+    timeout = FloatOption('timeout', 'How long is a duel on for', 15.0)
     extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
 
     duels = {}
