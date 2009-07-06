@@ -20,6 +20,8 @@ class Log(Processor):
             u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(sender_nick)s> %(message)s')
     action_format = Option('action_format', 'Format string for actions',
             u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d  * %(sender_nick)s %(message)s')
+    notice_format = Option('notice_format', 'Format string for notices',
+            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d -%(sender_nick)s- %(message)s')
     presence_format = Option('presence_format', 'Format string for presence events',
             u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(sender_nick)s (%(sender_connection)s) is now %(state)s')
     logs = {}
@@ -50,13 +52,14 @@ class Log(Processor):
         return self.logs[filename][0]
 
     def log_event(self, event):
-        if event.type in ('message', 'state', 'action'):
+        if event.type in ('message', 'state', 'action', 'notice'):
             when = localtime(event.time)
 
             format = {
                     'message': self.message_format,
                     'state': self.presence_format,
                     'action': self.action_format,
+                    'notice': self.notice_format,
                 }[event.type]
 
             fields = {
