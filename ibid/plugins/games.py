@@ -19,10 +19,15 @@ class Duel(Processor):
     I throw the gauntlet down at <user>'s feet [over <something>]
     draw [my <weapon>]
     bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
+
     feature = 'duel'
+
+    # Parameters for Processor:
+    event_types = ('message', 'action')
 
     addressed = BoolOption('addressed', 'Must the bot be addressed', True)
 
+    # Game configurables:
     extremities = Option('extremities', u'Extremities that can be hit', (
         u'toe', u'foot', u'leg', u'thigh', u'finger', u'hand', u'arm',
         u'elbow', u'shoulder', u'ear', u'nose', u'stomach',
@@ -40,6 +45,7 @@ class Duel(Processor):
         u'bam': (0.75, 50),
         u'pew': (0.75, 50),
         u'fire': (0.75, 70),
+        u'fires': (0.75, 70),
         u'bang': (0.75, 70),
         u'kapow': (0.75, 90),
         u'pewpew': (0.75, 110),
@@ -49,7 +55,7 @@ class Duel(Processor):
     draw_required = BoolOption('draw_required', 'Must you draw your weapon before firing?', True)
     accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
     start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
-    timeout = FloatOption('timeout', 'How long is a duel on for', 10.0)
+    timeout = FloatOption('timeout', 'How long is a duel on for', 15.0)
     extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
 
     duels = {}
@@ -150,7 +156,7 @@ class Duel(Processor):
             'recipient': duel.names[duel.recipient],
         })
 
-    @match(r'^.*\b(?:ok|yes|I\s+do|sure|accept|hit\s+me|bite\s+me|i\'m\s+game|bring\s+it)\b.*$')
+    @match(r'^.*\b(?:ok|yes|I\s+do|sure|accept|hit\s+me|bite\s+me|i\'m\s+game|bring\s+it|yebo)\b.*$')
     def confirm(self, event):
         if not event.addressed:
             return
@@ -209,11 +215,6 @@ class Duel(Processor):
             u'ready ... aim ... fire!'
         ))])})
 
-    def setup(self):
-        self.fire.im_func.pattern = re.compile(
-                r'^(%s)(?:[\s,.!:;].*)?$' % '|'.join(self.weapons.keys()),
-                re.I | re.DOTALL)
-
     @match(r'^draw(?:s\s+h(?:is|er)\s+.*|\s+my\s+.*)?$')
     def draw(self, event):
         if (event.source, event.channel) not in self.duels:
@@ -245,6 +246,11 @@ class Duel(Processor):
         duel.drawn[shooter.lower()] = True
         event.addresponse(True)
         
+    def setup(self):
+        self.fire.im_func.pattern = re.compile(
+                r'^(%s)(?:[\s,.!:;].*)?$' % '|'.join(self.weapons.keys()),
+                re.I | re.DOTALL)
+
     @handler
     def fire(self, event, weapon):
         shooter = event.sender['nick'].lower()

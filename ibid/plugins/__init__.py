@@ -10,7 +10,7 @@ import ibid
 
 class Processor(object):
 
-    type = 'message'
+    event_types = ('message',)
     addressed = True
     processed = False
     priority = 0
@@ -35,7 +35,7 @@ class Processor(object):
         pass
 
     def process(self, event):
-        if event.type != self.type:
+        if event.type not in self.event_types:
             return
 
         if self.addressed and ('addressed' not in event or not event.addressed):
