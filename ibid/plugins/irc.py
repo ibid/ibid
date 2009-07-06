@@ -1,7 +1,11 @@
 """Administrative commands for IRC"""
 
+import logging
+
 import ibid
-from ibid.plugins import Processor, match, authorise
+from ibid.plugins import Processor, match, handler, authorise
+
+log = logging.getLogger('plugins.irc')
 
 help = {"irc": u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
 
@@ -59,5 +63,31 @@ class Actions(Processor):
         else:
             source.change_nick(nick)
             event.addresponse(u'Changing nick to %s', nick)
+
+class NickServ(Processor):
+    event_types = ('notice',)
+
+    def process(self, event):
+        if event.sender.get('nick') != u'NickServ':
+            return
+
+        source_cfg = ibid.config['sources'][event.source]
+
+        if u'nickserv_connection' in source_cfg and \
+                source_cfg[u'nickserv_connection'] != event.sender['connection']:
+            return
+
+        Processor.process(self, event)
+
+    @match(r'^This nickname is registered\. Please choose a different nickname')
+    def auth(self, event):
+        source_cfg = ibid.config['sources'][event.source]
+
+        if u'nickserv_password' in source_cfg:
+            event.addresponse(u'IDENTIFY %s', source_cfg[u'nickserv_password'])
+
+    @match(r'^You are now identified for')
+    def success(self, event):
+        log.info(u'Authenticated with NickServ')
 
 # vi: set et sta sw=4 ts=4:
