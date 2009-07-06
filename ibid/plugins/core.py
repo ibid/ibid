@@ -123,7 +123,7 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    event_types = ('message', 'action', 'notice')
+    event_types = ('message', 'action')
 
     complaints = Option('complaints', 'Complaint responses', {
         'nonsense': (
