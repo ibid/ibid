@@ -1,5 +1,6 @@
 """Administrative commands for IRC"""
 
+from fnmatch import fnmatch
 import logging
 
 import ibid
@@ -69,9 +70,9 @@ class NickServ(Processor):
 
     def is_nickserv(self, event):
         source_cfg = ibid.config['sources'][event.source]
-        return (event.sender.get('nick') == u'NickServ' and (
-                u'nickserv_connection' not in source_cfg or
-                source_cfg[u'nickserv_connection'] == event.sender['connection']
+        return (event.sender.get('nick') == u'NickServ' and
+                fnmatch(event.sender['connection'].split('!', 1)[1],
+                    source_cfg.get(u'nickserv_mask', '*')
         ))
 
     @match(r'^(?:This nickname is registered\. Please choose a different nickname'
