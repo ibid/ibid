@@ -122,8 +122,7 @@ class FMLException(Exception):
     pass
 
 class FMyLife(Processor):
-    u"""fml (<number> | [random] | <category> | flop | top | last)
-    fml categories"""
+    u"""fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )"""
 
     feature = "fml"
 
@@ -157,16 +156,7 @@ class FMyLife(Processor):
 
             return u'%s : %s' % (url, text)
 
-    def setup(self):
-        url = urljoin(self.api_url, 'view/categories?' + urlencode({'language': self.fml_lang, 'key': self.api_key}))
-        tree = parse(urlopen(url))
-        self.categories = [x.get('code') for x in tree.findall('.//categorie')]
-
-        self.fml.im_func.pattern = re.compile(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|%s)$' % (
-            '|'.join(self.categories),
-        ), re.I)
-
-    @handler
+    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
         try:
             quote = self.remote_get(id)
@@ -190,10 +180,6 @@ class FMyLife(Processor):
     @match(r'^fml$')
     def fml_default(self, event):
         self.fml(event, 'random')
-
-    @match(r'^fml\s+categories$')
-    def list_categories(self, event):
-        event.addresponse(u'Categories: %s', u', '.join(self.categories))
 
 help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
 class TextsFromLastNight(Processor):
