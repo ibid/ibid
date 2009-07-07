@@ -67,29 +67,25 @@ class Actions(Processor):
 class NickServ(Processor):
     event_types = ('notice',)
 
-    def process(self, event):
-        if event.sender.get('nick') != u'NickServ':
-            return
-
+    def is_nickserv(self, event):
         source_cfg = ibid.config['sources'][event.source]
-
-        if u'nickserv_connection' in source_cfg and \
-                source_cfg[u'nickserv_connection'] != event.sender['connection']:
-            return
-
-        Processor.process(self, event)
+        return (event.sender.get('nick') == u'NickServ' and (
+                u'nickserv_connection' not in source_cfg or
+                source_cfg[u'nickserv_connection'] == event.sender['connection']
+        ))
 
     @match(r'^(?:This nickname is registered\. Please choose a different nickname'
             r'|This nickname is registered and protected\.  If it is your)')
     def auth(self, event):
-        source_cfg = ibid.config['sources'][event.source]
-
-        if u'nickserv_password' in source_cfg:
-            event.addresponse(u'IDENTIFY %s', source_cfg[u'nickserv_password'])
+        if self.is_nickserv(event):
+            source_cfg = ibid.config['sources'][event.source]
+            if u'nickserv_password' in source_cfg:
+                event.addresponse(u'IDENTIFY %s', source_cfg[u'nickserv_password'])
 
     @match(r'^(?:You are now identified for'
             r'|Password accepted -+ you are now recognized)')
     def success(self, event):
-        log.info(u'Authenticated with NickServ')
+        if self.is_nickserv(event):
+            log.info(u'Authenticated with NickServ')
 
 # vi: set et sta sw=4 ts=4:
