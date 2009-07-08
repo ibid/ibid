@@ -27,7 +27,7 @@ class Memo(Base):
     Column('to_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('memo', UnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
-    Column('delivered', Boolean, nullable=False),
+    Column('delivered', Boolean, nullable=False, index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 

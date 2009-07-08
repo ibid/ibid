@@ -19,7 +19,7 @@ class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
-    Column('type', Unicode(8), nullable=False),
+    Column('type', Unicode(8), nullable=False, index=True),
     Column('channel', Unicode(32)),
     Column('value', UnicodeText),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
