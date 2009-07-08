@@ -1,6 +1,6 @@
 import logging
 import logging.config
-from os import mkdir
+from os import makedirs
 from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
 
@@ -89,9 +89,11 @@ def create_logdirs(configfile):
     config = SafeConfigParser()
     config.read(configfile)
 
-    for section in config.sections():
-        if section.startswith('handler_'):
-            if config.has_option(section, 'class') and config.get(section, 'class') in ('FileHandler', 'RotatingFileHandler', 'TimedRotatingFileHandler'):
+    if config.has_option('handlers', 'keys'):
+        handlers = config.get('handlers', 'keys').split(',')
+        for handler in handlers:
+            section = 'handler_' + handler
+            if config.has_option(section, 'class') and config.get(section, 'class') in ('FileHandler', 'handlers.RotatingFileHandler', 'handlers.TimedRotatingFileHandler'):
                 if config.has_option(section, 'args'):
                     try:
                         args = eval(config.get(section, 'args'))
@@ -100,7 +102,7 @@ def create_logdirs(configfile):
                     if isinstance(args, tuple) and len(args) > 0:
                         dir = dirname(args[0])
                         if not exists(dir):
-                            mkdir(dir)
+                            makedirs(dir)
 
 class IbidException(Exception):
     pass
