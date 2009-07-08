@@ -26,8 +26,13 @@ class Sighting(Base):
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
+    
+    class SightingSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.identity_id)
+            self.add_index(self.table.c.type)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    __table__.versioned_schema = SightingSchema(__table__, 2)
 
     identity = relation('Identity')
 

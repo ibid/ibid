@@ -21,7 +21,11 @@ class Karma(Base):
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class KarmaSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.subject, unique=True)
+
+    __table__.versioned_schema = KarmaSchema(__table__, 2)
 
     def __init__(self, subject):
         self.subject = subject

@@ -239,9 +239,10 @@ class Schema(Base):
         useexisting=True)
 
     class SchemaSchema(VersionedSchema):
-        pass
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.table, unique=True)
 
-    __table__.versioned_schema = SchemaSchema(__table__, 1)
+    __table__.versioned_schema = SchemaSchema(__table__, 2)
     
     def __init__(self, table, version=0):
         self.table = table
@@ -260,7 +261,13 @@ class Identity(Base):
         UniqueConstraint('source', 'identity'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class IdentitySchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.identity)
+
+    __table__.versioned_schema = IdentitySchema(__table__, 2)
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -279,7 +286,12 @@ class Attribute(Base):
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class AttributeSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.name)
+
+    __table__.versioned_schema = AttributeSchema(__table__, 2)
 
     def __init__(self, name, value):
         self.name = name
@@ -297,7 +309,13 @@ class Credential(Base):
         Column('credential', Unicode(256), nullable=False),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class CredentialSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.method)
+
+    __table__.versioned_schema = CredentialSchema(__table__, 2)
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
@@ -314,7 +332,12 @@ class Permission(Base):
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class PermissionSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.name)
+
+    __table__.versioned_schema = PermissionSchema(__table__, 2)
 
     def __init__(self, name=None, value=None):
         self.name = name
@@ -326,7 +349,11 @@ class Account(Base):
         Column('username', Unicode(32), unique=True, nullable=False, index=True),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class AccountSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.username, unique=True)
+
+    __table__.versioned_schema = AccountSchema(__table__, 2)
 
     identities = relation(Identity, backref='account', cascade='all')
     attributes = relation(Attribute, cascade='all, delete-orphan')

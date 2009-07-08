@@ -27,7 +27,12 @@ class Feed(Base):
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class FeedSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.name, unique=True)
+            self.add_index(self.table.c.identity_id)
+
+    __table__.versioned_schema = FeedSchema(__table__, 2)
     
     feed = None
     entries = None
