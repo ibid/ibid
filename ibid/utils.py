@@ -11,10 +11,20 @@ from urllib import urlencode
 import urllib2
 import zlib
 
-import simplejson
 from html5lib import HTMLParser, treebuilders
-from xml.etree import cElementTree
 from BeautifulSoup import BeautifulSoup
+
+# json only in Python >=2.6
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
+# xml.etree only in Python >= 2.5
+try:
+    from xml.etree import cElementTree as ElementTree
+except ImportError:
+    import cElementTree as ElementTree
 
 import ibid
 
@@ -180,7 +190,7 @@ def json_webservice(url, params={}, headers={}):
     data = f.read()
     f.close()
     try:
-        return simplejson.loads(data)
+        return json.loads(data)
     except ValueError, e:
         raise JSONException(e)
     
