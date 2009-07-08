@@ -1,48 +1,10 @@
 #!/usr/bin/env python
 
-from os.path import exists
-from subprocess import Popen, PIPE
-
 from setuptools import setup
-
-def bzr_revision():
-    if not exists('.bzr'):
-        return
-
-    bzr = Popen(('bzr', 'tags', '--sort', 'time'), stdout=PIPE)
-    output, error = bzr.communicate()
-    code = bzr.wait()
-
-    if code != 0:
-        raise Exception(u'Error running bzr tags')
-
-    lines = output.splitlines()
-    if len(lines) == 0:
-        tag = '0.0.0'
-        revision = '0'
-    else:
-        tag, revision = lines[-1].split()
-
-    bzr = Popen(('bzr', 'log', '--line', '-r', '-1'), stdout=PIPE)
-    output, error = bzr.communicate()
-    code = bzr.wait()
-
-    if code != 0:
-        raise Exception(u"Error running bzr log")
-
-    latest = output.split(':')[0]
-
-    versionstring = latest == revision and tag or '%s-bzr%s' % (tag, latest)
-
-    f = open('ibid/.version', 'w')
-    f.write(versionstring)
-    f.close()
-
-    return versionstring
 
 setup(
     name='Ibid',
-    version=bzr_revision(),
+    version='0.0',
     description='A modular, extensible IRC/IM bot',
     url='http://ibid.omnia.za.net/',
     keywords='bot irc jabber',
