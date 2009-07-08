@@ -23,7 +23,7 @@ class Feed(Base):
     Column('id', Integer, primary_key=True),
     Column('name', Unicode(32), unique=True, nullable=False, index=True),
     Column('url', UnicodeText, nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 

@@ -29,7 +29,7 @@ class FactoidName(Base):
     Column('id', Integer, primary_key=True),
     Column('name', Unicode(128), nullable=False, unique=True, index=True),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
-    Column('identity_id', Integer, ForeignKey('identities.id')),
+    Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
@@ -56,7 +56,7 @@ class FactoidValue(Base):
     Column('id', Integer, primary_key=True),
     Column('value', UnicodeText, nullable=False),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
-    Column('identity_id', Integer, ForeignKey('identities.id')),
+    Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)

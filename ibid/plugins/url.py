@@ -21,7 +21,7 @@ class URL(Base):
     Column('id', Integer, primary_key=True),
     Column('url', UnicodeText, nullable=False),
     Column('channel', Unicode(32), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
