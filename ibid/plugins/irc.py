@@ -70,7 +70,7 @@ class NickServ(Processor):
 
     def is_nickserv(self, event):
         source_cfg = ibid.config['sources'][event.source]
-        return (source_cfg.type == 'irc' and
+        return (ibid.sources[event.source].type == 'irc' and
                 event.sender.get('nick') ==
                     source_cfg.get(u'nickserv_nick', u'NickServ') and
                 fnmatch(event.sender['connection'].split('!', 1)[1],
