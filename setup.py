@@ -5,9 +5,9 @@ from setuptools import setup
 setup(
     name='Ibid',
     version='0.0',
-    description='A modular, extensible IRC/IM bot',
+    description='Multi-protocol general purpose chat bot',
     url='http://ibid.omnia.za.net/',
-    keywords='bot irc jabber',
+    keywords='chat bot irc jabber twisted messaging',
     author='Ibid Developers',
     author_email='ibid@omnia.za.net',
     license='MIT',
