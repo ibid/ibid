@@ -1,7 +1,7 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, __version__
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, Index, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -61,6 +61,17 @@ class VersionedSchema(object):
             metadata.tables[dependancy].versioned_schema.upgrade_schema(sessionmaker)
 
         self.upgrade_session = session = sessionmaker()
+        self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
+
+        if self.table.name == 'schema':
+            if not session.bind.has_table(self.table.name):
+                metadata.bind = session.bind
+                self.table.create()
+
+                schema = Schema(unicode(self.table.name), self.version)
+                session.save_or_update(schema)
+                return
+            Schema.__table__ = self.get_reflected_model()
 
         schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).first()
 
@@ -74,7 +85,6 @@ class VersionedSchema(object):
                 session.save_or_update(schema)
 
             elif self.version > schema.version:
-                self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
                 for version in range(schema.version + 1, self.version + 1):
                     log.info(u"Upgrading table %s to version %i", self.table.name, version)
 
@@ -222,20 +232,8 @@ class Schema(Base):
         Column('version', Integer, nullable=False),
         useexisting=True)
 
-    # Upgrades to this table are probably going to be tricky
     class SchemaSchema(VersionedSchema):
-        def upgrade_schema(self, sessionmaker):
-            session = sessionmaker()
-
-            if not session.bind.has_table(self.table.name):
-                metadata.bind = session.bind
-                self.table.create()
-
-                schema = Schema(unicode(self.table.name), self.version)
-                session.save_or_update(schema)
-
-            session.commit()
-            session.close()
+        pass
 
     __table__.versioned_schema = SchemaSchema(__table__, 1)
     
