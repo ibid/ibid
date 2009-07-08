@@ -27,11 +27,11 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False, unique=True),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
+    Column('name', Unicode(128), nullable=False, unique=True, index=True),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
     class FactoidNameSchema(VersionedSchema):
@@ -55,10 +55,10 @@ class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('value', UnicodeText, nullable=False),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id')),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
     class FactoidValueSchema(VersionedSchema):
@@ -80,7 +80,7 @@ class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
@@ -103,7 +103,7 @@ class Factoid(Base):
 class Factpack(Base):
     __table__ = Table('factpacks', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64), nullable=False, unique=True),
+    Column('name', Unicode(64), nullable=False, unique=True, index=True),
     useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)

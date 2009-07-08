@@ -21,7 +21,7 @@ log = logging.getLogger('plugins.feeds')
 class Feed(Base):
     __table__ = Table('feeds', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(32), unique=True, nullable=False),
+    Column('name', Unicode(32), unique=True, nullable=False, index=True),
     Column('url', UnicodeText, nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
     Column('time', DateTime, nullable=False),

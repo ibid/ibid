@@ -23,8 +23,8 @@ log = logging.getLogger('plugins.memo')
 class Memo(Base):
     __table__ = Table('memos', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('from_id', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('to_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('from_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('to_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('memo', UnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
     Column('delivered', Boolean, nullable=False),

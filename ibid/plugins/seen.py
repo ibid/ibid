@@ -18,7 +18,7 @@ help = {'seen': u'Records when people were last seen.'}
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('type', Unicode(8), nullable=False),
     Column('channel', Unicode(32)),
     Column('value', UnicodeText),

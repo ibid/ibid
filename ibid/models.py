@@ -218,7 +218,7 @@ class VersionedSchema(object):
 class Schema(Base):
     __table__ = Table('schema', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('table', Unicode(32), unique=True, nullable=False),
+        Column('table', Unicode(32), unique=True, nullable=False, index=True),
         Column('version', Integer, nullable=False),
         useexisting=True)
 
@@ -249,9 +249,9 @@ class Schema(Base):
 class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id')),
-        Column('source', Unicode(16), nullable=False),
-        Column('identity', Unicode(64), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
+        Column('source', Unicode(16), nullable=False, index=True),
+        Column('identity', Unicode(64), nullable=False, index=True),
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
@@ -269,8 +269,8 @@ class Identity(Base):
 class Attribute(Base):
     __table__ = Table('account_attributes', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('name', Unicode(32), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('name', Unicode(32), nullable=False, index=True),
         Column('value', Unicode(128), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
@@ -287,9 +287,9 @@ class Attribute(Base):
 class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('source', Unicode(16)),
-        Column('method', Unicode(16), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('source', Unicode(16), index=True),
+        Column('method', Unicode(16), nullable=False, index=True),
         Column('credential', Unicode(256), nullable=False),
         useexisting=True)
 
@@ -304,8 +304,8 @@ class Credential(Base):
 class Permission(Base):
     __table__ = Table('permissions', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('name', Unicode(16), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('name', Unicode(16), nullable=False, index=True),
         Column('value', Unicode(4), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
@@ -319,7 +319,7 @@ class Permission(Base):
 class Account(Base):
     __table__ = Table('accounts', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('username', Unicode(32), unique=True, nullable=False),
+        Column('username', Unicode(32), unique=True, nullable=False, index=True),
         useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)

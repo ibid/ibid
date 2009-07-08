@@ -15,7 +15,7 @@ log = logging.getLogger('plugins.karma')
 class Karma(Base):
     __table__ = Table('karma', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('subject', Unicode(128), unique=True, nullable=False),
+    Column('subject', Unicode(128), unique=True, nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
