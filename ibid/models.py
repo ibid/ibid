@@ -138,6 +138,12 @@ class VersionedSchema(object):
 
         session.execute('ALTER TABLE "%s" ADD COLUMN %s %s;' % (table.name, description, " ".join(constraints)))
 
+    def add_index(self, col, unique=False):
+        "Add an index to the table"
+
+        Index('ix_%s_%s' % (self.table.name, col.name), col, unique=unique) \
+                .create(bind=self.upgrade_session.bind)
+
     def drop_column(self, col_name):
         "Drop column col_name from table"
 

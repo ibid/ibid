@@ -38,7 +38,7 @@ class FactoidName(Base):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
         def upgrade_2_to_3(self):
-            Index('name', self.table.c.name, unique=True).create(bind=self.upgrade_session.bind)
+            self.add_index(self.table.c.name, unique=True)
 
     __table__.versioned_schema = FactoidNameSchema(__table__, 3)
 
