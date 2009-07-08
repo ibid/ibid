@@ -4,5 +4,4 @@ recursive-include contrib *
 recursive-include lib *
 include factpacks/*.json
 include ibid/*.ini
-include ibid/.version
 include twisted/plugins/ibid_plugin.py
