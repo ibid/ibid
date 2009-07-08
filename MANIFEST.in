@@ -1,4 +1,5 @@
 recursive-include ibid *.py
+recursive-include ibid/templates *
 recursive-include tracibid *.py
 recursive-include contrib *
 recursive-include lib *
