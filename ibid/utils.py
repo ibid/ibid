@@ -65,6 +65,7 @@ def cacheable_download(url, cachefile):
             cachedir = os.path.join(ibid.options['base'], 'cache')
         elif cachedir[0] == "~":
             cachedir = os.path.expanduser(cachedir)
+        cachedir = os.path.abspath(cachedir)
 
         plugindir = os.path.join(cachedir, os.path.dirname(cachefile))
         if not os.path.isdir(plugindir):
