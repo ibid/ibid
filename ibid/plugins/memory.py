@@ -5,7 +5,11 @@ import gzip
 import os
 import os.path
 
-import simplejson
+try:
+    from json import dumps
+except ImportError:
+    from simplejson import dumps
+
 import objgraph
 
 import ibid
@@ -88,7 +92,7 @@ class MemoryLog(Processor):
         stats = objgraph.typestats()
         self.obj_file.write('%s %s\n' % (
             datetime.utcnow().isoformat(),
-            simplejson.dumps(objgraph.typestats())
+            dumps(objgraph.typestats())
         ))
         self.obj_file.flush()
 
