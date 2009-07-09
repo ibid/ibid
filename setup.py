@@ -9,6 +9,8 @@ install_requires=[
     'dnspython',
     'feedparser',
     'wokkel==0.4',
+    'pyopenssl',
+    'pysqlite',
     'jinja',
     'html5lib',
     'BeautifulSoup',
@@ -19,7 +21,7 @@ install_requires=[
 if version_info[0] == 2 and version_info[1] < 6:
     install_requires.append('simplejson')
 if version_info[0] == 2 and version_info[1] < 5:
-    install_requires.append('ElementTree')
+    install_requires.append('cElementTree')
 
 setup(
     name='Ibid',
