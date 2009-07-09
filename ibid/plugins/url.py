@@ -66,7 +66,7 @@ class Delicious(object):
             'description' : title,
             'tags' : tags,
             'replace' : u'yes',
-            'dt' : date,
+            'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'extended' : event.message['raw'],
             }
 
