@@ -35,7 +35,6 @@ class URL(Base):
         self.time = datetime.now()
 
 class Delicious(object):
-
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
@@ -58,7 +57,6 @@ class Delicious(object):
             at_re  = re.compile(r'@\S+?\.')
             obfusc_conn = at_re.sub('^', connection_body[1])
             obfusc_chan = at_re.sub('^', event.channel)
-
 
         tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
 
@@ -103,9 +101,9 @@ class Delicious(object):
         install_opener(opener)
 
 class Grab(Processor):
-
     addressed = False
     processed = True
+
     username  = Option('delicious_username', 'delicious account name')
     password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
