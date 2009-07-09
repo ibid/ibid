@@ -226,7 +226,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def disconnect(self):
         self.stopTrying()
         self.stopFactory()
-        self.proto.transport.loseConnection()
+        if hasattr(self, 'proto'):
+            self.proto.transport.loseConnection()
         return True
 
     def join(self, channel):
