@@ -1,4 +1,5 @@
 from datetime import datetime
+from httplib import BadStatusLine
 from urllib import urlencode
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPBasicAuthHandler, install_opener
 import logging
@@ -72,12 +73,16 @@ class Delicious(object):
 
         self._set_auth(username,password)
         posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
-        resp = urlopen(posturl).read()
-        if 'done' in resp:
-            log.debug(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
-                     url, event.channel, event.sender['nick'], date)
-        else:
-            log.error(u"Error posting url %s to delicious: %s", url, resp)
+
+        try:
+            resp = urlopen(posturl).read()
+            if 'done' in resp:
+                log.debug(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
+                         url, event.channel, event.sender['nick'], date)
+            else:
+                log.error(u"Error posting url %s to delicious: %s", url, resp)
+        except BadStatusLine, e:
+            log.error(u"Error posting url %s to delicious: %s", url, unicode(e))
 
     def _get_title(self, url):
         "Gets the title of a page"
