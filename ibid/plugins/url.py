@@ -75,12 +75,12 @@ class Delicious(object):
         try:
             resp = urlopen(posturl).read()
             if 'done' in resp:
-                log.debug(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
-                         url, event.channel, event.sender['nick'], date)
+                log.debug(u"Posted url '%s' to delicious, posted in %s on %s by %s/%i (%s)",
+                         url, event.channel, event.source, event.account, event.identity, event.sender['connection'])
             else:
-                log.error(u"Error posting url %s to delicious: %s", url, resp)
+                log.error(u"Error posting url '%s' to delicious: %s", url, resp)
         except BadStatusLine, e:
-            log.error(u"Error posting url %s to delicious: %s", url, unicode(e))
+            log.error(u"Error posting url '%s' to delicious: %s", url, unicode(e))
 
     def _get_title(self, url):
         "Gets the title of a page"
