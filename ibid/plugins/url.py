@@ -35,29 +35,28 @@ class URL(Base):
 
 class Delicious(object):
 
-    at_re  = re.compile(r'@\S+?\.')
-    ip_re  = re.compile(r'\.IP$|unaffiliated')
-    con_re = re.compile(r'!n=|!')
-
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
-        date  = datetime.now()
+        date  = datetime.utcnow()
         title = self._get_title(url)
 
-        connection_body = self.con_re.split(event.sender['connection'])
+        con_re = re.compile(r'!n=|!')
+        connection_body = con_re.split(event.sender['connection'])
         if len(connection_body) == 1:
             connection_body.append(event.sender['connection'])
 
-        if self.ip_re.search(connection_body[1]) != None:
+        ip_re  = re.compile(r'\.IP$|unaffiliated')
+        if ip_re.search(connection_body[1]) != None:
             connection_body[1] = ''
 
         if ibid.sources[event.source].type == 'jabber':
             obfusc_conn = ''
             obfusc_chan = event.channel.replace('@', '^')
         else:
-            obfusc_conn = self.at_re.sub('^', connection_body[1])
-            obfusc_chan = self.at_re.sub('^', event.channel)
+            at_re  = re.compile(r'@\S+?\.')
+            obfusc_conn = at_re.sub('^', connection_body[1])
+            obfusc_chan = at_re.sub('^', event.channel)
 
 
         tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
