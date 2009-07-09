@@ -164,7 +164,7 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     if treetype == "beautifulsoup":
         return BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     elif treetype == "etree":
-        treebuilder = treebuilders.getTreeBuilder("etree", cElementTree)
+        treebuilder = treebuilders.getTreeBuilder("etree", ElementTree)
     else:
         treebuilder = treebuilders.getTreeBuilder(treetype)
 
