@@ -33,7 +33,7 @@ class URL(Base):
         self.identity_id = identity_id
         self.time = datetime.now()
 
-class Delicious():
+class Delicious(object):
 
     at_re  = re.compile(r'@\S+?\.')
     ip_re  = re.compile(r'\.IP$|unaffiliated')
