@@ -14,13 +14,9 @@ setup(
     py_modules=['ibid'],
     install_requires=[
         'Twisted',
-        'Twisted_Words',
-        'Twisted_Web',
-        'Twisted_Mail',
         'SQLAlchemy>=0.4.6',
         'wokkel==0.4',
         'jinja',
-        'SOAPpy',
         'simplejson',
         'html5lib',
         'BeautifulSoup',
