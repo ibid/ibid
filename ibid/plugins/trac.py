@@ -24,6 +24,7 @@ class Tickets(Processor, RPC):
     u"""ticket <number>
     (open|my|<who>'s) tickets"""
     feature = 'trac'
+    autoload = False
 
     url = Option('url', 'URL of Trac instance')
     source = Option('source', 'Source to send commit notifications to')

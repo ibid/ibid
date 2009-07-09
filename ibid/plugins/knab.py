@@ -3,6 +3,7 @@ import perl
 from ibid.plugins import Processor, handler
 
 class Knab(Processor):
+    autoload = False
 
     knabdir = '../knab/'
     config = 'Knab.cfg'
