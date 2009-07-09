@@ -75,7 +75,7 @@ class Delicious(object):
         posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
         resp = urlopen(posturl).read()
         if 'done' in resp:
-            log.info(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
+            log.debug(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
                      url, event.channel, event.sender['nick'], date)
         else:
             log.error(u"Error posting url %s to delicious: %s", url, resp)
