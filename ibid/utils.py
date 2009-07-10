@@ -133,19 +133,16 @@ def unicode_output(output, errors="strict"):
     return unicode(output, encoding, errors)
 
 def ibid_version():
-    version = 'unknown'
     try:
         from pkg_resources import get_distribution, DistributionNotFound
         try:
             package = get_distribution('Ibid')
             if package and hasattr(package, 'version'):
-                version = package.version
+                return package.version
         except DistributionNotFound:
             pass
     except ImportError:
         pass
-
-    return version
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"

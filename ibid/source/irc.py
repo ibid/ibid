@@ -177,7 +177,7 @@ class Ircbot(irc.IRCClient):
 
     def ctcpQuery_VERSION(self, user, channel, data):
         nick = user.split("!")[0]
-        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % ibid_version())])
+        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % (ibid_version() or '',))])
 
     def ctcpQuery_SOURCE(self, user, channel, data):
         nick = user.split("!")[0]
