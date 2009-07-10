@@ -2,11 +2,12 @@ from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
 from httplib import BadStatusLine
 from urlparse import urljoin
-from time import time
+from time import time, strptime, strftime
 from datetime import datetime
 from random import choice, shuffle, randint
 from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
+from collections import defaultdict
 import re
 import logging
 
@@ -735,5 +736,55 @@ class Distance(Processor):
             'distance': ", ".join(u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) 
                 for unit in unit_names),
         })
+
+help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
+class TVShow(Processor):
+    u"""tvshow <show>"""
+
+    feature = 'tvshow'
+        
+    def remote_tvrage(self, show):
+        info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
+        
+        info = urlopen(info_url % urlencode({'show': show.encode('utf-8')}))
+        
+        info = info.read()
+        info = info.decode('utf-8')
+        if info.startswith('No Show Results Were Found'):
+            return
+        info = info[5:].splitlines()        
+        show_info = [i.split('@', 1) for i in info]
+        show_dict = dict(show_info)
+
+        #check if there are actual airdates for Latest and Next Episode. None for Next
+        #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
+        show_dict = defaultdict(lambda: 'None', show_info)
+
+        for field in ('Latest Episode', 'Next Episode'):
+            if field in show_dict:
+                format_from = '%b/%d/%Y'
+                format_to = '%d %B %Y'
+                ep, name, date = show_dict[field].split('^', 2)
+                if date.count('/') < 2:
+                    format_from = '%b/%Y'
+                    format_to = '%B %Y'
+                date = strftime(format_to, strptime(date, format_from))
+                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
+        return show_dict
+    
+    @match(r'^tv\s*show\s+(.+)$')
+    def tvshow(self, event, show):
+        retr_info = self.remote_tvrage(show)
+        
+        message = u'Show: %(Show Name)s. Premiered: %(Premiered)s. ' \
+                    u'Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. ' \
+                    u'Airtime: %(Airtime)s on %(Network)s. Genres: %(Genres)s. ' \
+                    u'Status: %(Status)s. - %(Show URL)s'
+                    
+        if not retr_info:
+            event.addresponse(u"I can't find anything out about '%s'", show)
+            return
+        
+        event.addresponse(message, retr_info)
 
 # vi: set et sta sw=4 ts=4:
