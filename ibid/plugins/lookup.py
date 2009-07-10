@@ -48,11 +48,11 @@ class Bash(Processor):
 
     feature = 'bash'
 
-    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
     @match(r'^bash(?:\.org)?(?:\s+(random|\d+))?$')
     def bash(self, event, quote):
-        if not quote and event.public and not self.allow_public:
+        if not quote and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
 
@@ -138,7 +138,7 @@ class FMyLife(Processor):
     api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
-    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
     failure_messages = (
             u'Today, I tried to get a quote for %(nick)s but failed. FML',
@@ -189,7 +189,7 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        if not event.public or self.allow_public:
+        if not event.public or self.public_browse:
             self.fml(event, 'random')
         else:
             event.addresponse(u'Sorry, not in public. PM me')
@@ -201,7 +201,7 @@ class TextsFromLastNight(Processor):
 
     feature = 'tfln'
 
-    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
     random_pool = []
 
@@ -216,7 +216,7 @@ class TextsFromLastNight(Processor):
             r'(?:\s+(random|worst|best|\d+))?'
             r'(?:this\s+)?(?:\s+(today|week|month))?$')
     def tfln(self, event, number, timeframe=None):
-        if not number and not timeframe and event.public and not self.allow_public:
+        if not number and not timeframe and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
 
@@ -264,7 +264,7 @@ class MyLifeIsAverage(Processor):
 
     feature = 'mlia'
 
-    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
     random_pool = {}
     pages = {}
@@ -285,7 +285,7 @@ class MyLifeIsAverage(Processor):
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
-        if not query and event.public and not self.allow_public:
+        if not query and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
 
