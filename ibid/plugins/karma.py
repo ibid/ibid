@@ -32,8 +32,8 @@ class Set(Processor):
     u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
     feature = 'karma'
 
-    # Clashes with morse
-    priority = 10
+    # Clashes with morse & math
+    priority = 510
 
     permission = u'karma'
 
@@ -46,7 +46,7 @@ class Set(Processor):
     importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
 
     def setup(self):
-        self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
+        self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
     @authorise

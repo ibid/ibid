@@ -1,7 +1,10 @@
 from urllib import urlencode
 from urllib2 import urlopen
-from simplejson import dumps
 from threading import Timer
+try:
+    from simplejson import dumps
+except ImportError:
+    from json import dumps
 
 from trac.core import *
 from trac.ticket import ITicketChangeListener

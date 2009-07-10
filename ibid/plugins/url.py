@@ -33,7 +33,7 @@ class URL(Base):
         self.identity_id = identity_id
         self.time = datetime.now()
 
-class Delicious():
+class Delicious(object):
 
     at_re  = re.compile(r'@\S+?\.')
     ip_re  = re.compile(r'\.IP$|unaffiliated')
@@ -87,8 +87,8 @@ class Delicious():
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title
-        except Exception:
-            log.exception(u"Delicious logic - error determining the title for url %s", url)
+        except Exception, e:
+            log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
 
     def _set_auth(self, username, password):

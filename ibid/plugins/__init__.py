@@ -4,13 +4,17 @@ import re
 
 from twisted.spread import pb
 from twisted.web import resource
-import simplejson
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 import ibid
 
 class Processor(object):
 
-    type = 'message'
+    event_types = ('message',)
     addressed = True
     processed = False
     priority = 0
@@ -35,7 +39,7 @@ class Processor(object):
         pass
 
     def process(self, event):
-        if event.type != self.type:
+        if event.type not in self.event_types:
             return
 
         if self.addressed and ('addressed' not in event or not event.addressed):
@@ -116,7 +120,7 @@ class RPC(pb.Referenceable, resource.Resource):
         args = []
         for arg in request.postpath[1:]:
             try:
-                arg = simplejson.loads(arg)
+                arg = json.loads(arg)
             except ValueError, e:
                 pass
             args.append(arg)
@@ -124,7 +128,7 @@ class RPC(pb.Referenceable, resource.Resource):
         kwargs = {}
         for key, value in request.args.items():
             try:
-                value = simplejson.loads(value[0])
+                value = json.loads(value[0])
             except ValueError, e:
                 value = value[0]
             kwargs[key] = value
@@ -137,9 +141,9 @@ class RPC(pb.Referenceable, resource.Resource):
 
         try:
             result = function(*args, **kwargs)
-            return simplejson.dumps(result)
+            return json.dumps(result)
         except Exception, e:
-            return simplejson.dumps({'exception': True, 'message': unicode(e)})
+            return json.dumps({'exception': True, 'message': unicode(e)})
 
     def render_GET(self, request):
         function = self.get_function(request)

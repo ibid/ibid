@@ -10,6 +10,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exceptions import IntegrityError
 
 import ibid
+from ibid.event import Event
+
 import auth
 
 class Dispatcher(object):
@@ -79,6 +81,28 @@ class Dispatcher(object):
 
         return threads.deferToThread(self._process, event)
 
+    def call_later(self, delay, callable, oldevent, *args, **kw):
+        "Run callable after delay seconds. Pass args and kw to it"
+
+        event = Event(oldevent.source, u'delayed')
+        event.sender = oldevent.sender
+        event.channel = oldevent.channel
+        event.public = oldevent.public
+        return reactor.callLater(delay, threads.deferToThread, self.delayed_call, callable, event, *args, **kw)
+
+    def delayed_call(self, callable, event, *args, **kw):
+        # Twisted doesn't catch exceptions here, so we must do it ourselves
+        try:
+            callable(event, *args, **kw)
+            self._process(event)
+            reactor.callFromThread(self.delayed_response, event)
+        except:
+            self.log.exception(u'Call Later')
+
+    def delayed_response(self, event):
+        for response in event.responses:
+            ibid.sources[event.source].send(response)
+
 class Reloader(object):
 
     def __init__(self):
@@ -120,7 +144,7 @@ class Reloader(object):
 
     def load_sources(self, service=None):
         for source in ibid.config.sources.keys():
-            if 'disabled' not in ibid.config.sources[source]:
+            if not ibid.config.sources[source].get('disabled', False):
                 self.load_source(source, service)
 
     def unload_source(self, name):

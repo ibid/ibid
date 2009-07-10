@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+import gzip
+import optparse
+import sys
+
+import dateutil
+try:
+    from simplejson import loads
+except ImportError:
+    from json import loads
+
+import matplotlib.pyplot as pyplot
+from matplotlib.dates import date2num
+import numpy
+
+parser = optparse.OptionParser(usage="""%prog [arguments] logfile types...
+logfile is an object log file (possibly gzipped)
+types are a list of object types to graph""")
+parser.add_option('-o', '--output', dest='output', metavar='FILE',
+        help='Output to filename rather than interactive')
+parser.add_option('-d', '--dpi', dest='dpi',
+        help='Output DPI')
+
+(options, args) = parser.parse_args()
+
+if len(args) < 1:
+    sys.stderr.write("Log file required\n")
+    sys.exit(2)
+if len(args) < 2:
+    sys.stderr.write("At least one type required\n")
+    sys.exit(2)
+
+f = args[0].endswith('.gz') and gzip.GzipFile(args[0], 'r') or file(args[0], 'r')
+header = f.readline().strip()
+
+if not header.startswith('Ibid Object Log v1: '):
+    sys.stderr.write("Incorrect file format\n")
+    sys.exit(1)
+
+botname = header.split(':', 1)[1].strip()
+
+types = args[1:]
+
+times = []
+data = []
+
+for line in f:
+    timestamp, json = line.split(' ', 1)
+
+    times.append(date2num(dateutil.parser.parse(timestamp)))
+
+    json = loads(json)
+    data.append([json.get(type, 0) for type in types])
+
+times = numpy.array(times, dtype=float)
+data = numpy.array(data, dtype=int)
+
+fig = pyplot.figure()
+ax = fig.add_subplot(111)
+ax.set_xlabel('time (s)')
+ax.set_ylabel('Objects (k)', color='b')
+ax.grid(True)
+
+ax.set_color_cycle(list('brgycmk'))
+
+for i, type in enumerate(types):
+    ax.plot_date(times, data[:,i], '-', label=type)
+
+pyplot.legend(loc='best')
+pyplot.title(botname + ' Object Stats')
+
+fig.autofmt_xdate()
+
+if options.output:
+    pyplot.savefig(options.output, dpi=options.dpi)
+else:
+    pyplot.show()
+
+# vi: set et sta sw=4 ts=4:

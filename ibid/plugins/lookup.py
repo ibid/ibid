@@ -1,18 +1,23 @@
 from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
+from httplib import BadStatusLine
 from urlparse import urljoin
 from time import time
 from datetime import datetime
-from random import choice
-from simplejson import loads
-from xml.dom.minidom import parse
+from random import choice, shuffle, randint
+from xml.etree.cElementTree import parse
+from .. math import acos, sin, cos, radians
 import re
+import logging
 
 import feedparser
 
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, cacheable_download
+from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
+        cacheable_download, json_webservice, JSONException
+
+log = logging.getLogger('plugins.lookup')
 
 help = {}
 
@@ -113,9 +118,11 @@ class Lotto(Processor):
         })
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
+class FMLException(Exception):
+    pass
+
 class FMyLife(Processor):
-    u"""fml (<number> | [random] | <category> | flop | top | last)
-    fml categories"""
+    u"""fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )"""
 
     feature = "fml"
 
@@ -134,54 +141,170 @@ class FMyLife(Processor):
             id.isalnum() and id + '/nocomment' or quote(id),
             urlencode({'language': self.fml_lang, 'key': self.api_key}))
         )
-        dom = parse(urlopen(url))
+        tree = parse(urlopen(url))
 
-        if dom.getElementsByTagName('error'):
-            return
+        if tree.find('.//error'):
+            raise FMLException(tree.findtext('.//error'))
 
-        items = dom.getElementsByTagName('item')
-        if items: 
+        item = tree.find('.//item')
+        if item:
             url = u"http://www.fmylife.com/%s/%s" % (
-                items[0].getElementsByTagName('category')[0].childNodes[0].nodeValue,
-                items[0].getAttribute('id'),
+                item.findtext('category'),
+                item.get('id'),
             )
-            text = items[0].getElementsByTagName('text')[0].childNodes[0].nodeValue
+            text = item.find('text').text
 
             return u'%s : %s' % (url, text)
 
-    def setup(self):
-        url = urljoin(self.api_url, 'view/categories?' + urlencode({'language': self.fml_lang, 'key': self.api_key}))
-        dom = parse(urlopen(url))
-        self.categories = [cat.getAttribute('code') for cat in dom.getElementsByTagName('categorie')]
-
-        self.fml.im_func.pattern = re.compile(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|%s)$' % (
-            '|'.join(self.categories),
-        ), re.I)
-
-    @handler
+    @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
         try:
             quote = self.remote_get(id)
+        except FMLException:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
         except HTTPError:
+            event.addresponse(choice(self.failure_messages) % event.sender)
+            return
+        except BadStatusLine:
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
         if quote:
             event.addresponse(quote)
-        else:
+        elif id.isdigit():
             event.addresponse(u'No such quote')
+        else:
+            event.addresponse(choice(self.failure_messages) % event.sender)
 
     @match(r'^fml$')
     def fml_default(self, event):
-        try:
-            event.addresponse(self.remote_get('random'))
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
+        self.fml(event, 'random')
 
-    @match(r'^fml\s+categories$')
-    def list_categories(self, event):
-        event.addresponse(u'Categories: %s', u', '.join(self.categories))
+help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
+class TextsFromLastNight(Processor):
+    u"""tfln [(random|<number>)]
+    tfln (worst|best) [(today|this week|this month)]"""
+
+    feature = 'tfln'
+
+    random_pool = []
+
+    def get_tfln(self, section):
+        tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
+        for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
+            id = int(div.get('id').split('_', 1)[1])
+            quote = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            yield id, quote
+
+    @match(r'^tfln'
+            r'(?:\s+(random|worst|best|\d+))?'
+            r'(?:this\s+)?(?:\s+(today|week|month))?$')
+    def tfln(self, event, number, timeframe=None):
+        number = number is None and u'random' or number.lower()
+
+        if number in (u'worst', u'best'):
+            number += u'-nights'
+            if timeframe.lower() in (u'week', u'month'):
+                number += u'this-' + timeframe.lower()
+        elif number.isdigit():
+            number = 'view/%s' % number
+
+        if number == u'random':
+            if not self.random_pool:
+                self.random_pool = [quote for quote in self.get_tfln(number)]
+                shuffle(self.random_pool)
+
+            quote = self.random_pool.pop()
+        else:
+            try:
+                quote = self.get_tfln(number).next()
+            except StopIteration:
+                event.addresponse(u'No such quote')
+                return
+
+        id, body = quote
+        if len(body) > 1:
+            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
+            for line in body:
+                event.addresponse(line)
+        else:
+            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
+                'id': id,
+                'body': body[0],
+            })
+
+    @match(r'^(?:http://)?(?:www\.)?textsfromlastnight\.com/view/(\d+)$')
+    def tfln_url(self, event, id):
+        self.tfln(event, id)
+
+help["mlia"] = u"Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com"
+class MyLifeIsAverage(Processor):
+    u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
+    mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
+
+    feature = 'mlia'
+
+    random_pool = {}
+    pages = {}
+
+    def find_stories(self, url):
+        if isinstance(url, basestring):
+            tree = get_html_parse_tree(url, treetype='etree')
+        else:
+            tree = url
+
+        storycol = [div for div in tree.findall('.//div') if div.get(u'id') in (u'leftcol', u'leftcol-wide')][0]
+        stories = [div for div in storycol.findall('div') if div.get(u'class') in (u'stories', u'stories-wide')]
+
+        for story in stories:
+            body = story.findtext('div/span/span').strip()
+            id = int(story.findtext('div/div/span/a')[1:])
+            yield id, body
+
+    @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
+    def mlia(self, event, site, query):
+        site = site.lower()
+        query = query is None and u'random' or query.lower()
+        url = {
+                'mlia': 'http://mylifeisaverage.com/',
+                'mlig': 'http://mylifeisg.com/',
+            }[site]
+
+        if query == u'random' or query is None:
+            if not self.random_pool.get(site):
+                tree = get_html_parse_tree(
+                        url + 'index.php?' + urlencode({'page': randint(1, self.pages.get(site, 1))}),
+                        treetype='etree')
+                self.random_pool[site] = [quote for quote in self.find_stories(tree)]
+                shuffle(self.random_pool[site])
+
+                pagination = [div for div in tree.findall('.//div') if div.get(u'class') == u'pagination'][0]
+                self.pages[site] = sorted(int(a.text) for a in pagination.findall('.//a') if a.text.isdigit())[-1]
+
+            quote = self.random_pool[site].pop()
+
+        else:
+            try:
+                if query.isdigit():
+                    quote = self.find_stories(url + 'story.php?' + urlencode({'id': query})).next()
+                else:
+                    quote = self.find_stories(url + 'index.php?' + urlencode({'part': query})).next()
+
+            except StopIteration:
+                event.addresponse(u'No such quote')
+                return
+
+        id, body = quote
+        event.addresponse(u'%(url)sstory.php?id=%(id)i : %(body)s', {
+            'url': url,
+            'id': id,
+            'body': body,
+        })
+
+    @match(r'^(?:http://)?(?:www\.)?mylifeis(average|g)\.com/story\.php\?id=(\d+)$')
+    def mlia_url(self, event, site, id):
+        self.mlia(event, 'mli' + site[0].lower(), id)
 
 help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
 class Twitter(Processor):
@@ -199,22 +322,27 @@ class Twitter(Processor):
     }
     services = Option('services', 'Micro blogging services', default)
 
+    class NoSuchUserException(Exception):
+        pass
+
     def setup(self):
         self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % '|'.join(self.services.keys()), re.I)
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?(\S+)$'
+        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?@?(\S+)$'
                 % '|'.join(self.services.keys()), re.I)
 
     def remote_update(self, service, id):
-        f = urlopen('%sstatuses/show/%s.json' % (service['endpoint'], id))
-        status = loads(f.read())
-        f.close()
+        status = json_webservice('%sstatuses/show/%s.json' % (service['endpoint'], id))
 
         return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
-        f = urlopen('%sstatuses/user_timeline/%s.json?count=1' % (service['endpoint'], user))
-        statuses = loads(f.read())
-        f.close()
+        statuses = json_webservice(
+                '%sstatuses/user_timeline/%s.json' % (service['endpoint'], user.encode('utf-8')),
+                {'count': 1})
+
+        if not statuses:
+            raise self.NoSuchUserException(user)
+
         latest = statuses[0]
 
         if service['api'] == 'twitter':
@@ -234,7 +362,7 @@ class Twitter(Processor):
         try:
             event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service, int(id)))
         except HTTPError, e:
-            if e.code == 403:
+            if e.code in (401, 403):
                 event.addresponse(u'That %s is private', service['name'])
             elif e.code == 404:
                 event.addresponse(u'No such %s', service['name'])
@@ -247,10 +375,14 @@ class Twitter(Processor):
         try:
             event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service, user))
         except HTTPError, e:
-            if e.code == 404:
+            if e.code in (401, 403):
+                event.addresponse(u"Sorry, %s's feed is private", user)
+            elif e.code == 404:
                 event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
+        except self.NoSuchUserException, e:
+                event.addresponse(u'No such %s', service['user'])
 
     @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
@@ -270,7 +402,6 @@ class Currency(Processor):
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
-    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _load_currencies(self):
         etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
@@ -299,11 +430,13 @@ class Currency(Processor):
                             currency[0].append(place)
                     else:
                         self.currencies[code] = [[place], name.strip()]
+
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
         self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
         self.currencies['XOF'][1] = u'Francs'
 
+    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
 
     def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
@@ -311,7 +444,12 @@ class Currency(Processor):
         if name.upper() in self.currencies:
             return name.upper()
 
-        name = self.strip_currency_re.match(name).group(1).lower()
+        m = self.strip_currency_re.match(name)
+        
+        if m is None:
+            return False
+
+        name = m.group(1).lower()
 
         # TLD -> country name
         if rough and len(name) == 2 and name.upper() in self.country_codes:
@@ -469,7 +607,7 @@ class Weather(Processor):
 
     def remote_weather(self, place):
         soup = self._get_page(place)
-        tds = soup.table.table.findAll('td')
+        tds = [x.table for x in soup.findAll('table') if x.table][0].findAll('td')
 
         # HACK: Some cities include a windchill row, but others don't
         if len(tds) == 39:
@@ -485,10 +623,11 @@ class Weather(Processor):
     def remote_forecast(self, place):
         soup = self._get_page(place)
         forecasts = []
+        table = [table for table in soup.findAll('table') if table.findAll('td', align='left')][0]
 
-        for td in soup.findAll('table')[0].findAll('td', align='left'):
+        for td in table.findAll('td', align='left'):
             day = td.b.string
-            forecast = td.contents[2]
+            forecast = u' '.join([self._text(line) for line in td.contents[2:]])
             forecasts.append(u'%s: %s' % (day, self._text(forecast)))
 
         return forecasts
@@ -517,5 +656,84 @@ class Weather(Processor):
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
+
+help['distance'] = u"Returns the distance between two places"
+class Distance(Processor):
+    u"""distance [in <unit>] between <source> and <destination>
+    place search for <placename>"""
+
+    # For Mathematics, see:
+    # http://www.mathforum.com/library/drmath/view/51711.html
+    # http://mathworld.wolfram.com/GreatCircle.html
+
+    feature = 'distance'
+    
+    default_unit_names = {
+            'km': "kilometres",
+            'mi': "miles",
+            'nm': "nautical miles"}
+    default_radius_values = {
+            'km': 6378,
+            'mi': 3963.1,
+            'nm': 3443.9}
+
+    unit_names = Option('unit_names', 'Names of units in which to specify distances', default_unit_names)
+    radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
+    
+    def get_place_data(self, place, num):
+        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
+
+    def get_place(self, place):
+        js = self.get_place_data(place, 1)
+        if js['totalResultsCount'] == 0:
+            return None
+        info = js['geonames'][0]
+        return {'name': "%s, %s, %s" % (info['name'], info['adminName1'], info['countryName']),
+                'lng': radians(info['lng']),
+                'lat': radians(info['lat'])}
+    
+    @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
+    def placesearch(self, event, place):
+        js = self.get_place_data(place, 10)
+        if js['totalResultsCount'] == 0:
+            event.addresponse(u"I don't know of anywhere even remotely like '%s'", place)
+        else:
+            event.addresponse(u"I can find: %s", 
+                    (u"; ".join(u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
+                        for p in js['geonames'][:10])))
+
+    @match(r'^(?:how\s*far|distance)(?:\s+in\s+(\S+))?\s+'
+            r'(?:(between)|from)' # Between ... and ... | from ... to ...
+            r'\s+(\S.+?)\s+(?(2)and|to)\s+(\S.+?)\s*$')
+    def distance(self, event, unit, ignore, src, dst):
+        unit_names = self.unit_names
+        if unit and unit not in self.unit_names:
+            event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
+                'badunit': unit, 
+                'knownunits': 
+                    u", ".join(u"%s (%s)" % (unit, self.unit_names[unit]) 
+                        for unit in self.unit_names),
+            })
+            return
+        if unit:
+            unit_names = [unit]
+        
+        srcp, dstp = self.get_place(src), self.get_place(dst)
+        if not srcp or not dstp:
+            event.addresponse(u"I don't know of anywhere called %s", 
+                    (u" or ".join("'%s'" % place[0] 
+                        for place in ((src, srcp), (dst, dstp)) if not place[1])))
+            return
+        
+        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
+                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + 
+                    sin(srcp['lat'])*sin(dstp['lat']))
+        
+        event.addresponse(u"Approximate distance, as the bot flies, between %(srcname)s and %(dstname)s is: %(distance)s", {
+            'srcname': srcp['name'],
+            'dstname': dstp['name'],
+            'distance': ", ".join(u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) 
+                for unit in unit_names),
+        })
 
 # vi: set et sta sw=4 ts=4:

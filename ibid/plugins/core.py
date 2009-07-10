@@ -11,6 +11,7 @@ class Addressed(Processor):
 
     priority = -1500
     addressed = False
+
     names = Option('names', 'Names to respond to', [ibid.config['botname']])
     verbs = Option('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
@@ -39,6 +40,8 @@ class Strip(Processor):
 
     priority = -1600
     addressed = False
+    event_types = ('message', 'action', 'notice')
+
     pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$', re.DOTALL)
 
     @handler
@@ -50,8 +53,9 @@ class Strip(Processor):
 
 class Ignore(Processor):
 
-    addressed = False
     priority = -1500
+    addressed = False
+    event_types = ('message', 'action', 'notice')
 
     @handler
     def handle_ignore(self, event):
@@ -85,6 +89,9 @@ class Responses(Processor):
 class Address(Processor):
 
     processed = True
+    addressed = False
+    event_types = ('message', 'action', 'notice')
+
     acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
     refusals = Option('refusals', 'Responses for negative acknowledgements',
@@ -116,6 +123,8 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
+    event_types = ('message', 'action')
+
     complaints = Option('complaints', 'Complaint responses', {
         'nonsense': (
             u'Huh?', u'Sorry...', u'?',
@@ -141,6 +150,8 @@ class Complain(Processor):
 class RateLimit(Processor):
 
     priority = -1000
+    event_types = ('message', 'action', 'notice')
+
     limit_time = IntOption('limit_time', 'Time period over which to measure messages', 10)
     limit_messages = IntOption('limit_messages', 'Number of messages to allow during the time period', 5)
     messages = {}

@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import gzip
+import optparse
+import sys
+
+import dateutil
+import matplotlib.pyplot as pyplot
+from matplotlib.dates import date2num
+import numpy
+
+parser = optparse.OptionParser(usage="""%prog logfile
+logfile is a memory log file (possibly gzipped)""")
+parser.add_option('-o', '--output', dest='output', metavar='FILE',
+        help='Output to filename rather than interactive')
+parser.add_option('-d', '--dpi', dest='dpi',
+        help='Output DPI')
+
+(options, args) = parser.parse_args()
+
+if len(args) != 1:
+    sys.stderr.write("Log file required\n")
+    sys.exit(2)
+
+f = args[0].endswith('.gz') and gzip.GzipFile(args[0], 'r') or file(args[0], 'r')
+header = f.readline().strip()
+f.close()
+if not header.startswith('Ibid Memory Log v2: '):
+    sys.stderr.write("Incorrect file format\n")
+    sys.exit(1)
+
+botname = header.split(':', 1)[1].strip()
+
+data = numpy.loadtxt(args[0],
+        dtype=float,
+        delimiter=',',
+        skiprows=1,
+        converters={0: lambda x: date2num(dateutil.parser.parse(x))},
+)
+
+fig = pyplot.figure()
+fig.autofmt_xdate()
+
+ax_obj = fig.add_subplot(111)
+ax_obj.set_xlabel('time (s)')
+ax_mem = ax_obj.twinx()
+ax_mem.grid(True)
+
+ax_obj.plot_date(data[:,0], data[:,1]/1000, 'b-', label='Objects (k)')
+ax_obj.set_ylabel('Objects (k)', color='b')
+
+for tl in ax_obj.get_yticklabels():
+    tl.set_color('b')
+
+ax_mem.plot_date(data[:,0], data[:,2]/1024, 'r-', label='VM Size')
+ax_mem.plot_date(data[:,0], data[:,3]/1024, 'g-', label='VM RSS')
+
+ax_mem.set_ylabel('Memory (MiB)')
+
+pyplot.legend(loc='best')
+pyplot.title(botname + ' Memory Usage')
+
+# autofmt_xdate doesn't work perfectly in twinx
+for label in ax_obj.get_xticklabels():
+    label.set_ha('right')
+    label.set_rotation(30)
+for label in ax_mem.get_xticklabels():
+    label.set_visible(False)
+
+if options.output:
+    pyplot.savefig(options.output, dpi=options.dpi)
+else:
+    pyplot.show()
+
+# vi: set et sta sw=4 ts=4:

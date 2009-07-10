@@ -312,8 +312,7 @@ class Permission(Base):
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
 
-    def __init__(self, name=None, value=None, account_id=None):
-        self.account_id = account_id
+    def __init__(self, name=None, value=None):
         self.name = name
         self.value = value
 

@@ -195,7 +195,7 @@ class RFCLookup(Processor):
             for result in pool[:5]:
                 result.parse()
                 results.append("%04i: %s" % (result.number, result.summary))
-            event.addresponse(u'Found %(found)i matching RFCs. Listing %(listing)i: %(results)', {
+            event.addresponse(u'Found %(found)i matching RFCs. Listing %(listing)i: %(results)s', {
                 'found': len(pool),
                 'listing': min(len(pool), 5),
                 'results': u',  '.join(results),

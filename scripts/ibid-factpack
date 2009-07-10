@@ -4,7 +4,10 @@ from sys import argv, exit, stderr
 from os.path import basename, exists
 from optparse import OptionParser
 
-from simplejson import loads
+try:
+    from simplejson import loads
+except ImportError:
+    from json import loads
 from sqlalchemy.sql import func
 
 import ibid

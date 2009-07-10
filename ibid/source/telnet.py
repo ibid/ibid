@@ -6,7 +6,9 @@ from twisted.application import internet
 
 import ibid
 from ibid.source import IbidSourceFactory
+from ibid.config import IntOption
 from ibid.event import Event
+from ibid.config import IntOption
 
 class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
@@ -18,6 +20,12 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 
     def telnet_User(self, line):
         self.user = unicode(line.strip(), 'utf-8', 'replace')
+        if ' ' in self.user:
+            self.transport.write('Sorry, no spaces allowed in usernames\r\n')
+            self.factory.log.info(u"Rejected connection from %s", self.user)
+            self.transport.loseConnection()
+            return
+
         self.factory.log.info(u"Connection established with %s", self.user)
         return 'Query'
 
@@ -45,7 +53,7 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
 
-    port = 3000
+    port = IntOption('port', 'Port to listen on', 3000)
 
     def __init__(self, name, *args, **kwargs):
         #protocol.ServerFactory.__init__(self, *args, **kwargs)
@@ -54,11 +62,16 @@ class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
 
     def setServiceParent(self, service=None):
         if service:
-            return internet.TCPServer(self.port, self).setServiceParent(service)
+            self.listener = internet.TCPServer(self.port, self).setServiceParent(service)
+            return self.listener
         else:
-            reactor.listenTCP(self.port, self)
+            self.listener = reactor.listenTCP(self.port, self)
 
     def connect(self):
         return self.setServiceParent(None)
+
+    def disconnect(self):
+        self.listener.stopListening()
+        return True
 
 # vi: set et sta sw=4 ts=4:

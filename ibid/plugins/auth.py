@@ -28,7 +28,7 @@ class AddAuth(Processor):
             if not ibid.auth.authenticate(event):
                 event.complain = 'notauthed'
                 return
-            account = event.session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).get(event.account)
 
         else:
             if not auth_responses(event, 'admin'):
@@ -89,7 +89,8 @@ class Permissions(Processor):
 
         else:
             if not permission:
-                permission = Permission(name, account_id=account.id)
+                permission = Permission(name)
+                account.permissions.append(permission)
 
             if action.lower() == 'revoke':
                 value = 'no'
@@ -121,7 +122,7 @@ class Permissions(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = event.session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).get(event.account)
         else:
             if not auth_responses(event, u'accounts'):
                 return

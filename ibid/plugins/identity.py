@@ -31,7 +31,7 @@ class Accounts(Processor):
             if ibid.auth.authenticate(event) and ibid.auth.authorise(event, 'accounts'):
                 admin = True
             else:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
                 event.addresponse(u'You already have an account called "%s"', account.username)
                 return
 
@@ -61,7 +61,7 @@ class Accounts(Processor):
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                         identity.id, identity.identity, identity.source, account.id, account.username)
         else:
-            identity = event.session.query(Identity).filter_by(id=event.identity).first()
+            identity = event.session.query(Identity).get(event.identity)
             identity.account_id = account.id
             event.session.save_or_update(identity)
             event.session.commit()
@@ -77,7 +77,7 @@ class Accounts(Processor):
 
         if own:
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
                 event.addresponse(u"You don't have an account")
                 return
@@ -106,7 +106,7 @@ class Accounts(Processor):
 
         if own:
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
                 event.addresponse(u"You don't have an account")
                 return
@@ -148,36 +148,45 @@ class Identities(Processor):
     def identity(self, event, username, identity, source):
         admin = False
         identity = identity.replace(' ', '')
+        reverse_attach = False
 
         if username.upper() == 'I':
             if event.account:
-                account = event.session.query(Account).filter_by(id=event.account).first()
+                account = event.session.query(Account).get(event.account)
             else:
-                username = event.sender['id']
-
-                account = event.session.query(Account).filter_by(username=username).first()
-
+                account = event.session.query(Account) \
+                        .join(Identity.account) \
+                        .filter(func.lower(Identity.identity) == identity.lower()) \
+                        .filter(func.lower(Identity.source) == source.lower()).first()
+                
                 if account:
-                    event.addresponse(u'I tried to create the account %s for you, but it already exists. '
-                        u"Please use 'create account <name>'", username)
-                    return
+                    reverse_attach = True
+                else:
+                    username = event.sender['id']
 
-                account = Account(username)
-                event.session.save_or_update(account)
+                    account = event.session.query(Account).filter_by(username=username).first()
 
-                currentidentity = event.session.query(Identity).filter_by(id=event.identity).first()
-                currentidentity.account_id = account.id
-                event.session.save_or_update(currentidentity)
+                    if account:
+                        event.addresponse(u'I tried to create the account %s for you, but it already exists. '
+                            u"Please use 'create account <name>'", username)
+                        return
 
-                identify_cache.clear()
+                    account = Account(username)
+                    event.session.save_or_update(account)
 
-                event.addresponse(u"I've created the account %s for you", username)
+                    currentidentity = event.session.query(Identity).get(event.identity)
+                    currentidentity.account_id = account.id
+                    event.session.save_or_update(currentidentity)
 
-                event.session.commit()
-                log.info(u"Created account %s (%s) by %s/%s (%s)",
-                        account.id, account.username, event.account, event.identity, event.sender['connection'])
-                log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
-                        currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
+                    identify_cache.clear()
+
+                    event.addresponse(u"I've created the account %s for you", username)
+
+                    event.session.commit()
+                    log.info(u"Created account %s (%s) by %s/%s (%s)",
+                            account.id, account.username, event.account, event.identity, event.sender['connection'])
+                    log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
+                            currentidentity.id, currentidentity.identity, currentidentity.source, account.id, account.username)
 
         else:
             if not auth_responses(event, 'accounts'):
@@ -188,9 +197,12 @@ class Identities(Processor):
                 event.addresponse(u"I don't know who %s is", username)
                 return
 
-        ident = event.session.query(Identity) \
-                .filter(func.lower(Identity.identity) == identity.lower()) \
-                .filter(func.lower(Identity.source) == source.lower()).first()
+        if reverse_attach:
+            ident = event.session.query(Identity).get(event.identity)
+        else:
+            ident = event.session.query(Identity) \
+                    .filter(func.lower(Identity.identity) == identity.lower()) \
+                    .filter(func.lower(Identity.source) == source.lower()).first()
         if ident and ident.account:
             event.addresponse(u'This identity is already attached to account %s',
                     ident.account.username)
@@ -204,10 +216,20 @@ class Identities(Processor):
 
         if not admin:
             token = ''.join([choice(chars) for i in xrange(16)])
-            self.tokens[token] = (account.id, identity, source)
-            response = {'reply': u'Please send me this message from %s on %s: %s' % (identity, source, token)}
-            if event.public:
-                response['target'] = event.sender['id']
+            if reverse_attach:
+                self.tokens[token] = (account.id, ident.identity, ident.source)
+                response = {
+                        'reply': u'Please send me this message from %s on %s: %s' % (ident.identity, ident.source, token),
+                        'target': identity,
+                        'source': source,
+                }
+                event.addresponse(True)
+            else:
+                self.tokens[token] = (account.id, identity, source)
+                response = {'reply': u'Please send me this message from %s on %s: %s' % (identity, source, token)}
+                if event.public:
+                    response['target'] = event.sender['id']
+                    event.addresponse(True)
             event.addresponse(response)
             log.info(u"Sent token %s to %s/%s (%s)",
                     token, event.account, event.identity, event.sender['connection'])
@@ -296,7 +318,7 @@ class Attributes(Processor):
             if not event.account:
                 event.addresponse(u"I don't know who you are")
                 return
-            account = event.session.query(Account).filter_by(id=event.account).first()
+            account = event.session.query(Account).get(event.account)
             if not account:
                 event.addresponse(u"%s doesn't exist. Please use 'add account' first", username)
                 return

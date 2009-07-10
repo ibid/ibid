@@ -71,15 +71,40 @@ class BC(Processor):
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
-help['calc'] = u'Returns the anwser to mathematical expressions'
+help['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
 class LimitException(Exception):
     pass
 
 def limited_pow(*args):
-    for arg, limit in zip(args, (1e100, 200)):
-        if isinstance(arg, int) and (arg > limit or arg < -limit):
-            raise LimitException
+    "We don't want users to DOS the bot. Pow is the most dangerous function. Limit it"
+
+    # Are all the arguments ints?
+    if not [True for arg in args if not isinstance(arg, int) and not isinstance(arg, long)]:
+        try:
+            answer = pow(float(args[0]), float(args[1]))
+            if answer > 1e+300:
+                raise LimitException
+
+        except OverflowError, e:
+            raise LimitException(e)
+
     return pow(*args)
+
+# Factorial is only available in 2.6:
+try:
+    from .. math import factorial
+except ImportError:
+    def factorial(x):
+        if not isinstance(x, int) or x < 0:
+            raise ValueError
+        if x == 0:
+            return 1
+        return reduce(lambda a, b: a * b, xrange(1, x + 1))
+
+def limited_factorial(x):
+    if x >= 500:
+        raise LimitException
+    return factorial(x)
 
 # ast method
 class PowSubstitutionTransformer(NodeTransformer):
@@ -110,7 +135,7 @@ class Calc(Processor):
     priority = 500
 
     extras = ('abs', 'round', 'min', 'max')
-    banned = ('for', 'yield', 'lambda')
+    banned = ('for', 'yield', 'lambda', '__')
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
@@ -119,6 +144,7 @@ class Calc(Processor):
     for function in extras:
         safe[function] = eval(function)
     safe['pow'] = limited_pow
+    safe['factorial'] = limited_factorial
 
     @match(r'^(?:calc\s+)?(.+?)$')
     def calculate(self, event, expression):
