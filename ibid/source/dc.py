@@ -3,14 +3,13 @@ import logging
 
 import dcwords
 
-from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 from twisted.internet import protocol
 from twisted.application import internet
 from pkg_resources import resource_exists, resource_string
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption, FloatOption
+from ibid.config import Option, IntOption, FloatOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 

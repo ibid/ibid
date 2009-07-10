@@ -1,12 +1,9 @@
 import re
 import socket
 import struct
-import sys
-from urllib2 import URLError
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import json_webservice, JSONException
 
 help = {}
 help['gameservers'] = u'Lists the users on Game servers'

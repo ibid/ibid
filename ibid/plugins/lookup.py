@@ -15,7 +15,7 @@ import feedparser
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice, JSONException
+        cacheable_download, json_webservice
 
 log = logging.getLogger('plugins.lookup')
 

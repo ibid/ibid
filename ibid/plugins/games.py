@@ -7,7 +7,6 @@ import time
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, IntOption, BoolOption, FloatOption
-from ibid.utils import ibid_version
 
 help = {}
 log = logging.getLogger('plugins.games')

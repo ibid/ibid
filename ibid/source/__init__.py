@@ -1,7 +1,5 @@
 from copy import copy
 
-import ibid
-
 class IbidSourceFactory(object):
 
     supports = ()
@@ -35,6 +33,7 @@ class IbidSourceFactory(object):
         return None
 
 from ibid.config import Option
+
 options = {
     'auth': Option('auth', 'Authentication methods to allow'),
     'permissions': Option('permissions', 'Permissions granted to users on this source')

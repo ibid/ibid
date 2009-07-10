@@ -1,12 +1,11 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, Index, __version__
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import text
-from sqlalchemy.exceptions import OperationalError, InvalidRequestError
+from sqlalchemy.exceptions import InvalidRequestError
 
 if __version__ < '0.5':
     NoResultFound = InvalidRequestError

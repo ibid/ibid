@@ -3,9 +3,9 @@ from random import choice
 import re
 from time import localtime, strftime, time
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, Index, or_
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import relation, eagerload
+from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
