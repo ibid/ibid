@@ -13,7 +13,7 @@ import logging
 import feedparser
 
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, BoolOption
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice, JSONException
 
@@ -44,12 +44,20 @@ def get_country_codes():
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
-    u"bash[.org] (random|<number>)"
+    u"bash[.org] [(random|<number>)]"
 
     feature = 'bash'
 
-    @match(r'^bash(?:\.org)?\s+(random|\d+)$')
+    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+
+    @match(r'^bash(?:\.org)?(?:\s+(random|\d+))?$')
     def bash(self, event, quote):
+        if not quote and event.public and not self.allow_public:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
+
+        quote = quote or u'random'
+
         soup = get_html_parse_tree('http://bash.org/?%s' % quote.lower())
 
         if quote.lower() == "random":
@@ -130,6 +138,8 @@ class FMyLife(Processor):
     api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
+    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+
     failure_messages = (
             u'Today, I tried to get a quote for %(nick)s but failed. FML',
             u'Today, FML is down. FML',
@@ -179,7 +189,10 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        self.fml(event, 'random')
+        if not event.public or self.allow_public:
+            self.fml(event, 'random')
+        else:
+            event.addresponse(u'Sorry, not in public. PM me')
 
 help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
 class TextsFromLastNight(Processor):
@@ -187,6 +200,8 @@ class TextsFromLastNight(Processor):
     tfln (worst|best) [(today|this week|this month)]"""
 
     feature = 'tfln'
+
+    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
 
     random_pool = []
 
@@ -201,6 +216,10 @@ class TextsFromLastNight(Processor):
             r'(?:\s+(random|worst|best|\d+))?'
             r'(?:this\s+)?(?:\s+(today|week|month))?$')
     def tfln(self, event, number, timeframe=None):
+        if not number and not timeframe and event.public and not self.allow_public:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
+
         number = number is None and u'random' or number.lower()
 
         if number in (u'worst', u'best'):
@@ -245,6 +264,8 @@ class MyLifeIsAverage(Processor):
 
     feature = 'mlia'
 
+    allow_public = BoolOption('allow_public', 'Allow random qutoes in public', True)
+
     random_pool = {}
     pages = {}
 
@@ -264,6 +285,10 @@ class MyLifeIsAverage(Processor):
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
+        if not query and event.public and not self.allow_public:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
+
         site = site.lower()
         query = query is None and u'random' or query.lower()
         url = {
