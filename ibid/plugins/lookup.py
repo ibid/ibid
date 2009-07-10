@@ -14,7 +14,7 @@ import logging
 import feedparser
 
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, BoolOption
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice
 
@@ -45,15 +45,23 @@ def get_country_codes():
 
 help['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
-    u"bash[.org] (random|<number>)"
+    u"bash[.org] [(random|<number>)]"
 
     feature = 'bash'
 
-    @match(r'^bash(?:\.org)?\s+(random|\d+)$')
-    def bash(self, event, id):
-        soup = get_html_parse_tree('http://bash.org/?%s' % id.lower())
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
-        if id.lower() == "random":
+    @match(r'^bash(?:\.org)?(?:\s+(random|\d+))?$')
+    def bash(self, event, id):
+        id = id is None and u'random' or id.lower()
+
+        if id == u'random' and event.public and not self.public_browse:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
+
+        soup = get_html_parse_tree('http://bash.org/?%s' % id)
+
+        if id == "random":
             number = u"".join(soup.find('p', 'quote').find('b').contents)
             event.addresponse(u'%s:', number)
 
@@ -131,6 +139,8 @@ class FMyLife(Processor):
     api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
+
     failure_messages = (
             u'Today, I tried to get a quote for %(nick)s but failed. FML',
             u'Today, FML is down. FML',
@@ -180,7 +190,10 @@ class FMyLife(Processor):
 
     @match(r'^fml$')
     def fml_default(self, event):
-        self.fml(event, 'random')
+        if not event.public or self.public_browse:
+            self.fml(event, 'random')
+        else:
+            event.addresponse(u'Sorry, not in public. PM me')
 
 help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
 class TextsFromLastNight(Processor):
@@ -188,6 +201,8 @@ class TextsFromLastNight(Processor):
     tfln (worst|best) [(today|this week|this month)]"""
 
     feature = 'tfln'
+
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
     random_pool = []
 
@@ -203,6 +218,11 @@ class TextsFromLastNight(Processor):
             r'(?:this\s+)?(?:\s+(today|week|month))?$')
     def tfln(self, event, number, timeframe=None):
         number = number is None and u'random' or number.lower()
+
+        if number == u'random' and not timeframe \
+                and event.public and not self.public_browse:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
 
         if number in (u'worst', u'best'):
             number += u'-nights'
@@ -246,6 +266,8 @@ class MyLifeIsAverage(Processor):
 
     feature = 'mlia'
 
+    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
+
     random_pool = {}
     pages = {}
 
@@ -265,8 +287,13 @@ class MyLifeIsAverage(Processor):
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
-        site = site.lower()
         query = query is None and u'random' or query.lower()
+
+        if query == u'random' and event.public and not self.public_browse:
+            event.addresponse(u'Sorry, not in public. PM me')
+            return
+
+        site = site.lower()
         url = {
                 'mlia': 'http://mylifeisaverage.com/',
                 'mlig': 'http://mylifeisg.com/',
