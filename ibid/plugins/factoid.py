@@ -4,7 +4,7 @@ import re
 from time import localtime, strftime, time
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exceptions import OperationalError
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
