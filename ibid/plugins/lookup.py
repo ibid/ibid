@@ -218,7 +218,7 @@ class TextsFromLastNight(Processor):
     def tfln(self, event, number, timeframe=None):
         number = number is None and u'random' or number.lower()
 
-        if numberi == u'random' and not timeframe \
+        if number == u'random' and not timeframe \
                 and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
