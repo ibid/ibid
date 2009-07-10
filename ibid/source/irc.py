@@ -1,3 +1,4 @@
+from collections import defaultdict
 from fnmatch import fnmatch
 from time import sleep
 import logging
@@ -27,6 +28,7 @@ class Ircbot(irc.IRCClient):
         self.factory.proto = self
         self.auth_callbacks = {}
         self.mode_prefixes = '@+'
+        self.channel_users = defaultdict(set)
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
         self.factory.log.info(u"Connected")
 
@@ -77,10 +79,10 @@ class Ircbot(irc.IRCClient):
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
-        event.sender['connection'] = unicode(user, 'utf-8', 'replace')
-        event.sender['id'] = unicode(nick, 'utf-8', 'replace')
+        event.sender['connection'] = user
+        event.sender['id'] = nick
         event.sender['nick'] = event.sender['id']
-        event.channel = unicode(channel, 'utf-8', 'replace')
+        event.channel = channel
         event.public = True
         event.source = self.factory.name
         return event
@@ -89,12 +91,12 @@ class Ircbot(irc.IRCClient):
         event = self._create_event(u'state', user, channel)
         event.state = action
         if message:
-            event.message = unicode(message, 'utf-8', 'replace')
+            event.message = message
         if kicker:
-            event.kicker = unicode(kicker, 'utf-8', 'replace')
+            event.kicker = kicker
             self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
         elif othername:
-            event.othername = unicode(othername, 'utf-8', 'replace')
+            event.othername = othername
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
@@ -107,6 +109,9 @@ class Ircbot(irc.IRCClient):
         self._message_event(u'action', user, channel, msg)
 
     def _message_event(self, msgtype, user, channel, msg):
+        user = unicode(user, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
@@ -121,20 +126,42 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def userJoined(self, user, channel):
+        user = unicode(user, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+        self.channel_users[channel].add(user)
         self._state_event(user, channel, u'online')
 
     def userLeft(self, user, channel):
+        user = unicode(user, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+        self.channel_users[channel].remove(user)
         self._state_event(user, channel, u'offline')
 
     def userRenamed(self, oldname, newname):
-        self._state_event(oldname, '', u'offline', othername=newname)
-        self._state_event(newame, '', u'online', othername=newname)
+        oldname = unicode(oldname, 'utf-8', 'replace')
+        newname = unicode(newname, 'utf-8', 'replace')
+        for channel in self.channel_users.keys():
+            if oldname in self.channel_users[channel]:
+                self.channel_users[channel].remove(oldname)
+                self._state_event(oldname, channel, u'offline', othername=newname)
+                self.channel_users[channel].add(newname)
+                self._state_event(newname, channel, u'online', othername=oldname)
 
     def userQuit(self, user, channel):
         # Channel contains the quit message
-        self._state_event(user, '', u'offline', message=channel)
+        user = unicode(user, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+        for channel in self.channel_users.keys():
+            if user in self.channel_users[channel]:
+                self.channel_users[channel].remove(user)
+                self._state_event(user, channel, u'offline', message=channel)
 
     def userKicked(self, kickee, channel, kicker, message):
+        kickee = unicode(kickee, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+        kicker = unicode(kicker, 'utf-8', 'replace')
+        message = unicode(message, 'utf-8', 'replace')
+        self.channel_users[channel].remove(kickee)
         self._state_event(kickee, channel, u'kicked', kicker, message)
 
     def respond(self, event):
@@ -187,14 +214,6 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
             self.do_auth_callback(params[1], False)
-
-    def joined(self, channel):
-        "I joined a channel"
-        self.factory.log.debug("Joined %s", channel)
-        self.names([channel])
-
-    def names(self, channels):
-        self.sendLine('NAMES %s' % ','.join(channels.decode('utf-8')))
 
     def irc_RPL_BOUNCE(self, prefix, params):
         # Broken in IrcClient :/
