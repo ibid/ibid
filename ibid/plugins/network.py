@@ -123,14 +123,14 @@ class IPCalc(Processor):
         code = ipcalc.wait()
         output = unicode_output(output)
 
-        return (code, output)
+        return (code, output, error)
 
     @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
     def ipcalc_netmask(self, event, address, netmask):
         address = address
         if netmask:
             address += u'/' + netmask
-        code, output = self.call_ipcalc([address])
+        code, output, error = self.call_ipcalc([address])
 
         if code == 0:
             if output.startswith(u'INVALID ADDRESS'):
@@ -156,7 +156,7 @@ class IPCalc(Processor):
 
     @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})\s*-\s*((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})$')
     def ipcalc_deggregate(self, event, frm, to):
-        code, output = self.call_ipcalc([frm, '-', to])
+        code, output, error = self.call_ipcalc([frm, '-', to])
 
         if code == 0:
             if output.startswith(u'INVALID ADDRESS'):

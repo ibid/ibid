@@ -16,7 +16,7 @@ import feedparser
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice, JSONException
+        cacheable_download, json_webservice
 
 log = logging.getLogger('plugins.lookup')
 
@@ -50,18 +50,18 @@ class Bash(Processor):
     feature = 'bash'
 
     @match(r'^bash(?:\.org)?\s+(random|\d+)$')
-    def bash(self, event, quote):
-        soup = get_html_parse_tree('http://bash.org/?%s' % quote.lower())
+    def bash(self, event, id):
+        soup = get_html_parse_tree('http://bash.org/?%s' % id.lower())
 
-        if quote.lower() == "random":
+        if id.lower() == "random":
             number = u"".join(soup.find('p', 'quote').find('b').contents)
             event.addresponse(u'%s:', number)
 
-        quote = soup.find('p', 'qt')
-        if not quote:
+        body = soup.find('p', 'qt')
+        if not body:
             event.addresponse(u"There's no such quote, but if you keep talking like that maybe there will be")
         else:
-            for line in quote.contents:
+            for line in body.contents:
                 line = unicode(line).strip()
                 if line != u'<br />':
                     event.addresponse(line)
@@ -160,7 +160,7 @@ class FMyLife(Processor):
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
         try:
-            quote = self.remote_get(id)
+            body = self.remote_get(id)
         except FMLException:
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
@@ -171,8 +171,8 @@ class FMyLife(Processor):
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
-        if quote:
-            event.addresponse(quote)
+        if body:
+            event.addresponse(body)
         elif id.isdigit():
             event.addresponse(u'No such quote')
         else:
@@ -195,8 +195,8 @@ class TextsFromLastNight(Processor):
         tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
         for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
             id = int(div.get('id').split('_', 1)[1])
-            quote = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
-            yield id, quote
+            message = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            yield id, message
 
     @match(r'^tfln'
             r'(?:\s+(random|worst|best|\d+))?'
@@ -213,18 +213,18 @@ class TextsFromLastNight(Processor):
 
         if number == u'random':
             if not self.random_pool:
-                self.random_pool = [quote for quote in self.get_tfln(number)]
+                self.random_pool = [message for message in self.get_tfln(number)]
                 shuffle(self.random_pool)
 
-            quote = self.random_pool.pop()
+            message = self.random_pool.pop()
         else:
             try:
-                quote = self.get_tfln(number).next()
+                message = self.get_tfln(number).next()
             except StopIteration:
                 event.addresponse(u'No such quote')
                 return
 
-        id, body = quote
+        id, body = message
         if len(body) > 1:
             event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
             for line in body:
@@ -277,26 +277,26 @@ class MyLifeIsAverage(Processor):
                 tree = get_html_parse_tree(
                         url + 'index.php?' + urlencode({'page': randint(1, self.pages.get(site, 1))}),
                         treetype='etree')
-                self.random_pool[site] = [quote for quote in self.find_stories(tree)]
+                self.random_pool[site] = [story for story in self.find_stories(tree)]
                 shuffle(self.random_pool[site])
 
                 pagination = [div for div in tree.findall('.//div') if div.get(u'class') == u'pagination'][0]
                 self.pages[site] = sorted(int(a.text) for a in pagination.findall('.//a') if a.text.isdigit())[-1]
 
-            quote = self.random_pool[site].pop()
+            story = self.random_pool[site].pop()
 
         else:
             try:
                 if query.isdigit():
-                    quote = self.find_stories(url + 'story.php?' + urlencode({'id': query})).next()
+                    story = self.find_stories(url + 'story.php?' + urlencode({'id': query})).next()
                 else:
-                    quote = self.find_stories(url + 'index.php?' + urlencode({'part': query})).next()
+                    story = self.find_stories(url + 'index.php?' + urlencode({'part': query})).next()
 
             except StopIteration:
                 event.addresponse(u'No such quote')
                 return
 
-        id, body = quote
+        id, body = story
         event.addresponse(u'%(url)sstory.php?id=%(id)i : %(body)s', {
             'url': url,
             'id': id,

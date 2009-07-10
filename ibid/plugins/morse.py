@@ -1,5 +1,3 @@
-import re
-
 from ibid.plugins import Processor, match
 
 help = {}

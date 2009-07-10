@@ -1,9 +1,7 @@
 import re
 from datetime import datetime
 import logging
-from urllib2 import urlopen, URLError
 from urlparse import urljoin
-from html5lib import HTMLParser, treebuilders
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 from sqlalchemy.sql import func

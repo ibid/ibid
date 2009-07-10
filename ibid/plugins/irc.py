@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 import logging
 
 import ibid
-from ibid.plugins import Processor, match, handler, authorise
+from ibid.plugins import Processor, match, authorise
 
 log = logging.getLogger('plugins.irc')
 

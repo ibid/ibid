@@ -1,7 +1,5 @@
 from cgi import parse_qs
-import htmlentitydefs
 from httplib import BadStatusLine
-import re
 from urllib import quote
 from urllib2 import urlopen, Request
 from urlparse import urlparse

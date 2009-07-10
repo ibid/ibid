@@ -1,6 +1,5 @@
 import logging
 from random import choice
-from time import sleep
 
 import ibid
 from ibid.plugins import Processor, match

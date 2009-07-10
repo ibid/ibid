@@ -1,5 +1,3 @@
-from socket import error
-
 from dictclient import Connection
 
 from ibid.plugins import Processor, match
