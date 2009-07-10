@@ -194,7 +194,7 @@ class TextsFromLastNight(Processor):
         tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
         for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
             id = int(div.get('id').split('_', 1)[1])
-            body = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            message = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
             yield id, message
 
     @match(r'^tfln'
