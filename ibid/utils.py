@@ -3,7 +3,6 @@ from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
 import os.path
-from pkg_resources import resource_exists, resource_string
 import re
 from StringIO import StringIO
 import time
@@ -134,7 +133,19 @@ def unicode_output(output, errors="strict"):
     return unicode(output, encoding, errors)
 
 def ibid_version():
-    return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+    version = 'unknown'
+    try:
+        from pkg_resources import get_distribution, DistributionNotFound
+        try:
+            package = get_distribution('Ibid')
+            if package and hasattr(package, 'version'):
+                version = package.version
+        except DistributionNotFound:
+            pass
+    except ImportError:
+        pass
+
+    return version
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"
