@@ -52,15 +52,15 @@ class Bash(Processor):
 
     @match(r'^bash(?:\.org)?(?:\s+(random|\d+))?$')
     def bash(self, event, quote):
-        if not quote and event.public and not self.public_browse:
+        quote = quote is None and u'random' or quote.lower()
+
+        if quote == u'random' and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
 
-        quote = quote or u'random'
+        soup = get_html_parse_tree('http://bash.org/?%s' % quote)
 
-        soup = get_html_parse_tree('http://bash.org/?%s' % quote.lower())
-
-        if quote.lower() == "random":
+        if quote == "random":
             number = u"".join(soup.find('p', 'quote').find('b').contents)
             event.addresponse(u'%s:', number)
 
@@ -216,11 +216,12 @@ class TextsFromLastNight(Processor):
             r'(?:\s+(random|worst|best|\d+))?'
             r'(?:this\s+)?(?:\s+(today|week|month))?$')
     def tfln(self, event, number, timeframe=None):
-        if not number and not timeframe and event.public and not self.public_browse:
+        number = number is None and u'random' or number.lower()
+
+        if numberi == u'random' and not timeframe \
+                and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
-
-        number = number is None and u'random' or number.lower()
 
         if number in (u'worst', u'best'):
             number += u'-nights'
@@ -285,12 +286,13 @@ class MyLifeIsAverage(Processor):
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
-        if not query and event.public and not self.public_browse:
+        query = query is None and u'random' or query.lower()
+
+        if query == u'random' and event.public and not self.public_browse:
             event.addresponse(u'Sorry, not in public. PM me')
             return
 
         site = site.lower()
-        query = query is None and u'random' or query.lower()
         url = {
                 'mlia': 'http://mylifeisaverage.com/',
                 'mlig': 'http://mylifeisg.com/',
