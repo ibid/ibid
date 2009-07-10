@@ -1,12 +1,11 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, PassiveDefault, __version__
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import text
-from sqlalchemy.exceptions import OperationalError, InvalidRequestError
+from sqlalchemy.exceptions import InvalidRequestError
 
 if __version__ < '0.5':
     NoResultFound = InvalidRequestError
@@ -61,6 +60,17 @@ class VersionedSchema(object):
             metadata.tables[dependancy].versioned_schema.upgrade_schema(sessionmaker)
 
         self.upgrade_session = session = sessionmaker()
+        self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
+
+        if self.table.name == 'schema':
+            if not session.bind.has_table(self.table.name):
+                metadata.bind = session.bind
+                self.table.create()
+
+                schema = Schema(unicode(self.table.name), self.version)
+                session.save_or_update(schema)
+                return
+            Schema.__table__ = self.get_reflected_model()
 
         schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).first()
 
@@ -74,7 +84,6 @@ class VersionedSchema(object):
                 session.save_or_update(schema)
 
             elif self.version > schema.version:
-                self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
                 for version in range(schema.version + 1, self.version + 1):
                     log.info(u"Upgrading table %s to version %i", self.table.name, version)
 
@@ -127,6 +136,12 @@ class VersionedSchema(object):
                 constraints.append(constraint)
 
         session.execute('ALTER TABLE "%s" ADD COLUMN %s %s;' % (table.name, description, " ".join(constraints)))
+
+    def add_index(self, col, unique=False):
+        "Add an index to the table"
+
+        Index('ix_%s_%s' % (self.table.name, col.name), col, unique=unique) \
+                .create(bind=self.upgrade_session.bind)
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
@@ -218,26 +233,15 @@ class VersionedSchema(object):
 class Schema(Base):
     __table__ = Table('schema', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('table', Unicode(32), unique=True, nullable=False),
+        Column('table', Unicode(32), unique=True, nullable=False, index=True),
         Column('version', Integer, nullable=False),
         useexisting=True)
 
-    # Upgrades to this table are probably going to be tricky
     class SchemaSchema(VersionedSchema):
-        def upgrade_schema(self, sessionmaker):
-            session = sessionmaker()
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.table, unique=True)
 
-            if not session.bind.has_table(self.table.name):
-                metadata.bind = session.bind
-                self.table.create()
-
-                schema = Schema(unicode(self.table.name), self.version)
-                session.save_or_update(schema)
-
-            session.commit()
-            session.close()
-
-    __table__.versioned_schema = SchemaSchema(__table__, 1)
+    __table__.versioned_schema = SchemaSchema(__table__, 2)
     
     def __init__(self, table, version=0):
         self.table = table
@@ -249,14 +253,20 @@ class Schema(Base):
 class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id')),
-        Column('source', Unicode(16), nullable=False),
-        Column('identity', Unicode(64), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
+        Column('source', Unicode(16), nullable=False, index=True),
+        Column('identity', Unicode(64), nullable=False, index=True),
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class IdentitySchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.identity)
+
+    __table__.versioned_schema = IdentitySchema(__table__, 2)
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -269,13 +279,18 @@ class Identity(Base):
 class Attribute(Base):
     __table__ = Table('account_attributes', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('name', Unicode(32), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('name', Unicode(32), nullable=False, index=True),
         Column('value', Unicode(128), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class AttributeSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.name)
+
+    __table__.versioned_schema = AttributeSchema(__table__, 2)
 
     def __init__(self, name, value):
         self.name = name
@@ -287,13 +302,19 @@ class Attribute(Base):
 class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('source', Unicode(16)),
-        Column('method', Unicode(16), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('source', Unicode(16), index=True),
+        Column('method', Unicode(16), nullable=False, index=True),
         Column('credential', Unicode(256), nullable=False),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class CredentialSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.method)
+
+    __table__.versioned_schema = CredentialSchema(__table__, 2)
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id
@@ -304,13 +325,18 @@ class Credential(Base):
 class Permission(Base):
     __table__ = Table('permissions', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False),
-        Column('name', Unicode(16), nullable=False),
+        Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
+        Column('name', Unicode(16), nullable=False, index=True),
         Column('value', Unicode(4), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class PermissionSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.account_id)
+            self.add_index(self.table.c.name)
+
+    __table__.versioned_schema = PermissionSchema(__table__, 2)
 
     def __init__(self, name=None, value=None):
         self.name = name
@@ -319,10 +345,14 @@ class Permission(Base):
 class Account(Base):
     __table__ = Table('accounts', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('username', Unicode(32), unique=True, nullable=False),
+        Column('username', Unicode(32), unique=True, nullable=False, index=True),
         useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class AccountSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.username, unique=True)
+
+    __table__.versioned_schema = AccountSchema(__table__, 2)
 
     identities = relation(Identity, backref='account', cascade='all')
     attributes = relation(Attribute, cascade='all, delete-orphan')

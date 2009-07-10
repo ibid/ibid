@@ -23,15 +23,21 @@ log = logging.getLogger('plugins.memo')
 class Memo(Base):
     __table__ = Table('memos', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('from_id', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('to_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('from_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('to_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('memo', UnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
-    Column('delivered', Boolean, nullable=False),
+    Column('delivered', Boolean, nullable=False, index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class MemoSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.from_id)
+            self.add_index(self.table.c.to_id)
+            self.add_index(self.table.c.delivered)
+
+    __table__.versioned_schema = MemoSchema(__table__, 2)
 
     def __init__(self, from_id, to_id, memo, private=False):
         self.from_id = from_id

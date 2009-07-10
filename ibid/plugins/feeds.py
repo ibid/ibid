@@ -1,9 +1,7 @@
 import re
 from datetime import datetime
 import logging
-from urllib2 import urlopen, URLError
 from urlparse import urljoin
-from html5lib import HTMLParser, treebuilders
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 from sqlalchemy.sql import func
@@ -21,13 +19,18 @@ log = logging.getLogger('plugins.feeds')
 class Feed(Base):
     __table__ = Table('feeds', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(32), unique=True, nullable=False),
+    Column('name', Unicode(32), unique=True, nullable=False, index=True),
     Column('url', UnicodeText, nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class FeedSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.name, unique=True)
+            self.add_index(self.table.c.identity_id)
+
+    __table__.versioned_schema = FeedSchema(__table__, 2)
     
     feed = None
     entries = None

@@ -3,8 +3,9 @@ from random import choice
 import re
 from time import localtime, strftime, time
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, Index, or_
-from sqlalchemy.orm import relation, eagerload
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
@@ -27,20 +28,28 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False, unique=True),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id')),
+    Column('name', Unicode(128), nullable=False, unique=True, index=True),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
+    Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
     class FactoidNameSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
         def upgrade_2_to_3(self):
-            Index('name', self.table.c.name, unique=True).create(bind=self.upgrade_session.bind)
+            self.add_index(self.table.c.name, unique=True)
+        def upgrade_3_to_4(self):
+            try:
+                self.add_index(self.table.c.name, unique=True)
+            except OperationalError:
+                pass
+            self.add_index(self.table.c.factoid_id)
+            self.add_index(self.table.c.identity_id)
+            self.add_index(self.table.c.factpack)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 3)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 4)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -55,17 +64,21 @@ class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('value', UnicodeText, nullable=False),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id')),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
+    Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
     class FactoidValueSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+        def upgrade_2_to_3(self):
+            self.add_index(self.table.c.factoid_id)
+            self.add_index(self.table.c.identity_id)
+            self.add_index(self.table.c.factpack)
 
-    __table__.versioned_schema = FactoidValueSchema(__table__, 2)
+    __table__.versioned_schema = FactoidValueSchema(__table__, 3)
 
     def __init__(self, value, identity_id, factoid_id=None, factpack=None):
         self.value = value
@@ -80,10 +93,8 @@ class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
-    Column('factpack', Integer, ForeignKey('factpacks.id')),
+    Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
-
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
 
     names = relation(FactoidName, cascade='all,delete', backref='factoid')
     values = relation(FactoidValue, cascade='all,delete', backref='factoid')
@@ -91,8 +102,10 @@ class Factoid(Base):
     class FactoidSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+        def upgrade_2_to_3(self):
+            self.add_index(self.table.c.factpack)
 
-    __table__.versioned_schema = FactoidSchema(__table__, 2)
+    __table__.versioned_schema = FactoidSchema(__table__, 3)
 
     def __init__(self, factpack=None):
         self.factpack = factpack
@@ -103,10 +116,14 @@ class Factoid(Base):
 class Factpack(Base):
     __table__ = Table('factpacks', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64), nullable=False, unique=True),
+    Column('name', Unicode(64), nullable=False, unique=True, index=True),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class FactpackSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.name, unique=True)
+
+    __table__.versioned_schema = FactpackSchema(__table__, 2)
 
     def __init__(self, name):
         self.name = name

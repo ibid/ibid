@@ -18,16 +18,21 @@ help = {'seen': u'Records when people were last seen.'}
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
-    Column('type', Unicode(8), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('type', Unicode(8), nullable=False, index=True),
     Column('channel', Unicode(32)),
     Column('value', UnicodeText),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
+    
+    class SightingSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.identity_id)
+            self.add_index(self.table.c.type)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    __table__.versioned_schema = SightingSchema(__table__, 2)
 
     identity = relation('Identity')
 

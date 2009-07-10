@@ -8,7 +8,6 @@ import ibid
 from ibid.source import IbidSourceFactory
 from ibid.config import IntOption
 from ibid.event import Event
-from ibid.config import IntOption
 
 class TelnetProtocol(telnet.StatefulTelnetProtocol):
 

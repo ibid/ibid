@@ -5,7 +5,6 @@ import gobject
 import dbus
 import dbus.service
 import dbus.mainloop.glib
-import traceback, sys
 
 class SomeObject(dbus.service.Object):
     @dbus.service.method("org.ibid.IbidInterface", in_signature='s', out_signature='s')
