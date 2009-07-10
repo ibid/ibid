@@ -26,6 +26,7 @@ class Ircbot(irc.IRCClient):
         self.factory.resetDelay()
         self.factory.proto = self
         self.auth_callbacks = {}
+        self.mode_prefixes = '@+'
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
         self.factory.log.info(u"Connected")
 
@@ -186,6 +187,36 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
             self.do_auth_callback(params[1], False)
+
+    def joined(self, channel):
+        "I joined a channel"
+        self.factory.log.debug("Joined %s", channel)
+        self.names([channel])
+
+    def names(self, channels):
+        self.sendLine('NAMES %s' % ','.join(channels.decode('utf-8')))
+
+    def irc_RPL_BOUNCE(self, prefix, params):
+        # Broken in IrcClient :/
+        # 005 is doubly assigned.  Piece of crap dirty trash protocol.
+        if params[-1] in ('are available on this server', 'are supported by this server'):
+            self.isupport(params[1:-1])
+        else:
+            self.bounce(params[1])
+
+    def isupport(self, options):
+        "Server supports message"
+        for option in options:
+            if option.startswith('PREFIX='):
+                self.mode_prefixes = option.split(')', 1)[1]
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2]
+        for user in params[3].split():
+            if user[0] in self.mode_prefixes:
+                user = user[1:]
+            if user != self.nickname:
+                self.userJoined(user, channel)
 
     def ctcpQuery_VERSION(self, user, channel, data):
         nick = user.split("!")[0]
