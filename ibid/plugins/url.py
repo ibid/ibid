@@ -1,4 +1,5 @@
 from datetime import datetime
+from httplib import BadStatusLine
 from urllib import urlencode
 from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPBasicAuthHandler, install_opener
 import logging
@@ -34,31 +35,28 @@ class URL(Base):
         self.time = datetime.now()
 
 class Delicious(object):
-
-    at_re  = re.compile(r'@\S+?\.')
-    ip_re  = re.compile(r'\.IP$|unaffiliated')
-    con_re = re.compile(r'!n=|!')
-
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
-        date  = datetime.now()
+        date  = datetime.utcnow()
         title = self._get_title(url)
 
-        connection_body = self.con_re.split(event.sender['connection'])
+        con_re = re.compile(r'!n=|!')
+        connection_body = con_re.split(event.sender['connection'])
         if len(connection_body) == 1:
             connection_body.append(event.sender['connection'])
 
-        if self.ip_re.search(connection_body[1]) != None:
+        ip_re  = re.compile(r'\.IP$|unaffiliated')
+        if ip_re.search(connection_body[1]) != None:
             connection_body[1] = ''
 
         if ibid.sources[event.source].type == 'jabber':
             obfusc_conn = ''
             obfusc_chan = event.channel.replace('@', '^')
         else:
-            obfusc_conn = self.at_re.sub('^', connection_body[1])
-            obfusc_chan = self.at_re.sub('^', event.channel)
-
+            at_re  = re.compile(r'@\S+?\.')
+            obfusc_conn = at_re.sub('^', connection_body[1])
+            obfusc_chan = at_re.sub('^', event.channel)
 
         tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
 
@@ -67,18 +65,22 @@ class Delicious(object):
             'description' : title,
             'tags' : tags,
             'replace' : u'yes',
-            'dt' : date,
+            'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'extended' : event.message['raw'],
             }
 
         self._set_auth(username,password)
         posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
-        resp = urlopen(posturl).read()
-        if 'done' in resp:
-            log.info(u"Successfully posted url %s to delicious, posted in channel %s by nick %s at time %s",
-                     url, event.channel, event.sender['nick'], date)
-        else:
-            log.error(u"Error posting url %s to delicious: %s", url, resp)
+
+        try:
+            resp = urlopen(posturl).read()
+            if 'done' in resp:
+                log.debug(u"Posted url '%s' to delicious, posted in %s on %s by %s/%i (%s)",
+                         url, event.channel, event.source, event.account, event.identity, event.sender['connection'])
+            else:
+                log.error(u"Error posting url '%s' to delicious: %s", url, resp)
+        except BadStatusLine, e:
+            log.error(u"Error posting url '%s' to delicious: %s", url, unicode(e))
 
     def _get_title(self, url):
         "Gets the title of a page"
@@ -99,9 +101,9 @@ class Delicious(object):
         install_opener(opener)
 
 class Grab(Processor):
-
     addressed = False
     processed = True
+
     username  = Option('delicious_username', 'delicious account name')
     password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
