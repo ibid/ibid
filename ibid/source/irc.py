@@ -93,7 +93,7 @@ class Ircbot(irc.IRCClient):
             event.kicker = unicode(kicker, 'utf-8', 'replace')
             self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
         elif othername:
-            event.othername = othername
+            event.othername = unicode(othername, 'utf-8', 'replace')
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
