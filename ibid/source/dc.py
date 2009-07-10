@@ -7,15 +7,15 @@ from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 from twisted.internet import protocol
 from twisted.application import internet
-from pkg_resources import resource_exists, resource_string
 
 import ibid
 from ibid.config import Option, IntOption, BoolOption, FloatOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+from ibid.utils import ibid_version
 
 class DCBot(dcwords.DCClient):
-    version = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or 'dev'
+    version = ibid_version() or 'dev'
     client = 'Ibid' 
 
     def connectionMade(self):
