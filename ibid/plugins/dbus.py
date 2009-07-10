@@ -5,6 +5,7 @@ import ibid
 from ibid.plugins import Processor
 
 class Proxy(Processor):
+    autoload = False
 
     def __init__(self, name):
         Module.__init__(self, name)

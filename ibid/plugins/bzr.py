@@ -46,6 +46,7 @@ class Bazaar(Processor, RPC):
     u"""(last commit|commit <revno>) [to <repo>] [full]
     repositories"""
     feature = 'bzr'
+    autoload = False
 
     datetime_format = Option('datetime_format', 'Format string for dates', 'on %Y/%m/%d at %H:%M:%S')
     repositories = Option('repositories', 'Dict of repository names and URLs')

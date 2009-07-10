@@ -11,6 +11,7 @@ help = {'buildbot': u'Displays buildbot build results and triggers builds.'}
 class BuildBot(Processor, RPC):
     u"""rebuild <branch> [ (revision|r) <number> ]"""
     feature = 'buildbot'
+    autoload = False
 
     server = Option('server', 'Buildbot server hostname', 'localhost')
     status_port = IntOption('status_port', 'Buildbot server port number', 9988)

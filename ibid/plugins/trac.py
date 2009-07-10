@@ -15,15 +15,17 @@ help = {'trac': u'Retrieves tickets from a Trac database.'}
 class Ticket(object):
     pass
 
-session = ibid.databases.trac()
-metadata = MetaData(bind=ibid.databases.trac().bind)
-ticket_table = Table('ticket', metadata, autoload=True)
-mapper(Ticket, ticket_table)
+if 'trac' in ibid.databases:
+    session = ibid.databases.trac()
+    metadata = MetaData(bind=ibid.databases.trac().bind)
+    ticket_table = Table('ticket', metadata, autoload=True)
+    mapper(Ticket, ticket_table)
     
 class Tickets(Processor, RPC):
     u"""ticket <number>
     (open|my|<who>'s) tickets"""
     feature = 'trac'
+    autoload = 'trac' in ibid.databases
 
     url = Option('url', 'URL of Trac instance')
     source = Option('source', 'Source to send commit notifications to')

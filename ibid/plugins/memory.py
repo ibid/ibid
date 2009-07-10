@@ -28,6 +28,7 @@ def get_memusage():
 class MemoryLog(Processor):
     
     feature = 'memory'
+    autoload = False
 
     mem_filename = Option('mem_filename', 'Memory log filename', 'logs/memory.log')
     mem_interval = IntOption('mem_interval', 'Interval between memory stat logging', 0)
