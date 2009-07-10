@@ -31,7 +31,8 @@ class Log(Processor):
             u'%(timestamp)s -%(sender_nick)s- %(message)s')
     presence_format = Option('presence_format', 'Format string for presence events',
             u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) is now %(state)s')
-
+    rename_format = Option('rename_format', 'Format string for rename events',
+            u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) has renamed to %(new_nick)s')
     logs = {}
 
     def get_logfile(self, event):
@@ -73,6 +74,12 @@ class Log(Processor):
                     'notice': self.notice_format,
                 }[event.type]
 
+            # We get two events on a rename, ignore one of them
+            if event.type == 'state' and hasattr(event, 'othername'):
+                if event.state == 'online':
+                    return
+                format = self.rename_format
+
             fields = {
                     'source': event.source,
                     'channel': event.channel,
@@ -85,7 +92,10 @@ class Log(Processor):
             }
 
             if event.type == 'state':
-                fields['state'] = event.state
+                if hasattr(event, 'othername'):
+                    fields['new_nick'] = event.othername
+                else:
+                    fields['state'] = event.state
             elif isinstance(event.message, dict):
                 fields['message'] = event.message['raw']
             else:

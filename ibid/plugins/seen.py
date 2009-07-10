@@ -52,7 +52,7 @@ class See(Processor):
     priority = 1500
 
     def process(self, event):
-        if event.type != 'message' and event.type != 'state':
+        if event.type not in ('message', 'state'):
             return
 
         sighting = event.session.query(Sighting) \
