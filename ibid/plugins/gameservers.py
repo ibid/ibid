@@ -21,30 +21,32 @@ class Bnet(Processor):
     bnet_user = Option('bnet_user', 'Bnet username', 'guest')
     bnet_pass = Option('bnet_pass', 'Bnet password', 'guest')
 
-    player_re = re.compile(r'^1018 INFO "\s+bnet\s+W3XP\s+"(\S+?)"?\s+\d+\s+\S+\s+\S+"$')
+    def bnet_players(self, gametype):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.bnet_host, self.bnet_port))
+        s.settimeout(5)
+        s.send('\03%s\n%s\n/con\n/quit\n' % (self.bnet_user, self.bnet_pass))
+
+        out = ""
+        while (True):
+            line = s.recv(1024)
+            if line == "":
+                break
+            out += line
+
+        s.close()
+
+        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+\S+\s+\S+"$' % gametype)
+        users = [player_re.match(line).group(1) for line in out.splitlines() if self.player_re.match(line)]
+        users.sort()
+
     @match(r'^(?:dota\s+players|who(?:\'s|\s+is)\s+(?:playing\s+dota|on\s+bnet))$')
-    def players(self, event):
+    def dota_players(self, event):
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((self.bnet_host, self.bnet_port))
-            s.settimeout(5)
-            s.send('\03%s\n%s\n/con\n/quit\n' % (self.bnet_user, self.bnet_pass))
-
-            out = ""
-            while (True):
-                line = s.recv(1024)
-                if line == "":
-                    break
-                out += line
-
-            s.close()
+            users = self.bnet_players('W3XP')
         except socket.error:
             event.addresponse(u"Sorry, I couldn't contact the server. Maybe it's down")
             return
-
-        users = [self.player_re.match(line).group(1) for line in out.splitlines() if self.player_re.match(line)]
-        users.sort()
-
         if users:
             event.addresponse(u'The battlefield contains %s', u', '.join(users))
         else:
