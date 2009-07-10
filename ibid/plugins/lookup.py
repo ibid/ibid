@@ -548,16 +548,16 @@ help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
 class TVShow(Processor):
     u"""tvshow <show>"""
 
-    feature = "tvshow"
+    feature = 'tvshow'
         
     def remote_tvrage(self, show):
-        info_url = "http://services.tvrage.com/tools/quickinfo.php?%s"
+        info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
         
         info = urlopen(info_url % urlencode({'show': show.encode('utf-8')}))
         
         info = info.read()
-        info = info.decode("ISO-8859-1")
-        if info.startswith("No Show Results Were Found"):
+        info = info.decode('utf-8')
+        if info.startswith('No Show Results Were Found'):
             return
         info = info[5:].splitlines()        
         show_info = [i.split('@', 1) for i in info]
@@ -567,16 +567,16 @@ class TVShow(Processor):
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
         show_dict = defaultdict(lambda: 'None', show_info)
 
-        for field in ("Latest Episode", "Next Episode"):
+        for field in ('Latest Episode', 'Next Episode'):
             if field in show_dict:
-                format_from = "%b/%d/%Y"
-                format_to = "%d %B %Y"
-                ep, name, date = show_dict[field].split("^", 2)
-                if date.count("/") < 2:
-                    format_from = "%b/%Y"
-                    format_to = "%B %Y"
+                format_from = '%b/%d/%Y'
+                format_to = '%d %B %Y'
+                ep, name, date = show_dict[field].split('^', 2)
+                if date.count('/') < 2:
+                    format_from = '%b/%Y'
+                    format_to = '%B %Y'
                 date = strftime(format_to, strptime(date, format_from))
-                show_dict[field] = '%s - "%s" - %s' % (ep, name, date)        
+                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
         return show_dict
     
     @match(r'^tv\s*show\s+(.+)$')
