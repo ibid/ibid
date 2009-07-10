@@ -7,6 +7,7 @@ from datetime import datetime
 from random import choice
 from simplejson import loads
 from xml.etree.cElementTree import parse
+from collections import defaultdict
 import re
 import logging
 
@@ -552,7 +553,7 @@ class TVShow(Processor):
     def remote_tvrage(self, show):
         info_url = "http://services.tvrage.com/tools/quickinfo.php?%s"
         
-        info = urlopen(info_url % urlencode({'show': show}))
+        info = urlopen(info_url % urlencode({'show': show.encode('utf-8')}))
         
         info = info.read()
         info = info.decode("ISO-8859-1")
@@ -564,37 +565,32 @@ class TVShow(Processor):
 
         #check if there are actual airdates for Latest and Next Episode. None for Next
         #Episode does not neccesarily mean it is nor airing, just the date is unconfirmed.
-        for field in ("Latest Episode", "Next Episode", "Show Name", "Premiered", \
-                        "Airtime", "Network", "Genres", "Status", "Show URL"):
+        show_dict = defaultdict(lambda: 'None', show_info)
+
+        for field in ("Latest Episode", "Next Episode"):
             if field in show_dict:
-                if field in ("Latest Episode", "Next Episode"):
-                    format_b = "%b/%d/%Y"
-                    format_a = "%d %B %Y"
-                    ep, name, date = show_dict[field].split("^", 2)
-                    if date.count("/") < 2:
-                        format_b = "%b/%Y"
-                        format_a = "%B %Y"
-                    date = strftime(format_a, strptime(date, format_b))
-                    show_dict[field] = '%s - "%s" - %s' %(ep, name, date)
-                else:
-                    pass
-            else:
-                show_dict[field] = "None"
-        
+                format_from = "%b/%d/%Y"
+                format_to = "%d %B %Y"
+                ep, name, date = show_dict[field].split("^", 2)
+                if date.count("/") < 2:
+                    format_from = "%b/%Y"
+                    format_to = "%B %Y"
+                date = strftime(format_to, strptime(date, format_from))
+                show_dict[field] = '%s - "%s" - %s' % (ep, name, date)        
         return show_dict
     
-    @match(r'^tvshow\s+(.+)$')
+    @match(r'^tv\s*show\s+(.+)$')
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
         
-        message = u"Show: %(Show Name)s. Premiered: %(Premiered)s. " \
-                    u"Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. " \
-                    u"Airtime: %(Airtime)s on %(Network)s.  Genres: %(Genres)s. " \
-                    u"Status: %(Status)s. - %(Show URL)s"
+        message = u'Show: %(Show Name)s. Premiered: %(Premiered)s. ' \
+                    u'Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. ' \
+                    u'Airtime: %(Airtime)s on %(Network)s. Genres: %(Genres)s. ' \
+                    u'Status: %(Status)s. - %(Show URL)s'
                     
         if not retr_info:
-            message = u"I'm sorry, but no show results were found for '%(show)s'."
-            retr_info = dict([('show', show)])
+            event.addresponse(u"I can't find anything out about '%s'", show)
+            return
         
         event.addresponse(message, retr_info)
 
