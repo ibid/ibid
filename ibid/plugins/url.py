@@ -112,7 +112,7 @@ class Grab(Processor):
     password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
 
-    @match(r'((?:\S+://|(?:www|ftp)\.)\S+|\S+\.(?:com|org|net|za)\S*)')
+    @match(r'(?:[^@]\b|\A|<)((?:\S+://|(?:www|ftp)\.)\S+|[^@\s]+\.(?:com|org|net|za)\S*?)(?:>|\b|Z)')
     def grab(self, event, url):
         if url.find('://') == -1:
             if url.lower().startswith('ftp'):
