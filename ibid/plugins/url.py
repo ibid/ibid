@@ -22,11 +22,15 @@ class URL(Base):
     Column('id', Integer, primary_key=True),
     Column('url', UnicodeText, nullable=False),
     Column('channel', Unicode(32), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
-    __table__.versioned_schema = VersionedSchema(__table__, 1)
+    class URLSchema(VersionedSchema):
+        def upgrade_1_to_2(self):
+            self.add_index(self.table.c.identity_id)
+
+    __table__.versioned_schema = URLSchema(__table__, 2)
 
     def __init__(self, url, channel, identity_id):
         self.url = url
