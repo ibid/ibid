@@ -5,10 +5,10 @@ from sys import version_info
 from setuptools import setup
 
 install_requires=[
-    'imdbpy',
     'dnspython',
     'feedparser',
     'wokkel==0.4',
+    'SOAPpy',
     'pyopenssl',
     'pysqlite',
     'jinja',
@@ -34,7 +34,13 @@ setup(
     license='MIT',
     py_modules=['ibid'],
     install_requires=install_requires,
-    dependency_links=['http://wokkel.ik.nu/downloads'],
+    extras_require = {
+        'imdb': ['imdbpy'],
+    },
+    dependency_links=[
+        'http://ibid.omnia.za.net/eggs/',
+        'http://wokkel.ik.nu/downloads',
+    ],
     packages=['ibid', 'tracibid', 'lib', 'twisted', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
