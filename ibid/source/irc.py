@@ -84,7 +84,7 @@ class Ircbot(irc.IRCClient):
         event.source = self.factory.name
         return event
 
-    def _state_event(self, user, channel, action, kicker=None, message=None):
+    def _state_event(self, user, channel, action, kicker=None, message=None, othername=None):
         event = self._create_event(u'state', user, channel)
         event.state = action
         if message:
@@ -92,8 +92,8 @@ class Ircbot(irc.IRCClient):
         if kicker:
             event.kicker = unicode(kicker, 'utf-8', 'replace')
             self.factory.log.debug(u"%s has been kicked from %s by %s (%s)", event.sender['id'], event.channel, event.kicker, event.message)
-        else:
-            self.factory.log.debug(u"%s has %s %s", user, action, channel)
+        elif othername:
+            event.othername = othername
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def privmsg(self, user, channel, msg):
@@ -124,6 +124,10 @@ class Ircbot(irc.IRCClient):
 
     def userLeft(self, user, channel):
         self._state_event(user, channel, u'offline')
+
+    def userRenamed(self, oldname, newname):
+        self._state_event(oldname, '', u'offline', othername=newname)
+        self._state_event(newame, '', u'online', othername=newname)
 
     def userQuit(self, user, channel):
         # Channel contains the quit message
