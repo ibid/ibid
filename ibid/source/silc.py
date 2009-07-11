@@ -160,6 +160,8 @@ class SilcBot(SilcClient):
 
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
         self.channels[name] = channel
+        for user in users:
+            self._state_event(user, channel, u'online')
 
     def disconnect(self):
         self.command_call('QUIT')
