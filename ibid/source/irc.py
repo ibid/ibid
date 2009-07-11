@@ -28,7 +28,6 @@ class Ircbot(irc.IRCClient):
         self.factory.proto = self
         self.auth_callbacks = {}
         self.mode_prefixes = '@+'
-        self.channel_users = defaultdict(set)
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
         self.factory.log.info(u"Connected")
 
@@ -128,40 +127,30 @@ class Ircbot(irc.IRCClient):
     def userJoined(self, user, channel):
         user = unicode(user, 'utf-8', 'replace')
         channel = unicode(channel, 'utf-8', 'replace')
-        self.channel_users[channel].add(user)
         self._state_event(user, channel, u'online')
 
     def userLeft(self, user, channel):
         user = unicode(user, 'utf-8', 'replace')
         channel = unicode(channel, 'utf-8', 'replace')
-        self.channel_users[channel].remove(user)
         self._state_event(user, channel, u'offline')
 
     def userRenamed(self, oldname, newname):
         oldname = unicode(oldname, 'utf-8', 'replace')
         newname = unicode(newname, 'utf-8', 'replace')
-        for channel in self.channel_users.keys():
-            if oldname in self.channel_users[channel]:
-                self.channel_users[channel].remove(oldname)
-                self._state_event(oldname, channel, u'offline', othername=newname)
-                self.channel_users[channel].add(newname)
-                self._state_event(newname, channel, u'online', othername=oldname)
+        self._state_event(oldname, None, u'offline', othername=newname)
+        self._state_event(newname, None, u'online', othername=oldname)
 
     def userQuit(self, user, channel):
         # Channel contains the quit message
         user = unicode(user, 'utf-8', 'replace')
         channel = unicode(channel, 'utf-8', 'replace')
-        for channel in self.channel_users.keys():
-            if user in self.channel_users[channel]:
-                self.channel_users[channel].remove(user)
-                self._state_event(user, channel, u'offline', message=channel)
+        self._state_event(user, None, u'offline', message=channel)
 
     def userKicked(self, kickee, channel, kicker, message):
         kickee = unicode(kickee, 'utf-8', 'replace')
         channel = unicode(channel, 'utf-8', 'replace')
         kicker = unicode(kicker, 'utf-8', 'replace')
         message = unicode(message, 'utf-8', 'replace')
-        self.channel_users[channel].remove(kickee)
         self._state_event(kickee, channel, u'kicked', kicker, message)
 
     def respond(self, event):
