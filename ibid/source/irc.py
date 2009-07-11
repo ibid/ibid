@@ -167,6 +167,7 @@ class Ircbot(irc.IRCClient):
 
         if 'action' in response and response['action']:
             # We can't use self.me() because it prepends a # onto channel names
+            # See http://twistedmatrix.com/trac/ticket/3910
             self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
             self.factory.log.debug(u"Sent action to %s: %s", target, message)
         elif 'notice' in response and response['notice']:
@@ -206,7 +207,7 @@ class Ircbot(irc.IRCClient):
 
     def irc_RPL_BOUNCE(self, prefix, params):
         # Broken in IrcClient :/
-        # 005 is doubly assigned.  Piece of crap dirty trash protocol.
+        # See http://twistedmatrix.com/trac/ticket/3285
         if params[-1] in ('are available on this server', 'are supported by this server'):
             self.isupport(params[1:-1])
         else:
