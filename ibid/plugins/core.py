@@ -201,4 +201,21 @@ class UnicodeWarning(Processor):
         elif isinstance(object, str):
             self.log.warning(u'Found a non-unicode string: %s' % object)
 
+class ChannelTracker(Processor):
+    priority = -1550
+    addressed = False
+    event_types = ('state',)
+
+    @handler
+    def track(self, event):
+        if event.public:
+            if event.state == 'online':
+                ibid.channels[event.source][event.channel].add(event.identity)
+            elif event.state == 'offline':
+                if event.channel:
+                    ibid.channels[event.source][event.channel].remove(event.identity)
+                else:
+                    for channel in ibid.channels[event.source].values():
+                        channel.remove(event.identity)
+
 # vi: set et sta sw=4 ts=4:

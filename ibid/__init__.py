@@ -1,5 +1,6 @@
 import logging
 import logging.config
+from collections import defaultdict
 from os import makedirs
 from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
@@ -32,6 +33,7 @@ auth = None
 service = None
 options = {}
 rpc = {}
+channels = defaultdict(lambda: defaultdict(set))
 
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')
