@@ -2,7 +2,7 @@ from random import shuffle, choice
 import ibid
 import logging
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option
+from ibid.config import Option, IntOption, BoolOption
 from collections import defaultdict
 
 log = logging.getLogger('plugins.werewolf')
@@ -16,8 +16,16 @@ class WerewolfGame (Processor):
 
     player_limit = IntOption('min_players', 'the minimum number of players', 5)
     addressed = BoolOption('addressed', 'messages must be addressed to bot', False)
+    players_per_wolf = IntOption('players_per_wolf',
+                                'number of players to each wolf/seer',
+                                4)
+    seer_delay = IntOption('seer_delay',
+                            'number of players between extra wolf and extra seer',
+                            4)
 
-    @match(r"^(?:start|play|begin)\s+werewolf$")
+    event_types = ('message', 'action')
+
+    @match(r"^(?:start|play|begin)s?\b.*werewolf$")
     def prestart (self, event):
         """Initiate a game.
 
@@ -43,7 +51,7 @@ class WerewolfGame (Processor):
         log.debug("Starting game.")
         self.timed_goto(event, 60, self.start)
 
-    @match(r"^join$")
+    @match(r"^joins?\b")
     def join (self, event):
         if self.state != self.prestart:
             log.debug("Not joining: already in state %s." % self.state)
@@ -51,7 +59,7 @@ class WerewolfGame (Processor):
         
         if event.sender['nick'] not in self.players:
             self.players.add(event.sender['nick'])
-            event.addresponse({'reply': _("Player %(player)s has joined "
+            event.addresponse({'reply': _("%(player)s has joined "
                                         "(%(num)i players).") %
                                         {'num': len(self.players),
                                         'player': event.sender['nick']},
@@ -66,7 +74,7 @@ class WerewolfGame (Processor):
         
         self.state = self.start
 
-        if players < self.player_limit:
+        if len(self.players) < self.player_limit:
             event.addresponse(_("Not enough players. Try again later."))
             self.state = None
             return
@@ -77,8 +85,11 @@ class WerewolfGame (Processor):
 
         self.players = list(self.players)
         shuffle(self.players)
-        self.wolves = self.players[:1]
-        self.seers = self.players[1:2]
+
+        nwolves = max(1, len(self.players)//self.players_per_wolf)
+        nseers = max(1, (len(self.players)-self.seer_delay)//self.players_per_wolf)
+        self.wolves = self.players[:nwolves]
+        self.seers = self.players[nwolves:nwolves+nseers]
 
         self.roles = dict((player, 'villager') for player in self.players)
         del self.players
@@ -94,6 +105,13 @@ class WerewolfGame (Processor):
                                     {'name': player, 'role': _(role)},
                                 'target': player,
                                 'notice': True})
+
+        if nwolves > 1:
+            event.addresponse(_("This game has %(wolves)i wolves.") %
+                                {'wolves': nwolves})
+        if nseers > 1:
+            event.addresponse(_("This game has %(seers)i seers.") %
+                                {'wolves': nseers})
 
         self.timed_goto(event, 10, self.night)
 
@@ -118,7 +136,7 @@ class WerewolfGame (Processor):
 
         self.timed_goto(event, 60, self.dawn)
 
-    @match(r"^(?:kill|see)\s+(\S+)$")
+    @match(r"^(?:kill|see|eat)s?\s+(\S+)$")
     def kill_see (self, event, target_nick):
         if (self.state != self.night or
             event.public
@@ -181,7 +199,7 @@ class WerewolfGame (Processor):
                             "in mind last night.") %
                             {'nick': target})
                 
-                event.addresponse({'reply': msg, 'target': seer})
+                event.addresponse({'reply': msg, 'target': seer, 'notice': True})
         self.seer_targets = {}
 
         if not self.endgame(event):
@@ -204,11 +222,10 @@ class WerewolfGame (Processor):
 
         self.timed_goto(event, 60, self.dusk)
 
-    @match(r"^(?:lynch|vote)\s+(\S+)$")
+    @match(r"^(?:lynch(?:es)?|votes?)\s+(?:for\s+|against\s+)(\S+)$")
     def vote (self, event, target_nick):
         if (self.state != self.noon or
-            event.sender['nick'] not in self.roles or
-            event.public):
+            event.sender['nick'] not in self.roles):
             return
         
         target = self.identify(target_nick)
@@ -217,7 +234,7 @@ class WerewolfGame (Processor):
                                 {'nick': target_nick})
         else:
             self.votes[event.sender['nick']] = target
-            event.addresponse({'reply': _("%(voter)s have voted for %(target)s.") %
+            event.addresponse({'reply': _("%(voter)s voted for %(target)s.") %
                                         {'target': target,
                                         'voter': event.sender['nick']},
                                 'target': self.channel})
@@ -250,7 +267,7 @@ class WerewolfGame (Processor):
         event.addresponse(msg)
             
         if not self.endgame(event):
-            self.timed_goto(event, 10, night)
+            self.timed_goto(event, 10, self.night)
 
     def say_survivors (self, event):
         """Name surviving players."""
