@@ -1,7 +1,7 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
+from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -254,8 +254,8 @@ class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
-        Column('source', Unicode(16), nullable=False, index=True),
-        Column('identity', Unicode(64), nullable=False, index=True),
+        Column('source', Unicode(32), nullable=False, index=True),
+        Column('identity', UnicodeText, nullable=False, index=True),
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
@@ -281,7 +281,7 @@ class Attribute(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
         Column('name', Unicode(32), nullable=False, index=True),
-        Column('value', Unicode(128), nullable=False),
+        Column('value', UnicodeText, nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
@@ -303,9 +303,9 @@ class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
-        Column('source', Unicode(16), index=True),
+        Column('source', Unicode(32), index=True),
         Column('method', Unicode(16), nullable=False, index=True),
-        Column('credential', Unicode(256), nullable=False),
+        Column('credential', UnicodeText, nullable=False),
         useexisting=True)
 
     class CredentialSchema(VersionedSchema):
