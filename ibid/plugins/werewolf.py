@@ -84,7 +84,8 @@ class WerewolfGame (Processor):
         for player, role in self.roles.iteritems():
             event.addresponse({'reply': _("%(name)s, you are a %(role)s.") %
                                     {'name': player, 'role': _(role)},
-                                'target': player})
+                                'target': player,
+                                'notice': True})
 
         self.timed_goto(event, 10, self.night)
 

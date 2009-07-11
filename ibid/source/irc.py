@@ -145,7 +145,11 @@ class Ircbot(irc.IRCClient):
             self.ctcpMakeQuery(response['target'].encode('utf-8'), [('ACTION', message.encode('utf-8'))])
             self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
         else:
-            self.msg(response['target'].encode('utf-8'), message.encode('utf-8'))
+            if response.get('notice', False):
+                send = self.notice
+            else:
+                send = self.msg
+            send(response['target'].encode('utf-8'), message.encode('utf-8'))
             self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
 
     def join(self, channel):
