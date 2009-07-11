@@ -1,4 +1,5 @@
 import cgi
+from datetime import datetime
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
@@ -135,6 +136,24 @@ def unicode_output(output, errors="strict"):
 
 def ibid_version():
     return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+
+def format_date(timestamp, length='datetime'):
+    "Format a date for displaying in a response"
+
+    defaults = {
+            u'datetime_format': u'%Y-%m-%d %H:%M:%S %Z',
+            u'date_format': u'%Y-%m-%d',
+            u'time_format': u'%H:%M:%S %Z',
+    }
+
+    length += '_format'
+    format = ibid.config.plugins.get(length, defaults[length]).encode('ascii')
+
+    if isinstance(timestamp, datetime):
+        timestamp = int(timestamp.strftime('%s')) - time.timezone
+
+    timestamp = time.localtime(timestamp)
+    return time.strftime(format, timestamp)
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"
