@@ -266,7 +266,11 @@ class Identity(Base):
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.identity)
 
-    __table__.versioned_schema = IdentitySchema(__table__, 2)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('source', Unicode(32), nullable=False, index=True), length_only=True)
+            self.alter_column(Column('identity', UnicodeText, nullable=False, index=True), length_only=True)
+
+    __table__.versioned_schema = IdentitySchema(__table__, 3)
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -289,8 +293,10 @@ class Attribute(Base):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.name)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('value', UnicodeText, nullable=False), length_only=True)
 
-    __table__.versioned_schema = AttributeSchema(__table__, 2)
+    __table__.versioned_schema = AttributeSchema(__table__, 3)
 
     def __init__(self, name, value):
         self.name = name
@@ -313,8 +319,11 @@ class Credential(Base):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.method)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('source', Unicode(32), index=True), length_only=True)
+            self.alter_column(Column('credential', UnicodeText, nullable=False), length_only=True)
 
-    __table__.versioned_schema = CredentialSchema(__table__, 2)
+    __table__.versioned_schema = CredentialSchema(__table__, 3)
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id

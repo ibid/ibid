@@ -24,8 +24,10 @@ class Karma(Base):
     class KarmaSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.subject, unique=True)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('subject', Unicode(64), unique=True, nullable=False, index=True), length_only=True)
 
-    __table__.versioned_schema = KarmaSchema(__table__, 2)
+    __table__.versioned_schema = KarmaSchema(__table__, 3)
 
     def __init__(self, subject):
         self.subject = subject

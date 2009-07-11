@@ -48,8 +48,10 @@ class FactoidName(Base):
             self.add_index(self.table.c.factoid_id)
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
+        def upgrade_4_to_5(self):
+            self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True), length_only=True)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 4)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 5)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
