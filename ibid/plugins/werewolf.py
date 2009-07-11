@@ -1,8 +1,8 @@
 from random import shuffle, choice
 import ibid
 import logging
-from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option, IntOption, BoolOption
+from ibid.plugins import Processor, match
+from ibid.config import IntOption, BoolOption
 from collections import defaultdict
 
 log = logging.getLogger('plugins.werewolf')
@@ -14,14 +14,18 @@ class WerewolfGame (Processor):
     feature = 'werewolf'
     state = None
 
-    player_limit = IntOption('min_players', 'the minimum number of players', 5)
-    addressed = BoolOption('addressed', 'messages must be addressed to bot', False)
+    player_limit = IntOption('min_players',
+                            'the minimum number of players',
+                            5)
+    addressed = BoolOption('addressed',
+                            'messages must be addressed to bot',
+                            False)
     players_per_wolf = IntOption('players_per_wolf',
                                 'number of players to each wolf/seer',
                                 4)
     seer_delay = IntOption('seer_delay',
-                            'number of players between extra wolf and extra seer',
-                            4)
+                          'number of players between extra wolf and extra seer',
+                          4)
 
     event_types = ('message', 'action')
 
@@ -29,7 +33,8 @@ class WerewolfGame (Processor):
     def prestart (self, event):
         """Initiate a game.
 
-        This is the state from initiation to start of game. Next state is start."""
+        This is the state from initiation to start of game. Next state is start.
+        """
 
         if self.state:
             log.debug("Not starting game: already in state %s." % self.state)
@@ -87,7 +92,8 @@ class WerewolfGame (Processor):
         shuffle(self.players)
 
         nwolves = max(1, len(self.players)//self.players_per_wolf)
-        nseers = max(1, (len(self.players)-self.seer_delay)//self.players_per_wolf)
+        nseers = max(1,
+                    (len(self.players)-self.seer_delay)//self.players_per_wolf)
         self.wolves = self.players[:nwolves]
         self.seers = self.players[nwolves:nwolves+nseers]
 
@@ -138,6 +144,10 @@ class WerewolfGame (Processor):
 
     @match(r"^(?:kill|see|eat)s?\s+(\S+)$")
     def kill_see (self, event, target_nick):
+        """Kill or see a player.
+
+        Only works for seers and wolves."""
+
         if (self.state != self.night or
             event.public
             or event.sender['nick'] not in self.roles):
@@ -199,7 +209,9 @@ class WerewolfGame (Processor):
                             "in mind last night.") %
                             {'nick': target})
                 
-                event.addresponse({'reply': msg, 'target': seer, 'notice': True})
+                event.addresponse({'reply': msg,
+                                    'target': seer,
+                                    'notice': True})
         self.seer_targets = {}
 
         if not self.endgame(event):
@@ -224,6 +236,8 @@ class WerewolfGame (Processor):
 
     @match(r"^(?:lynch(?:es)?|votes?)\s+(?:for\s+|against\s+)(\S+)$")
     def vote (self, event, target_nick):
+        """Vote to lynch a player."""
+
         if (self.state != self.noon or
             event.sender['nick'] not in self.roles):
             return
@@ -240,6 +254,10 @@ class WerewolfGame (Processor):
                                 'target': self.channel})
 
     def dusk (self, event):
+        """Counting of votes and lynching.
+
+        Next state is night."""
+
         self.state = self.dusk
         vote_counts = defaultdict(int)
         for vote in self.votes.values():
@@ -259,7 +277,8 @@ class WerewolfGame (Processor):
             if len(victims) > 1:
                 event.addresponse(_("The votes are tied. Picking randomly..."))
             victim = choice(list(victims))
-            msg = (_("The ballots are in, and %(nick)s the %(role)s has been lynched.") %
+            msg = (_("The ballots are in, "
+                     "and %(nick)s the %(role)s has been lynched.") %
                     {'nick': victim, 'role': _(self.roles[victim])})
             self.death(victim)
         else:
@@ -288,13 +307,22 @@ class WerewolfGame (Processor):
             return None
 
     def death (self, player):
+        """Remove player from game."""
+
         del self.roles[player]
 
         for role in (self.wolves, self.seers):
-            try: role.remove(player)
-            except ValueError: pass
+            try:
+                role.remove(player)
+            except ValueError:
+                pass
 
     def endgame (self, event):
+        """Check if the game is over.
+
+        If the game is over, announce the winners and return True. Otherwise
+        return False."""
+
         if 2*len(self.wolves) >= len(self.roles):
             # werewolves win
             event.addresponse(_("The werewolves devour the remaining "
@@ -314,10 +342,12 @@ class WerewolfGame (Processor):
         return True
 
     def timed_goto(self, event, delay, target):
+        """Like call_later, but does nothing if state has changed."""
+
         from_state = self.state
-        def go (evt):
+        def goto (evt):
+            """Change state if it hasn't already changed."""
             if self.state == from_state:
-                # only change state if it hasn't already changed
                 target(evt)
 
-        ibid.dispatcher.call_later(delay, go, event)
+        ibid.dispatcher.call_later(delay, goto, event)
