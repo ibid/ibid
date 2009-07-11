@@ -147,7 +147,7 @@ def format_date(timestamp, length='datetime'):
     }
 
     length += '_format'
-    format = ibid.config.plugins.get(length, defaults[length]).encode('ascii')
+    format = ibid.config.plugins.get(length, defaults[length])
 
     if isinstance(timestamp, datetime):
         timestamp = int(timestamp.strftime('%s')) - time.timezone
