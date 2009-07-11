@@ -14,6 +14,9 @@ class WerewolfGame (Processor):
     feature = 'werewolf'
     state = None
 
+    player_limit = IntOption('min_players', 'the minimum number of players', 5)
+    addressed = BoolOption('addressed', 'messages must be addressed to bot', False)
+
     @match(r"^(?:start|play|begin)\s+werewolf$")
     def prestart (self, event):
         """Initiate a game.
@@ -62,6 +65,11 @@ class WerewolfGame (Processor):
         Players are assigned their roles. The next state is night."""
         
         self.state = self.start
+
+        if players < self.player_limit:
+            event.addresponse(_("Not enough players. Try again later."))
+            self.state = None
+            return
 
         event.addresponse(_("%(num)i players joined. "
             "Please wait while I assign roles.") %
@@ -112,23 +120,31 @@ class WerewolfGame (Processor):
 
     @match(r"^(?:kill|see)\s+(\S+)$")
     def kill_see (self, event, target_nick):
-        if self.state != self.night:
+        if (self.state != self.night or
+            event.public
+            or event.sender['nick'] not in self.roles):
             return
 
         sender = event.sender['nick']
         target = self.identify(target_nick)
         if target is None:
-            event.addresponse(_("%(nick)s is not playing.") %
-                                {'nick': target_nick})
+            event.addresponse({'reply': _("%(nick)s is not playing.") %
+                                    {'nick': target_nick},
+                                'target': event.sender['id'],
+                                'notice': True})
         elif self.roles[sender] == 'wolf':
-            event.addresponse(_("You have chosen %(nick)s "
-                                "for your feast tonight.") %
-                                {'nick': target_nick})
+            event.addresponse({'reply': _("You have chosen %(nick)s "
+                                        "for your feast tonight.") %
+                                        {'nick': target_nick},
+                                'target': event.sender['id'],
+                                'notice': True})
             self.wolf_targets[sender] = target
         elif self.roles[sender] == 'seer':
-            event.addresponse(_("You will discover %(nick)s's "
-                                "role at dawn tomorrow.") %
-                                {'nick': target})
+            event.addresponse({'reply': _("You will discover %(nick)s's "
+                                        "role at dawn tomorrow.") %
+                                        {'nick': target_nick},
+                                'target': event.sender['id'],
+                                'notice': True})
             self.seer_targets[sender] = target
 
     def dawn (self, event):
@@ -190,7 +206,9 @@ class WerewolfGame (Processor):
 
     @match(r"^(?:lynch|vote)\s+(\S+)$")
     def vote (self, event, target_nick):
-        if self.state != self.noon or event.sender['nick'] not in self.roles:
+        if (self.state != self.noon or
+            event.sender['nick'] not in self.roles or
+            event.public):
             return
         
         target = self.identify(target_nick)
@@ -268,10 +286,10 @@ class WerewolfGame (Processor):
                                 {'wolves': ', '.join(self.wolves)})
         elif not self.wolves:
             # villagers win
-            event.addresponse(_("Having defeated the werewolves, the "
-                                "surviving villagers rejoice their victory."))
-            event.addresponse(_("The winning villagers were: %(wolves)s") %
-                                {'wolves': ', '.join(self.wolves)})
+            event.addresponse(_("The villagers have defeated the werewolves. "
+                                "Vigilantism FTW."))
+            event.addresponse(_("The surviving villagers were: %(villagers)s") %
+                                {'villagers': ', '.join(self.roles)})
         else:
             return False
 
@@ -280,13 +298,9 @@ class WerewolfGame (Processor):
 
     def timed_goto(self, event, delay, target):
         from_state = self.state
-        print 'Will go from %s to %s in %i seconds' % (from_state, target, delay)
         def go (evt):
             if self.state == from_state:
                 # only change state if it hasn't already changed
-                print 'BAM'
                 target(evt)
-            else:
-                print 'Average-sized failure'
 
         ibid.dispatcher.call_later(delay, go, event)
