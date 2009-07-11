@@ -39,7 +39,7 @@ class Feed(Base):
         self.name = name
         self.url = url
         self.identity_id = identity_id
-        self.time = datetime.now()
+        self.time = datetime.utcnow()
         self.update()
 
     def update(self):

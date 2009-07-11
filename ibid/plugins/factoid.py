@@ -350,7 +350,7 @@ class Get(Processor, RPC):
     interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
 
-    date_format = Option('date_format', 'Format string for dates', '%Y/%m/%d')
+    date_format = Option('date_format', 'Format string for dates', '%Y-%m-%d')
     time_format = Option('time_format', 'Format string for times', '%H:%M:%S')
 
     def __init__(self, name):
