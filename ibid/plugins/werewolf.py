@@ -34,9 +34,8 @@ class WerewolfGame (Processor):
 
         starter = event.sender['nick']
         self.players = set((starter,))
-        event.addresponse({'reply': _("you have started a game of Werewolf. "
-            "Everybody has 60 seconds to join the game."),
-                            'target': self.channel})
+        event.addresponse(_("you have started a game of Werewolf. "
+            "Everybody has 60 seconds to join the game."))
 
         log.debug("Starting game.")
         self.timed_goto(event, 60, self.start)
@@ -199,8 +198,9 @@ class WerewolfGame (Processor):
                                 {'nick': target_nick})
         else:
             self.votes[event.sender['nick']] = target
-            event.addresponse({'reply': _("You have voted for %(nick)s.") %
-                                        {'nick': target},
+            event.addresponse({'reply': _("%(voter)s have voted for %(target)s.") %
+                                        {'target': target,
+                                        'voter': event.sender['nick']},
                                 'target': self.channel})
 
     def dusk (self, event):
@@ -239,9 +239,6 @@ class WerewolfGame (Processor):
         event.addresponse(_("The surviving villagers are: %(villagers)s.") %
                             {'villagers': ', '.join(sorted(player
                                     for player in self.roles.iterkeys()))})
-
-    def process (self, event):
-        pass
 
     def identify (self, nick):
         """Find the identity (correctly-capitalised nick) of a player.
