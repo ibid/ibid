@@ -6,6 +6,7 @@ import logging
 import ibid
 from ibid.plugins import Processor, handler
 from ibid.config import IntOption, ListOption, DictOption
+from ibid.plugins.identity import identify
 
 class Addressed(Processor):
 
@@ -209,9 +210,15 @@ class ChannelTracker(Processor):
     @handler
     def track(self, event):
         if event.public:
-            if event.state == 'online':
+            if event.state == 'online' and hasattr(event, 'othername'):
+                oldid = identify(event.session, event.source, event.othername)
+                for channel in ibid.channels[event.source].values():
+                    if oldid in channel:
+                        channel.remove(oldid)
+                        channel.add(event.identity)
+            elif event.state == 'online':
                 ibid.channels[event.source][event.channel].add(event.identity)
-            elif event.state == 'offline':
+            elif event.state == 'offline' and not hasattr(event, 'othername'):
                 if event.channel:
                     ibid.channels[event.source][event.channel].remove(event.identity)
                 else:
