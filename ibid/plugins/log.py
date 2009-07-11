@@ -16,7 +16,7 @@ class Log(Processor):
     priority = 1900
 
     log = Option('log', 'Log file to log messages to. Can contain substitutions: source, channel, year, month, day',
-            'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log')
+            'logs/%(year)d/%(month)02d/%(source)s/%(channel)s.log')
 
     timestamp_format = Option('timestamp_format', 'Format to substitute %(timestamp)s with', '%Y-%m-%d %H:%M:%S%z')
     date_utc = BoolOption('date_utc', 'Log with UTC timestamps', False)
