@@ -415,4 +415,9 @@ def get_identities(event):
     else:
         return (event.identity,)
 
+def identify(session, source, id):
+    identity = session.query(Identity).filter(func.lower(Identity.source) == source.lower()) \
+        .filter(func.lower(Identity.identity) == id.lower()).first()
+    return identity and identity.id
+
 # vi: set et sta sw=4 ts=4:
