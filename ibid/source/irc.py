@@ -7,17 +7,16 @@ from twisted.words.protocols import irc
 from twisted.internet import protocol, ssl
 from twisted.application import internet
 from sqlalchemy import or_
-from pkg_resources import resource_exists, resource_string
 
 import ibid
 from ibid.config import Option, IntOption, BoolOption, FloatOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+from ibid.utils import ibid_version
 
 class Ircbot(irc.IRCClient):
 
-    versionNum = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or ''
     _ping_deferred = None
     _reconnect_deferred = None
 
@@ -178,7 +177,7 @@ class Ircbot(irc.IRCClient):
 
     def ctcpQuery_VERSION(self, user, channel, data):
         nick = user.split("!")[0]
-        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % self.versionNum)])
+        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % (ibid_version() or '',))])
 
     def ctcpQuery_SOURCE(self, user, channel, data):
         nick = user.split("!")[0]

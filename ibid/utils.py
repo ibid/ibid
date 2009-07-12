@@ -4,7 +4,6 @@ from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
 import os.path
-from pkg_resources import resource_exists, resource_string
 import re
 from StringIO import StringIO
 import time
@@ -135,7 +134,16 @@ def unicode_output(output, errors="strict"):
     return unicode(output, encoding, errors)
 
 def ibid_version():
-    return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+    try:
+        from pkg_resources import get_distribution, DistributionNotFound
+        try:
+            package = get_distribution('Ibid')
+            if package and hasattr(package, 'version'):
+                return package.version
+        except DistributionNotFound:
+            pass
+    except ImportError:
+        pass
 
 def format_date(timestamp, length='datetime'):
     "Format a UTC date for displaying in a response"
