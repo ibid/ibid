@@ -14,7 +14,7 @@ install_requires=[
     'jinja',
     'html5lib',
     'BeautifulSoup',
-    'SQLAlchemy>=0.4.6',
+    'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
 ]
 
