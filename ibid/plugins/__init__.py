@@ -51,14 +51,15 @@ class Processor(object):
         found = False
         for name, method in getmembers(self, ismethod):
             if hasattr(method, 'handler'):
-                found = True
-                if hasattr(method, 'pattern'):
+                if not hasattr(method, 'pattern'):
+                    found = True
+                    method(event)
+                elif hasattr(event, 'message'):
+                    found = True
                     match = method.pattern.search(event.message[method.message_version])
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
                             method(event, *match.groups())
-                else:
-                    method(event)
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
