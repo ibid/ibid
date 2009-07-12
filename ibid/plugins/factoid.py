@@ -636,7 +636,7 @@ static_default = {
     },
 }
 
-class RegexFactoid(Processor):
+class StaticFactoid(Processor):
     priority = 900
 
     extras = Option('static', 'List of static factoids using regexes', {})
@@ -646,7 +646,7 @@ class RegexFactoid(Processor):
         self.factoids.update(self.extras)
 
     @handler
-    def handler(self, event):
+    def static(self, event):
         for factoid in self.factoids.values():
             for match in factoid['matches']:
                 if re.search(match, event.message['stripped']):
