@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option, IntOption
+from ibid.config import IntOption
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
