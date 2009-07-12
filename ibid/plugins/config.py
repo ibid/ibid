@@ -54,6 +54,11 @@ class Config(Processor):
                 event.addresponse(u'No such option')
                 return
             config = config[part]
-        event.addresponse(unicode(config))
+        if isinstance(config, list):
+            event.addresponse(u', '.join(config))
+        elif isinstance(config, dict):
+            event.addresponse(u'Keys: ' + u', '.join(config.keys()))
+        else:
+            event.addresponse(unicode(config))
         
 # vi: set et sta sw=4 ts=4:
