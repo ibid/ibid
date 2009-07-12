@@ -1,14 +1,16 @@
 from random import shuffle, choice
 import ibid
 import logging
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.config import IntOption, BoolOption
 from collections import defaultdict
 
 log = logging.getLogger('plugins.werewolf')
 
 def _ (arg):
-    return arg
+    return unicode(arg)
+
+games = []
 
 class WerewolfGame (Processor):
     feature = 'werewolf'
@@ -47,13 +49,16 @@ class WerewolfGame (Processor):
 
         self.state = self.prestart
         self.channel = event.channel
+        
+        log.debug("Starting game.")
+
+        games.append(self)
 
         starter = event.sender['nick']
         self.players = set((starter,))
         event.addresponse(_("you have started a game of Werewolf. "
             "Everybody has 60 seconds to join the game."))
 
-        log.debug("Starting game.")
         self.timed_goto(event, 60, self.start)
 
     @match(r"^joins?\b")
@@ -94,8 +99,8 @@ class WerewolfGame (Processor):
         nwolves = max(1, len(self.players)//self.players_per_wolf)
         nseers = max(1,
                     (len(self.players)-self.seer_delay)//self.players_per_wolf)
-        self.wolves = self.players[:nwolves]
-        self.seers = self.players[nwolves:nwolves+nseers]
+        self.wolves = set(self.players[:nwolves])
+        self.seers = set(self.players[nwolves:nwolves+nseers])
 
         self.roles = dict((player, 'villager') for player in self.players)
         del self.players
@@ -309,13 +314,16 @@ class WerewolfGame (Processor):
     def death (self, player):
         """Remove player from game."""
 
-        del self.roles[player]
+        if self.state == self.prestart:
+            self.players.remove(player)
+        elif self.state is not None:
+            del self.roles[player]
 
-        for role in (self.wolves, self.seers):
-            try:
-                role.remove(player)
-            except ValueError:
-                pass
+            for role in (self.wolves, self.seers):
+                try:
+                    role.remove(player)
+                except ValueError:
+                    pass
 
     def endgame (self, event):
         """Check if the game is over.
@@ -339,15 +347,59 @@ class WerewolfGame (Processor):
             return False
 
         self.state = None
+        games.remove(self)
         return True
 
     def timed_goto(self, event, delay, target):
         """Like call_later, but does nothing if state has changed."""
 
         from_state = self.state
+        log.debug("Going from state %s to %s in %i seconds." %
+                    (from_state, target, delay))
         def goto (evt):
             """Change state if it hasn't already changed."""
             if self.state == from_state:
                 target(evt)
 
         ibid.dispatcher.call_later(delay, goto, event)
+
+    def rename (self, oldnick, newnick):
+        """Rename a player."""
+        
+        for playerset in ('players', 'wolves', 'seers'):
+            if hasattr(self, playerset):
+                playerset = getattr(self, playerset)
+                if oldnick in playerset:
+                    playerset.remove(oldnick)
+                    playerset.add(newnick)
+
+        if hasattr(self, 'roles') and oldnick in self.roles:
+            self.roles[newnick] = self.roles[oldnick]
+            del self.roles[oldnick]
+
+    def state_change (self, event):
+        if self.state is None:
+            return
+
+        if not hasattr(event, 'state'):
+            return
+
+        if event.state != 'online':
+            nick = event.sender['nick']
+            if hasattr(event, 'othername'):
+                self.rename(event.othername, nick)
+            elif ((self.state == self.prestart and nick in self.players) or 
+                nick in self.roles):
+                event.addresponse({'reply': 
+                                   _("%(nick)s has fled the game in terror.") %
+                                            {'nick': nick},
+                                   'target': self.channel})
+                self.death(nick)
+
+class StateProcessor (Processor):
+    event_types = ('state',)
+
+    @handler
+    def state_change (self, event):
+        for game in self.games:
+            game.state_change(event)
