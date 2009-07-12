@@ -9,7 +9,7 @@ from bzrlib.errors import NotBranchError
 import ibid
 from ibid.plugins import Processor, match, RPC, handler
 from ibid.config import Option
-from ibid.utils import ago, date_format
+from ibid.utils import ago, format_date
 
 help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
 
@@ -23,7 +23,6 @@ class LogFormatter(log.LogFormatter):
 
     def log_revision(self, revision):
         if self.full:
-            when = datetime.fromtimestamp(revision.rev.timestamp)
             delta = self.branch.repository.get_revision_delta(revision.rev.revision_id)
             changes = []
 
@@ -36,11 +35,12 @@ class LogFormatter(log.LogFormatter):
             if delta.renamed:
                 changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
-            commit = 'Commit %s by %s to %s %s: %s (%s)\n' % (
+            commit = 'Commit %s by %s to %s on %s at %s: %s (%s)\n' % (
                     revision.revno,
                     self.short_author(revision.rev),
                     self.repository,
-                    date_format(when),
+                    format_date(revision.rev.timestamp, 'date'),
+                    format_date(revision.rev.timestamp, 'time'),
                     revision.rev.message.replace('\n', ' '),
                     '; '.join(changes))
         else:
