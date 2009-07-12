@@ -3,7 +3,7 @@ import logging
 
 import ibid
 from ibid.config import FileConfig
-from ibid.plugins import Processor, match, authorise
+from ibid.plugins import Processor, match, authorise, auth_responses
 
 help = {'config': u'Gets and sets configuration settings, and rereads the configuration file.'}
 
@@ -48,6 +48,9 @@ class Config(Processor):
 
     @match(r'^(?:get\s+config|config\s+get)\s+(\S+?)$')
     def get(self, event, key):
+        if 'password' in key.lower() and not auth_responses(event, u'config'):
+            return
+
         config = ibid.config
         for part in key.split('.'):
             if part not in config:
