@@ -11,54 +11,25 @@ from ibid.config import Option, IntOption, BoolOption, FloatOption
 help = {}
 log = logging.getLogger('plugins.games')
 
+duels = {}
+
 help['duel'] = u"Duel at dawn, between channel members"
-class Duel(Processor):
+class DuelInitiate(Processor):
     u"""I challenge <user> to a duel [over <something>]
     I demand satisfaction from <user> [over <something>]
     I throw the gauntlet down at <user>'s feet [over <something>]
-    draw [my <weapon>]
-    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
+    """
 
     feature = 'duel'
 
-    # Parameters for Processor:
-    event_types = ('message', 'action')
-
-    addressed = BoolOption('addressed', 'Must the bot be addressed', True)
-
-    # Game configurables:
-    extremities = Option('extremities', u'Extremities that can be hit', (
-        u'toe', u'foot', u'leg', u'thigh', u'finger', u'hand', u'arm',
-        u'elbow', u'shoulder', u'ear', u'nose', u'stomach',
-    ))
-
-    vitals = Option('vitals', 'Vital parts of the body that can be hit', (
-        u'head', u'groin', u'chest', u'heart', u'neck',
-    ))
+    accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
+    start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
+    timeout = FloatOption('timeout', 'How long is a duel on for', 15.0)
 
     happy_endings = Option('happy_endings', 'Both survive', (
         u'walk off into the sunset', u'go for a beer', u'call it quits',
     ))
 
-    weapons = Option('weapons', 'Weapons that can be used: name: (chance, damage)', {
-        u'bam': (0.75, 50),
-        u'pew': (0.75, 50),
-        u'fire': (0.75, 70),
-        u'fires': (0.75, 70),
-        u'bang': (0.75, 70),
-        u'kapow': (0.75, 90),
-        u'pewpew': (0.75, 110),
-        u'holyhandgrenadeofantioch': (1.0, 200),
-    })
-
-    draw_required = BoolOption('draw_required', 'Must you draw your weapon before firing?', True)
-    accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
-    start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
-    timeout = FloatOption('timeout', 'How long is a duel on for', 15.0)
-    extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
-
-    duels = {}
-    
     class Duel(object):
         pass
 
@@ -73,9 +44,6 @@ class Duel(Processor):
     
     @match(r'^(?:I\s+)?challenge\s+(\S+)(?:\s+to\s+a\s+duel)?(?:\s+(?:over|because|for)\s+.+)?$')
     def initiate(self, event, recipient):
-        if not event.addressed:
-            return
-
         if not event.public:
             event.addresponse(choice((
                 u"All duels must take place in public places, by decree of the bot",
@@ -86,7 +54,7 @@ class Duel(Processor):
             })
             return
 
-        if (event.source, event.channel) in self.duels:
+        if (event.source, event.channel) in duels:
             event.addresponse(choice((
                 u"We already have a war in here. Take your fight outside",
                 u"Isn't one fight enough? You may wait your turn",
@@ -112,7 +80,7 @@ class Duel(Processor):
             return
 
         duel = self.Duel()
-        self.duels[(event.source, event.channel)] = duel
+        duels[(event.source, event.channel)] = duel
 
         duel.hp = {
                 aggressor.lower(): 100.0,
@@ -144,8 +112,8 @@ class Duel(Processor):
         }})
 
     def cancel(self, event):
-        duel = self.duels[(event.source, event.channel)]
-        del self.duels[(event.source, event.channel)]
+        duel = duels[(event.source, event.channel)]
+        del duels[(event.source, event.channel)]
 
         event.addresponse(choice((
             u"%(recipient)s appears to have fled the country during the night",
@@ -157,13 +125,10 @@ class Duel(Processor):
 
     @match(r'^.*\b(?:ok|yes|I\s+do|sure|accept|hit\s+me|bite\s+me|i\'m\s+game|bring\s+it|yebo)\b.*$')
     def confirm(self, event):
-        if not event.addressed:
+        if (event.source, event.channel) not in duels:
             return
 
-        if (event.source, event.channel) not in self.duels:
-            return
-
-        duel = self.duels[(event.source, event.channel)]
+        duel = duels[(event.source, event.channel)]
 
         confirmer = event.sender['nick'].lower()
         if confirmer not in duel.names or duel.confirmed or confirmer != duel.recipient:
@@ -201,7 +166,7 @@ class Duel(Processor):
         }})
 
     def start(self, event):
-        duel = self.duels[(event.source, event.channel)]
+        duel = duels[(event.source, event.channel)]
 
         duel.started = True
         duel.timeout_callback = ibid.dispatcher.call_later(self.timeout, self.end, event)
@@ -214,9 +179,64 @@ class Duel(Processor):
             u'ready ... aim ... fire!'
         ))])})
 
-    @match(r'^draw(?:s\s+h(?:is|er)\s+.*|\s+my\s+.*)?$')
+    def end(self, event):
+        duel = duels[(event.source, event.channel)]
+        del duels[(event.source, event.channel)]
+
+        winner, loser = duel.names.keys()
+        if duel.hp[winner] < duel.hp[loser]:
+            winner, loser = loser, winner
+
+        if duel.hp[loser] == 100.0:
+            message = u"DRAW: %(winner)s and %(loser)s shake hands and %(ending)s"
+        elif duel.hp[winner] < 50.0:
+            message = u"DRAW: %(winner)s and %(loser)s bleed to death together"
+        elif duel.hp[loser] < 50.0:
+            message = u"VICTORY: %(loser)s bleeds to death"
+        elif duel.hp[winner] < 100.0:
+            message = u"DRAW: %(winner)s and %(loser)s hobble off together. Satisfaction is obtained"
+        else:
+            message = u"VICTORY: %(loser)s hobbles off while %(winner)s looks victorious"
+
+        event.addresponse({'reply': message % { 
+                'loser': duel.names[loser],
+                'winner': duel.names[winner],
+                'ending': choice(self.happy_endings),
+        }})
+    
+class DuelDraw(Processor):
+    u"""draw [my <weapon>]
+    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
+
+    # Parameters for Processor:
+    event_types = ('message', 'action')
+    addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
+
+    # Game configurables:
+    weapons = Option('weapons', 'Weapons that can be used: name: (chance, damage)', {
+        u'bam': (0.75, 50),
+        u'pew': (0.75, 50),
+        u'fire': (0.75, 70),
+        u'fires': (0.75, 70),
+        u'bang': (0.75, 70),
+        u'kapow': (0.75, 90),
+        u'pewpew': (0.75, 110),
+        u'holyhandgrenadeofantioch': (1.0, 200),
+    })
+    extremities = Option('extremities', u'Extremities that can be hit', (
+        u'toe', u'foot', u'leg', u'thigh', u'finger', u'hand', u'arm',
+        u'elbow', u'shoulder', u'ear', u'nose', u'stomach',
+    ))
+    vitals = Option('vitals', 'Vital parts of the body that can be hit', (
+        u'head', u'groin', u'chest', u'heart', u'neck',
+    ))
+
+    draw_required = BoolOption('draw_required', 'Must you draw your weapon before firing?', True)
+    extratime = FloatOption('extratime', 'How much more time to grant after every shot fired?', 1.0)
+
+    @match(r'^draws?(?:\s+h(?:is|er)\s+.*|\s+my\s+.*)?$')
     def draw(self, event):
-        if (event.source, event.channel) not in self.duels:
+        if (event.source, event.channel) not in duels:
             if event.addressed:
                 event.addresponse(choice((
                     u"We do not permit drawn weapons here",
@@ -224,7 +244,7 @@ class Duel(Processor):
                 )))
             return
 
-        duel = self.duels[(event.source, event.channel)]
+        duel = duels[(event.source, event.channel)]
 
         shooter = event.sender['nick']
         if shooter.lower() not in duel.names:
@@ -253,10 +273,10 @@ class Duel(Processor):
     @handler
     def fire(self, event, weapon):
         shooter = event.sender['nick'].lower()
-        if (event.source, event.channel) not in self.duels:
+        if (event.source, event.channel) not in duels:
             return
 
-        duel = self.duels[(event.source, event.channel)]
+        duel = duels[(event.source, event.channel)]
 
         if shooter not in duel.names:
             event.addresponse(choice((
@@ -296,7 +316,7 @@ class Duel(Processor):
                 'shooter': duel.names[shooter],
                 'enemy': duel.names[enemy],
             }})
-            del self.duels[(event.source, event.channel)]
+            del duels[(event.source, event.channel)]
             if duel.cancel_callback.active():
                 duel.cancel_callback.cancel()
             if duel.start_callback.active():
@@ -309,7 +329,7 @@ class Duel(Processor):
             damage = max(gauss(power, power/2.0), 0)
             duel.hp[recipient] -= damage
             if duel.hp[recipient] <= 0.0:
-                del self.duels[(event.source, event.channel)]
+                del duels[(event.source, event.channel)]
                 duel.timeout_callback.cancel()
             else:
                 duel.timeout_callback.delay(self.extratime)
@@ -370,29 +390,4 @@ class Duel(Processor):
                 u'%s is useless with a weapon'
             )) % duel.names[shooter]})
 
-    def end(self, event):
-        duel = self.duels[(event.source, event.channel)]
-        del self.duels[(event.source, event.channel)]
-
-        winner, loser = duel.names.keys()
-        if duel.hp[winner] < duel.hp[loser]:
-            winner, loser = loser, winner
-
-        if duel.hp[loser] == 100.0:
-            message = u"DRAW: %(winner)s and %(loser)s shake hands and %(ending)s"
-        elif duel.hp[winner] < 50.0:
-            message = u"DRAW: %(winner)s and %(loser)s bleed to death together"
-        elif duel.hp[loser] < 50.0:
-            message = u"VICTORY: %(loser)s bleeds to death"
-        elif duel.hp[winner] < 100.0:
-            message = u"DRAW: %(winner)s and %(loser)s hobble off together. Satisfaction is obtained"
-        else:
-            message = u"VICTORY: %(loser)s hobbles off while %(winner)s looks victorious"
-
-        event.addresponse({'reply': message % { 
-                'loser': duel.names[loser],
-                'winner': duel.names[winner],
-                'ending': choice(self.happy_endings),
-        }})
-    
 # vi: set et sta sw=4 ts=4:
