@@ -417,7 +417,7 @@ class Set(Processor):
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
 
-    priority = 910
+    priority = 800
     permission = u'factoid'
     
     def setup(self):
@@ -607,5 +607,41 @@ class Modify(Processor):
                     operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
             event.addresponse(True)
+
+static_default = {
+    'greet': {
+        'matches': ['lo|ello|hello|hi|hithere|howdy|hey|heya|hiya|hola|salut|bonjour|sup|wussup|hoezit|wotcha|wotcher|yo|word|goodday|wasup|wassup|howzit|howsit|buongiorno|hoelykit|hoegaandit|goodmorning|morning'],
+        'responses': ['lo', 'ello', 'hello', 'hi', 'hithere', 'howdy', 'hey', 'heya', 'hiya', 'hola', 'salut', 'bonjour', 'sup', 'wussup', 'hoezit', 'wotcha', 'wotcher', 'yo', 'word', 'goodday', 'wasup', 'wassup', 'howzit', 'howsit', 'buongiorno', 'hoelykit', 'hoegaandit', 'goodmorning', 'morning']
+    },
+    'reward': {
+        'matches': ['bot(\s+|\-)?snack'],
+        'responses': ['thanks, $who', '$who: thankyou!', ':)'],
+    },
+    'praise': {
+        'matches': ['good(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl|$nick)', 'you\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)'],
+        'responses': ['thanks, $who', '$who: thankyou!', ':)'],
+    },
+    'thanks': {
+        'matches': ['thank(s|\s*you)', '^\s*ta\s*$', '^\s*shot\s*$'],
+        'responses': ['no problem, $who', '$who: my pleasure', 'sure thing, $who', 'no worries, $who', '$who: np', 'no probs, $who', '$who: no problemo', '$who: not at all'],
+    },
+    'criticism': {
+        'matches': ['((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl|$nick))|(bot(\s|\-)?s(mack|lap))'],
+        'responses': ['*whimper*', 'sorry, $who :(', ':(', '*cringe*', 'sorry, baas'],
+    },
+}
+
+class RegexFactoid(Processor):
+    priority = 900
+
+    factoids = Option('static', 'List of static factoids using regexes', static_default)
+
+    @handler
+    def handler(self, event):
+        for factoid in self.factoids.values():
+            for match in factoid['matches']:
+                if re.search(match, event.message['stripped']):
+                    event.addresponse(choice(factoid['responses']))
+                    return
 
 # vi: set et sta sw=4 ts=4:
