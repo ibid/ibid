@@ -210,6 +210,7 @@ class DuelDraw(Processor):
 
     # Parameters for Processor:
     event_types = ('message', 'action')
+
     addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
 
     # Game configurables:
@@ -237,7 +238,7 @@ class DuelDraw(Processor):
     @match(r'^draws?(?:\s+h(?:is|er)\s+.*|\s+my\s+.*)?$')
     def draw(self, event):
         if (event.source, event.channel) not in duels:
-            if event.addressed:
+            if event.get('addressed', False):
                 event.addresponse(choice((
                     u"We do not permit drawn weapons here",
                     u"You may only draw a weapon on the field of honour",
