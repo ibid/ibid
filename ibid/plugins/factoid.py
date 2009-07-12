@@ -639,7 +639,11 @@ static_default = {
 class RegexFactoid(Processor):
     priority = 900
 
-    factoids = Option('static', 'List of static factoids using regexes', static_default)
+    extras = Option('static', 'List of static factoids using regexes', {})
+
+    def setup(self):
+        self.factoids = static_default.copy()
+        self.factoids.update(self.extras)
 
     @handler
     def handler(self, event):
