@@ -138,7 +138,7 @@ def ibid_version():
     return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
 
 def format_date(timestamp, length='datetime'):
-    "Format a date for displaying in a response"
+    "Format a UTC date for displaying in a response"
 
     defaults = {
             u'datetime_format': u'%Y-%m-%d %H:%M:%S %Z',
