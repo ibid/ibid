@@ -15,7 +15,8 @@ duels = {}
 
 help['duel'] = u"Duel at dawn, between channel members"
 class DuelInitiate(Processor):
-    u"""I challenge <user> to a duel [over <something>]
+    u"""
+    I challenge <user> to a duel [over <something>]
     I demand satisfaction from <user> [over <something>]
     I throw the gauntlet down at <user>'s feet [over <something>]
     """
@@ -205,8 +206,12 @@ class DuelInitiate(Processor):
         }})
     
 class DuelDraw(Processor):
-    u"""draw [my <weapon>]
-    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
+    u"""
+    draw [my <weapon>]
+    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch
+    """
+
+    feature = 'duel'
 
     # Parameters for Processor:
     event_types = ('message', 'action')
@@ -390,5 +395,40 @@ class DuelDraw(Processor):
                 u'%s aims wide',
                 u'%s is useless with a weapon'
             )) % duel.names[shooter]})
+
+class DuelFlee(Processor):
+    feature = 'duel'
+    addressed = False
+    event_types = ('status')
+
+    @handler
+    def dueller_fled(self, event):
+        if event.state == 'offline' and (event.source, event.channel) in duels:
+            duel = duels[(event.source, event.channel)]
+            fleer = event.sender['nick'].lower()
+            if fleer in duel.names:
+                if hasattr(event, 'othername'):
+                    for key in ('hp', 'names', 'drawn'):
+                        getattr(duel, key)[event.othername.lower()] = getattr(duel, key)[fleer]
+                        del getattr(duel, key)[fleer]
+                    if duel.aggressor == fleer:
+                        duel.agressor = event.othername.lower()
+                    else:
+                        duel.recipient = event.othername.lower()
+
+                    event.addresponse({'reply': choice((
+                        "%s: Changing your identity won't help",
+                        "%s: You think I didn't see that?",
+                        "%s: There's no escape, you know",
+                    )) % event.othername})
+                else:
+                    del duels[(event.source, event.channel)]
+                    event.addresponse({'reply': choice((
+                            "%(winner)s: %(fleer)s has fled the country during the night",
+                            "%(winner)s: The cowardly %(fleer)s has run for his life",
+                        )) % {
+                            'winner': duel.names[[name for name in duel.names if name != fleer][0]],
+                            'fleer': duel.names[fleer],
+                    }})
 
 # vi: set et sta sw=4 ts=4:
