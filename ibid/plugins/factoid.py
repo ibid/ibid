@@ -12,6 +12,7 @@ from ibid.plugins import Processor, match, handler, authorise, auth_responses, R
 from ibid.config import Option, IntOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
+from ibid.utils import format_date
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
@@ -350,9 +351,6 @@ class Get(Processor, RPC):
     interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
 
-    date_format = Option('date_format', 'Format string for dates', '%Y-%m-%d')
-    time_format = Option('time_format', 'Format string for times', '%H:%M:%S')
-
     def __init__(self, name):
         super(Get, self).__init__(name)
         RPC.__init__(self)
@@ -386,17 +384,18 @@ class Get(Processor, RPC):
 
             reply = reply.replace('$who', event.sender['nick'])
             reply = reply.replace('$channel', event.channel)
-            now = localtime()
+            utcnow = time()
+            now = localtime(utcnow)
             reply = reply.replace('$year', str(now[0]))
             reply = reply.replace('$month', str(now[1]))
             reply = reply.replace('$day', str(now[2]))
             reply = reply.replace('$hour', str(now[3]))
             reply = reply.replace('$minute', str(now[4]))
             reply = reply.replace('$second', str(now[5]))
-            reply = reply.replace('$date', strftime(self.date_format, now))
-            reply = reply.replace('$time', strftime(self.time_format, now))
+            reply = reply.replace('$date', format_date(utcnow, 'date'))
+            reply = reply.replace('$time', format_date(utcnow, 'time'))
             reply = reply.replace('$dow', strftime('%A', now))
-            reply = reply.replace('$unixtime', str(time()))
+            reply = reply.replace('$unixtime', str(utcnow))
 
             (reply, count) = action_re.subn('', reply)
             if count:
