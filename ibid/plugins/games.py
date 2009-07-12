@@ -32,7 +32,11 @@ class DuelInitiate(Processor):
     ))
 
     class Duel(object):
-        pass
+        def stop(self):
+            for callback in ('cancel', 'start', 'timeout'):
+                callback += '_callback'
+                if hasattr(self, callback) and getattr(self, callback).active():
+                    getattr(self, callback).cancel()
 
     @match(r'^(?:I\s+)throw\s+(?:down\s+(?:the|my)\s+gauntlet|(?:the|my)\s+gauntlet\s+down)\s+'
             r'at\s+(\S+?)(?:\'s\s+feet)?(?:\s+(?:over|because|for)\s+.+)?$')
@@ -323,10 +327,7 @@ class DuelDraw(Processor):
                 'enemy': duel.names[enemy],
             }})
             del duels[(event.source, event.channel)]
-            if duel.cancel_callback.active():
-                duel.cancel_callback.cancel()
-            if duel.start_callback.active():
-                duel.start_callback.cancel()
+            duel.stop()
             return
 
         chance, power = self.weapons[weapon.lower()]
@@ -336,7 +337,7 @@ class DuelDraw(Processor):
             duel.hp[recipient] -= damage
             if duel.hp[recipient] <= 0.0:
                 del duels[(event.source, event.channel)]
-                duel.timeout_callback.cancel()
+                duel.stop()
             else:
                 duel.timeout_callback.delay(self.extratime)
             
@@ -399,36 +400,50 @@ class DuelDraw(Processor):
 class DuelFlee(Processor):
     feature = 'duel'
     addressed = False
-    event_types = ('status')
+    event_types = ('state',)
 
     @handler
     def dueller_fled(self, event):
-        if event.state == 'offline' and (event.source, event.channel) in duels:
-            duel = duels[(event.source, event.channel)]
-            fleer = event.sender['nick'].lower()
-            if fleer in duel.names:
-                if hasattr(event, 'othername'):
-                    for key in ('hp', 'names', 'drawn'):
-                        getattr(duel, key)[event.othername.lower()] = getattr(duel, key)[fleer]
-                        del getattr(duel, key)[fleer]
-                    if duel.aggressor == fleer:
-                        duel.agressor = event.othername.lower()
-                    else:
-                        duel.recipient = event.othername.lower()
+        if event.state != 'offline':
+            return
 
-                    event.addresponse({'reply': choice((
+        fleer = event.sender['nick'].lower()
+        for (source, channel), duel in duels.items():
+            if source != event.source or fleer not in duel.names:
+                continue
+
+            if hasattr(event, 'othername'):
+                newnamekey = event.othername.lower()
+                for key in ('hp', 'names', 'drawn'):
+                    getattr(duel, key)[newnamekey] = getattr(duel, key)[fleer]
+                    del getattr(duel, key)[fleer]
+                duel.names[newnamekey] = event.othername
+                if duel.aggressor == fleer:
+                    duel.aggressor = newnamekey
+                else:
+                    duel.recipient = newnamekey
+
+                event.addresponse({
+                    'target': channel,
+                    'reply': choice((
                         "%s: Changing your identity won't help",
                         "%s: You think I didn't see that?",
                         "%s: There's no escape, you know",
-                    )) % event.othername})
-                else:
-                    del duels[(event.source, event.channel)]
-                    event.addresponse({'reply': choice((
-                            "%(winner)s: %(fleer)s has fled the country during the night",
-                            "%(winner)s: The cowardly %(fleer)s has run for his life",
+                    )) % event.othername,
+                })
+
+            else:
+                del duels[(source, channel)]
+                duel.stop()
+                event.addresponse({
+                    'target': channel,
+                    'reply': choice((
+                            "VICTORY: %(winner)s: %(fleer)s has fled the country during the night",
+                            "VICTORY: %(winner)s: The cowardly %(fleer)s has run for his life",
                         )) % {
                             'winner': duel.names[[name for name in duel.names if name != fleer][0]],
                             'fleer': duel.names[fleer],
-                    }})
+                    },
+                })
 
 # vi: set et sta sw=4 ts=4:
