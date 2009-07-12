@@ -36,13 +36,13 @@ class URL(Base):
         self.url = url
         self.channel = channel
         self.identity_id = identity_id
-        self.time = datetime.now()
+        self.time = datetime.utcnow()
 
 class Delicious(object):
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
-        date  = datetime.utcnow()
+        date = datetime.utcnow()
         title = self._get_title(url)
 
         con_re = re.compile(r'!n=|!')

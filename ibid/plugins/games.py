@@ -1,12 +1,12 @@
-import datetime
+from datetime import datetime, timedelta
 import logging
 from random import choice, gauss, random
 import re
-import time
 
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, IntOption, BoolOption, FloatOption
+from ibid.utils import format_date
 
 help = {}
 log = logging.getLogger('plugins.games')
@@ -175,10 +175,9 @@ class Duel(Processor):
         duel.confirmed = True
         duel.cancel_callback.cancel()
         
-        now = datetime.datetime.now()
-        starttime = now + datetime.timedelta(seconds=self.start_delay + ((30 - now.second) % 30))
-        starttime = datetime.datetime(starttime.year, starttime.month, starttime.day,
-                starttime.hour, starttime.minute, starttime.second)
+        now = datetime.utcnow()
+        starttime = now + timedelta(seconds=self.start_delay + ((30 - now.second) % 30))
+        starttime = starttime.replace(microsecond=0)
         delay = starttime - now
         delay = delay.seconds + (delay.microseconds / 10.**6)
 
@@ -186,7 +185,7 @@ class Duel(Processor):
 
         event.addresponse({'reply': (
             u"%(aggressor)s, %(recipient)s: "
-            u"The duel shall begin on the stroke of %(starttime)s %(timezone)s (in %(delay)s seconds). "
+            u"The duel shall begin on the stroke of %(starttime)s (in %(delay)s seconds). "
             + choice((
                 u"You may clean your pistols.",
                 u"Prepare yourselves.",
@@ -195,8 +194,7 @@ class Duel(Processor):
         ) % {
             'aggressor': duel.names[duel.aggressor],
             'recipient': duel.names[duel.recipient],
-            'starttime': starttime.time().isoformat(),
-            'timezone': time.tzname[0],
+            'starttime': format_date(starttime, 'time'),
             'delay': (starttime - now).seconds,
         }})
 

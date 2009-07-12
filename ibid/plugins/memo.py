@@ -7,11 +7,11 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option, IntOption
+from ibid.config import IntOption
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
-from ibid.utils import ago
+from ibid.utils import ago, format_date
 
 help = {'memo': u'Keeps messages for people.'}
 
@@ -294,8 +294,6 @@ class Messages(Processor):
     my messages for <person> [on <source>]"""
     feature = 'memo'
 
-    datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
-
     @match(r'^my\s+messages$')
     def messages(self, event):
         memos = get_memos(event, True)
@@ -304,7 +302,7 @@ class Messages(Processor):
                 '%s: %s (%s)' % (
                     memos.index(memo),
                     memo.sender.identity,
-                    memo.time.strftime(self.datetime_format)
+                    format_date(memo.time),
                 ) for memo in memos
             ))
         else:
@@ -335,7 +333,7 @@ class Messages(Processor):
 
         if memos:
             event.addresponse(u'Pending: ' + u', '.join(
-                '%i: %s (%s)' % (i, memo.memo, memo.time.strftime(self.datetime_format))
+                '%i: %s (%s)' % (i, memo.memo, format_date(memo.time))
                 for i, memo in enumerate(memos)
             ))
         else:
@@ -358,7 +356,7 @@ class Messages(Processor):
         event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
             'sender': memo.sender.identity,
             'source': memo.sender.source,
-            'time': memo.time.strftime(self.datetime_format),
+            'time': format_date(memo.time),
             'message': memo.memo,
         })
 

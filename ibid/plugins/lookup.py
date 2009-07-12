@@ -86,7 +86,10 @@ class LastFm(Processor):
         if songs['bozo']:
             event.addresponse(u'No such user')
         else:
-            event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
+            event.addresponse(u', '.join(u'%s (%s ago)' % (
+                    e.title,
+                    ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                ) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
 class Lotto(Processor):

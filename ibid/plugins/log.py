@@ -1,12 +1,12 @@
 """Logs messages sent and received."""
 
-from time import time, localtime
+from time import time, gmtime, localtime, strftime
 from os.path import dirname, join, expanduser
 from os import makedirs
 
 import ibid
 from ibid.plugins import Processor
-from ibid.config import Option
+from ibid.config import Option, BoolOption
 from ibid.event import Event
 
 class Log(Processor):
@@ -14,28 +14,38 @@ class Log(Processor):
     addressed = False
     processed = True
     priority = 1900
-    log = Option('log', 'Log file to log messages to. Can contain substitutions.',
-            'logs/%(source)s.%(channel)s.%(year)d.%(month)02d.log')
+
+    log = Option('log', 'Log file to log messages to. Can contain substitutions: source, channel, year, month, day',
+            'logs/%(year)d/%(month)02d/%(source)s/%(channel)s.log')
+
+    timestamp_format = Option('timestamp_format', 'Format to substitute %(timestamp)s with', '%Y-%m-%d %H:%M:%S%z')
+    date_utc = BoolOption('date_utc', 'Log with UTC timestamps', False)
+
     message_format = Option('message_format', 'Format string for messages',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d <%(sender_nick)s> %(message)s')
+            u'%(timestamp)s <%(sender_nick)s> %(message)s')
     action_format = Option('action_format', 'Format string for actions',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d  * %(sender_nick)s %(message)s')
+            u'%(timestamp)s * %(sender_nick)s %(message)s')
     notice_format = Option('notice_format', 'Format string for notices',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d -%(sender_nick)s- %(message)s')
+            u'%(timestamp)s -%(sender_nick)s- %(message)s')
     presence_format = Option('presence_format', 'Format string for presence events',
-            u'%(year)d/%(month)02d/%(day)02d %(hour)02d:%(minute)02d:%(second)02d %(sender_nick)s (%(sender_connection)s) is now %(state)s')
+            u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) is now %(state)s')
+
     logs = {}
 
     def get_logfile(self, source, channel, when):
-        when = localtime(when)
+        if self.date_utc:
+            when = gmtime(when)
+        else:
+            when = localtime(when)
+
         if ibid.sources[source].type == 'jabber':
             channel = channel.split('/')[0]
         filename = self.log % {
                 'source': source.replace('/', '-'),
                 'channel': channel.replace('/', '-'),
-                'year': when[0],
-                'month': when[1],
-                'day': when[2],
+                'year': when.tm_year,
+                'month': when.tm_mon,
+                'day': when.tm_mday,
         }
         filename = join(ibid.options['base'], expanduser(filename))
         if filename not in self.logs:
@@ -53,7 +63,10 @@ class Log(Processor):
 
     def log_event(self, event):
         if event.type in ('message', 'state', 'action', 'notice'):
-            when = localtime(event.time)
+            if self.date_utc:
+                when = gmtime(event.time)
+            else:
+                when = localtime(event.time)
 
             format = {
                     'message': self.message_format,
@@ -68,12 +81,7 @@ class Log(Processor):
                     'sender_connection': event.sender['connection'],
                     'sender_id': event.sender['id'],
                     'sender_nick': event.sender['nick'],
-                    'year': when.tm_year,
-                    'month': when.tm_mon,
-                    'day': when.tm_mday,
-                    'hour': when.tm_hour,
-                    'minute': when.tm_min,
-                    'second': when.tm_sec,
+                    'timestamp': strftime(self.timestamp_format, when),
             }
 
             if event.type == 'state':
