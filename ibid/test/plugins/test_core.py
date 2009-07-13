@@ -22,15 +22,24 @@ class TestAddressed(unittest.TestCase):
     def assert_addressed(self, event, addressed, message):
         self.assert_(hasattr(event, 'addressed'))
         self.assertEqual(event.addressed, addressed)
-        self.assertEqual(event.message.strip(), message)
+        self.assertEqual(event.message['deaddressed'].strip(), message)
+
+    def create_event(self, message, event_type=u'message'):
+        event = Event(u'fakesource', event_type)
+        event.message = {
+            'raw': message,
+            'deaddressed': message,
+            'clean': message,
+            'stripped': message,
+        }
+        return event
 
     def test_non_messages(self):
         for event_type in [u'timer', u'rpc']:
-            event = Event(u'fakesource', event_type)
-            event.message = u'bot: foo'
+            event = self.create_event(u'bot: foo', event_type)
             self.processor.process(event)
             self.assertFalse(hasattr(event, u'addressed'))
-            self.assertEqual(event.message, u'bot: foo')
+            self.assertEqual(event.message['deaddressed'], u'bot: foo')
 
     happy_prefixes = [
         (u'bot', u':  '),
@@ -40,8 +49,7 @@ class TestAddressed(unittest.TestCase):
 
     def test_happy_prefix_names(self):
         for prefix in self.happy_prefixes:
-            event = Event(u'fakesource', u'message')
-            event.message = u'%s%sfoo' % prefix
+            event = self.create_event(u'%s%sfoo' % prefix)
             self.processor.process(event)
             self.assert_addressed(event, prefix[0], u'foo')
 
@@ -53,8 +61,7 @@ class TestAddressed(unittest.TestCase):
 
     def test_sad_prefix_names(self):
         for prefix in self.sad_prefixes:
-            event = Event(u'fakesource', u'message')
-            event.message = u'%s%sfoo' % prefix
+            event = self.create_event(u'%s%sfoo' % prefix)
             self.processor.process(event)
             self.assert_addressed(event, False, u'%s%sfoo' % prefix)
 
@@ -66,8 +73,7 @@ class TestAddressed(unittest.TestCase):
 
     def test_happy_suffix_names(self):
         for suffix in self.happy_suffixes:
-            event = Event(u'fakesource', u'message')
-            event.message = u'foo%s%s' % suffix
+            event = self.create_event(u'foo%s%s' % suffix)
             self.processor.process(event)
             self.assert_addressed(event, suffix[1], u'foo')
 
@@ -80,8 +86,7 @@ class TestAddressed(unittest.TestCase):
 
     def test_sad_suffix_names(self):
         for suffix in self.sad_suffixes:
-            event = Event(u'fakesource', u'message')
-            event.message = u'foo%s%s' % suffix
+            event = self.create_event(u'foo%s%s' % suffix)
             self.processor.process(event)
             self.assert_addressed(event, False, u'foo%s%s' % suffix)
 

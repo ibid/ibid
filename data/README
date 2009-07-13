@@ -1,0 +1,5 @@
+These are data files used by plugins, that don't change very much.
+Thus outdated versions shouldn't be a major issue.
+
+Sources:
+http://data.iana.org/TLD/tlds-alpha-by-domain.txt
