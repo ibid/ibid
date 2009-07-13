@@ -1,7 +1,5 @@
 from twisted.trial import unittest
-import ibid.test
 
-from ibid.event import Event
 from ibid.plugins import url
 
 class TestURLGrabber(unittest.TestCase):
