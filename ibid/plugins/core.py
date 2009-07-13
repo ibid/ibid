@@ -223,6 +223,6 @@ class ChannelTracker(Processor):
                     ibid.channels[event.source][event.channel].remove(event.identity)
                 else:
                     for channel in ibid.channels[event.source].values():
-                        channel.remove(event.identity)
+                        channel.discard(event.identity)
 
 # vi: set et sta sw=4 ts=4:
