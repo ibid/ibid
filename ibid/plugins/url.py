@@ -134,8 +134,6 @@ class Grab(Processor):
 
     @handler
     def grab(self, event, url):
-        event.addresponse(u'Matched %s', url)
-        return
         if url.find('://') == -1:
             if url.lower().startswith('ftp'):
                 url = 'ftp://%s' % url
