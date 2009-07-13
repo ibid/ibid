@@ -6,3 +6,6 @@ recursive-include lib *
 include factpacks/*.json
 include ibid/*.ini
 include twisted/plugins/ibid_plugin.py
+include INSTALL
+include COPYING
+include README
