@@ -3,6 +3,7 @@ recursive-include ibid/templates *
 recursive-include tracibid *.py
 recursive-include contrib *
 recursive-include lib *
+recursive-include data *
 include factpacks/*.json
 include ibid/*.ini
 include twisted/plugins/ibid_plugin.py
