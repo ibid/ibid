@@ -5,6 +5,7 @@ from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPB
 import logging
 import re
 
+from pkg_resources import resource_exists, resource_stream
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 
 import ibid
@@ -112,8 +113,29 @@ class Grab(Processor):
     password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
 
-    @match(r'(?:[^@]\b|\A|<)((?:\w+://|(?:www|ftp)\.)\S+|[^@\s:]+\.(?:com|org|net|za)\S*?)(?:>|\b|Z)')
+    def setup(self):
+        if resource_exists(__name__, '../../data/tlds-alpha-by-domain.txt'):
+            tlds = [tld.strip().lower() for tld
+                    in resource_stream(__name__, '../../data/tlds-alpha-by-domain.txt')
+                        .readlines()
+                    if not tld.startswith('#')
+            ]
+
+        else:
+            log.warning(u"Couldn't open TLD list, falling back to minimal default")
+            tlds = 'com.org.net.za'.split('.')
+
+        self.grab.im_func.pattern = re.compile((
+            r'(?:[^@]\b|\A)('               # Match a boundry, but not on an e-mail address
+            r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
+            r'|[^@\s:]+\.(?:%s)(?:/\S*?)?'  # Guess at the URL based on TLD
+            r')[\[>)\]"\'.]*(?:\s|\Z)'      # End Boundry
+        ) % '|'.join(tlds), re.I | re.DOTALL)
+
+    @handler
     def grab(self, event, url):
+        event.addresponse(u'Matched %s', url)
+        return
         if url.find('://') == -1:
             if url.lower().startswith('ftp'):
                 url = 'ftp://%s' % url
@@ -154,7 +176,7 @@ class Lengthen(Processor):
     ))
 
     def setup(self):
-        self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I)
+        self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I|re.DOTALL)
 
     @handler
     def lengthen(self, event, url):
