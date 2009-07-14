@@ -2,13 +2,13 @@ import logging
 import re
 
 from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, ForeignKey, \
-        UniqueConstraint, MetaData, Table, Index, __version__
+        UniqueConstraint, MetaData, Table, Index, __version__ as sqlalchemy_version
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, ProgrammingError
 
-if __version__ < '0.5':
+if sqlalchemy_version < '0.5':
     NoResultFound = InvalidRequestError
 else:
     from sqlalchemy.orm.exc import NoResultFound
@@ -212,17 +212,25 @@ class VersionedSchema(object):
     def add_index(self, col, unique=False):
         "Add an index to the table"
 
+        engine = self.upgrade_session.bind.engine.name
+
         try:
             Index(self._index_name(col), col, unique=unique) \
                     .create(bind=self.upgrade_session.bind)
-        # MySQL:
+
+        # We understand that occasionaly we'll duplicate an Index.
+        # This is due to differences in index-creation requirements
+        # between DBMS
         except OperationalError, e:
-            if u'Duplicate' not in unicode(e):
-                raise
-        # Postgres:
-        except ProgrammingError, e:    
-            if u'already exists' not in unicode(e):
-                raise
+            if engine == 'sqlalchemy' and u'already exists' in unicode(e):
+                return
+            if engine == 'mysql' and u'Duplicate' in unicode(e):
+                return
+            raise
+        except ProgrammingError, e:
+            if engine == 'postgres' and u'already exists' in unicode(e):
+                return
+            raise
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
@@ -335,10 +343,27 @@ class VersionedSchema(object):
                 table.append_column(col)
 
         session.execute('ALTER TABLE "%s" RENAME TO "%s_old";' % (table.name, table.name))
+
+        # SQLAlchemy indexes aren't attached to tables, they must be dropped around now
+        # or we'll get a clash
+        for constraint in table.indexes:
+            constraint.drop()
+
         table.create()
+
         session.execute('INSERT INTO "%s" ("%s") SELECT "%s" FROM "%s_old";'
                 % (table.name, '", "'.join(fullcolmap.values()), '", "'.join(fullcolmap.keys()), table.name))
+
         session.execute('DROP TABLE "%s_old";' % table.name)
+
+        # SQLAlchemy doesn't pick up all the indexes in the reflected table.
+        # It's ok to use indexes that may be further in the future than this upgrade
+        # because either we can already support them or we'll be rebuilding again soon
+        for constraint in self.table.indexes:
+            try:
+                constraint.create(bind=session.bind)
+            except OperationalError:
+                pass
 
 class Schema(Base):
     __table__ = Table('schema', Base.metadata,
