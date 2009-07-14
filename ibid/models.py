@@ -278,7 +278,7 @@ class VersionedSchema(object):
                             constraint.drop()
 
                             constraint.columns = [
-                                    (old_col.name != column.name) and column or col
+                                    (old_col.name == column.name) and col or column
                                     for column in constraint.columns
                             ]
                             recreate.append((isinstance(constraint, UniqueConstraint),
