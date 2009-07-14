@@ -4,7 +4,6 @@ import re
 from time import localtime, strftime, time
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.exceptions import OperationalError
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
@@ -41,10 +40,7 @@ class FactoidName(Base):
         def upgrade_2_to_3(self):
             self.add_index(self.table.c.name, unique=True)
         def upgrade_3_to_4(self):
-            try:
-                self.add_index(self.table.c.name, unique=True)
-            except OperationalError:
-                pass
+            self.add_index(self.table.c.name, unique=True)
             self.add_index(self.table.c.factoid_id)
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
