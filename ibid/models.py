@@ -1,11 +1,12 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
+from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, ForeignKey, \
+        UniqueConstraint, MetaData, Table, Index, __version__
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.exceptions import InvalidRequestError, OperationalError
+from sqlalchemy.exceptions import InvalidRequestError, OperationalError, ProgrammingError
 
 if __version__ < '0.5':
     NoResultFound = InvalidRequestError
@@ -214,8 +215,13 @@ class VersionedSchema(object):
         try:
             Index(self._index_name(col), col, unique=unique) \
                     .create(bind=self.upgrade_session.bind)
+        # MySQL:
         except OperationalError, e:
             if u'Duplicate' not in unicode(e):
+                raise
+        # Postgres:
+        except ProgrammingError, e:    
+            if u'already exists' not in unicode(e):
                 raise
 
     def drop_column(self, col_name):
@@ -243,7 +249,8 @@ class VersionedSchema(object):
         elif session.bind.engine.name == 'mysql':
             self.alter_column(col, old_name)
         else:
-            session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
+            session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' %
+                    (table.name, old_name, col.name))
 
     def alter_column(self, col, old_name=None):
         """Change a column (possibly renaming from old_name) to Column col."""
@@ -285,18 +292,23 @@ class VersionedSchema(object):
                             recreate.append((isinstance(constraint, UniqueConstraint),
                                 self._mysql_constraint_createstring(constraint)))
             
-            session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
-                % (table.name, old_col.name, description))
+            session.execute('ALTER TABLE "%s" CHANGE "%s" %s;' %
+                (table.name, old_col.name, description))
 
             for unique, columnspec in recreate:
-                session.execute('ALTER TABLE "%s" ADD %s INDEX (%s);' % (
-                    self.table.name, unique and 'UNIQUE' or '', columnspec))
+                session.execute('ALTER TABLE "%s" ADD %s INDEX (%s);' %
+                    (self.table.name, unique and 'UNIQUE' or '', columnspec))
 
         else:
             if old_name is not None:
                 self.rename_column(col, old_name)
-            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s'
-                % (table.name, col.name, description.split(" ", 1)[1]))
+
+            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s;' %
+                (table.name, col.name, description.split(" ", 3)[1]))
+
+            if old_col.nullable != col.nullable:
+                session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" %s NOT NULL;' % 
+                    (table.name, col.name, col.nullable and 'DROP' or 'SET'))
 
     def _rebuild_sqlite(self, colmap):
         """SQLite doesn't support modification of table schema - must rebuild the table.
