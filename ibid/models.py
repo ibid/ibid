@@ -254,9 +254,9 @@ class VersionedSchema(object):
 
         sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
+        old_col = table.c[old_name or col.name]
 
         if session.bind.engine.name == 'sqlite':
-            old_col = table.c[old_name or col.name]
             if (isinstance(col.type, (UnicodeText, Unicode))
                         and isinstance(old_col.type, (UnicodeText, Unicode))
                     ) or (isinstance(col.type, Integer)
@@ -271,20 +271,21 @@ class VersionedSchema(object):
             # Special handling for columns of TEXT type, because SQLAlchemy
             # can't create indexes for them
             recreate = []
-            if isinstance(col.type, UnicodeText):
+            if isinstance(col.type, UnicodeText) or isinstance(old_col.type, UnicodeText):
                 for type in (table.constraints, table.indexes):
                     for constraint in list(type):
-                        if [True for column in constraint.columns if (old_name or col.name) == column.name]:
+                        if [True for column in constraint.columns if old_col.name == column.name]:
                             constraint.drop()
 
-                            constraint.columns = [column for column in constraint.columns
-                                    if (old_name or col.name) != column.name] \
-                                    + [col]
+                            constraint.columns = [
+                                    (old_col.name != column.name) and column or col
+                                    for column in constraint.columns
+                            ]
                             recreate.append((isinstance(constraint, UniqueConstraint),
                                 self._mysql_constraint_createstring(constraint)))
             
             session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
-                % (table.name, old_name is not None and old_name or col.name, description))
+                % (table.name, old_col.name, description))
 
             for unique, columnspec in recreate:
                 session.execute('ALTER TABLE "%s" ADD %s INDEX (%s);' % (
