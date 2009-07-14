@@ -41,7 +41,7 @@ setup(
         'http://ibid.omnia.za.net/eggs/',
         'http://wokkel.ik.nu/downloads',
     ],
-    packages=['ibid', 'tracibid', 'lib', 'twisted', 'contrib', 'factpacks'],
+    packages=['ibid', 'tracibid', 'lib', 'twisted', 'data', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
     },
