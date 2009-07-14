@@ -244,9 +244,8 @@ class VersionedSchema(object):
         else:
             session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
 
-    def alter_column(self, col, old_name=None, length_only=False):
-        """Change a column (possibly renaming from old_name) to Column col.
-        Specify length_only if the change is simply a change of data-type length."""
+    def alter_column(self, col, old_name=None):
+        """Change a column (possibly renaming from old_name) to Column col."""
 
         session = self.upgrade_session
         table = self._get_reflected_model()
@@ -257,9 +256,13 @@ class VersionedSchema(object):
         description = sg.get_column_specification(col)
 
         if session.bind.engine.name == 'sqlite':
-            #TODO: Automatically detect length_only
-            if length_only:
-                # SQLite doesn't enforce value length restrictions, only type changes have a real effect
+            old_col = table.c[old_name or col.name]
+            if (isinstance(col.type, (UnicodeText, Unicode))
+                        and isinstance(old_col.type, (UnicodeText, Unicode))
+                    ) or (isinstance(col.type, Integer)
+                        and isinstance(old_col.type, (Integer))):
+                # SQLite doesn't enforce value length restrictions
+                # only type changes have a real effect
                 return
 
             self._rebuild_sqlite({old_name is None and col.name or old_name: col})
@@ -360,8 +363,8 @@ class Identity(Base):
             self.add_index(self.table.c.identity)
 
         def upgrade_2_to_3(self):
-            self.alter_column(Column('source', Unicode(32), nullable=False, index=True), length_only=True)
-            self.alter_column(Column('identity', UnicodeText, nullable=False, index=True), length_only=True)
+            self.alter_column(Column('source', Unicode(32), nullable=False, index=True))
+            self.alter_column(Column('identity', UnicodeText, nullable=False, index=True))
 
     __table__.versioned_schema = IdentitySchema(__table__, 3)
 
@@ -387,7 +390,7 @@ class Attribute(Base):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.name)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('value', UnicodeText, nullable=False), length_only=True)
+            self.alter_column(Column('value', UnicodeText, nullable=False))
 
     __table__.versioned_schema = AttributeSchema(__table__, 3)
 
@@ -413,8 +416,8 @@ class Credential(Base):
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.method)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('source', Unicode(32), index=True), length_only=True)
-            self.alter_column(Column('credential', UnicodeText, nullable=False), length_only=True)
+            self.alter_column(Column('source', Unicode(32), index=True))
+            self.alter_column(Column('credential', UnicodeText, nullable=False))
 
     __table__.versioned_schema = CredentialSchema(__table__, 3)
 
