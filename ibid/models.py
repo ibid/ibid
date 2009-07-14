@@ -93,7 +93,8 @@ class VersionedSchema(object):
 
                     schema.version = version
                     session.save_or_update(schema)
-                del self.upgrade_reflected_model
+
+                    self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
 
             session.commit()
 
