@@ -159,7 +159,6 @@ class VersionedSchema(object):
 
                         getattr(self.table, type).remove(constraint)
 
-        log.debug(u"Current table: %s", repr(self.table.indexes))
         self.table.create(bind=session.bind)
 
         if session.bind.engine.name == 'mysql':
