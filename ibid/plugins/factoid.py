@@ -615,23 +615,23 @@ class Modify(Processor):
 greetings = ('lo', 'ello', 'hello', 'hi', 'hithere', 'howdy', 'hey', 'heya', 'hiya', 'hola', 'salut', 'bonjour', 'sup', 'wussup', 'hoezit', 'wotcha', 'wotcher', 'yo', 'word', 'goodday', 'wasup', 'wassup', 'howzit', 'howsit', 'buongiorno', 'hoelykit', 'hoegaandit', 'goodmorning', 'morning')
 static_default = {
     'greet': {
-        'matches': ['|'.join(greetings)],
+        'matches': [r'\b(' + '|'.join(greetings) + r')\b'],
         'responses': greetings,
     },
     'reward': {
-        'matches': ['bot(\s+|\-)?snack'],
+        'matches': [r'\bbot(\s+|\-)?snack\b'],
         'responses': ['thanks, $who', '$who: thankyou!', ':)'],
     },
     'praise': {
-        'matches': ['good(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl|$nick)', 'you\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)'],
+        'matches': [r'\bgood(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl|$nick)\b', r'\byou\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)\b'],
         'responses': ['thanks, $who', '$who: thankyou!', ':)'],
     },
     'thanks': {
-        'matches': ['thank(s|\s*you)', '^\s*ta\s*$', '^\s*shot\s*$'],
+        'matches': [r'\bthank(s|\s*you)\b', '^\s*ta\s*$', '^\s*shot\s*$'],
         'responses': ['no problem, $who', '$who: my pleasure', 'sure thing, $who', 'no worries, $who', '$who: np', 'no probs, $who', '$who: no problemo', '$who: not at all'],
     },
     'criticism': {
-        'matches': ['((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl|$nick))|(bot(\s|\-)?s(mack|lap))'],
+        'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl|$nick))|(bot(\s|\-)?s(mack|lap))\b'],
         'responses': ['*whimper*', 'sorry, $who :(', ':(', '*cringe*', 'sorry, baas'],
     },
 }
