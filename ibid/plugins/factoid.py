@@ -649,7 +649,7 @@ class StaticFactoid(Processor):
     def static(self, event):
         for factoid in self.factoids.values():
             for match in factoid['matches']:
-                if re.search(match, event.message['stripped']):
+                if re.search(match, event.message['stripped'], re.I|re.DOTALL):
                     event.addresponse(_interpolate(choice(factoid['responses']), event))
                     return
 
