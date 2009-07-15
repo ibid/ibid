@@ -623,7 +623,7 @@ static_default = {
         'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
     },
     'praise': {
-        'matches': [r'\bgood(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl|$nick)\b', r'\byou\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)\b'],
+        'matches': [r'\bgood(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl)\b', r'\byou\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)\b'],
         'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
     },
     'thanks': {
@@ -631,7 +631,7 @@ static_default = {
         'responses': [u'no problem, $who', u'$who: my pleasure', u'sure thing, $who', u'no worries, $who', u'$who: np', u'no probs, $who', u'$who: no problemo', u'$who: not at all'],
     },
     'criticism': {
-        'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl|$nick))|(bot(\s|\-)?s(mack|lap))\b'],
+        'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl))|(bot(\s|\-)?s(mack|lap))\b'],
         'responses': [u'*whimper*', u'sorry, $who :(', u':(', u'*cringe*', u'sorry, baas'],
     },
 }
