@@ -612,7 +612,7 @@ class Modify(Processor):
 
             event.addresponse(True)
 
-greetings = ('lo', 'ello', 'hello', 'hi', 'hithere', 'howdy', 'hey', 'heya', 'hiya', 'hola', 'salut', 'bonjour', 'sup', 'wussup', 'hoezit', 'wotcha', 'wotcher', 'yo', 'word', 'goodday', 'wasup', 'wassup', 'howzit', 'howsit', 'buongiorno', 'hoelykit', 'hoegaandit', 'goodmorning', 'morning')
+greetings = (u'lo', u'ello', u'hello', u'hi', u'hithere', u'howdy', u'hey', u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup', u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'goodday', u'wasup', u'wassup', u'howzit', u'howsit', u'buongiorno', u'hoelykit', u'hoegaandit', u'goodmorning', u'morning')
 static_default = {
     'greet': {
         'matches': [r'\b(' + '|'.join(greetings) + r')\b'],
@@ -620,19 +620,19 @@ static_default = {
     },
     'reward': {
         'matches': [r'\bbot(\s+|\-)?snack\b'],
-        'responses': ['thanks, $who', '$who: thankyou!', ':)'],
+        'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
     },
     'praise': {
         'matches': [r'\bgood(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl|$nick)\b', r'\byou\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)\b'],
-        'responses': ['thanks, $who', '$who: thankyou!', ':)'],
+        'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
     },
     'thanks': {
-        'matches': [r'\bthank(s|\s*you)\b', '^\s*ta\s*$', '^\s*shot\s*$'],
-        'responses': ['no problem, $who', '$who: my pleasure', 'sure thing, $who', 'no worries, $who', '$who: np', 'no probs, $who', '$who: no problemo', '$who: not at all'],
+        'matches': [r'\bthank(s|\s*you)\b', r'^\s*ta\s*$', r'^\s*shot\s*$'],
+        'responses': [u'no problem, $who', u'$who: my pleasure', u'sure thing, $who', u'no worries, $who', u'$who: np', u'no probs, $who', u'$who: no problemo', u'$who: not at all'],
     },
     'criticism': {
         'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl|$nick))|(bot(\s|\-)?s(mack|lap))\b'],
-        'responses': ['*whimper*', 'sorry, $who :(', ':(', '*cringe*', 'sorry, baas'],
+        'responses': [u'*whimper*', u'sorry, $who :(', u':(', u'*cringe*', u'sorry, baas'],
     },
 }
 
