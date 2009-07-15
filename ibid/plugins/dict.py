@@ -22,7 +22,6 @@ class Dict(Processor):
     def define(self, event, word, dictionary):
         connection = Connection(self.server, self.port)
         dictionary = dictionary is None and '*' or dictionary.lower()
-        word = word.encode('utf-8')
         dictionaries = connection.getdbdescs().keys()
 
         if dictionary != '*' and dictionary not in dictionaries:
@@ -31,11 +30,11 @@ class Dict(Processor):
                     human_join(sorted(dictionaries)))
             return
 
-        definitions = connection.define(dictionary, word)
+        definitions = connection.define(dictionary, word.encode('utf-8'))
         if definitions:
             event.addresponse(u', '.join(d.getdefstr() for d in definitions))
         else:
-            suggestions = connection.match(dictionary, 'lev', word)
+            suggestions = connection.match(dictionary, 'lev', word.encode('utf-8'))
             if suggestions:
                 event.addresponse(
                         u"I don't know about %(word)s. Maybe you meant %(suggestions)s?", {
