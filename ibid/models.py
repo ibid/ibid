@@ -1,13 +1,14 @@
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UniqueConstraint, MetaData, Table, Index, __version__
+from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, ForeignKey, \
+        UniqueConstraint, MetaData, Table, Index, __version__ as sqlalchemy_version
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.exceptions import InvalidRequestError
+from sqlalchemy.exceptions import InvalidRequestError, OperationalError, ProgrammingError
 
-if __version__ < '0.5':
+if sqlalchemy_version < '0.5':
     NoResultFound = InvalidRequestError
 else:
     from sqlalchemy.orm.exc import NoResultFound
@@ -65,12 +66,12 @@ class VersionedSchema(object):
         if self.table.name == 'schema':
             if not session.bind.has_table(self.table.name):
                 metadata.bind = session.bind
-                self.table.create()
+                self._create_table()
 
                 schema = Schema(unicode(self.table.name), self.version)
                 session.save_or_update(schema)
                 return
-            Schema.__table__ = self.get_reflected_model()
+            Schema.__table__ = self._get_reflected_model()
 
         schema = session.query(Schema).filter(Schema.table==unicode(self.table.name)).first()
 
@@ -78,7 +79,7 @@ class VersionedSchema(object):
             if not schema:
                 log.info(u"Creating table %s", self.table.name)
 
-                self.table.create(bind=session.bind)
+                self._create_table()
 
                 schema = Schema(unicode(self.table.name), self.version)
                 session.save_or_update(schema)
@@ -93,7 +94,8 @@ class VersionedSchema(object):
 
                     schema.version = version
                     session.save_or_update(schema)
-                del self.upgrade_reflected_model
+
+                    self.upgrade_reflected_model = MetaData(session.bind, reflect=True)
 
             session.commit()
 
@@ -104,7 +106,77 @@ class VersionedSchema(object):
         session.close()
         del self.upgrade_session
 
-    def get_reflected_model(self):
+    def _index_name(self, col):
+        """
+        We'd like to not duplicate an existing index so try to abide by the local customs
+        """
+        session = self.upgrade_session
+
+        if session.bind.engine.name == 'sqlite':
+            return 'ix_%s_%s' % (self.table.name, col.name)
+        elif session.bind.engine.name == 'postgres':
+            return '%s_%s_key' % (self.table.name, col.name)
+        elif session.bind.engine.name == 'mysql':
+            return col.name
+
+        log.warning(u"Unknown database type, %s, you may end up with duplicate indices"
+                % session.bind.engine.name)
+        return 'ix_%s_%s' % (self.table.name, col.name)
+
+    def _mysql_constraint_createstring(self, constraint):
+        """Generate the description of a constraint for insertion into a CREATE string"""
+        return ', '.join(
+            (isinstance(column.type, UnicodeText)
+                    and '"%(name)s"(%(length)i)'
+                    or '"%(name)s"') % {
+                'name': column.name,
+                'length': column.info.get('ibid_mysql_index_length', 8),
+            } for column in constraint.columns
+        )
+
+    def _create_table(self):
+        """Check that the table is in a suitable form for all DBs, before creating.
+        Yes, SQLAlchemy's abstractions are leaky enough that you have to do this"""
+
+        session = self.upgrade_session
+        indices = []
+        old_indexes = list(self.table.indexes)
+        old_constraints = list(self.table.constraints)
+
+        for column in self.table.c:
+            if column.unique and not column.index:
+                raise Exception(u"Column %s.%s is unique but not indexed. "
+                    u"SQLite doesn't like such things, so please be nice and don't do that."
+                    % (self.table.name, self.column.name))
+
+        # Strip out Indexes and Constraints that SQLAlchemy can't create by itself
+        if session.bind.engine.name == 'mysql':
+            for type, old_list in (
+                    ('constraints', old_constraints),
+                    ('indexes', old_indexes)):
+                for constraint in old_list:
+                    if [True for column in constraint.columns if isinstance(column.type, UnicodeText)]:
+                        indices.append((isinstance(constraint, UniqueConstraint),
+                            self._mysql_constraint_createstring(constraint)))
+
+                        getattr(self.table, type).remove(constraint)
+
+        self.table.create(bind=session.bind)
+
+        if session.bind.engine.name == 'mysql':
+            for constraint in old_constraints:
+                if constraint not in self.table.constraints:
+                    self.table.constraints.add(constraint)
+
+            for index in old_indexes:
+                if index not in self.table.indexes:
+                    self.table.indexes.add(index)
+
+            for unique, columnspec in indices:
+                session.execute('ALTER TABLE "%s" ADD %s INDEX (%s);' % (
+                    self.table.name, unique and 'UNIQUE' or '', columnspec))
+
+    def _get_reflected_model(self):
         "Get a reflected table from the current DB's schema"
 
         return self.upgrade_reflected_model.tables.get(self.table.name, None)
@@ -113,7 +185,7 @@ class VersionedSchema(object):
         "Add column col to table"
 
         session = self.upgrade_session
-        table = self.get_reflected_model()
+        table = self._get_reflected_model()
 
         log.debug(u"Adding column %s to table %s", col.name, table.name)
 
@@ -140,8 +212,25 @@ class VersionedSchema(object):
     def add_index(self, col, unique=False):
         "Add an index to the table"
 
-        Index('ix_%s_%s' % (self.table.name, col.name), col, unique=unique) \
-                .create(bind=self.upgrade_session.bind)
+        engine = self.upgrade_session.bind.engine.name
+
+        try:
+            Index(self._index_name(col), col, unique=unique) \
+                    .create(bind=self.upgrade_session.bind)
+
+        # We understand that occasionaly we'll duplicate an Index.
+        # This is due to differences in index-creation requirements
+        # between DBMS
+        except OperationalError, e:
+            if engine == 'sqlalchemy' and u'already exists' in unicode(e):
+                return
+            if engine == 'mysql' and u'Duplicate' in unicode(e):
+                return
+            raise
+        except ProgrammingError, e:
+            if engine == 'postgres' and u'already exists' in unicode(e):
+                return
+            raise
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
@@ -151,7 +240,7 @@ class VersionedSchema(object):
         log.debug(u"Dropping column %s from table %s", col_name, self.table.name)
 
         if session.bind.engine.name == 'sqlite':
-            self.rebuild_sqlite({col_name: None})
+            self._rebuild_sqlite({col_name: None})
         else:
             session.execute('ALTER TABLE "%s" DROP COLUMN "%s";' % (self.table.name, col_name))
 
@@ -159,55 +248,84 @@ class VersionedSchema(object):
         "Rename column from old_name to Column col"
 
         session = self.upgrade_session
-        table = self.get_reflected_model()
+        table = self._get_reflected_model()
 
         log.debug(u"Rename column %s to %s in table %s", old_name, col.name, table.name)
 
         if session.bind.engine.name == 'sqlite':
-            self.rebuild_sqlite({old_name: col})
+            self._rebuild_sqlite({old_name: col})
         elif session.bind.engine.name == 'mysql':
             self.alter_column(col, old_name)
         else:
-            session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' % (table.name, old_name, col.name))
+            session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";' %
+                    (table.name, old_name, col.name))
 
-    def alter_column(self, col, old_name=None, length_only=False):
-        """Change a column (possibly renaming from old_name) to Column col.
-        Specify length_only if the change is simply a change of data-type length."""
+    def alter_column(self, col, old_name=None):
+        """Change a column (possibly renaming from old_name) to Column col."""
 
         session = self.upgrade_session
-        table = self.get_reflected_model()
+        table = self._get_reflected_model()
 
         log.debug(u"Altering column %s in table %s", col.name, table.name)
 
         sg = session.bind.dialect.schemagenerator(session.bind.dialect, session.bind)
         description = sg.get_column_specification(col)
+        old_col = table.c[old_name or col.name]
 
         if session.bind.engine.name == 'sqlite':
-            #TODO: Automatically detect length_only
-            if length_only:
-                # SQLite doesn't enforce value length restrictions, only type changes have a real effect
+            if (isinstance(col.type, (UnicodeText, Unicode))
+                        and isinstance(old_col.type, (UnicodeText, Unicode))
+                    ) or (isinstance(col.type, Integer)
+                        and isinstance(old_col.type, (Integer))):
+                # SQLite doesn't enforce value length restrictions
+                # only type changes have a real effect
                 return
 
-            self.rebuild_sqlite({old_name is None and col.name or old_name: col})
+            self._rebuild_sqlite({old_name is None and col.name or old_name: col})
 
         elif session.bind.engine.name == 'mysql':
-            session.execute('ALTER TABLE "%s" CHANGE "%s" %s;'
-                % (table.name, old_name is not None and old_name or col.name, description))
+            # Special handling for columns of TEXT type, because SQLAlchemy
+            # can't create indexes for them
+            recreate = []
+            if isinstance(col.type, UnicodeText) or isinstance(old_col.type, UnicodeText):
+                for type in (table.constraints, table.indexes):
+                    for constraint in list(type):
+                        if [True for column in constraint.columns if old_col.name == column.name]:
+                            constraint.drop()
+
+                            constraint.columns = [
+                                    (old_col.name == column.name) and col or column
+                                    for column in constraint.columns
+                            ]
+                            recreate.append((isinstance(constraint, UniqueConstraint),
+                                self._mysql_constraint_createstring(constraint)))
+            
+            session.execute('ALTER TABLE "%s" CHANGE "%s" %s;' %
+                (table.name, old_col.name, description))
+
+            for unique, columnspec in recreate:
+                session.execute('ALTER TABLE "%s" ADD %s INDEX (%s);' %
+                    (self.table.name, unique and 'UNIQUE' or '', columnspec))
 
         else:
             if old_name is not None:
                 self.rename_column(col, old_name)
-            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s'
-                % (table.name, col.name, description.split(" ", 1)[1]))
 
-    def rebuild_sqlite(self, colmap):
+            session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" TYPE %s;' %
+                (table.name, col.name, description.split(" ", 3)[1]))
+
+            if old_col.nullable != col.nullable:
+                session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" %s NOT NULL;' % 
+                    (table.name, col.name, col.nullable and 'DROP' or 'SET'))
+
+    def _rebuild_sqlite(self, colmap):
         """SQLite doesn't support modification of table schema - must rebuild the table.
         colmap maps old column names to new Columns (or None for column deletion).
         Only modified columns need to be listed, unchaged columns are carried over automatically.
         Specify table in case name has changed in a more recent version."""
 
         session = self.upgrade_session
-        table = self.get_reflected_model()
+        table = self._get_reflected_model()
 
         log.debug(u"Rebuilding SQLite table %s", table.name)
 
@@ -225,10 +343,27 @@ class VersionedSchema(object):
                 table.append_column(col)
 
         session.execute('ALTER TABLE "%s" RENAME TO "%s_old";' % (table.name, table.name))
+
+        # SQLAlchemy indexes aren't attached to tables, they must be dropped around now
+        # or we'll get a clash
+        for constraint in table.indexes:
+            constraint.drop()
+
         table.create()
+
         session.execute('INSERT INTO "%s" ("%s") SELECT "%s" FROM "%s_old";'
                 % (table.name, '", "'.join(fullcolmap.values()), '", "'.join(fullcolmap.keys()), table.name))
+
         session.execute('DROP TABLE "%s_old";' % table.name)
+
+        # SQLAlchemy doesn't pick up all the indexes in the reflected table.
+        # It's ok to use indexes that may be further in the future than this upgrade
+        # because either we can already support them or we'll be rebuilding again soon
+        for constraint in self.table.indexes:
+            try:
+                constraint.create(bind=session.bind)
+            except OperationalError:
+                pass
 
 class Schema(Base):
     __table__ = Table('schema', Base.metadata,
@@ -254,8 +389,8 @@ class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
-        Column('source', Unicode(16), nullable=False, index=True),
-        Column('identity', Unicode(64), nullable=False, index=True),
+        Column('source', Unicode(32), nullable=False, index=True),
+        Column('identity', UnicodeText, nullable=False, index=True),
         Column('created', DateTime, default=func.current_timestamp()),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
@@ -266,7 +401,11 @@ class Identity(Base):
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.identity)
 
-    __table__.versioned_schema = IdentitySchema(__table__, 2)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('source', Unicode(32), nullable=False, index=True))
+            self.alter_column(Column('identity', UnicodeText, nullable=False, index=True))
+
+    __table__.versioned_schema = IdentitySchema(__table__, 3)
 
     def __init__(self, source, identity, account_id=None):
         self.source = source
@@ -281,7 +420,7 @@ class Attribute(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
         Column('name', Unicode(32), nullable=False, index=True),
-        Column('value', Unicode(128), nullable=False),
+        Column('value', UnicodeText, nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
@@ -289,8 +428,10 @@ class Attribute(Base):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.name)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('value', UnicodeText, nullable=False))
 
-    __table__.versioned_schema = AttributeSchema(__table__, 2)
+    __table__.versioned_schema = AttributeSchema(__table__, 3)
 
     def __init__(self, name, value):
         self.name = name
@@ -303,9 +444,9 @@ class Credential(Base):
     __table__ = Table('credentials', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), nullable=False, index=True),
-        Column('source', Unicode(16), index=True),
+        Column('source', Unicode(32), index=True),
         Column('method', Unicode(16), nullable=False, index=True),
-        Column('credential', Unicode(256), nullable=False),
+        Column('credential', UnicodeText, nullable=False),
         useexisting=True)
 
     class CredentialSchema(VersionedSchema):
@@ -313,8 +454,11 @@ class Credential(Base):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.method)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('source', Unicode(32), index=True))
+            self.alter_column(Column('credential', UnicodeText, nullable=False))
 
-    __table__.versioned_schema = CredentialSchema(__table__, 2)
+    __table__.versioned_schema = CredentialSchema(__table__, 3)
 
     def __init__(self, method, credential, source=None, account_id=None):
         self.account_id = account_id

@@ -4,7 +4,6 @@ import re
 from time import localtime, strftime, time
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.exceptions import OperationalError
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
@@ -29,7 +28,7 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(128), nullable=False, unique=True, index=True),
+    Column('name', Unicode(64), nullable=False, unique=True, index=True),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False, default=func.current_timestamp()),
@@ -42,15 +41,14 @@ class FactoidName(Base):
         def upgrade_2_to_3(self):
             self.add_index(self.table.c.name, unique=True)
         def upgrade_3_to_4(self):
-            try:
-                self.add_index(self.table.c.name, unique=True)
-            except OperationalError:
-                pass
+            self.add_index(self.table.c.name, unique=True)
             self.add_index(self.table.c.factoid_id)
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
+        def upgrade_4_to_5(self):
+            self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 4)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 5)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
