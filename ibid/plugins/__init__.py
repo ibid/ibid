@@ -38,6 +38,9 @@ class Processor(object):
     def setup(self):
         pass
 
+    def shutdown(self):
+        pass
+
     def process(self, event):
         if event.type not in self.event_types:
             return
