@@ -50,14 +50,14 @@ Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, back
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
+    u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
+    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg|ask)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
     @authorise
     def tell(self, event, how, who, source, memo):
         source_specified = bool(source)
