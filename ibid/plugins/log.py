@@ -7,7 +7,7 @@ from os import makedirs
 from dateutil.tz import tzlocal, tzutc
 
 import ibid
-from ibid.plugins import Processor
+from ibid.plugins import Processor, handler
 from ibid.config import Option, BoolOption
 from ibid.event import Event
 
@@ -15,6 +15,7 @@ class Log(Processor):
 
     addressed = False
     processed = True
+    event_types = (u'message', u'state', u'action', u'notice')
     priority = 1900
 
     log = Option('log', 'Log file to log messages to. Can contain substitutions: source, channel, year, month, day',
@@ -62,51 +63,50 @@ class Log(Processor):
         return self.logs[filename]
 
     def log_event(self, event):
-        if event.type in ('message', 'state', 'action', 'notice'):
-            when = event.time
-            if not self.date_utc:
-                when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())
+        if self.date_utc:
+            when = gmtime(event.time)
+        else:
+            when = localtime(event.time)
 
-            format = {
-                    'message': self.message_format,
-                    'state': self.presence_format,
-                    'action': self.action_format,
-                    'notice': self.notice_format,
-                }[event.type]
+        format = {
+                'message': self.message_format,
+                'state': self.presence_format,
+                'action': self.action_format,
+                'notice': self.notice_format,
+            }[event.type]
 
-            # We get two events on a rename, ignore one of them
-            if event.type == 'state' and hasattr(event, 'othername'):
-                if event.state == 'online':
-                    return
-                format = self.rename_format
+        # We get two events on a rename, ignore one of them
+        if event.type == 'state' and hasattr(event, 'othername'):
+            if event.state == 'online':
+                return
+            format = self.rename_format
 
-            fields = {
-                    'source': event.source,
-                    'channel': event.channel,
-                    'sender_connection': event.sender['connection'],
-                    'sender_id': event.sender['id'],
-                    'sender_nick': event.sender['nick'],
-                    'timestamp': unicode(
-                        when.strftime(self.timestamp_format.encode('utf8')),
-                        'utf8'),
-            }
+        fields = {
+                'source': event.source,
+                'channel': event.channel,
+                'sender_connection': event.sender['connection'],
+                'sender_id': event.sender['id'],
+                'sender_nick': event.sender['nick'],
+                'timestamp': strftime(self.timestamp_format, when),
+        }
 
-            if event.type == 'state':
-                if hasattr(event, 'othername'):
-                    fields['new_nick'] = event.othername
-                else:
-                    fields['state'] = event.state
-            elif isinstance(event.message, dict):
-                fields['message'] = event.message['raw']
+        if event.type == 'state':
+            if hasattr(event, 'othername'):
+                fields['new_nick'] = event.othername
             else:
-                fields['message'] = event.message
+                fields['state'] = event.state
+        elif isinstance(event.message, dict):
+            fields['message'] = event.message['raw']
+        else:
+            fields['message'] = event.message
 
-            file = self.get_logfile(event)
+        file = self.get_logfile(event.source, event.channel or '', event.time)
 
-            file.write((format % fields).encode('utf-8') + '\n')
-            file.flush()
+        file.write((format % fields).encode('utf-8') + '\n')
+        file.flush()
 
-    def process(self, event):
+    @handler
+    def log(self, event):
         self.log_event(event)
 
         for response in event.responses:

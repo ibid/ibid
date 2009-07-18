@@ -41,7 +41,7 @@ class Strip(Processor):
 
     priority = -1600
     addressed = False
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$', re.DOTALL)
 
@@ -56,7 +56,7 @@ class Ignore(Processor):
 
     priority = -1500
     addressed = False
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     nicks = ListOption('ignore', 'List of nicks to ignore', [])
 
@@ -105,7 +105,7 @@ class Address(Processor):
 
     processed = True
     addressed = False
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
@@ -138,7 +138,7 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
@@ -165,7 +165,7 @@ class Complain(Processor):
 class RateLimit(Processor):
 
     priority = -1000
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     limit_time = IntOption('limit_time', 'Time period over which to measure messages', 10)
     limit_messages = IntOption('limit_messages', 'Number of messages to allow during the time period', 5)
@@ -205,7 +205,7 @@ class UnicodeWarning(Processor):
 class ChannelTracker(Processor):
     priority = -1550
     addressed = False
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def track(self, event):

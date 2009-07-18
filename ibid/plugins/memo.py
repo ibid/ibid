@@ -266,7 +266,7 @@ class Deliver(Processor):
 class Notify(Processor):
     feature = 'memo'
 
-    event_types = ('state',)
+    event_types = (u'state',)
     addressed = False
     processed = True
 

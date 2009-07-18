@@ -66,7 +66,7 @@ class Actions(Processor):
             event.addresponse(u'Changing nick to %s', nick)
 
 class NickServ(Processor):
-    event_types = ('notice',)
+    event_types = (u'notice',)
 
     def is_nickserv(self, event):
         source_cfg = ibid.config['sources'][event.source]

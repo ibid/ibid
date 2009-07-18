@@ -6,7 +6,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 from sqlalchemy.exceptions import IntegrityError
 
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago, format_date
 
@@ -50,11 +50,12 @@ class See(Processor):
     feature = 'seen'
 
     priority = 1500
+    event_types = (u'message', u'state')
+    addressed = False
+    processed = True
 
-    def process(self, event):
-        if event.type not in ('message', 'state'):
-            return
-
+    @handler
+    def see(self, event):
         sighting = event.session.query(Sighting) \
                 .filter_by(identity_id=event.identity) \
                 .filter_by(type=event.type).first()

@@ -221,7 +221,7 @@ class DuelDraw(Processor):
     feature = 'duel'
 
     # Parameters for Processor:
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
 
@@ -403,7 +403,7 @@ class DuelDraw(Processor):
 class DuelFlee(Processor):
     feature = 'duel'
     addressed = False
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def dueller_fled(self, event):

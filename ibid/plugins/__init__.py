@@ -14,7 +14,7 @@ import ibid
 
 class Processor(object):
 
-    event_types = ('message',)
+    event_types = (u'message',)
     addressed = True
     processed = False
     priority = 0

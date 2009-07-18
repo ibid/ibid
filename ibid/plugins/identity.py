@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.exceptions import IntegrityError
 
 import ibid
-from ibid.plugins import Processor, match, auth_responses
+from ibid.plugins import Processor, match, handler, auth_responses
 from ibid.models import Account, Identity, Attribute
 from ibid.utils import human_join
 
@@ -372,8 +372,12 @@ class Describe(Processor):
 class Identify(Processor):
 
     priority = -1600
+    addressed = False
+    processed = True
+    event_types = (u'message', u'state', u'action', u'notice')
 
-    def process(self, event):
+    @handler
+    def handle(self, event):
         if event.sender:
             if (event.source, event.sender['connection']) in identify_cache:
                 (event.identity, event.account) = identify_cache[(event.source, event.sender['connection'])]
