@@ -238,6 +238,7 @@ class Reloader(object):
 
         if processors:
             for processor in processors:
+                processor.shutdown()
                 ibid.processors.remove(processor)
 
             self.log.info(u"Unloaded %s plugin", name)

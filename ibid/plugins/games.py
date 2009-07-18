@@ -38,6 +38,10 @@ class DuelInitiate(Processor):
                 if hasattr(self, callback) and getattr(self, callback).active():
                     getattr(self, callback).cancel()
 
+    def shutdown(self):
+        for duel in duels:
+            duel.stop()
+
     @match(r'^(?:I\s+)throw\s+(?:down\s+(?:the|my)\s+gauntlet|(?:the|my)\s+gauntlet\s+down)\s+'
             r'at\s+(\S+?)(?:\'s\s+feet)?(?:\s+(?:over|because|for)\s+.+)?$')
     def initiate_gauntlet(self, event, recipient):
