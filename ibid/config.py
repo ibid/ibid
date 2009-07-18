@@ -82,6 +82,10 @@ class DictOption(Option):
             both.update(value)
             value = both
 
+            for k, v in value.items():
+                if not v:
+                    del value[k]
+
         return value
 
 # vi: set et sta sw=4 ts=4:
