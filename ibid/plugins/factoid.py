@@ -612,7 +612,7 @@ class Modify(Processor):
 
             event.addresponse(True)
 
-greetings = (u'lo', u'ello', u'hello', u'hi', u'hithere', u'howdy', u'hey', u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup', u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'goodday', u'wasup', u'wassup', u'howzit', u'howsit', u'buongiorno', u'hoelykit', u'hoegaandit', u'goodmorning', u'morning')
+greetings = (u'lo', u'ello', u'hello', u'hi', u'hithere', u'howdy', u'hey', u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup', u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'goodday', u'wasup', u'wassup', u'howzit', u'howsit', u'buongiorno', u'hoelykit', u'hoegaandit', u'goodmorning', u'morning', u'afternoon', u'evening')
 static_default = {
     'greet': {
         'matches': [r'\b(' + '|'.join(greetings) + r')\b'],
@@ -632,7 +632,7 @@ static_default = {
     },
     'criticism': {
         'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl))|(bot(\s|\-)?s(mack|lap))\b'],
-        'responses': [u'*whimper*', u'sorry, $who :(', u':(', u'*cringe*', u'sorry, baas'],
+        'responses': [u'*whimper*', u'sorry, $who :(', u':(', u'*cringe*'],
     },
 }
 
