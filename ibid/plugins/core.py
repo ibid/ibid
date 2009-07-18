@@ -205,20 +205,25 @@ class UnicodeWarning(Processor):
 class ChannelTracker(Processor):
     priority = -1550
     addressed = False
-    event_types = (u'state',)
+    event_types = (u'state', u'source')
 
     @handler
     def track(self, event):
-        if event.public:
-            if event.state == 'online' and hasattr(event, 'othername'):
+        if event.type == u'source':
+            if event.status == u'disconnected':
+                ibid.channels.pop(event.source, None)
+            elif event.status == u'left':
+                ibid.channels[event.source].pop(event.channel, None)
+        elif event.public:
+            if event.state == u'online' and hasattr(event, 'othername'):
                 oldid = identify(event.session, event.source, event.othername)
                 for channel in ibid.channels[event.source].values():
                     if oldid in channel:
                         channel.remove(oldid)
                         channel.add(event.identity)
-            elif event.state == 'online':
+            elif event.state == u'online':
                 ibid.channels[event.source][event.channel].add(event.identity)
-            elif event.state == 'offline' and not hasattr(event, 'othername'):
+            elif event.state == u'offline' and not hasattr(event, 'othername'):
                 if event.channel:
                     ibid.channels[event.source][event.channel].remove(event.identity)
                 else:

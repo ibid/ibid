@@ -1,6 +1,6 @@
 import logging
 
-from wokkel import client, xmppim
+from wokkel import client, xmppim, subprotocols
 from twisted.internet import reactor, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
@@ -38,15 +38,33 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         for room in self.parent.rooms:
             self.join(room)
 
+        event = Event(self.parent.name, u'source')
+        event.status = u'connected'
+        ibid.dispatcher.dispatch(event)
+
+    def connectionLost(self, reason):
+        self.parent.log.info(u"Disconnected (%s)", reason)
+
+        event = Event(self.parent.name, u'source')
+        event.status = u'disconnected'
+        ibid.dispatcher.dispatch(event)
+
+        subprotocols.XMPPHandler.connectionLost(self, reason)
+
     def _state_event(self, entity, state):
         event = Event(self.name, u'state')
         event.state = state
         if entity.userhost().lower() in self.rooms:
-            event.sender['connection'] = entity.full()
-            event.sender['id'] = event.sender['connection']
-            event.sender['nick'] = event.sender['connection'].split('/')[1]
+            nick = entity.full().split('/')[1]
             event.channel = entity.userhost()
-            event.public = True
+            if nick == self.parent.nick:
+                event.type = u'connection'
+                event.status = state == u'online' and u'joined' or u'left'
+            else:
+                event.sender['connection'] = entity.full()
+                event.sender['id'] = event.sender['connection']
+                event.sender['nick'] = nick
+                event.public = True
         else:
             event.sender['connection'] = entity.full()
             event.sender['id'] = event.sender['connection'].split('/')[0]

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from fnmatch import fnmatch
 from time import sleep
 import logging
@@ -23,7 +22,9 @@ class Ircbot(irc.IRCClient):
 
     def connectionMade(self):
         self.nickname = self.factory.nick.encode('utf-8')
+
         irc.IRCClient.connectionMade(self)
+
         self.factory.resetDelay()
         self.factory.proto = self
         self.auth_callbacks = {}
@@ -33,6 +34,11 @@ class Ircbot(irc.IRCClient):
 
     def connectionLost(self, reason):
         self.factory.log.info(u"Disconnected (%s)", reason)
+
+        event = Event(self.factory.name, u'source')
+        event.status = u'disconnected'
+        ibid.dispatcher.dispatch(event)
+
         irc.IRCClient.connectionLost(self, reason)
 
     def _idle_ping(self):
@@ -75,6 +81,10 @@ class Ircbot(irc.IRCClient):
             self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
 
+        event = Event(self.factory.name, u'source')
+        event.status = u'connected'
+        ibid.dispatcher.dispatch(event)
+
     def _create_event(self, type, user, channel):
         nick = user.split('!', 1)[0]
         event = Event(self.factory.name, type)
@@ -83,7 +93,6 @@ class Ircbot(irc.IRCClient):
         event.sender['nick'] = event.sender['id']
         event.channel = channel
         event.public = True
-        event.source = self.factory.name
         return event
 
     def _state_event(self, user, channel, action, kicker=None, message=None, othername=None):
@@ -181,9 +190,21 @@ class Ircbot(irc.IRCClient):
         self.factory.log.info(u"Joining %s", channel)
         irc.IRCClient.join(self, channel.encode('utf-8'))
 
+    def joined(self, channel):
+        event = Event(self.factory.name, u'source')
+        event.channel = channel
+        event.status = u'joined'
+        ibid.dispatcher.dispatch(event)
+
     def leave(self, channel):
         self.factory.log.info(u"Leaving %s", channel)
         irc.IRCClient.leave(self, channel.encode('utf-8'))
+
+    def left(self, channel):
+        event = Event(self.factory.name, u'source')
+        event.channel = channel
+        event.status = u'left'
+        ibid.dispatcher.dispatch(event)
 
     def authenticate(self, nick, callback):
         self.sendLine('WHOIS %s' % nick.encode('utf-8'))
