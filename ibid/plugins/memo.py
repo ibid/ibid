@@ -109,7 +109,9 @@ class Tell(Processor):
             event.addresponse(u'Just tell %s yourself', who)
             return
 
-        memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
+        memo = u' '.join((how, who, memo))
+
+        memo = Memo(event.identity, to.id, memo, how.lower() in (u'pm', u'privmsg', u'msg'))
         event.session.save_or_update(memo)
 
         event.session.commit()
@@ -235,7 +237,7 @@ class Deliver(Processor):
                 continue
 
             if memo.private:
-                message = u'By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago' % {
+                message = u'By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago' % {
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
@@ -243,7 +245,7 @@ class Deliver(Processor):
                 }
                 event.addresponse({'reply': message, 'target': event.sender['id']})
             else:
-                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago', {
+                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago', {
                     'recipient': event.sender['nick'],
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
