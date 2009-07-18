@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignK
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, ListOption
 from ibid.models import Base, VersionedSchema
 from ibid.utils  import get_html_parse_tree
 
@@ -167,7 +167,7 @@ class Lengthen(Processor):
     u"""<url>"""
     feature = 'url'
 
-    services = Option('services', 'List of URL prefixes of URL shortening services', (
+    services = ListOption('services', 'List of URL prefixes of URL shortening services', (
         'http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/',
         'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/',
         'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'

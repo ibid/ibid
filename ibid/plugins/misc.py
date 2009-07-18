@@ -3,7 +3,7 @@ from random import choice
 
 import ibid
 from ibid.plugins import Processor, match
-from ibid.config import IntOption, Option
+from ibid.config import IntOption, Option, ListOption
 from ibid.utils import ibid_version
 
 help = {}
@@ -101,7 +101,7 @@ class Insult(Processor):
     u"""(flame | insult) <person>"""
     feature = 'insult'
 
-    adjectives = Option('adjectives', 'List of adjectives', (
+    adjectives = ListOption('adjectives', 'List of adjectives', (
         u'acidic', u'antique', u'artless', u'base-court', u'bat-fowling',
         u'bawdy', u'beef-witted', u'beetle-headed', u'beslubbering',
         u'boil-brained', u'bootless', u'churlish', u'clapper-clawed',
@@ -140,14 +140,14 @@ class Insult(Processor):
         u'weather-bitten', u'weedy', u'wretched', u'yeasty',
     ))
 
-    collections = Option('collections', 'List of collective nouns', (
+    collections = ListOption('collections', 'List of collective nouns', (
         u'accumulation', u'ass-full', u'assload', u'bag', u'bucket',
         u'coagulation', u'enema-bucketful', u'gob', u'half-mouthful', u'heap',
         u'mass', u'mound', u'ooze', u'petrification', u'pile', u'plate',
         u'puddle', u'quart', u'stack', u'thimbleful', u'tongueful',
     ))
 
-    nouns = Option('nouns', u'List of singular nouns', (
+    nouns = ListOption('nouns', u'List of singular nouns', (
         u'apple-john', u'baggage', u'barnacle', u'bladder', u'boar-pig',
         u'bugbear', u'bum-bailey', u'canker-blossom', u'clack-dish',
         u'clotpole', u'coxcomb', u'codpiece', u'death-token', u'dewberry',
@@ -161,7 +161,7 @@ class Insult(Processor):
         u'whey-face', u'wagtail',
     ))
 
-    plnouns = Option('plnouns', u'List of plural nouns', (
+    plnouns = ListOption('plnouns', u'List of plural nouns', (
         u'anal warts', u'armadillo snouts', u'bat toenails', u'bug spit',
         u'buzzard gizzards', u'cat bladders', u'cat hair', u'cat-hair-balls',
         u'chicken piss', u'cold sores', u'craptacular carpet droppings',

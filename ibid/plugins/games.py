@@ -5,7 +5,7 @@ import re
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option, IntOption, BoolOption, FloatOption
+from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
 from ibid.utils import format_date
 
 help = {}
@@ -27,7 +27,7 @@ class DuelInitiate(Processor):
     start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
     timeout = FloatOption('timeout', 'How long is a duel on for', 15.0)
 
-    happy_endings = Option('happy_endings', 'Both survive', (
+    happy_endings = ListOption('happy_endings', 'Both survive', (
         u'walk off into the sunset', u'go for a beer', u'call it quits',
     ))
 
@@ -231,11 +231,11 @@ class DuelDraw(Processor):
         u'pewpew': (0.75, 110),
         u'holyhandgrenadeofantioch': (1.0, 200),
     })
-    extremities = Option('extremities', u'Extremities that can be hit', (
+    extremities = ListOption('extremities', u'Extremities that can be hit', (
         u'toe', u'foot', u'leg', u'thigh', u'finger', u'hand', u'arm',
         u'elbow', u'shoulder', u'ear', u'nose', u'stomach',
     ))
-    vitals = Option('vitals', 'Vital parts of the body that can be hit', (
+    vitals = ListOption('vitals', 'Vital parts of the body that can be hit', (
         u'head', u'groin', u'chest', u'heart', u'neck',
     ))
 
