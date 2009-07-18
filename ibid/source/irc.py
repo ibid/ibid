@@ -181,9 +181,9 @@ class Ircbot(irc.IRCClient):
         self.factory.log.info(u"Joining %s", channel)
         irc.IRCClient.join(self, channel.encode('utf-8'))
 
-    def part(self, channel):
+    def leave(self, channel):
         self.factory.log.info(u"Leaving %s", channel)
-        irc.IRCClient.part(self, channel.encode('utf-8'))
+        irc.IRCClient.leave(self, channel.encode('utf-8'))
 
     def authenticate(self, nick, callback):
         self.sendLine('WHOIS %s' % nick.encode('utf-8'))
@@ -285,8 +285,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def join(self, channel):
         return self.proto.join(channel)
 
-    def part(self, channel):
-        return self.proto.part(channel)
+    def leave(self, channel):
+        return self.proto.leave(channel)
 
     def change_nick(self, nick):
         return self.proto.setNick(nick.encode('utf-8'))

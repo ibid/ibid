@@ -43,8 +43,8 @@ class Actions(Processor):
             source.join(channel)
             event.addresponse(u'Joining %s', channel)
         else:
-            source.part(channel)
-            event.addresponse(u'Parting %s', channel)
+            source.leave(channel)
+            event.addresponse(u'Leaving %s', channel)
 
     @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
     @authorise
