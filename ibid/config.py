@@ -64,7 +64,7 @@ class ListOption(Option):
         if not isinstance(value, (list, tuple)):
             value = [value]
 
-        if not value[0] and self.default:
+        if value and not value[0] and self.default:
             both = []
             both.extend(self.default)
             both.extend(value[1:])
