@@ -57,4 +57,13 @@ class IntOption(Option):
 class FloatOption(Option):
     accessor = 'as_float'
 
+class ListOption(Option):
+
+    def __get__(self, instance, owner):
+        value = Option.__get__(self, instance, owner)
+        if isinstance(value, (list, tuple)):
+            return value
+        else:
+            return [value]
+
 # vi: set et sta sw=4 ts=4:
