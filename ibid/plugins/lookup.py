@@ -14,7 +14,7 @@ import logging
 import feedparser
 
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option, BoolOption
+from ibid.config import Option, BoolOption, DictOption
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice
 
@@ -351,7 +351,7 @@ class Twitter(Processor):
         'identi.ca': {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
         'dent':      {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
     }
-    services = Option('services', 'Micro blogging services', default)
+    services = DictOption('services', 'Micro blogging services', default)
 
     class NoSuchUserException(Exception):
         pass
@@ -597,7 +597,7 @@ class Weather(Processor):
                     'jhb': 'Johannesburg, South Africa',
                     'joburg': 'Johannesburg, South Africa',
                }
-    places = Option('places', 'Alternate names for places', defaults)
+    places = DictOption('places', 'Alternate names for places', defaults)
     labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
     whitespace = re.compile('\s+')
 
@@ -708,8 +708,8 @@ class Distance(Processor):
             'mi': 3963.1,
             'nm': 3443.9}
 
-    unit_names = Option('unit_names', 'Names of units in which to specify distances', default_unit_names)
-    radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
+    unit_names = DictOption('unit_names', 'Names of units in which to specify distances', default_unit_names)
+    radius_values = DictOption('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
     
     def get_place_data(self, place, num):
         return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})

@@ -5,7 +5,7 @@ import logging
 
 import ibid
 from ibid.plugins import Processor, handler
-from ibid.config import Option, IntOption, ListOption
+from ibid.config import IntOption, ListOption, DictOption
 
 class Addressed(Processor):
 
@@ -125,7 +125,7 @@ class Complain(Processor):
     priority = 950
     event_types = ('message', 'action')
 
-    complaints = Option('complaints', 'Complaint responses', {
+    complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
             u'Huh?', u'Sorry...', u'?',
             u'Excuse me?', u'*blink*', u'What?',

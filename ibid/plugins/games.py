@@ -5,7 +5,7 @@ import re
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
+from ibid.config import IntOption, BoolOption, FloatOption, ListOption, DictOption
 from ibid.utils import format_date
 
 help = {}
@@ -221,7 +221,7 @@ class DuelDraw(Processor):
     addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
 
     # Game configurables:
-    weapons = Option('weapons', 'Weapons that can be used: name: (chance, damage)', {
+    weapons = DictOption('weapons', 'Weapons that can be used: name: (chance, damage)', {
         u'bam': (0.75, 50),
         u'pew': (0.75, 50),
         u'fire': (0.75, 70),

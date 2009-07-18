@@ -8,7 +8,7 @@ from bzrlib.errors import NotBranchError
 
 import ibid
 from ibid.plugins import Processor, match, RPC, handler
-from ibid.config import Option
+from ibid.config import Option, DictOption
 from ibid.utils import ago, format_date
 
 help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
@@ -58,10 +58,10 @@ class Bazaar(Processor, RPC):
     feature = 'bzr'
     autoload = False
 
-    repositories = Option('repositories', 'Dict of repository names and URLs')
+    repositories = DictOption('repositories', 'Dict of repository names and URLs')
     source = Option('source', 'Source to send commit notifications to')
     channel = Option('channel', 'Channel to send commit notifications to')
-    launchpad_branches = Option('launchpad_branches', 'Branch paths in Launchpad mapped to names')
+    launchpad_branches = DictOption('launchpad_branches', 'Branch paths in Launchpad mapped to names')
 
     def __init__(self, name):
         self.log = logging.getLogger('plugins.bzr')
