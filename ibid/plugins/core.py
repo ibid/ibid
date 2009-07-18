@@ -59,9 +59,10 @@ class Ignore(Processor):
 
     @handler
     def handle_ignore(self, event):
-        for who in ibid.config.plugins[self.name]['ignore']:
-            if event.sender['nick'] == who:
-                event.processed = True
+        if 'ignore' in ibid.config.plugins[self.name]:
+            for who in ibid.config.plugins[self.name]['ignore']:
+                if event.sender['nick'] == who:
+                    event.processed = True
 
 class Responses(Processor):
 
