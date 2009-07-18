@@ -5,15 +5,15 @@ import logging
 
 import ibid
 from ibid.plugins import Processor, handler
-from ibid.config import Option, IntOption
+from ibid.config import IntOption, ListOption, DictOption
 
 class Addressed(Processor):
 
     priority = -1500
     addressed = False
 
-    names = Option('names', 'Names to respond to', [ibid.config['botname']])
-    verbs = Option('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
+    names = ListOption('names', 'Names to respond to', [ibid.config['botname']])
+    verbs = ListOption('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
@@ -29,7 +29,7 @@ class Addressed(Processor):
             matches = pattern.search(event.message['stripped'])
             if matches:
                 new_message = pattern.sub('', event.message['stripped'])
-                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(self.verbs):
+                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(tuple(self.verbs)):
                     return
 
                 event.addressed = matches.group(1)
@@ -92,9 +92,9 @@ class Address(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
-    acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements',
+    acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
-    refusals = Option('refusals', 'Responses for negative acknowledgements',
+    refusals = ListOption('refusals', 'Responses for negative acknowledgements',
             (u'No', u"I won't", u"Shan't", u"I'm sorry, but I can't do that"))
 
     @handler
@@ -125,7 +125,7 @@ class Complain(Processor):
     priority = 950
     event_types = ('message', 'action')
 
-    complaints = Option('complaints', 'Complaint responses', {
+    complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
             u'Huh?', u'Sorry...', u'?',
             u'Excuse me?', u'*blink*', u'What?',

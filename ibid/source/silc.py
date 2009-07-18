@@ -6,7 +6,7 @@ from .. silc import SilcClient, create_key_pair, load_key_pair
 import ibid
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
-from ibid.config import Option, IntOption
+from ibid.config import Option, IntOption, ListOption
 
 import logging
 
@@ -141,7 +141,7 @@ class SourceFactory(IbidSourceFactory):
     server = Option('server', 'Server hostname')
     port = IntOption('port', 'Server port number', 706)
     nick = Option('nick', 'Nick', ibid.config['botname'])
-    channels = Option('channels', 'Channels to autojoin', [])
+    channels = ListOption('channels', 'Channels to autojoin', [])
     realname = Option('realname', 'Real Name', ibid.config['botname'])
     public_key = Option('public_key', 'Filename of public key', 'silc.pub')
     private_key = Option('private_key', 'Filename of private key', 'silc.prv')

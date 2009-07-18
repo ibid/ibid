@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, Table
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.config import Option, BoolOption, IntOption
+from ibid.config import Option, BoolOption, IntOption, ListOption
 from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -43,12 +43,12 @@ class Set(Processor):
 
     permission = u'karma'
 
-    increase = Option('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
-    decrease = Option('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
-    neutral = Option('neutral', 'Suffixes which indicate neutral karma', ('==',))
+    increase = ListOption('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
+    decrease = ListOption('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
+    neutral = ListOption('neutral', 'Suffixes which indicate neutral karma', ('==',))
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
-    ignore = Option('ignore', 'Karma subjects to silently ignore', ())
+    ignore = ListOption('ignore', 'Karma subjects to silently ignore', ())
     importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
 
     def setup(self):

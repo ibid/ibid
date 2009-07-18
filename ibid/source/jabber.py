@@ -7,7 +7,7 @@ from twisted.words.xish import domish
 from twisted.application import internet
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption
+from ibid.config import Option, IntOption, BoolOption, ListOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
@@ -140,7 +140,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     jid_str = Option('jid', 'Jabber ID')
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
-    rooms = Option('rooms', 'Chatrooms to autojoin', [])
+    rooms = ListOption('rooms', 'Chatrooms to autojoin', [])
     accept_domains = Option('accept_domains', 'Only accept messages from these domains')
 
     def __init__(self, name):

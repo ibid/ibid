@@ -8,7 +8,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
-from ibid.config import Option, IntOption
+from ibid.config import Option, IntOption, ListOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
 from ibid.utils import format_date
@@ -346,8 +346,8 @@ class Get(Processor, RPC):
 
     priority = 200
 
-    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
-    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+    interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
 
     def __init__(self, name):
         super(Get, self).__init__(name)
@@ -410,8 +410,8 @@ class Set(Processor):
     u"""<name> (<verb>|=<verb>=) [also] <value>"""
     feature = 'factoids'
 
-    interrogatives = Option('interrogatives', 'Question words to strip', default_interrogatives)
-    verbs = Option('verbs', 'Verbs that split name from value', default_verbs)
+    interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
+    verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
 
     priority = 910
     permission = u'factoid'
