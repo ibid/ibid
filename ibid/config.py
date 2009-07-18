@@ -72,4 +72,16 @@ class ListOption(Option):
 
         return value
 
+class DictOption(Option):
+
+    def __get__(self, instance, owner):
+        value = Option.__get__(self, instance, owner)
+
+        if self.default and value is not self.default:
+            both = self.default.copy()
+            both.update(value)
+            value = both
+
+        return value
+
 # vi: set et sta sw=4 ts=4:
