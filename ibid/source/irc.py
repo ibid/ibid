@@ -9,7 +9,7 @@ from twisted.application import internet
 from sqlalchemy import or_
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption, FloatOption
+from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
@@ -194,7 +194,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
-    channels = Option('channels', 'Channels to autojoin', [])
+    channels = ListOption('channels', 'Channels to autojoin', [])
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:

@@ -7,7 +7,7 @@ from twisted.application import internet
 import ibid
 from ibid import AuthException, SourceException
 from ibid.event import Event
-from ibid.config import Option
+from ibid.config import Option, ListOption
 from ibid.source import IbidSourceFactory
 
 class CampfireBot(Campfire):
@@ -75,7 +75,7 @@ class SourceFactory(IbidSourceFactory):
     subdomain = Option('subdomain', 'Campfire subdomain')
     username = Option('username', 'Email address')
     password = Option('password', 'Campfire password')
-    rooms = Option('rooms', 'Rooms to join', [])
+    rooms = ListOption('rooms', 'Rooms to join', [])
 
     def __init__(self, name):
         super(SourceFactory, self).__init__(name)
