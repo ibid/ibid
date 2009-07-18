@@ -106,7 +106,7 @@ class Log(Processor):
         file.flush()
 
     @handler
-    def log(self, event):
+    def log_handler(self, event):
         self.log_event(event)
 
         for response in event.responses:
