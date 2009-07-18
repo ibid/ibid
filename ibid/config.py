@@ -61,9 +61,15 @@ class ListOption(Option):
 
     def __get__(self, instance, owner):
         value = Option.__get__(self, instance, owner)
-        if isinstance(value, (list, tuple)):
-            return value
-        else:
-            return [value]
+        if not isinstance(value, (list, tuple)):
+            value = [value]
+
+        if not value[0] and self.default:
+            both = []
+            both.extend(self.default)
+            both.extend(value[1:])
+            value = both
+
+        return value
 
 # vi: set et sta sw=4 ts=4:
