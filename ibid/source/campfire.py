@@ -19,7 +19,7 @@ class CampfireBot(Campfire):
         self.uri = urlparse('http://%s.campfirenow.com' % self.factory.subdomain)
         self.rooms = {}
         self.factory.join = self.join
-        self.factory.part = self.part
+        self.factory.leave = self.leave
         self.factory.send = self.send
 
     def run_one(self):
@@ -68,7 +68,7 @@ class CampfireBot(Campfire):
         room.join()
         self.rooms[room.name] = room
 
-    def part(self, room):
+    def leave(self, room):
         if room not in self.rooms:
             return False
 

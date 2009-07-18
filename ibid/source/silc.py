@@ -20,7 +20,7 @@ class SilcBot(SilcClient):
         self.users = {}
 
         self.factory.join = self.join
-        self.factory.part = self.part
+        self.factory.leave = self.leave
         self.factory.send = self.send
 
     def _create_event(self, type, user, channel):
@@ -111,7 +111,7 @@ class SilcBot(SilcClient):
         self.command_call('JOIN %s' % channel)
         return True
 
-    def part(self, channel):
+    def leave(self, channel):
         if channel not in self.channels:
             return False
 

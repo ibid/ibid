@@ -129,7 +129,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(presence)
         self.rooms.append(room.lower())
 
-    def part(self, room):
+    def leave(self, room):
         self.parent.log.info(u"Leaving %s", room)
         jid = JID('%s/%s' % (room, self.parent.nick))
         presence = xmppim.UnavailablePresence(to=jid)
@@ -182,8 +182,8 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def join(self, room):
         return self.proto.join(room)
 
-    def part(self, room):
-        return self.proto.part(room)
+    def leave(self, room):
+        return self.proto.leave(room)
 
     def url(self):
         return u'xmpp://%s' % (self.jid_str,)
