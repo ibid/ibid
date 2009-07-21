@@ -138,13 +138,19 @@ class Ircbot(irc.IRCClient):
 
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
+        raw_message = message.encode('utf-8')
+        target = response['target']
+        raw_target = target.encode('utf-8')
         if 'action' in response and response['action']:
             # We can't use self.me() because it prepends a # onto channel names
-            self.ctcpMakeQuery(response['target'].encode('utf-8'), [('ACTION', message.encode('utf-8'))])
-            self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
+            self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
+            self.factory.log.debug(u"Sent action to %s: %s", target, message)
+        elif 'notice' in response and response['notice']:
+            self.notice(raw_target, raw_message)
+            self.factory.log.debug(u"Sent notice to %s: %s", target, message)
         else:
-            self.msg(response['target'].encode('utf-8'), message.encode('utf-8'))
-            self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
+            self.msg(raw_target, raw_message)
+            self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
     def join(self, channel):
         self.factory.log.info(u"Joining %s", channel)
