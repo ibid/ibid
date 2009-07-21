@@ -24,7 +24,6 @@ class Ircbot(irc.IRCClient):
         self.nickname = self.factory.nick.encode('utf-8')
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
-        self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
@@ -237,6 +236,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def change_nick(self, nick):
         return self.proto.setNick(nick.encode('utf-8'))
+
+    def send(self, response):
+        return self.proto.send(response)
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
