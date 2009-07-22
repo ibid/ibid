@@ -29,12 +29,15 @@ class SilcBot(SilcClient):
         event.sender['nick'] = unicode(user.nickname, 'utf-8', 'replace')
         event.sender['connection'] = self._to_hex(user.user_id)
         event.sender['id'] = self._to_hex(user.fingerprint)
-        event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender['connection']
+        if channel:
+            event.channel = unicode(channel.channel_name, 'utf-8', 'replace')
+        else:
+            event.channel = event.sender['connection']
         event.public = True
         event.source = self.factory.name
 
-        if event.sender['connection'] not in self.users:
-            self.users[event.sender['connection']] = user
+        self.users[event.sender['connection']] = user
+        self.users[event.sender['id']] = user
 
         return event
 
@@ -68,13 +71,16 @@ class SilcBot(SilcClient):
 
     def send(self, response):
         message = response['reply'].replace('\n', ' ').encode('utf-8')
+        flags=0
+        if 'action' in response and response['action']:
+            flags=4
 
         if response['target'] in self.users:
             target = self.users[response['target']]
-            self.send_private_message(target, message, flags='action' in response and response['action'] and 4 or 0)
+            self.send_private_message(target, message, flags=flags)
         elif response['target'] in self.channels:
             target = self.channels[response['target']]
-            self.send_channel_message(target, message, flags='action' in response and response['action'] and 4 or 0)
+            self.send_channel_message(target, message, flags=flags)
         else:
             self.factory.log.debug(u"Unknown target: %s" % response['target'])
             return
@@ -91,6 +97,10 @@ class SilcBot(SilcClient):
 
         self.command_call('LEAVE %s' % channel)
         del self.channels[channel]
+
+        # TODO: When pysilc gets channel.user_list support
+        # we should remove stale users
+
         return True
 
     def _to_hex(self, string):
@@ -110,12 +120,16 @@ class SilcBot(SilcClient):
 
     def notify_signoff(self, user, channel):
         self._state_event(user, channel, u'offline')
+        del self.users[self._to_hex(user.user_id)]
+        del self.users[self._to_hex(user.fingerprint)]
 
     def notify_kicked(self, user, message, kicker, channel):
         self._state_event(user, channel, u'kicked', kicker, message)
 
     def notify_killed(self, user, message, kicker, channel):
         self._state_event(user, channel, u'killed', kicker, message)
+        del self.users[self._to_hex(user.user_id)]
+        del self.users[self._to_hex(user.fingerprint)]
 
     def running(self):
         self.connect_to_server(self.factory.server, self.factory.port)
@@ -131,7 +145,9 @@ class SilcBot(SilcClient):
         self.command_call('QUIT')
 
     def disconnected(self, message):
-       self.factory.s.stopService()
+        self.factory.s.stopService()
+        self.channels.clear()
+        self.users.clear()
 
 class SourceFactory(IbidSourceFactory):
 

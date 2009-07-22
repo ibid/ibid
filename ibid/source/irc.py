@@ -113,7 +113,7 @@ class Ircbot(irc.IRCClient):
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = event.sender['nick']
+            event.channel = event.sender['connection']
         else:
             event.public = True
 
@@ -139,8 +139,11 @@ class Ircbot(irc.IRCClient):
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
         raw_message = message.encode('utf-8')
-        target = response['target']
+
+        # Target may be a connection or a plain nick
+        target = response['target'].split('!')[0]
         raw_target = target.encode('utf-8')
+
         if 'action' in response and response['action']:
             # We can't use self.me() because it prepends a # onto channel names
             self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
