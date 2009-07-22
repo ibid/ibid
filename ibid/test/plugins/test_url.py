@@ -39,7 +39,7 @@ class TestURLGrabber(unittest.TestCase):
     def test_good_grabs(self):
         for input, url in self.good_grabs:
             m = self.grab.grab.im_func.pattern.search(input)
-            self.assertEqual(m.group(1), url)
+            self.assertEqual(m.group(1), url, input)
 
     bad_grabs = [
         u'joe@bar.com',
@@ -50,6 +50,6 @@ class TestURLGrabber(unittest.TestCase):
     def test_bad_grabs(self):
         for input in self.bad_grabs:
             m = self.grab.grab.im_func.pattern.search(input)
-            self.assertEqual(m, None)
+            self.assertEqual(m, None, input)
 
 # vi: set et sta sw=4 ts=4:
