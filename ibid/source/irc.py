@@ -191,6 +191,7 @@ class Ircbot(irc.IRCClient):
         nick = user.split("!")[0]
         self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
 
+
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
@@ -248,6 +249,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def send(self, response):
         return self.proto.send(response)
+
+    def logging_name(self, identity):
+        return identity.split('!')[0]
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)

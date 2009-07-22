@@ -82,10 +82,30 @@ class SilcBot(SilcClient):
             target = self.channels[response['target']]
             self.send_channel_message(target, message, flags=flags)
         else:
+            for user in self.users.itervalues():
+                if user.nickname == response['target']:
+                    self.send_private_message(user, message, flags=flags)
+                    return
+
             self.factory.log.debug(u"Unknown target: %s" % response['target'])
             return
 
         self.factory.log.debug(u"Sent message to %s: %s", response['target'], message)
+
+    def logging_name(self, identity):
+        format_user = lambda user: u'-'.join((user.nickname,
+                                              self._to_hex(user.fingerprint)))
+        if identity in self.users:
+            user = self.users[identity]
+            return format_user(user)
+        if identity in self.channels:
+            return identity
+        # Only really used for saydo
+        for user in self.users.itervalues():
+            if user.nickname == identity:
+                return format_user(user)
+        self.factory.log.error(u"Unknown identity: %s", identity)
+        return identity
 
     def join(self, channel):
         self.command_call('JOIN %s' % channel)
@@ -189,5 +209,8 @@ class SourceFactory(IbidSourceFactory):
 
     def url(self):
         return u'silc://%s@%s:%s' % (self.nick, self.server, self.port)
+
+    def logging_name(self, identity):
+        return self.client.logging_name(identity)
 
 # vi: set et sta sw=4 ts=4:

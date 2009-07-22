@@ -175,13 +175,13 @@ class FMyLife(Processor):
         try:
             body = self.remote_get(id)
         except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+            event.addresponse(choice(self.failure_messages) % event.sender['nick'])
             return
         except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+            event.addresponse(choice(self.failure_messages) % event.sender['nick'])
             return
         except BadStatusLine:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+            event.addresponse(choice(self.failure_messages) % event.sender['nick'])
             return
 
         if body:
@@ -189,7 +189,7 @@ class FMyLife(Processor):
         elif id.isdigit():
             event.addresponse(u'No such quote')
         else:
-            event.addresponse(choice(self.failure_messages) % event.sender)
+            event.addresponse(choice(self.failure_messages) % event.sender['nick'])
 
     @match(r'^fml$')
     def fml_default(self, event):
