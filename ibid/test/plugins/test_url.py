@@ -45,6 +45,7 @@ class TestURLGrabber(unittest.TestCase):
         u'joe@bar.com',
         u'x joe@google.com',
         u'<joe@bar.com>',
+        u'joe@bar.za.net',
     ]
 
     def test_bad_grabs(self):
