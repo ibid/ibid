@@ -48,7 +48,7 @@ class Tickets(Processor, RPC):
         if not ticket:
             raise Exception(u"No such ticket")
 
-        message = u'New %s in %s reported by %s: "%s" %sticket/%s' % (ticket.type, ticket.component, ticket.reporter, ticket.summary, self.url, ticket.id)
+        message = u'New %s in %s reported by %s: "%s" <%sticket/%s>' % (ticket.type, ticket.component, ticket.reporter, ticket.summary, self.url, ticket.id)
         ibid.dispatcher.send({'reply': message, 'source': self.source, 'target': self.channel})
         self.log.info(u'Ticket %s created', id)
         return True
@@ -79,7 +79,7 @@ class Tickets(Processor, RPC):
 
         if ticket:
             event.addresponse(u'Ticket %(id)s (%(status)s %(priority)s %(type)s in %(component)s for %(milestone)s) '
-                u'reported %(ago)s ago assigned to %(owner)s: "%(summary)s" %(url)sticket/%(id)s', {
+                u'reported %(ago)s ago assigned to %(owner)s: "%(summary)s" <%(url)sticket/%(id)s>', {
                 'id': ticket.id,
                 'status': ticket.status,
                 'priority': ticket.priority,

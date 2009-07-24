@@ -52,7 +52,7 @@ class GoogleAPISearch(Processor):
 
             title = item["titleNoFormatting"]
 
-            results.append(u'"%s" %s' % (decode_htmlentities(title), item["unescapedUrl"]))
+            results.append(u'%s <%s>' % (decode_htmlentities(title), item["unescapedUrl"]))
             
         if results:
             event.addresponse(u', '.join(results))
@@ -141,7 +141,7 @@ class GoogleScrapeSearch(Processor):
                 title = u''.join([e.string for e in item.a.contents])
                 if title.startswith("Image results for"):
                     continue
-                results.append(u'"%s" %s' % (decode_htmlentities(title), url))
+                results.append(u'%s <%s>' % (decode_htmlentities(title), url))
             except Exception:
                 pass
             if len(results) >= 8:
