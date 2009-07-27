@@ -6,7 +6,7 @@ from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output
+from ibid.utils import file_in_path, unicode_output, human_join
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -48,7 +48,7 @@ class DNS(Processor):
         for rdata in answers:
             responses.append(unicode(rdata))
 
-        event.addresponse(u'Records: %s', u', '.join(responses))
+        event.addresponse(u'Records: %s', human_join(responses))
 
 help['ping'] = u'ICMP pings the specified host.'
 class Ping(Processor):
@@ -162,7 +162,7 @@ class IPCalc(Processor):
             if output.startswith(u'INVALID ADDRESS'):
                 event.addresponse(u"That's an invalid address. Try something like 192.168.1.0")
             else:
-                event.addresponse(u'Deaggregates to: %s', u', '.join(output.splitlines()[1:]))
+                event.addresponse(u'Deaggregates to: %s', human_join(output.splitlines()[1:]))
         else:
             error = unicode_output(error.strip())
             event.addresponse(error.replace(u'\n', u' '))

@@ -2,6 +2,7 @@ import inspect
 
 import ibid
 from ibid.plugins import Processor, match
+from ibid.utils import human_join
 
 help = {'help': u'Provides help and usage information about plugins.'}
 
@@ -27,7 +28,7 @@ class Help(Processor):
                     if feature not in features:
                         features.append(feature)
 
-        event.addresponse(u'Features: %s', u' '.join(sorted(features)) or u'none')
+        event.addresponse(u'Features: %s', human_join(sorted(features)) or u'none')
 
     @match(r'^help\s+(.+)$')
     def help(self, event, feature):

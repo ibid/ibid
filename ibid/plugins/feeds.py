@@ -10,7 +10,7 @@ from html2text import html2text_file
 
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base, VersionedSchema
-from ibid.utils import cacheable_download, get_html_parse_tree
+from ibid.utils import cacheable_download, get_html_parse_tree, human_join
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -99,7 +99,7 @@ class Manage(Processor):
     def list(self, event):
         feeds = event.session.query(Feed).all()
         if feeds:
-            event.addresponse(u'I know about: %s', u', '.join(sorted([feed.name for feed in feeds])))
+            event.addresponse(u'I know about: %s', human_join(sorted([feed.name for feed in feeds])))
         else:
             event.addresponse(u"I don't know about any feeds")
 

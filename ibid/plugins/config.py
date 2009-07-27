@@ -3,6 +3,7 @@ import logging
 
 import ibid
 from ibid.config import FileConfig
+from ibid.utils import human_join
 from ibid.plugins import Processor, match, authorise, auth_responses
 
 help = {'config': u'Gets and sets configuration settings, and rereads the configuration file.'}
@@ -60,7 +61,7 @@ class Config(Processor):
         if isinstance(config, list):
             event.addresponse(u', '.join(config))
         elif isinstance(config, dict):
-            event.addresponse(u'Keys: ' + u', '.join(config.keys()))
+            event.addresponse(u'Keys: ' + human_join(config.keys()))
         else:
             event.addresponse(unicode(config))
         

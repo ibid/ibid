@@ -7,6 +7,7 @@ from .. imdb import IMDb, IMDbDataAccessError, IMDbError
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, BoolOption
+from ibid.utils import human_join
 
 help = {'imdb': u'Looks up movies on IMDB.com.'}
 
@@ -78,7 +79,7 @@ class IMDB(Processor):
         filmography = character.get("filmography", ())
         if len(filmography):
             more = (u"", u" etc")[len(filmography) > 5]
-            desc += u" Appeared in %s%s." % (", ".join(x["long imdb title"] for x in filmography[:5]), more)
+            desc += u" Appeared in %s%s." % (human_join(x["long imdb title"] for x in filmography[:5]), more)
         if character.has_key("introduction"):
             desc += u" Bio: %s" % character["introduction"]
         return desc
@@ -91,7 +92,7 @@ class IMDB(Processor):
                 (u"miscellaneous companies", u"Was involved in")):
             if len(company.get(key, ())) > 0:
                 more = (u"", u" etc.")[len(company[key]) > 3]
-                desc += u" %s %s%s" % (title, ", ".join(x["long imdb title"] for x in company[key][:3]), more)
+                desc += u" %s %s%s" % (title, human_join(x["long imdb title"] for x in company[key][:3]), more)
         return desc
 
     def display_episode(self, episode):
@@ -99,30 +100,30 @@ class IMDB(Processor):
                 episode.movieID, episode["series title"], episode["season"],
                 episode["episode"], episode["title"], episode["year"])
         if len(episode.get("director", ())) > 0:
-            desc += u" Dir: %s." % (u", ".join(x["name"] for x in episode["director"]))
+            desc += u" Dir: %s." % (human_join(x["name"] for x in episode["director"]))
         if len(episode.get("cast", ())) > 0:
-            desc += u" Starring: %s." % (u", ".join(x["name"] for x in episode["cast"][:3]))
+            desc += u" Starring: %s." % (human_join(x["name"] for x in episode["cast"][:3]))
         if episode.has_key("rating"):
             desc += u" Rated: %.1f " % episode["rating"]
-        desc += u", ".join(episode.get("genres", ()))
+        desc += human_join(episode.get("genres", ()))
         desc += u" Plot: %s" % episode.get("plot outline", u"Unknown")
         return desc
 
     def display_movie(self, movie):
         desc = u"%s: %s." % (movie.movieID, movie["long imdb title"])
         if len(movie.get("director", ())) > 0:
-            desc += u" Dir: %s." % (u", ".join(x["name"] for x in movie["director"]))
+            desc += u" Dir: %s." % (human_join(x["name"] for x in movie["director"]))
         if len(movie.get("cast", ())) > 0:
-            desc += u" Starring: %s." % (u", ".join(x["name"] for x in movie["cast"][:3]))
+            desc += u" Starring: %s." % (human_join(x["name"] for x in movie["cast"][:3]))
         if movie.has_key("rating"):
             desc += u" Rated: %.1f " % movie["rating"]
-        desc += u", ".join(movie.get("genres", ()))
+        desc += human_join(movie.get("genres", ()))
         desc += u" Plot: %s" % movie.get("plot outline", u"Unknown")
         return desc
 
     def display_person(self, person):
         desc = u"%s: %s. %s." % (person.personID, person["name"],
-                u", ".join(role.title() for role in (
+                human_join(role.title() for role in (
                     u"actor", u"animation department", u"art department",
                     u"art director", u"assistant director", u"camera department",
                     u"casting department", u"casting director", u"cinematographer",

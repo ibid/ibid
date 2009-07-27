@@ -9,6 +9,7 @@ from sqlalchemy.exceptions import IntegrityError
 import ibid
 from ibid.plugins import Processor, match, auth_responses
 from ibid.models import Account, Identity, Attribute
+from ibid.utils import human_join
 
 help = {}
 identify_cache = {}
@@ -364,7 +365,7 @@ class Describe(Processor):
 
         event.addresponse(u'%(accountname)s is %(identities)s', {
             'accountname': account.username,
-            'identities': u', '.join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
+            'identities': human_join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
 
 class Identify(Processor):

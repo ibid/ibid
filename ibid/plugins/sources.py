@@ -1,5 +1,6 @@
 import ibid
 from ibid.plugins import Processor, match, authorise
+from ibid.utils import human_join
 
 help = {'sources': u'Controls and lists the configured sources.'}
 
@@ -48,10 +49,10 @@ class Info(Processor):
         for name, source in ibid.sources.items():
             url = source.url()
             sources.append(url and u'%s (%s)' % (name, url) or name)
-        event.addresponse(u'Sources: %s', u', '.join(sorted(sources)) or u'none')
+        event.addresponse(u'Sources: %s', human_join(sorted(sources)) or u'none')
 
     @match(r'^list\s+configured\s+sources$')
     def listall(self, event):
-        event.addresponse(u'Configured sources: %s', u', '.join(sorted(ibid.config.sources.keys())) or u'none')
+        event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
 
 # vi: set et sta sw=4 ts=4:

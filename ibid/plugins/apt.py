@@ -2,7 +2,7 @@ from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output
+from ibid.utils import file_in_path, unicode_output, human_join
 
 help = {}
 
@@ -54,7 +54,7 @@ class Aptitude(Processor):
                 output = [line.strip() for line in output.splitlines()]
                 event.addresponse(u'Found %(num)i packages: %(names)s', {
                     'num': len(output),
-                    'names': u', '.join(output),
+                    'names': human_join(output),
                 })
             else:
                 event.addresponse(u'No packages found')
@@ -122,9 +122,10 @@ class AptFile(Processor):
             if output:
                 output = unicode_output(output.strip())
                 output = [line.split(u':')[0] for line in output.splitlines()]
+                packages = sorted(set(output))
                 event.addresponse(u'Found %(num)i packages: %(names)s', {
-                    'num': len(output),
-                    'names': u', '.join(output),
+                    'num': len(packages),
+                    'names': human_join(packages),
                 })
             else:
                 event.addresponse(u'No packages found')

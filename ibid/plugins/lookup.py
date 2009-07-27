@@ -16,7 +16,7 @@ import feedparser
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, BoolOption, DictOption
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice
+        cacheable_download, json_webservice, human_join
 
 log = logging.getLogger('plugins.lookup')
 
@@ -544,7 +544,7 @@ class Currency(Processor):
                     break
 
         if results:
-            event.addresponse(u', '.join(results))
+            event.addresponse(human_join(results))
         else:
             event.addresponse(u'No currencies found')
 
@@ -671,7 +671,7 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.args[0]),
+                'exception': human_join(e.args[0], separator=u';'),
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
@@ -683,7 +683,7 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.args[0]),
+                'exception': human_join(e.args[0], separator=u';'),
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
@@ -730,8 +730,9 @@ class Distance(Processor):
             event.addresponse(u"I don't know of anywhere even remotely like '%s'", place)
         else:
             event.addresponse(u"I can find: %s", 
-                    (u"; ".join(u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
-                        for p in js['geonames'][:10])))
+                    (human_join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
+                        for p in js['geonames'][:10]],
+                        separator=u';')))
 
     @match(r'^(?:how\s*far|distance)(?:\s+in\s+(\S+))?\s+'
             r'(?:(between)|from)' # Between ... and ... | from ... to ...
@@ -742,7 +743,7 @@ class Distance(Processor):
             event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
                 'badunit': unit, 
                 'knownunits': 
-                    u", ".join(u"%s (%s)" % (unit, self.unit_names[unit]) 
+                    human_join(u"%s (%s)" % (unit, self.unit_names[unit]) 
                         for unit in self.unit_names),
             })
             return
@@ -763,8 +764,10 @@ class Distance(Processor):
         event.addresponse(u"Approximate distance, as the bot flies, between %(srcname)s and %(dstname)s is: %(distance)s", {
             'srcname': srcp['name'],
             'dstname': dstp['name'],
-            'distance': ", ".join(u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) 
-                for unit in unit_names),
+            'distance': human_join([
+                u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit])
+                for unit in unit_names],
+                conjunction=u'or'),
         })
 
 help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
