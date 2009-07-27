@@ -100,7 +100,7 @@ class CounterStrike(Processor):
                 'clients': clientcount,
                 'clientmax': clientmax,
                 'map': map,
-                'players': human_join([u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players]),
+                'players': human_join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
             })
 
         except socket.error:

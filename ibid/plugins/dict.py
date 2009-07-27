@@ -67,7 +67,7 @@ class Dict(Processor):
 
         suggestions = connection.match('*', strategy, word)
         if suggestions:
-            event.addresponse(u'Suggestions: %s', human_join([d.getword() for d in suggestions]))
+            event.addresponse(u'Suggestions: %s', human_join(d.getword() for d in suggestions))
         else:
             event.addresponse(u"That doesn't seem correct, but I can't find anything to suggest")
 
