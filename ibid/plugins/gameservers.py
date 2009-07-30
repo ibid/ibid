@@ -34,7 +34,7 @@ class Bnet(Processor):
 
         s.close()
 
-        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+\S+\s+\S+"$' % gametype)
+        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+' % gametype)
         users = [player_re.match(line).group(1) for line in out.splitlines() if player_re.match(line)]
         users.sort()
         return users
