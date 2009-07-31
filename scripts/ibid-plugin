@@ -64,9 +64,8 @@ if options.load_base:
 
 if load:
     if 'load' in ibid.config.plugins:
-        ibid.config.plugins['load'].extend(load)
-    else:
-        ibid.config.plugins['load'] = load
+        load.extend(ibid.config.plugins['load'])
+    ibid.config.plugins['load'] = load
 
 if noload:
     if 'noload' in ibid.config.plugins:
