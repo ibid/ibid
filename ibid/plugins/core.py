@@ -127,7 +127,7 @@ class Complain(Processor):
 
     complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
-            u'Huh?', u'Sorry...', u'?',
+            u'Huh?', u'Sorry...',
             u'Excuse me?', u'*blink*', u'What?',
         ),
         'notauthed': (
