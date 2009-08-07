@@ -511,6 +511,14 @@ class Account(Base):
     def __repr__(self):
         return '<Account %s>' % self.username
 
+
+class SchemaVersionException(Exception):
+    """There is an out-of-date table.
+    The message should be a list of out of date tables.
+    """
+    pass
+
+
 def check_schema_versions(sessionmaker):
     """Pass through all tables, log out of date ones,
     and except if not all up to date"""
@@ -528,7 +536,7 @@ def check_schema_versions(sessionmaker):
     if not upgrades:
         return
 
-    raise Exception(u"Tables %s are out of date. Run ibid-setup" % u", ".join(upgrades))
+    raise SchemaVersionException(u", ".join(upgrades))
 
 def upgrade_schemas(sessionmaker):
     "Pass through all tables and update schemas"
