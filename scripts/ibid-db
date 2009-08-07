@@ -170,7 +170,10 @@ elif options.import_ is not None:
             if dependancy not in loaded:
                 load_table(dependancy, dump[dependancy])
             
+        maxid = 0
         for row in data:
+            if row['id'] > maxid:
+                maxid = row['id']
             for field in row.iterkeys():
                 if isinstance(dbtable.c[field].type, DateTime):
                     row[field] = datetime.strptime(row[field],
@@ -179,6 +182,8 @@ elif options.import_ is not None:
                     row[field] = unicode(row[field])
             sql = dbtable.insert().values(**row)
             db.execute(sql)
+        if maxid != 0 and db.bind.engine.name == 'postgres':
+            db.execute("SELECT setval('%s_id_seq', %i);" % (table, maxid + 1))
         db.commit()
         loaded.add(table)
 
