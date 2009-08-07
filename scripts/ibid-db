@@ -63,6 +63,10 @@ ibid.config = FileConfig('ibid.ini')
 ibid.config.merge(FileConfig('local.ini'))
 
 def dump_table(table, db):
+    """Return a list of dicts of the data in table.
+    table is a SQLAlchemy table
+    db is a SQLAlchemy session
+    """
     sql = select([table])
     rows = []
     for row in db.execute(sql):
@@ -150,11 +154,23 @@ elif options.import_ is not None:
             'Aborting.')
         exit(1)
 
-    for table_name, table in dump.iteritems():
+    loaded = set()
+
+    def load_table(table, data):
+        """Load data into table.
+        table is a table name
+        data is a list of dicts of data
+        """
         if table_name == 'schema':
-            continue
-        dbtable = metadata.tables[table_name]
-        for row in table:
+            return
+
+        dbtable = metadata.tables[table]
+        for fk in dbtable.foreign_keys:
+            dependancy = fk.target_fullname.split('.')[0]
+            if dependancy not in loaded:
+                load_table(dependancy, dump[dependancy])
+            
+        for row in data:
             for field in row.iterkeys():
                 if isinstance(dbtable.c[field].type, DateTime):
                     row[field] = datetime.strptime(row[field],
@@ -164,4 +180,10 @@ elif options.import_ is not None:
             sql = dbtable.insert().values(**row)
             db.execute(sql)
         db.commit()
+        loaded.add(table)
+
+    for table_name, table in dump.iteritems():
+        if table_name not in loaded:
+            load_table(table_name, table)
+
     db.close()
