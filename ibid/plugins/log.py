@@ -38,7 +38,6 @@ class Log(Processor):
         else:
             when = localtime(event.time)
 
-        channel = event.channel
         channel = ibid.sources[event.source].logging_name(event.channel)
         filename = self.log % {
                 'source': event.source.replace('/', '-'),
