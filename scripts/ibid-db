@@ -1,0 +1,167 @@
+#!/usr/bin/env python
+
+from datetime import datetime
+import gzip
+import logging
+from optparse import OptionParser, OptionGroup
+from os.path import exists
+import re
+from sys import stdin, stdout, stderr, exit
+
+from sqlalchemy import select, DateTime, Unicode, UnicodeText
+from twisted.python.modules import getModule
+# json only in Python >=2.6
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
+import ibid
+from ibid.config import FileConfig
+from ibid.core import DatabaseManager
+from ibid.models import metadata, upgrade_schemas
+from ibid.utils import ibid_version
+
+parser = OptionParser(usage='%prog [options...]',
+        description="""Ibid Database management tool. Used for import, export,
+and upgrades. Export format is a header-line followed by JSON. FILE can be -
+for stdin/stdout or can end in .gz for automatic Gzip compression.""")
+commands = OptionGroup(parser, 'Modes')
+commands.add_option('-e', '--export', dest='export', metavar='FILE',
+        help='Export DB contents to FILE.')
+commands.add_option('-i', '--import', dest='import_', metavar='FILE',
+        help='Import DB contents from FILE. DB must be empty first.')
+commands.add_option('-u', '--upgrade', dest='upgrade', action='store_true',
+        help='Upgrade DB schema. You should backup first.')
+parser.add_option_group(commands)
+parser.add_option('-v', '--verbose', dest='verbose', action='store_true',
+        default=False, help='Turn on debugging output to STDERR.')
+
+(options, args) = parser.parse_args()
+
+modes = sum(1 for mode in (options.import_, options.export, options.upgrade)
+        if mode is not None)
+if modes > 1:
+    parser.error('Only one mode can be specified.')
+elif modes == 0:
+    parser.error('You must specify a mode.')
+
+if options.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.ERROR)
+
+for module in getModule('ibid.plugins').iterModules():
+    try:
+        __import__(module.name)
+    except Exception, e:
+        print >> stderr, u"Couldn't load %s plugin: %s" % (
+                module.name.replace('ibid.plugins.', ''), unicode(e))
+
+ibid.options = {'base': '.'}
+ibid.config = FileConfig('ibid.ini')
+ibid.config.merge(FileConfig('local.ini'))
+
+def dump_table(table, db):
+    sql = select([table])
+    rows = []
+    for row in db.execute(sql):
+        out = {}
+        for key in row.iterkeys():
+            value = row[key]
+            if isinstance(value, datetime):
+                value = value.strftime('%Y-%m-%dT%H:%M:%SZ')
+            out[key] = value
+        rows.append(out)
+    return rows
+
+if options.upgrade is not None:
+    db = DatabaseManager(check_schema_versions=False)['ibid']
+    if not db.bind.has_table('schema'):
+        print >> stderr, ("Database doesn't appear to contain an Ibid. "
+                'Run ibid-setup.')
+        exit(1)
+    upgrade_schemas(db)
+
+elif options.export is not None:
+    if options.export == '-':
+        output = stdout
+    elif exists(options.export):
+        print >> stderr, (
+                'Output file (%s) exists, refusing to clobber it' %
+                options.export)
+        exit(1)
+    elif options.export.endswith('.gz'):
+        output = gzip.open(options.export, 'wb')
+    else:
+        output = open(options.export, 'wb')
+
+    output.write(('# Ibid %(version)s Database dump for %(botname)s '
+            'made on %(date)s\n') % {
+        'version': ibid_version() or 'bzr',
+        'botname': ibid.config['botname'],
+        'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    })
+
+    db = DatabaseManager()['ibid']
+    dump = dict((table.name, dump_table(table, db))
+            for table in metadata.tables.itervalues())
+
+    output.write(json.dumps(dump, sort_keys=True, indent=4))
+    output.close()
+
+elif options.import_ is not None:
+    db = DatabaseManager(check_schema_versions=False)['ibid']
+    if db.bind.has_table('schema'):
+        print >> stderr, ('Database looks like it already contains an Ibid. '
+                'Refusing to clobber it.')
+        exit(1)
+
+    upgrade_schemas(db)
+
+    if options.import_ == '-':
+        input = stdin
+    elif options.import_.endswith('.gz'):
+        input = gzip.open(options.import_, 'rb')
+    else:
+        input = open(options.import_, 'rb')
+
+    version = input.readline().strip()
+    version = re.match(r'^# Ibid (.+) Database dump for', version).group(1)
+    if version != (ibid_version() or 'bzr'):
+        print >> stderr, (
+            'Ibid version differs between dump (%(dump)s) and '
+            'local install (%(local)s). Aborting.') % {
+                'dump': version,
+                'local': ibid_version() or 'bzr',
+        }
+        exit(1)
+
+    dump = json.loads(input.read())
+
+    dump_schema = dict((table['table'], table['version'])
+            for table in dump['schema'])
+    db_schema = dict((table['table'], table['version'])
+            for table in dump_table(metadata.tables['schema'], db))
+    if dump_schema != db_schema:
+        print >> stderr, (
+            "Dump schema doesn't match DB Schema. "
+            'You must use the same version of ibid that you dumped with. '
+            'Aborting.')
+        exit(1)
+
+    for table_name, table in dump.iteritems():
+        if table_name == 'schema':
+            continue
+        dbtable = metadata.tables[table_name]
+        for row in table:
+            for field in row.iterkeys():
+                if isinstance(dbtable.c[field].type, DateTime):
+                    row[field] = datetime.strptime(row[field],
+                            '%Y-%m-%dT%H:%M:%SZ')
+                elif isinstance(dbtable.c[field].type, (Unicode, UnicodeText)):
+                    row[field] = unicode(row[field])
+            sql = dbtable.insert().values(**row)
+            db.execute(sql)
+        db.commit()
+    db.close()
