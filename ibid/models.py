@@ -391,7 +391,8 @@ class Identity(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
         Column('source', Unicode(32), nullable=False, index=True),
-        Column('identity', UnicodeText, nullable=False, index=True),
+        Column('identity', UnicodeText, nullable=False, index=True,
+            info={'ibid_mysql_index_length': 32}),
         Column('created', DateTime),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
