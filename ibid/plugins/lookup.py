@@ -285,8 +285,10 @@ class MyLifeIsAverage(Processor):
 
         for story in stories:
             body = story.findtext('div/span/span').strip()
-            id = int(story.findtext('div/div/span/a')[1:])
-            yield id, body
+            id = story.findtext('.//a')
+            if isinstance(id, basestring) and id[1:].isdigit():
+                id = int(id[1:])
+                yield id, body
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
