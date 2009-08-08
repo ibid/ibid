@@ -187,6 +187,8 @@ class DCClient(LineReceiver):
     def dc_Hello(self, params):
         "Someone arrived"
         nick = _decode_htmlent(params)
+        if nick == self.my_nickname:
+            return
         if nick not in self.hub_users:
             self.hub_users[nick] = User(nick)
             self.userJoined(nick)
@@ -218,6 +220,9 @@ class DCClient(LineReceiver):
             return
 
         nick = _decode_htmlent(m.group(1))
+        if nick == self.my_nickname:
+            return
+
         if nick in self.hub_users:
             user = self.hub_users[nick]
         else:
@@ -264,6 +269,8 @@ class DCClient(LineReceiver):
         "List of Ops received"
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             user.op = True
             if nick not in self.hub_users:
@@ -274,6 +281,8 @@ class DCClient(LineReceiver):
         "List of Bots received"
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             user.bot = True
             if nick not in self.hub_users:
@@ -294,6 +303,8 @@ class DCClient(LineReceiver):
 
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             if nick in self.hub_users:
                 oldlist.remove(nick)
