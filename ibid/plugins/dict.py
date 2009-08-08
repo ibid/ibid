@@ -18,7 +18,7 @@ class Dict(Processor):
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
 
-    @match(r'^define\s+(.+?)(?:\s+using\s+(.+))?$')
+    @match(r'^(?:define|dict)\s+(.+?)(?:\s+using\s+(.+))?$')
     def define(self, event, word, dictionary):
         connection = Connection(self.server, self.port)
         dictionary = dictionary is None and '*' or dictionary.lower()
