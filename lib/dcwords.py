@@ -254,7 +254,7 @@ class DCClient(LineReceiver):
         user.connection = _decode_htmlent(m.group(6))
         user.away = m.group(7) in _raway and _raway[m.group(7)] or 'normal'
         user.email = _decode_htmlent(m.group(8))
-        user.sharesize = int(m.group(9))
+        user.sharesize = m.group(9) and int(m.group(9)) or 0
 
         if nick not in self.hub_users:
             self.hub_users[nick] = user
