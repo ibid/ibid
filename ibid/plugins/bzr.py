@@ -9,7 +9,7 @@ from bzrlib.errors import NotBranchError
 import ibid
 from ibid.plugins import Processor, match, RPC, handler
 from ibid.config import Option, DictOption
-from ibid.utils import ago, format_date
+from ibid.utils import ago, format_date, human_join
 
 help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
 
@@ -80,7 +80,7 @@ class Bazaar(Processor, RPC):
     def handle_repositories(self, event):
         repositories = self.branches.keys()
         if repositories:
-            event.addresponse(u'I know about: %s', u', '.join(sorted(repositories)))
+            event.addresponse(u'I know about: %s', human_join(sorted(repositories)))
         else:
             event.addresponse(u"I don't know about any repositories")
 

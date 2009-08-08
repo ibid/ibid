@@ -1,6 +1,7 @@
 from twisted.internet import reactor
 
 import ibid
+from ibid.utils import human_join
 from ibid.plugins import Processor, match, authorise
 
 help = {}
@@ -17,7 +18,7 @@ class ListPLugins(Processor):
             if processor.name not in plugins:
                 plugins.append(processor.name)
 
-        event.addresponse(u'Plugins: %s', u', '.join(sorted(plugins)) or u'none')
+        event.addresponse(u'Plugins: %s', human_join(sorted(plugins)) or u'none')
 
 help['core'] = u'Reloads core modules.'
 class ReloadCoreModules(Processor):

@@ -3,8 +3,8 @@ from random import choice
 
 import ibid
 from ibid.plugins import Processor, match
-from ibid.config import IntOption, Option, ListOption
-from ibid.utils import ibid_version
+from ibid.config import IntOption, ListOption
+from ibid.utils import ibid_version, human_join
 
 help = {}
 log = logging.getLogger('plugins.misc')
@@ -20,7 +20,8 @@ class Coffee(Processor):
     cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
     
     def coffee_announce(self, event):
-        event.addresponse(u"Coffee's ready for %s!", u', '.join(self.pots[(event.source, event.channel)]))
+        event.addresponse(u"Coffee's ready for %s!", 
+                human_join(self.pots[(event.source, event.channel)]))
         del self.pots[(event.source, event.channel)]
 
     @match(r'^coffee\s+on$')

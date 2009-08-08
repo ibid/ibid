@@ -222,9 +222,11 @@ def json_webservice(url, params={}, headers={}):
     except ValueError, e:
         raise JSONException(e)
 
-def human_join(list, conjunction=u'and'):
+def human_join(items, separator=u',', conjunction=u'and'):
     "Create a list like: a, b, c and d"
+    items = list(items)
+    separator += u' '
     return ((u' %s ' % conjunction)
-            .join(filter(None, [u', '.join(list[:-1])] + list[-1:])))
+            .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
 
 # vi: set et sta sw=4 ts=4:
