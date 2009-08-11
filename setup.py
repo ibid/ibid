@@ -48,6 +48,7 @@ setup(
     },
     scripts=[
         'scripts/ibid',
+        'scripts/ibid-db',
         'scripts/ibid-plugin',
         'scripts/ibid-setup',
         'scripts/ibid-factpack',
