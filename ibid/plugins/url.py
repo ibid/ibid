@@ -164,7 +164,8 @@ class NullRedirect(HTTPRedirectHandler):
         return None
 
 class Lengthen(Processor):
-    u"""<url>"""
+    u"""<url>
+    expand <url>"""
     feature = 'url'
 
     services = ListOption('services', 'List of URL prefixes of URL shortening services', (
@@ -177,10 +178,11 @@ class Lengthen(Processor):
     ))
 
     def setup(self):
-        self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I|re.DOTALL)
+        self.lengthen.im_func.pattern = re.compile(r'^(?:((?:%s)\S+)|(?:lengthen\s+|expand\s+)(http://\S+))$' % '|'.join([re.escape(service) for service in self.services]), re.I|re.DOTALL)
 
     @handler
-    def lengthen(self, event, url):
+    def lengthen(self, event, url1, url2):
+        url = url1 or url2
         opener = build_opener(NullRedirect())
         try:
             f = opener.open(url)
