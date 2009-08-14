@@ -170,7 +170,10 @@ class Lengthen(Processor):
     services = ListOption('services', 'List of URL prefixes of URL shortening services', (
         'http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/',
         'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/',
-        'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'
+        'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/',
+        'http://bit.ly/', 'http://cli.gs/', 'http://zi.ma/', 'http://twurl.nl/',
+        'http://xrl.us/', 'http://lnk.in/', 'http://url.ie/', 'http://ne1.net/',
+        'http://turo.us/', 'http://301url.com/',
     ))
 
     def setup(self):
