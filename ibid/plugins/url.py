@@ -174,7 +174,7 @@ class Lengthen(Processor):
         'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/',
         'http://bit.ly/', 'http://cli.gs/', 'http://zi.ma/', 'http://twurl.nl/',
         'http://xrl.us/', 'http://lnk.in/', 'http://url.ie/', 'http://ne1.net/',
-        'http://turo.us/', 'http://301url.com/',
+        'http://turo.us/', 'http://301url.com/', 'http://u.nu/', 'http://twi.la/',
     ))
 
     def setup(self):
