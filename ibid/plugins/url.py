@@ -186,12 +186,13 @@ class Lengthen(Processor):
         opener = build_opener(NullRedirect())
         try:
             f = opener.open(url)
+            f.close()
         except HTTPError, e:
             if e.code in (301, 302, 303, 307):
                 event.addresponse(u'That expands to: %s', e.hdrs['location'])
                 return
+            raise
 
-        f.close()
         event.addresponse(u"No redirect")
 
 # vi: set et sta sw=4 ts=4:
