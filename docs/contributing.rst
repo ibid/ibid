@@ -66,7 +66,7 @@ development process as the Ibid developers:
 .. _style-guidelines:
 
 Style Guidelines
-================
+----------------
 
 Writing code that matches the Ibid style will lead to a consistent code
 base thus happy developers.
@@ -79,13 +79,13 @@ base thus happy developers.
 * Single quotes are preferred to double, where sensible.
 
 Sources
--------
+^^^^^^^
 
 * Follow `Twisted style
   <http://twistedmatrix.com/trac/browser/trunk/doc/core/development/policy/coding-standard.xhtml?format=raw>`_.
 
 Plugins
--------
+^^^^^^^
 
 * All features should have help and usage strings.
 
@@ -104,7 +104,7 @@ Plugins
 .. _bzr-guide:
 
 Bazaar for Ibid Developers
-==========================
+--------------------------
 
 You'll want a non-ancient version (>=1.9) of Bazaar (check your
 distribution's backport repository), and a Launchpad account.
@@ -165,7 +165,7 @@ See also:
 .. _dev-instance:
 
 Running a Development Ibid
-==========================
+--------------------------
 
 A full-blown Ibid install is overkill for development and debugging
 cycles.
@@ -203,7 +203,6 @@ If ``ibid-plugin`` isn't sufficient for your debugging needs, you can
 launch a normal Ibid by running::
 
    ~/code/ibid/feature-1234 $ twistd -n ibid
-
 
 
 .. vi: set et sta sw=3 ts=3:
