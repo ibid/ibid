@@ -6,6 +6,8 @@ Contents
 
    intro
    install
+   plugins
+   contributing
 
 
 Indices and tables

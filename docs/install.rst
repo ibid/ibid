@@ -19,7 +19,7 @@ Ibid development community <contributing>` (i.e. contributing code) or
 drastic internal changes, you will probably want to work :ref:`from source
 <from-source>` instead.
 
-.. _prerequsites:
+.. _prerequisites:
 
 Prerequisites
 -------------
