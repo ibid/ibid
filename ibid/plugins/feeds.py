@@ -183,7 +183,7 @@ class Retrieve(Processor):
             else:
                 summary = article.content[0].value
 
-        event.addresponse(u'"%(title)s" %(link)s : %(summary)s', {
+        event.addresponse(u'"%(title)s" <%(link)s> %(summary)s', {
             'title': html2text_file(article.title, None).strip(),
             'link': article.link,
             'summary': summary,

@@ -34,6 +34,10 @@ class TestURLGrabber(unittest.TestCase):
             u'http://en.example.org/wiki/Python_(programming_language'),
         (u'Python <URL:http://en.example.org/wiki/Python_(programming_language)> is a lekker language',
             u'http://en.example.org/wiki/Python_(programming_language'),
+        (u'Spinach - Wikipedia, the free encyclopedia <http://en.wikipedia.org/wiki/Spinach>, WHFoods: Spinach',
+            u'http://en.wikipedia.org/wiki/Spinach'),
+        (u"<http://mylifeisaverage.com/story.php?id=293529>: Today, I noticed MLIA'S mode is the mathematical term for average. MLIA is smarter than me. MLIA",
+            u'http://mylifeisaverage.com/story.php?id=293529'),
     ]
 
     def test_good_grabs(self):

@@ -156,7 +156,7 @@ class RFCLookup(Processor):
 
         number = int(number)
         if number in rfcs:
-            event.addresponse(u"%(record)s http://www.rfc-editor.org/rfc/rfc%(number)i.txt", {
+            event.addresponse(u"%(record)s <http://www.rfc-editor.org/rfc/rfc%(number)i.txt>", {
                 'record': rfcs[number].record,
                 'number': number,
             })
