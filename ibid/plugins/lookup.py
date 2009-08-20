@@ -168,7 +168,7 @@ class FMyLife(Processor):
             )
             text = item.find('text').text
 
-            return u'<%s>: %s' % (url, text)
+            return u'<%s> %s' % (url, text)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
@@ -249,11 +249,11 @@ class TextsFromLastNight(Processor):
 
         id, body = message
         if len(body) > 1:
-            event.addresponse(u'<http://textsfromlastnight.com/view/%i>:', id)
+            event.addresponse(u'<http://textsfromlastnight.com/view/%i>', id)
             for line in body:
                 event.addresponse(line)
         else:
-            event.addresponse(u'<http://textsfromlastnight.com/view/%(id)i>: %(body)s', {
+            event.addresponse(u'<http://textsfromlastnight.com/view/%(id)i> %(body)s', {
                 'id': id,
                 'body': body[0],
             })
@@ -327,7 +327,7 @@ class MyLifeIsAverage(Processor):
                 return
 
         id, body = story
-        event.addresponse(u'<%(url)sstory.php?id=%(id)i>: %(body)s', {
+        event.addresponse(u'<%(url)sstory.php?id=%(id)i> %(body)s', {
             'url': url,
             'id': id,
             'body': body,
@@ -404,7 +404,7 @@ class Twitter(Processor):
     def latest(self, event, service_name, user):
         service = self.services[service_name.lower()]
         try:
-            event.addresponse(u'"%(text)s" %(ago)s ago, <%(url)s>', self.remote_latest(service, user))
+            event.addresponse(u'"%(text)s" %(ago)s ago <%(url)s>', self.remote_latest(service, user))
         except HTTPError, e:
             if e.code in (401, 403):
                 event.addresponse(u"Sorry, %s's feed is private", user)
