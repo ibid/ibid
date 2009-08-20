@@ -34,6 +34,8 @@ class TestURLGrabber(unittest.TestCase):
             u'http://en.example.org/wiki/Python_(programming_language'),
         (u'Python <URL:http://en.example.org/wiki/Python_(programming_language)> is a lekker language',
             u'http://en.example.org/wiki/Python_(programming_language'),
+        (u'Spinach - Wikipedia, the free encyclopedia <http://en.wikipedia.org/wiki/Spinach>, WHFoods: Spinach',
+            u'http://en.wikipedia.org/wiki/Spinach'),
     ]
 
     def test_good_grabs(self):
