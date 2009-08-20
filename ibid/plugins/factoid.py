@@ -418,14 +418,15 @@ class Set(Processor):
     
     def setup(self):
         self.set_factoid.im_func.pattern = re.compile(
-            r'^(no[,.: ]\s*)?(.+?)\s+(?:=(\S+)=)?(?(3)|(%s))(\s+also)?\s+((?(3).+|(?!.*=\S+=).+))$'
+            r'^(no[,.: ]\s*)?(.+?)\s+(also\s+)?(?:=(\S+)=)?(?(4)|(%s))(\s+also)?\s+((?(3).+|(?!.*=\S+=).+))$'
             % '|'.join(self.verbs), re.I)
         self.set_factoid.im_func.message_version = 'deaddressed'
 
     @handler
     @authorise
-    def set_factoid(self, event, correction, name, verb1, verb2, addition, value):
-        verb = verb1 and verb1 or verb2
+    def set_factoid(self, event, correction, name, addition1, verb1, verb2, addition2, value):
+        verb = verb1 or verb2
+        addition = addition1 or addition2
 
         name = strip_name(name)
 
