@@ -156,7 +156,7 @@ class Identities(Processor):
                 account = event.session.query(Account).get(event.account)
             else:
                 account = event.session.query(Account) \
-                        .join(Identity.account) \
+                        .join('identities') \
                         .filter(func.lower(Identity.identity) == identity.lower()) \
                         .filter(func.lower(Identity.source) == source.lower()).first()
                 
