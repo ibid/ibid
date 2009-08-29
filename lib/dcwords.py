@@ -209,7 +209,7 @@ class DCClient(LineReceiver):
 
         self._sendMyINFO()
 
-    _myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?\$([AP5 ])\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
+    _myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
     def dc_MyINFO(self, params):
         "Information about a user"
         self._state_Connected()
