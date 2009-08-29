@@ -11,6 +11,7 @@ install_requires=[
     'SOAPpy',
     'pyopenssl',
     'pysqlite',
+    'python-dateutil',
     'jinja',
     'html5lib',
     'BeautifulSoup',

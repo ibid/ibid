@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeText, Table
@@ -241,7 +240,7 @@ class Deliver(Processor):
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.utcnow()-memo.time),
+                    'ago': ago(event.time - memo.time),
                 }
                 event.addresponse({'reply': message, 'target': event.sender['connection']})
             else:
@@ -250,7 +249,7 @@ class Deliver(Processor):
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.utcnow()-memo.time),
+                    'ago': ago(event.time - memo.time),
                 })
 
             memo.delivered = True

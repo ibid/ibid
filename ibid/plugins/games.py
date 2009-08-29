@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 from random import choice, gauss, random
 import re
@@ -149,10 +149,10 @@ class DuelInitiate(Processor):
         duel.confirmed = True
         duel.cancel_callback.cancel()
         
-        now = datetime.utcnow()
-        starttime = now + timedelta(seconds=self.start_delay + ((30 - now.second) % 30))
+        starttime = event.time + timedelta(
+                seconds=self.start_delay + ((30 - event.time.second) % 30))
         starttime = starttime.replace(microsecond=0)
-        delay = starttime - now
+        delay = starttime - event.time
         delay = delay.seconds + (delay.microseconds / 10.**6)
 
         duel.start_callback = ibid.dispatcher.call_later(delay, self.start, event)
@@ -169,7 +169,7 @@ class DuelInitiate(Processor):
             'aggressor': duel.names[duel.aggressor],
             'recipient': duel.names[duel.recipient],
             'starttime': format_date(starttime, 'time'),
-            'delay': (starttime - now).seconds,
+            'delay': (starttime - event.time).seconds,
         }})
 
     def start(self, event):

@@ -1,5 +1,5 @@
 import re
-from time import time
+from datetime import datetime, timedelta
 from random import choice
 import logging
 
@@ -118,7 +118,7 @@ class Timestamp(Processor):
     priority = -1900
 
     def process(self, event):
-        event.time = time()
+        event.time = datetime.utcnow()
 
 class Complain(Processor):
 
@@ -162,7 +162,9 @@ class RateLimit(Processor):
             self.messages[event.identity] = [event.time]
         else:
             self.messages[event.identity].append(event.time)
-            self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
+            self.messages[event.identity] = filter(
+                lambda x: event.time - x < timedelta(seconds=self.limit_time),
+                self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
                     event.addresponse({'reply': u'Geez, give me some time to think!'})
