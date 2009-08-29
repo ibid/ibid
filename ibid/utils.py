@@ -90,9 +90,6 @@ def cacheable_download(url, cachefile):
         else:
             raise
     
-    # Download into a temporary file, in case something goes wrong
-    downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
-    outfile = file(downloadfile, "wb")
     data = connection.read()
 
     compression = connection.headers.get('content-encoding')
@@ -107,17 +104,10 @@ def cacheable_download(url, cachefile):
             gzipper = GzipFile(fileobj=compressedstream)
             data = gzipper.read()
 
+    outfile = file(cachefile, 'wb')
     outfile.write(data)
-    
     outfile.close()
 
-    try:
-        os.rename(downloadfile, cachefile)
-    except OSError:
-        # Are we on a system that doesn't support atomic renames?
-        os.remove(cachefile)
-        os.rename(downloadfile, cachefile)
-    
     return cachefile
 
 def file_in_path(program):
