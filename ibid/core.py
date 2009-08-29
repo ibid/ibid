@@ -294,11 +294,15 @@ class DatabaseManager(dict):
 
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
-                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
-                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=echo)
+                creator=sqlite_creator(join(ibid.options['base'],
+                    expanduser(uri.replace('sqlite:///', '', 1)))),
+                encoding='utf-8', convert_unicode=True,
+                assert_unicode=True, echo=echo
+            )
 
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=echo)
+            engine = create_engine(uri, encoding='utf-8',
+                convert_unicode=True, assert_unicode=True, echo=echo)
 
             if uri.startswith('mysql://'):
                 class MySQLModeListener(object):
