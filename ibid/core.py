@@ -305,10 +305,18 @@ class DatabaseManager(dict):
                         c.execute("SET storage_engine=%s;" % mysql_engine)
                         c.execute("SET time_zone='+0:00';")
                         c.close()
-
                 engine.pool.add_listener(MySQLModeListener())
 
                 engine.dialect.use_ansiquotes = True
+
+            elif uri.startswith('postgres://'):
+                class PGSQLModeListener(object):
+                    def connect(self, dbapi_con, con_record):
+                        c = dbapi_con.cursor()
+                        c.execute("SET TIME ZONE UTC")
+                        c.close()
+
+                engine.pool.add_listener(PGSQLModeListener())
 
         self[name] = scoped_session(sessionmaker(bind=engine))
 
