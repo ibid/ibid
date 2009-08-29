@@ -174,13 +174,7 @@ class FMyLife(Processor):
     def fml(self, event, id):
         try:
             body = self.remote_get(id)
-        except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except BadStatusLine:
+        except (FMLException, HTTPError, BadStatusLine, SyntaxError):
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
