@@ -288,13 +288,21 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]
+        echo = (u'debugging' in ibid.config and
+                u'sqlalchemy_echo' in ibid.config.debugging and
+                ibid.config.debugging.as_bool(u'sqlalchemy_echo'))
+
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
-                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
-                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+                creator=sqlite_creator(join(ibid.options['base'],
+                    expanduser(uri.replace('sqlite:///', '', 1)))),
+                encoding='utf-8', convert_unicode=True,
+                assert_unicode=True, echo=echo
+            )
 
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+            engine = create_engine(uri, encoding='utf-8',
+                convert_unicode=True, assert_unicode=True, echo=echo)
 
             if uri.startswith('mysql://'):
                 class MySQLModeListener(object):
