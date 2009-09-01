@@ -9,6 +9,7 @@ from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
 from collections import defaultdict
 import re
+from sys import exc_info
 import logging
 
 import feedparser
@@ -158,8 +159,10 @@ class FMyLife(Processor):
         f = urlopen(url)
         try:
             tree = parse(f)
-        except SyntaxError, e:
-            raise FMLException(e.message)
+        except SyntaxError:
+            class_, e, tb = exc_info()
+            new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))
+            raise new_exc.__class__, new_exc, tb
 
         if tree.find('.//error'):
             raise FMLException(tree.findtext('.//error'))
