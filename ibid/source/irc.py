@@ -24,7 +24,6 @@ class Ircbot(irc.IRCClient):
         self.nickname = self.factory.nick.encode('utf-8')
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
-        self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
@@ -114,7 +113,7 @@ class Ircbot(irc.IRCClient):
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = event.sender['nick']
+            event.channel = event.sender['connection']
         else:
             event.public = True
 
@@ -139,13 +138,22 @@ class Ircbot(irc.IRCClient):
 
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
+        raw_message = message.encode('utf-8')
+
+        # Target may be a connection or a plain nick
+        target = response['target'].split('!')[0]
+        raw_target = target.encode('utf-8')
+
         if 'action' in response and response['action']:
             # We can't use self.me() because it prepends a # onto channel names
-            self.ctcpMakeQuery(response['target'].encode('utf-8'), [('ACTION', message.encode('utf-8'))])
-            self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
+            self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
+            self.factory.log.debug(u"Sent action to %s: %s", target, message)
+        elif 'notice' in response and response['notice']:
+            self.notice(raw_target, raw_message)
+            self.factory.log.debug(u"Sent notice to %s: %s", target, message)
         else:
-            self.msg(response['target'].encode('utf-8'), message.encode('utf-8'))
-            self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
+            self.msg(raw_target, raw_message)
+            self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
     def join(self, channel):
         self.factory.log.info(u"Joining %s", channel)
@@ -182,6 +190,7 @@ class Ircbot(irc.IRCClient):
     def ctcpQuery_SOURCE(self, user, channel, data):
         nick = user.split("!")[0]
         self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
+
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
@@ -237,6 +246,12 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def change_nick(self, nick):
         return self.proto.setNick(nick.encode('utf-8'))
+
+    def send(self, response):
+        return self.proto.send(response)
+
+    def logging_name(self, identity):
+        return identity.split('!')[0]
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)

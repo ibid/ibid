@@ -44,6 +44,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender['id'] = event.sender['connection'].split('/')[0]
         event.sender['nick'] = event.sender['connection'].split('@')[0]
         event.state = show or u'online'
+        event.public = False
         event.channel = entity.full()
         self.parent.log.debug(u"Received available presence from %s (%s)", event.sender['connection'], event.state)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
@@ -54,6 +55,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender['id'] = event.sender['connection'].split('/')[0]
         event.sender['nick'] = event.sender['connection'].split('@')[0]
         event.state = u'offline'
+        event.public = False
         event.channel = entity.full()
         self.parent.log.debug(u"Received unavailable presence from %s", event.sender['connection'])
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
@@ -182,5 +184,8 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     def url(self):
         return u'xmpp://%s' % (self.jid_str,)
+
+    def logging_name(self, identity):
+        return identity.split('/')[0]
 
 # vi: set et sta sw=4 ts=4:

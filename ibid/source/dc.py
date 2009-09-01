@@ -57,7 +57,7 @@ class DCBot(dcwords.DCClient):
         event = Event(self.factory.name, type)
         event.sender['connection'] = user
         event.sender['id'] = user
-        event.sender['nick'] = event.sender['id']
+        event.sender['nick'] = user
         event.channel = u'$public'
         event.public = True
         event.source = self.factory.name
@@ -77,7 +77,7 @@ class DCBot(dcwords.DCClient):
         if private:
             event.addressed = True
             event.public = False
-            event.channel = event.sender['nick']
+            event.channel = event.sender['connection']
         else:
             event.public = True
 

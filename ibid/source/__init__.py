@@ -32,6 +32,10 @@ class IbidSourceFactory(object):
     def url(self):
         return None
 
+    def logging_name(self, identity):
+        "Given an identity or connection, return a name suitable for logging"
+        return identity
+
 from ibid.config import Option
 
 options = {

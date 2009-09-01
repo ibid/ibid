@@ -1,4 +1,5 @@
 import logging
+from socket import timeout
 from urlparse import urlparse
 
 from pinder import Campfire
@@ -29,7 +30,12 @@ class CampfireBot(Campfire):
                 self.join(room)
 
         for room in self.rooms.values():
-            for message in room.messages():
+            try:
+                messages = room.messages()
+            except timeout, e:
+                self.factory.log.debug(u"Campfire timed out on us")
+                break
+            for message in messages:
                 self.factory.log.debug('Received message: %s', str(message))
                 self._create_message(message, room.name)
 

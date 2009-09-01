@@ -32,16 +32,15 @@ class Log(Processor):
 
     logs = {}
 
-    def get_logfile(self, source, channel, when):
+    def get_logfile(self, event):
         if self.date_utc:
-            when = gmtime(when)
+            when = gmtime(event.time)
         else:
-            when = localtime(when)
+            when = localtime(event.time)
 
-        if ibid.sources[source].type == 'jabber':
-            channel = channel.split('/')[0]
+        channel = ibid.sources[event.source].logging_name(event.channel)
         filename = self.log % {
-                'source': source.replace('/', '-'),
+                'source': event.source.replace('/', '-'),
                 'channel': channel.replace('/', '-'),
                 'year': when.tm_year,
                 'month': when.tm_mon,
@@ -91,7 +90,7 @@ class Log(Processor):
             else:
                 fields['message'] = event.message
 
-            file = self.get_logfile(event.source, event.channel, event.time)
+            file = self.get_logfile(event)
 
             file.write((format % fields).encode('utf-8') + '\n')
             file.flush()
