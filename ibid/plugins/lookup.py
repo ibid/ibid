@@ -155,7 +155,11 @@ class FMyLife(Processor):
             id.isalnum() and id + '/nocomment' or quote(id),
             urlencode({'language': self.fml_lang, 'key': self.api_key}))
         )
-        tree = parse(urlopen(url))
+        f = urlopen(url)
+        try:
+            tree = parse(f)
+        except SyntaxError, e:
+            raise FMLException(e.message)
 
         if tree.find('.//error'):
             raise FMLException(tree.findtext('.//error'))
@@ -174,7 +178,7 @@ class FMyLife(Processor):
     def fml(self, event, id):
         try:
             body = self.remote_get(id)
-        except (FMLException, HTTPError, BadStatusLine, SyntaxError):
+        except (FMLException, HTTPError, BadStatusLine):
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
