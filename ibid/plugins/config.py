@@ -33,16 +33,17 @@ class Config(Processor):
     def set(self, event, key, value):
         config = ibid.config
         for part in key.split('.')[:-1]:
-            if hasattr(config, 'has_key') and not config.has_key(part):
-                config[part] = {}
-            elif not hasattr(config, 'has_key'):
+            if isinstance(config, dict):
+                if part not in config:
+                    config[part] = {}
+            else:
                 event.addresponse(u'No such option')
                 return
 
             config = config[part]
 
         part = key.split('.')[-1]
-        if not hasattr(config, 'has_key') or not config.has_key(part):
+        if not isinstance(config, dict) or part not in config:
             event.addresponse(u'No such option')
             return
         if ',' in value:
@@ -63,7 +64,7 @@ class Config(Processor):
 
         config = ibid.config
         for part in key.split('.'):
-            if not hasattr(config, 'has_key') or not config.has_key(part):
+            if not isinstance(config, dict) or part not in config:
                 event.addresponse(u'No such option')
                 return
             config = config[part]
