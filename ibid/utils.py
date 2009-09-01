@@ -1,4 +1,5 @@
 import cgi
+from collections import defaultdict
 from datetime import datetime
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
@@ -6,6 +7,7 @@ import os
 import os.path
 import re
 from StringIO import StringIO
+from threading import Lock
 import time
 from urllib import urlencode
 import urllib2
@@ -52,11 +54,21 @@ def decode_htmlentities(text):
     text = re.sub("&(\w+);", replace, text)
     return text
 
+downloads_in_progress = defaultdict(Lock)
 def cacheable_download(url, cachefile):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
     Returns complete path to downloaded file."""
 
+    downloads_in_progress[cachefile].acquire()
+    try:
+        f = _cacheable_download(url, cachefile)
+    finally:
+        downloads_in_progress[cachefile].release()
+
+    return f
+
+def _cacheable_download(url, cachefile):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
