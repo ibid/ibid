@@ -69,13 +69,14 @@ class MemoryLog(Processor):
             self.obj_last = datetime.utcnow()
 
     def process(self, event):
-        now = datetime.utcnow()
-        if self.mem_interval and now - self.mem_last >= timedelta(seconds=self.mem_interval):
+        if self.mem_interval and event.time - self.mem_last >= \
+                timedelta(seconds=self.mem_interval):
             self.mem_log()
-            self.mem_last = now
-        if self.obj_interval and now - self.obj_last >= timedelta(seconds=self.obj_interval):
+            self.mem_last = event.time
+        if self.obj_interval and event.time - self.obj_last >= \
+                timedelta(seconds=self.obj_interval):
             self.obj_log()
-            self.obj_last = now
+            self.obj_last = event.time
 
     def mem_log(self):
         status = get_memusage()

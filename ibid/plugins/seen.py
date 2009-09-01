@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
@@ -66,7 +65,7 @@ class See(Processor):
             sighting.value = event.public and event.message['raw'] or None
         elif event.type == 'state':
             sighting.value = event.state
-        sighting.time = datetime.utcfromtimestamp(event.time)
+        sighting.time = event.time
         sighting.count = sighting.count + 1
 
         event.session.save_or_update(sighting)
@@ -128,10 +127,10 @@ class Seen(Processor):
         reply = u''
         if len(messages) > 0:
             sighting = messages[0]
-            delta = datetime.utcnow() - sighting.time
-            reply = u'%s was last seen %s ago in %s on %s [%s]' \
-                    % (who, ago(delta), sighting.channel or 'private',
-                            sighting.identity.source, format_date(sighting.time))
+            delta = event.time - sighting.time
+            reply = u'%s was last seen %s ago in %s on %s [%s]' %(
+                    who, ago(delta), sighting.channel or 'private',
+                    sighting.identity.source, format_date(sighting.time))
 
         if len(states) > 0:
             sighting = states[0]
@@ -139,8 +138,9 @@ class Seen(Processor):
                 reply += u', and'
             else:
                 reply = who
-            reply += u' has been %s on %s since %s' \
-                    % (sighting.value, sighting.identity.source, format_date(sighting.time))
+            reply += u' has been %s on %s since %s' % (
+                    sighting.value, sighting.identity.source,
+                    format_date(sighting.time))
 
         event.addresponse(reply)
 

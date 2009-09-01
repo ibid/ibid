@@ -1,14 +1,15 @@
+from datetime import datetime
 import logging
 from random import choice
 import re
-from time import localtime, strftime, time
 
+from dateutil.tz import tzlocal, tzutc
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
 from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
-from ibid.config import Option, IntOption, ListOption
+from ibid.config import IntOption, ListOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
 from ibid.utils import format_date
@@ -380,20 +381,20 @@ class Get(Processor, RPC):
                 reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
-            reply = reply.replace('$who', event.sender['nick'])
-            reply = reply.replace('$channel', event.channel)
-            utcnow = time()
-            now = localtime(utcnow)
-            reply = reply.replace('$year', str(now[0]))
-            reply = reply.replace('$month', str(now[1]))
-            reply = reply.replace('$day', str(now[2]))
-            reply = reply.replace('$hour', str(now[3]))
-            reply = reply.replace('$minute', str(now[4]))
-            reply = reply.replace('$second', str(now[5]))
-            reply = reply.replace('$date', format_date(utcnow, 'date'))
-            reply = reply.replace('$time', format_date(utcnow, 'time'))
-            reply = reply.replace('$dow', strftime('%A', now))
-            reply = reply.replace('$unixtime', str(utcnow))
+            reply = reply.replace(u'$who', event.sender['nick'])
+            reply = reply.replace(u'$channel', event.channel)
+            utcnow = datetime.utcnow()
+            now = utcnow.replace(tzinfo=tzutc()).astimezone(tzlocal())
+            reply = reply.replace(u'$year', unicode(now.year))
+            reply = reply.replace(u'$month', unicode(now.month))
+            reply = reply.replace(u'$day', unicode(now.day))
+            reply = reply.replace(u'$hour', unicode(now.hour))
+            reply = reply.replace(u'$minute', unicode(now.minute))
+            reply = reply.replace(u'$second', unicode(now.second))
+            reply = reply.replace(u'$date', format_date(utcnow, 'date'))
+            reply = reply.replace(u'$time', format_date(utcnow, 'time'))
+            reply = reply.replace(u'$dow', unicode(now.strftime('%A')))
+            reply = reply.replace(u'$unixtime', unicode(utcnow.strftime('%s')))
 
             (reply, count) = action_re.subn('', reply)
             if count:

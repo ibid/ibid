@@ -1,5 +1,4 @@
 import cgi
-from datetime import datetime
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
@@ -11,6 +10,7 @@ from urllib import urlencode
 import urllib2
 import zlib
 
+from dateutil.tz import tzlocal, tzutc
 from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
@@ -157,11 +157,12 @@ def format_date(timestamp, length='datetime'):
     length += '_format'
     format = ibid.config.plugins.get(length, defaults[length])
 
-    if isinstance(timestamp, datetime):
-        timestamp = int(timestamp.strftime('%s')) - time.timezone
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=tzutc())
 
-    timestamp = time.localtime(timestamp)
-    return time.strftime(format, timestamp)
+    timestamp = timestamp.astimezone(tzlocal())
+
+    return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"

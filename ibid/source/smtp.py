@@ -1,7 +1,7 @@
 import logging
+from datetime import datetime
 from email import message_from_string
 from socket import gethostname
-from time import gmtime, strftime
 import re
 try:
     from email.utils import parseaddr
@@ -27,7 +27,10 @@ class IbidDelivery:
         self.factory = factory
 
     def receivedHeader(self, helo, origin, recipients):
-        return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (helo[0], helo[1], gethostname(), str(recipients[0]), strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)', gmtime()))
+        return 'Received: from %s ([%s])\n\tby %s (Ibid)\n\tfor %s; %s' % (
+            helo[0], helo[1], gethostname(), str(recipients[0]),
+            datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S +0000 (UTC)')
+        )
 
     def validateFrom(self, helo, origin):
         return origin
