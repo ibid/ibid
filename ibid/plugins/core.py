@@ -63,6 +63,18 @@ class Ignore(Processor):
             if event.sender['nick'] == who:
                 event.processed = True
 
+class IgnorePublic(Processor):
+
+    priority = -1490
+
+    @handler
+    def ignore_public(self, event):
+        if event.public and not ibid.auth.authorise(event, u'publicresponse'):
+            event.addresponse(
+                u"Sorry, I'm not allowed to talk to you in public. "
+                'Ask me by private message.'
+            )
+
 class Responses(Processor):
 
     priority = 1600

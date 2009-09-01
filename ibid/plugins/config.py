@@ -25,6 +25,7 @@ class Config(Processor):
         ibid.config.reload()
         ibid.config.merge(FileConfig(join(ibid.options['base'], 'local.ini')))
         ibid.reloader.reload_config()
+        ibid.auth.drop_caches()
         event.addresponse(True)
         log.info(u'Reread configuration file')
 

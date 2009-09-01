@@ -52,11 +52,16 @@ def permission(name, account, source, session):
 class Auth(object):
 
     def __init__(self):
-        self.cache = {}
+        self.authentication_cache = {}
+        self.authorisation_cache = {}
         self.log = logging.getLogger('core.auth')
 
-    def authenticate(self, event, credential=None):
+    def drop_caches(self):
+        "Authentication / Authorisation data changed"
+        self.authentication_cache = {}
+        self.authorisation_cache = {}
 
+    def authenticate(self, event, credential=None):
         if 'account' not in event or not event.account:
             self.log.debug(u"Authentication for %s (%s) failed because identity doesn't have an account", event.identity, event.sender['connection'])
             return False
@@ -66,13 +71,13 @@ class Auth(object):
         methods.extend(ibid.sources[event.source].auth)
         methods.extend(config['methods'])
 
-        if event.sender['connection'] in self.cache:
-            timestamp = self.cache[event.sender['connection']]
+        if event.sender['connection'] in self.authentication_cache:
+            timestamp = self.authentication_cache[event.sender['connection']]
             if time() - timestamp < ibid.config.auth['timeout']:
                 self.log.debug(u"Authenticated %s/%s (%s) from cache", event.account, event.identity, event.sender['connection'])
                 return True
             else:
-                del self.cache[event.sender['connection']]
+                del self.authentication_cache[event.sender['connection']]
 
         for method in methods:
             if hasattr(ibid.sources[event.source], 'auth_%s' % method):
@@ -86,7 +91,7 @@ class Auth(object):
             try:
                 if function(event, credential):
                     self.log.info(u"Authenticated %s/%s (%s) using %s", event.account, event.identity, event.sender['connection'], method)
-                    self.cache[event.sender['connection']] = time()
+                    self.authentication_cache[event.sender['connection']] = time()
                     return True
             except:
                 self.log.exception(u"Exception occured in %s auth method", method)
@@ -95,15 +100,23 @@ class Auth(object):
         return False
 
     def authorise(self, event, name):
-        value = permission(name, event.account, event.source, event.session)
-        self.log.info(u"Checking %s permission for %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], value)
+        "Check if event comes from a user with permission 'name'"
+        key = (name, event.account, event.source)
+        if key not in self.authorisation_cache:
+            value = permission(session=event.session, *key)
+            self.authorisation_cache[key] = value
+            self.log.info(u"Checking %s permission for %s/%s (%s): %s",
+                    name, event.account, event.identity,
+                    event.sender['connection'], value)
+        else:
+            value = self.authorisation_cache[key]
+            self.log.info(u"Checking %s permission for %s/%s (%s) from cache: %s",
+                    name, event.account, event.identity,
+                    event.sender['connection'], value)
 
-        if value == 'yes':
-            return True
-        elif value == 'auth':
+        if value == 'auth':
             return self.authenticate(event)
-
-        return False
+        return value == 'yes'
 
     def implicit(self, event, credential=None):
         return True

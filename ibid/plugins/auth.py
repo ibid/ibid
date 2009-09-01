@@ -112,6 +112,7 @@ class Permissions(Processor):
             event.session.save_or_update(permission)
 
         event.session.commit()
+        ibid.auth.drop_caches()
         log.info(u"%s %s permission for account %s (%s) by account %s",
                 actions[action.lower()], name, account.id, account.username, event.account)
 
