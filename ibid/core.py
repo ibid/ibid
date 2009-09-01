@@ -24,8 +24,12 @@ class Dispatcher(object):
             try:
                 processor.process(event)
             except:
-                self.log.exception(u"Exception occured in %s processor of %s plugin",
-                        processor.__class__.__name__, processor.name)
+                self.log.exception(
+                        u'Exception occured in %s processor of %s plugin.\n'
+                        u'Event: %s',
+                        processor.__class__.__name__,
+                        processor.name,
+                        event)
                 event.complain = u'exception'
                 if 'session' in event:
                     event.session.rollback()
