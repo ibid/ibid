@@ -9,6 +9,7 @@ from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
 from collections import defaultdict
 import re
+from sys import exc_info
 import logging
 
 import feedparser
@@ -155,7 +156,13 @@ class FMyLife(Processor):
             id.isalnum() and id + '/nocomment' or quote(id),
             urlencode({'language': self.fml_lang, 'key': self.api_key}))
         )
-        tree = parse(urlopen(url))
+        f = urlopen(url)
+        try:
+            tree = parse(f)
+        except SyntaxError:
+            class_, e, tb = exc_info()
+            new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))
+            raise new_exc.__class__, new_exc, tb
 
         if tree.find('.//error'):
             raise FMLException(tree.findtext('.//error'))
@@ -168,19 +175,13 @@ class FMyLife(Processor):
             )
             text = item.find('text').text
 
-            return u'<%s> %s' % (url, text)
+            return u'%s <%s>' % (text, url)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
         try:
             body = self.remote_get(id)
-        except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except BadStatusLine:
+        except (FMLException, HTTPError, BadStatusLine):
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
@@ -249,11 +250,11 @@ class TextsFromLastNight(Processor):
 
         id, body = message
         if len(body) > 1:
-            event.addresponse(u'<http://textsfromlastnight.com/view/%i>', id)
             for line in body:
                 event.addresponse(line)
+            event.addresponse(u'<http://textsfromlastnight.com/view/%i>', id)
         else:
-            event.addresponse(u'<http://textsfromlastnight.com/view/%(id)i> %(body)s', {
+            event.addresponse(u'%(body)s <http://textsfromlastnight.com/view/%(id)i>', {
                 'id': id,
                 'body': body[0],
             })
@@ -329,7 +330,7 @@ class MyLifeIsAverage(Processor):
                 return
 
         id, body = story
-        event.addresponse(u'<%(url)sstory.php?id=%(id)i> %(body)s', {
+        event.addresponse(u'%(body)s <%(url)sstory.php?id=%(id)i>', {
             'url': url,
             'id': id,
             'body': body,
