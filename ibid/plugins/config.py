@@ -34,14 +34,24 @@ class Config(Processor):
     def set(self, event, key, value):
         config = ibid.config
         for part in key.split('.')[:-1]:
-            if part not in config:
-                config[part] = {}
+            if isinstance(config, dict):
+                if part not in config:
+                    config[part] = {}
+            else:
+                event.addresponse(u'No such option')
+                return
+
             config = config[part]
 
+        part = key.split('.')[-1]
+        if not isinstance(config, dict) or part not in config:
+            event.addresponse(u'No such option')
+            return
         if ',' in value:
-            config[key.split('.')[-1]] = [part.strip() for part in value.split(',')]
+            config[part] = [part.strip() for part in value.split(',')]
         else:
-            config[key.split('.')[-1]] = value
+            config[part] = value
+
         ibid.config.write()
         ibid.reloader.reload_config()
         log.info(u"Set %s to %s", key, value)
@@ -55,7 +65,7 @@ class Config(Processor):
 
         config = ibid.config
         for part in key.split('.'):
-            if part not in config:
+            if not isinstance(config, dict) or part not in config:
                 event.addresponse(u'No such option')
                 return
             config = config[part]
