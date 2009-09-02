@@ -110,7 +110,7 @@ class Auth(object):
                     event.sender['connection'], value)
         else:
             value = self.authorisation_cache[key]
-            self.log.info(u"Checking %s permission for %s/%s (%s) from cache: %s",
+            self.log.debug(u"Checking %s permission for %s/%s (%s) from cache: %s",
                     name, event.account, event.identity,
                     event.sender['connection'], value)
 
