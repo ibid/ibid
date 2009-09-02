@@ -799,8 +799,13 @@ class TVShow(Processor):
         for field in ('Latest Episode', 'Next Episode'):
             if field in show_dict:
                 ep, name, date = show_dict[field].split('^', 2)
-                format_from = '/'.join(('%b', '%d', '%Y')[-1 - date.count('/'):])
-                format_to = ' '.join(('%d', '%B', '%Y')[-1 - date.count('/'):])
+                count = date.count('/')
+                format_from = {
+                    0: '%Y',
+                    1: '%b/%Y',
+                    2: '%b/%d/%Y'
+                }[count]
+                format_to = ' '.join(('%d', '%B', '%Y')[-1 - count:])
                 date = strftime(format_to, strptime(date, format_from))
                 show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
         return show_dict
