@@ -57,9 +57,11 @@ class Ignore(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
+    nicks = ListOption('ignore', 'List of nicks to ignore', [])
+
     @handler
     def handle_ignore(self, event):
-        for who in ibid.config.plugins[self.name]['ignore']:
+        for who in self.nicks:
             if event.sender['nick'] == who:
                 event.processed = True
 
