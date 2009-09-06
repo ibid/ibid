@@ -1,10 +1,12 @@
 import cgi
+from collections import defaultdict
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
 import os.path
 import re
 from StringIO import StringIO
+from threading import Lock
 import time
 from urllib import urlencode
 import urllib2
@@ -52,11 +54,21 @@ def decode_htmlentities(text):
     text = re.sub("&(\w+);", replace, text)
     return text
 
+downloads_in_progress = defaultdict(Lock)
 def cacheable_download(url, cachefile):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
     Returns complete path to downloaded file."""
 
+    downloads_in_progress[cachefile].acquire()
+    try:
+        f = _cacheable_download(url, cachefile)
+    finally:
+        downloads_in_progress[cachefile].release()
+
+    return f
+
+def _cacheable_download(url, cachefile):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
@@ -90,9 +102,6 @@ def cacheable_download(url, cachefile):
         else:
             raise
     
-    # Download into a temporary file, in case something goes wrong
-    downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
-    outfile = file(downloadfile, "wb")
     data = connection.read()
 
     compression = connection.headers.get('content-encoding')
@@ -107,17 +116,10 @@ def cacheable_download(url, cachefile):
             gzipper = GzipFile(fileobj=compressedstream)
             data = gzipper.read()
 
+    outfile = file(cachefile, 'wb')
     outfile.write(data)
-    
     outfile.close()
 
-    try:
-        os.rename(downloadfile, cachefile)
-    except OSError:
-        # Are we on a system that doesn't support atomic renames?
-        os.remove(cachefile)
-        os.rename(downloadfile, cachefile)
-    
     return cachefile
 
 def file_in_path(program):
