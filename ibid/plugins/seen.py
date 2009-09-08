@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
@@ -20,7 +21,7 @@ class Sighting(Base):
     Column('type', Unicode(8), nullable=False, index=True),
     Column('channel', Unicode(32)),
     Column('value', UnicodeText),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
@@ -39,6 +40,7 @@ class Sighting(Base):
         self.type = type
         self.channel = channel
         self.value = value
+        self.time = datetime.utcnow()
         self.count = 0
 
     def __repr__(self):

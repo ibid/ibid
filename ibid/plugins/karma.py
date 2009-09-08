@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 import logging
 
@@ -5,7 +6,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, Table
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.config import Option, BoolOption, IntOption, ListOption
+from ibid.config import BoolOption, IntOption, ListOption
 from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -18,7 +19,7 @@ class Karma(Base):
     Column('subject', Unicode(64), unique=True, nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class KarmaSchema(VersionedSchema):
@@ -33,6 +34,7 @@ class Karma(Base):
         self.subject = subject
         self.changes = 0
         self.value = 0
+        self.time = datetime.utcnow()
 
 class Set(Processor):
     u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""

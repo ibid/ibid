@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeText, Table
@@ -27,7 +28,7 @@ class Memo(Base):
     Column('memo', UnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
     Column('delivered', Boolean, nullable=False, index=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class MemoSchema(VersionedSchema):
@@ -44,6 +45,7 @@ class Memo(Base):
         self.memo = memo
         self.private = private
         self.delivered = False
+        self.time = datetime.utcnow()
 
 Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, backref='sender')
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')

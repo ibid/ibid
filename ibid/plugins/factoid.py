@@ -32,7 +32,7 @@ class FactoidName(Base):
     Column('name', Unicode(64), nullable=False, unique=True, index=True),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
@@ -55,6 +55,7 @@ class FactoidName(Base):
         self.name = name
         self.factoid_id = factoid_id
         self.identity_id = identity_id
+        self.time = datetime.utcnow()
         self.factpack = factpack
 
     def __repr__(self):
@@ -66,7 +67,7 @@ class FactoidValue(Base):
     Column('value', UnicodeText, nullable=False),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
@@ -84,6 +85,7 @@ class FactoidValue(Base):
         self.value = value
         self.factoid_id = factoid_id
         self.identity_id = identity_id
+        self.time = datetime.utcnow()
         self.factpack = factpack
 
     def __repr__(self):
@@ -92,7 +94,7 @@ class FactoidValue(Base):
 class Factoid(Base):
     __table__ = Table('factoids', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
     useexisting=True)
 
@@ -108,6 +110,7 @@ class Factoid(Base):
     __table__.versioned_schema = FactoidSchema(__table__, 3)
 
     def __init__(self, factpack=None):
+        self.time = datetime.utcnow()
         self.factpack = factpack
 
     def __repr__(self):
