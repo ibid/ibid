@@ -133,7 +133,7 @@ class Accounts(Processor):
                 account.id, oldname, account.username, event.account, event.identity, event.sender['connection'])
         event.addresponse(True)
 
-chars = string.letters + string.digits
+chars = [x for x in string.letters + string.digits if x not in '01lOI']
 
 class Identities(Processor):
     u"""(I am|<username> is) <identity> on <source>
