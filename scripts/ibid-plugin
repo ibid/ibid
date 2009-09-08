@@ -84,7 +84,7 @@ if not username:
 
 session = ibid.databases.ibid()
 
-identity = session.query(Identity).filter_by(identity=username).first()
+identity = session.query(Identity).filter_by(identity=username, source=u'test_source').first()
 if not identity:
     identity = Identity(u'test_source',username)
     session.save(identity)
