@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import re
 
@@ -391,7 +392,7 @@ class Identity(Base):
         Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
         Column('source', Unicode(32), nullable=False, index=True),
         Column('identity', UnicodeText, nullable=False, index=True),
-        Column('created', DateTime, default=func.current_timestamp()),
+        Column('created', DateTime),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
 
@@ -411,6 +412,7 @@ class Identity(Base):
         self.source = source
         self.identity = identity
         self.account_id = account_id
+        created = datetime.uctnow()
 
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
