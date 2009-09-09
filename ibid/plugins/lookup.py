@@ -174,8 +174,7 @@ class FMyLife(Processor):
                 item.get('id'),
             )
             text = item.find('text').text
-
-            return u'%s <%s>' % (text, url)
+            return u'%s : %s' % (text, url)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
@@ -252,9 +251,9 @@ class TextsFromLastNight(Processor):
         if len(body) > 1:
             for line in body:
                 event.addresponse(line)
-            event.addresponse(u'<http://textsfromlastnight.com/view/%i>', id)
+            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
         else:
-            event.addresponse(u'%(body)s <http://textsfromlastnight.com/view/%(id)i>', {
+            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
                 'id': id,
                 'body': body[0],
             })
@@ -330,7 +329,7 @@ class MyLifeIsAverage(Processor):
                 return
 
         id, body = story
-        event.addresponse(u'%(body)s <%(url)sstory.php?id=%(id)i>', {
+        event.addresponse(u'%(body)s - %(url)sstory.php?id=%(id)i', {
             'url': url,
             'id': id,
             'body': body,
@@ -407,7 +406,7 @@ class Twitter(Processor):
     def latest(self, event, service_name, user):
         service = self.services[service_name.lower()]
         try:
-            event.addresponse(u'"%(text)s" %(ago)s ago <%(url)s>', self.remote_latest(service, user))
+            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service, user))
         except HTTPError, e:
             if e.code in (401, 403):
                 event.addresponse(u"Sorry, %s's feed is private", user)
@@ -817,7 +816,7 @@ class TVShow(Processor):
         message = u'Show: %(Show Name)s. Premiered: %(Premiered)s. ' \
                     u'Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. ' \
                     u'Airtime: %(Airtime)s on %(Network)s. Genres: %(Genres)s. ' \
-                    u'Status: %(Status)s. <%(Show URL)s>'
+                    u'Status: %(Status)s. - %(Show URL)s'
                     
         if not retr_info:
             event.addresponse(u"I can't find anything out about '%s'", show)
