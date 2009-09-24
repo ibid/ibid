@@ -345,10 +345,12 @@ class Search(Processor):
             event.addresponse(u"I couldn't find anything with that name")
 
 def _interpolate(message, event):
-    message = message.replace(u'$who', event.sender['nick'])
-    message = message.replace(u'$channel', event.channel)
+    "Expand factoid variables"
     utcnow = datetime.utcnow()
     now = utcnow.replace(tzinfo=tzutc()).astimezone(tzlocal())
+
+    message = message.replace(u'$who', event.sender['nick'])
+    message = message.replace(u'$channel', event.channel)
     message = message.replace(u'$year', unicode(now.year))
     message = message.replace(u'$month', unicode(now.month))
     message = message.replace(u'$day', unicode(now.day))
