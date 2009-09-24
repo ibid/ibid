@@ -807,6 +807,10 @@ class TVShow(Processor):
                 format_to = ' '.join(('%d', '%B', '%Y')[-1 - count:])
                 date = strftime(format_to, strptime(date, format_from))
                 show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
+
+        if 'Genres' in show_dict:
+            show_dict['Genres'] = human_join(show_dict['Genres'].split(' | '))
+
         return show_dict
     
     @match(r'^tv\s*show\s+(.+)$')
