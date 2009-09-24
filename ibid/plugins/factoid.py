@@ -650,7 +650,7 @@ class StaticFactoid(Processor):
         for factoid in self.factoids.values():
             for match in factoid['matches']:
                 if re.search(match, event.message['stripped'], re.I|re.DOTALL):
-                    event.addresponse(_interpolate(choice(factoid['responses']), event))
+                    event.addresponse({'reply': _interpolate(choice(factoid['responses']), event)})
                     return
 
 # vi: set et sta sw=4 ts=4:
