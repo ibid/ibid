@@ -614,10 +614,18 @@ class Modify(Processor):
 
             event.addresponse(True)
 
-greetings = (u'lo', u'ello', u'hello', u'hi', u'hithere', u'howdy', u'hey', u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup', u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'goodday', u'wasup', u'wassup', u'howzit', u'howsit', u'buongiorno', u'hoelykit', u'hoegaandit', u'goodmorning', u'morning', u'afternoon', u'evening')
+greetings = (
+        u'lo', u'ello', u'hello', u'hi', u'hi there', u'howdy', u'hey',
+        u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup',
+        u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'good day',
+        u'wasup', u'wassup', u'howzit', u'howsit', u'buon giorno',
+        u'hoe lyk it', u'hoe gaan dit', u'good morning', u'morning',
+        u'afternoon', u'evening',
+)
 static_default = {
     'greet': {
-        'matches': [r'\b(' + '|'.join(greetings) + r')\b'],
+        'matches': [r'\b(' + '|'.join(list(greetings) +
+            [g.replace(' ', '') for g in greetings if ' ' in g]) + r')\b'],
         'responses': greetings,
     },
     'reward': {
