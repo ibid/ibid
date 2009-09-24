@@ -174,7 +174,7 @@ class FMyLife(Processor):
                 item.get('id'),
             )
             text = item.find('text').text
-            return u'%s : %s' % (text, url)
+            return u'%s - %s' % (text, url)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
@@ -251,9 +251,9 @@ class TextsFromLastNight(Processor):
         if len(body) > 1:
             for line in body:
                 event.addresponse(line)
-            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
+            event.addresponse(u'- http://textsfromlastnight.com/view/%i', id)
         else:
-            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
+            event.addresponse(u'%(body)s - http://textsfromlastnight.com/view/%(id)i', {
                 'id': id,
                 'body': body[0],
             })
