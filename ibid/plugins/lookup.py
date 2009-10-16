@@ -216,8 +216,6 @@ class TextsFromLastNight(Processor):
             message = []
             line = ''
             for a in div.findAll('div', attrs={'class': 'post_content'})[0].findAll('a'):
-                if 'class' in a:
-                    break
                 if a['href'].startswith('/areacode/'):
                     line = u'%s: ' % a.contents[0]
                 else:
