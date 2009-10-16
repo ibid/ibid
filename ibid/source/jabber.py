@@ -12,7 +12,7 @@ from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
 class Message(domish.Element):
-    
+
     def __init__(self, to, frm, body, type):
         domish.Element(self, (None, 'message'))
         self['to'] = to

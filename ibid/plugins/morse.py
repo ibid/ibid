@@ -7,7 +7,7 @@ help["morse"] = u"Translates messages into and out of morse code."
 class Morse(Processor):
     u"""morse (text|morsecode)"""
     feature = 'morse'
-    
+
     _table = {
         'A': ".-",
         'B': "-...",

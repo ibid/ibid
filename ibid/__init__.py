@@ -58,7 +58,7 @@ def setup(opts, service=None):
 
     if not exists(options['config']):
         raise IbidException('Cannot find configuration file %s' % options['config'])
-     
+
     ibid.config = FileConfig(options['config'])
     ibid.config.merge(FileConfig(join(options['base'], 'local.ini')))
 

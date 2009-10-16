@@ -41,7 +41,7 @@ class Knab(Processor):
                 responses.append(new)
             else:
                 responses.append(response)
-                
+
         event.responses = responses
 
 # vi: set et sta sw=4 ts=4:

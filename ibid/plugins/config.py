@@ -75,5 +75,5 @@ class Config(Processor):
             event.addresponse(u'Keys: ' + human_join(config.keys()))
         else:
             event.addresponse(unicode(config))
-        
+
 # vi: set et sta sw=4 ts=4:

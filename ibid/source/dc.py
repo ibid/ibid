@@ -15,7 +15,7 @@ from ibid.utils import ibid_version
 
 class DCBot(dcwords.DCClient):
     version = ibid_version() or 'dev'
-    client = 'Ibid' 
+    client = 'Ibid'
 
     def connectionMade(self):
         self.keepalive = True

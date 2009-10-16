@@ -49,7 +49,7 @@ class Ircbot(irc.IRCClient):
             self._reconnect_deferred.cancel()
             self._reconnect_deferred = None
             self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
-        
+
     def dataReceived(self, data):
         irc.IRCClient.dataReceived(self, data)
         if self._ping_deferred is not None:

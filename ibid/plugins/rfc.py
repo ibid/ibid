@@ -133,7 +133,7 @@ class RFCLookup(Processor):
                 strip = lineno
                 break
         lines = lines[strip:]
-    
+
         rfcs = {}
         buf = ""
         # So there's nothing left in buf:
@@ -170,7 +170,7 @@ class RFCLookup(Processor):
             return
 
         rfcs = self._parse_rfcs()
-        
+
         # Search engines:
         pool = rfcs.itervalues()
         if len(terms) > 2 and terms[0] == terms[-1] == "/":

@@ -165,5 +165,5 @@ class RPC(pb.Referenceable, resource.Resource):
             return self.render_POST(request)
 
         return self.form.render(args=args).encode('utf-8')
- 
+
 # vi: set et sta sw=4 ts=4:

@@ -76,7 +76,7 @@ class Dispatcher(object):
             self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
         else:
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
-        
+
     def dispatch(self, event):
         log_level = logging.DEBUG
         if event.type == u'clock':
@@ -128,7 +128,7 @@ class Reloader(object):
         except Exception, e:
             self.log.error(u"Failed to reload reloader: %s", unicode(e))
             return False
-        
+
     def load_source(self, name, service=None):
         type = 'type' in ibid.config.sources[name] and ibid.config.sources[name]['type'] or name
 
@@ -185,7 +185,7 @@ class Reloader(object):
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
-        
+
         for plugin in all_plugins:
             load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
             noload_processors = [p.split('.')[1] for p in noload if p.startswith(plugin + '.')]
@@ -223,7 +223,7 @@ class Reloader(object):
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
 
             ibid.models.check_schema_versions(ibid.databases['ibid'])
-                
+
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False

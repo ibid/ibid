@@ -22,7 +22,7 @@ class SourceFactory(ShellFactory, IbidSourceFactory):
             return self.listener
         else:
             self.listener = reactor.listenTCP(self.port, self)
-    
+
     def connect(self):
         return self.setServiceParent(None)
 

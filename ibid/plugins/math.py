@@ -53,7 +53,7 @@ class BC(Processor):
 
         output = bc.stdout.read()
         error = bc.stderr.read()
-        
+
         code = bc.wait()
 
         if code == 0:
@@ -154,7 +154,7 @@ class Calc(Processor):
 
         try:
             # We need to remove all power operators and replace with our limited pow
-            # ast is the new method (Python >=2.6) compiler is the old 
+            # ast is the new method (Python >=2.6) compiler is the old
             ast = parse(expression, mode='eval')
             if transform_method == 'ast':
                 ast = PowSubstitutionTransformer().visit(ast)
@@ -192,7 +192,7 @@ class BaseConvert(Processor):
     [convert] <sequence> from base <number> to ascii"""
 
     feature = "base"
-    
+
     abbr_named_bases = {
             "hex": 16,
             "dec": 10,
@@ -232,7 +232,7 @@ class BaseConvert(Processor):
 
     def _from_base(self, num, base):
         "Return a base-n number in decimal. Needed as int(x, n) only works for n<=36"
-        
+
         if base <= 36:
             num = num.upper()
 
@@ -288,7 +288,7 @@ class BaseConvert(Processor):
 
         self.ascii_decode.im_func.pattern = re.compile(
             r"^(?:convert\s+)?ascii\s+(.+?)(?:(?:\s+(?:in|to|into))?\s+(base\s+\d+|%s))?$" % bases, re.I)
-    
+
         self.ascii_encode.im_func.pattern = re.compile(
             r"^(?:convert\s+)?([0-9a-zA-Z+/\s]+?)(?:\s+(?:(?:from|in)\s+)?(base\s+\d+|%s))?\s+(?:in|to|into)\s+ascii$" % bases, re.I)
 
@@ -298,17 +298,17 @@ class BaseConvert(Processor):
 
         base_from = self._parse_base(base_from)
         base_to = self._parse_base(base_to)
-        
+
         if min(base_from, base_to) < 2 or max(base_from, base_to) > 64:
             event.addresponse(u'Sorry, valid bases are between 2 and 64, inclusive')
             return
-        
+
         try:
             number = self._from_base(number, base_from)
         except ValueError, e:
             event.addresponse(unicode(e))
             return
-        
+
         event.addresponse(u'That is %(result)s in %(base)s', {
             'result': self._in_base(number, base_to),
             'base': self._base_name(base_to),
@@ -322,7 +322,7 @@ class BaseConvert(Processor):
 
         if len(text) > 2 and text[0] == text[-1] and text[0] in ("'", '"'):
             text = text[1:-1]
-        
+
         output = u""
         for char in text:
             code_point = ord(char)
@@ -330,7 +330,7 @@ class BaseConvert(Processor):
                 output += u'U%s ' % self._in_base(code_point, base_to)
             else:
                 output += self._in_base(code_point, base_to) + u" "
-        
+
         output = output.strip()
 
         event.addresponse(u'That is %(result)s in %(base)s', {
@@ -376,7 +376,7 @@ class BaseConvert(Processor):
         except ValueError, e:
             event.addresponse(unicode(e))
             return
-        
+
         event.addresponse(u'That is "%s"', output)
         if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')

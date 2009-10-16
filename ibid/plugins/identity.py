@@ -92,7 +92,7 @@ class Accounts(Processor):
                 return
             elif not admin or username != account.username:
                 return
-        
+
         event.session.delete(account)
         event.session.commit()
         identify_cache.clear()
@@ -121,7 +121,7 @@ class Accounts(Processor):
                 return
             elif not admin and username != account.username:
                 return
-        
+
         oldname = account.username
         account.username = newname
 
@@ -160,7 +160,7 @@ class Identities(Processor):
                         .join('identities') \
                         .filter(func.lower(Identity.identity) == identity.lower()) \
                         .filter(func.lower(Identity.source) == source.lower()).first()
-                
+
                 if account:
                     reverse_attach = True
                 else:

@@ -97,10 +97,10 @@ class Lotto(Processor):
     u"""lotto"""
 
     feature = 'lotto'
-    
+
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/balls/ball_(\d+).gif')
-    
+
     @match(r'^lotto(\s+for\s+south\s+africa)?$')
     def za(self, event, za):
         try:
@@ -108,12 +108,12 @@ class Lotto(Processor):
         except Exception, e:
             event.addresponse(u'Something went wrong getting to the Lotto site')
             return
-        
+
         s = "".join(f)
         f.close()
-        
+
         balls = self.za_re.findall(s)
-        
+
         if len(balls) != 14:
             event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
                 'expected': 14,
@@ -121,7 +121,7 @@ class Lotto(Processor):
                 'balls': u', '.join(balls),
             })
             return
-        
+
         event.addresponse(u'Latest lotto results for South Africa, '
             u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s)', {
             'lottoballs': u" ".join(balls[:6]),
@@ -478,7 +478,7 @@ class Currency(Processor):
             return name.upper()
 
         m = self.strip_currency_re.match(name)
-        
+
         if m is None:
             return False
 
@@ -487,7 +487,7 @@ class Currency(Processor):
         # TLD -> country name
         if rough and len(name) == 2 and name.upper() in self.country_codes:
            name = self.country_codes[name.upper()].lower()
-        
+
         # Currency Name
         if name == u'dollar':
             return "USD"
@@ -700,7 +700,7 @@ class Distance(Processor):
     # http://mathworld.wolfram.com/GreatCircle.html
 
     feature = 'distance'
-    
+
     default_unit_names = {
             'km': "kilometres",
             'mi': "miles",
@@ -712,7 +712,7 @@ class Distance(Processor):
 
     unit_names = DictOption('unit_names', 'Names of units in which to specify distances', default_unit_names)
     radius_values = DictOption('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
-    
+
     def get_place_data(self, place, num):
         return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
 
@@ -724,15 +724,15 @@ class Distance(Processor):
         return {'name': "%s, %s, %s" % (info['name'], info['adminName1'], info['countryName']),
                 'lng': radians(info['lng']),
                 'lat': radians(info['lat'])}
-    
+
     @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
     def placesearch(self, event, place):
         js = self.get_place_data(place, 10)
         if js['totalResultsCount'] == 0:
             event.addresponse(u"I don't know of anywhere even remotely like '%s'", place)
         else:
-            event.addresponse(u"I can find: %s", 
-                    (human_join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
+            event.addresponse(u"I can find: %s",
+                    (human_join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName'])
                         for p in js['geonames'][:10]],
                         separator=u';')))
 
@@ -743,26 +743,26 @@ class Distance(Processor):
         unit_names = self.unit_names
         if unit and unit not in self.unit_names:
             event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
-                'badunit': unit, 
-                'knownunits': 
-                    human_join(u"%s (%s)" % (unit, self.unit_names[unit]) 
+                'badunit': unit,
+                'knownunits':
+                    human_join(u"%s (%s)" % (unit, self.unit_names[unit])
                         for unit in self.unit_names),
             })
             return
         if unit:
             unit_names = [unit]
-        
+
         srcp, dstp = self.get_place(src), self.get_place(dst)
         if not srcp or not dstp:
-            event.addresponse(u"I don't know of anywhere called %s", 
-                    (u" or ".join("'%s'" % place[0] 
+            event.addresponse(u"I don't know of anywhere called %s",
+                    (u" or ".join("'%s'" % place[0]
                         for place in ((src, srcp), (dst, dstp)) if not place[1])))
             return
-        
-        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
-                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + 
+
+        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) +
+                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) +
                     sin(srcp['lat'])*sin(dstp['lat']))
-        
+
         event.addresponse(u"Approximate distance, as the bot flies, between %(srcname)s and %(dstname)s is: %(distance)s", {
             'srcname': srcp['name'],
             'dstname': dstp['name'],
@@ -777,17 +777,17 @@ class TVShow(Processor):
     u"""tvshow <show>"""
 
     feature = 'tvshow'
-        
+
     def remote_tvrage(self, show):
         info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
-        
+
         info = urlopen(info_url % urlencode({'show': show.encode('utf-8')}))
-        
+
         info = info.read()
         info = info.decode('utf-8')
         if info.startswith('No Show Results Were Found'):
             return
-        info = info[5:].splitlines()        
+        info = info[5:].splitlines()
         show_info = [i.split('@', 1) for i in info]
         show_dict = dict(show_info)
 
@@ -806,26 +806,26 @@ class TVShow(Processor):
                 }[count]
                 format_to = ' '.join(('%d', '%B', '%Y')[-1 - count:])
                 date = strftime(format_to, strptime(date, format_from))
-                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
+                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)
 
         if 'Genres' in show_dict:
             show_dict['Genres'] = human_join(show_dict['Genres'].split(' | '))
 
         return show_dict
-    
+
     @match(r'^tv\s*show\s+(.+)$')
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
-        
+
         message = u'Show: %(Show Name)s. Premiered: %(Premiered)s. ' \
                     u'Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. ' \
                     u'Airtime: %(Airtime)s on %(Network)s. Genres: %(Genres)s. ' \
                     u'Status: %(Status)s. %(Show URL)s'
-                    
+
         if not retr_info:
             event.addresponse(u"I can't find anything out about '%s'", show)
             return
-        
+
         event.addresponse(message, retr_info)
 
 # vi: set et sta sw=4 ts=4:

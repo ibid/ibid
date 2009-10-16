@@ -195,7 +195,7 @@ class SourceFactory(IbidSourceFactory):
 
     def run_one(self):
         self.client.run_one()
-    
+
     def setServiceParent(self, service):
         self.s = internet.TimerService(0.2, self.run_one)
         if service is None:

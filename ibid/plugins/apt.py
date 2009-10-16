@@ -100,7 +100,7 @@ class Aptitude(Processor):
             if error.startswith(u"E: "):
                 error = error[3:]
             event.addresponse(u"Couldn't find package: %s", error)
-    
+
 help['apt-file'] = u'Searches for packages containing the specified file'
 class AptFile(Processor):
     u"""apt-file [search] <term>"""

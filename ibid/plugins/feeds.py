@@ -31,7 +31,7 @@ class Feed(Base):
             self.add_index(self.table.c.identity_id)
 
     __table__.versioned_schema = FeedSchema(__table__, 2)
-    
+
     feed = None
     entries = None
 
@@ -64,7 +64,7 @@ class Manage(Processor):
         if feed:
             event.addresponse(u"I already have the %s feed", name)
             return
-        
+
         valid = bool(feedparser.parse(url)["version"])
 
         if not valid:
@@ -152,7 +152,7 @@ class Retrieve(Processor):
             event.addresponse(u"I don't know about the %s feed", name)
             return
 
-        feed.update() 
+        feed.update()
         if not feed.entries:
             event.addresponse(u"I can't access that feed")
             return

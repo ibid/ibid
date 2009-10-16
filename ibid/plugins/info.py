@@ -50,7 +50,7 @@ help['nickometer'] = u'Calculates how lame a nick is.'
 class Nickometer(Processor):
     u"""nickometer [<nick>] [with reasons]"""
     feature = 'nickometer'
-    
+
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
     def handle_nickometer(self, event, nick, wreasons):
         nick = nick or event.sender['nick']
@@ -84,7 +84,7 @@ class Man(Processor):
         command = [self.man, page]
         if section:
             command.insert(1, section)
-        
+
         if page.strip().startswith("-"):
             event.addresponse(False)
             return

@@ -13,7 +13,7 @@ class FakeConfig(dict):
 
     def __setattr__(self, name, value):
         self[name] = value
-        
+
 
 def set_config(config):
     ibid.config = FakeConfig(config)

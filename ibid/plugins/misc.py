@@ -18,9 +18,9 @@ class Coffee(Processor):
 
     time = IntOption('coffee_time', u'Brewing time in seconds', 240)
     cups = IntOption('coffee_cups', u'Maximum number of cups', 4)
-    
+
     def coffee_announce(self, event):
-        event.addresponse(u"Coffee's ready for %s!", 
+        event.addresponse(u"Coffee's ready for %s!",
                 human_join(self.pots[(event.source, event.channel)]))
         del self.pots[(event.source, event.channel)]
 
@@ -34,7 +34,7 @@ class Coffee(Processor):
             else:
                 event.addresponse(u"There's already a pot on. If you ask nicely, maybe you can have a cup")
             return
-        
+
         self.pots[(event.source, event.channel)] = [event.sender['nick']]
         ibid.dispatcher.call_later(self.time, self.coffee_announce, event)
 
@@ -47,7 +47,7 @@ class Coffee(Processor):
                 u'washes some mugs',
             )),
         })
-    
+
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
         if (event.source, event.channel) not in self.pots:
@@ -79,20 +79,20 @@ help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak wor
 class Dvorak(Processor):
     u"""(aoeu|asdf) <text>"""
     feature = 'dvorak'
-    
+
     # List of characters on each keyboard layout
     dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
     qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?-=_+|"""
-    
+
     # Typed by a QWERTY typist on a Dvorak-mapped keyboard
     typed_on_dvorak = dict(zip(map(ord, dvormap), qwermap))
     # Typed by a Dvorak typist on a QWERTY-mapped keyboard
     typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
-    
+
     @match(r'^(?:asdf|dvorak)\s+(.+)$')
     def convert_from_qwerty(self, event, text):
         event.addresponse(text.translate(self.typed_on_qwerty))
-    
+
     @match(r'^(?:aoeu|qwerty)\s+(.+)$')
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))

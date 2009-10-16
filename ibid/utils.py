@@ -82,7 +82,7 @@ def _cacheable_download(url, cachefile):
         plugindir = os.path.join(cachedir, os.path.dirname(cachefile))
         if not os.path.isdir(plugindir):
             os.makedirs(plugindir)
-    
+
         cachefile = os.path.join(cachedir, cachefile)
 
     exists = os.path.isfile(cachefile)
@@ -101,7 +101,7 @@ def _cacheable_download(url, cachefile):
             return cachefile
         else:
             raise
-    
+
     data = connection.read()
 
     compression = connection.headers.get('content-encoding')

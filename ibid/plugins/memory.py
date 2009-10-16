@@ -26,7 +26,7 @@ def get_memusage():
     return dict((x, int(y.split()[0])) for (x, y) in status)
 
 class MemoryLog(Processor):
-    
+
     feature = 'memory'
     autoload = False
 

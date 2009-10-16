@@ -26,7 +26,7 @@ class VersionedSchema(object):
     When you have upgrades to the schema, instead of using VersionedSchema
     directly, derive from it and include your own upgrade_x_to_y(self) methods,
     where y = x + 1
-    
+
     In the upgrade methods, you can call the helper functions:
     add_column, drop_column, rename_column, alter_column
     They try to do the correct thing in most situations, including rebuilding
@@ -300,7 +300,7 @@ class VersionedSchema(object):
                             ]
                             recreate.append((isinstance(constraint, UniqueConstraint),
                                 self._mysql_constraint_createstring(constraint)))
-            
+
             session.execute('ALTER TABLE "%s" CHANGE "%s" %s;' %
                 (table.name, old_col.name, description))
 
@@ -316,7 +316,7 @@ class VersionedSchema(object):
                 (table.name, col.name, description.split(" ", 3)[1]))
 
             if old_col.nullable != col.nullable:
-                session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" %s NOT NULL;' % 
+                session.execute('ALTER TABLE "%s" ALTER COLUMN "%s" %s NOT NULL;' %
                     (table.name, col.name, col.nullable and 'DROP' or 'SET'))
 
     def _rebuild_sqlite(self, colmap):
@@ -378,7 +378,7 @@ class Schema(Base):
             self.add_index(self.table.c.table, unique=True)
 
     __table__.versioned_schema = SchemaSchema(__table__, 2)
-    
+
     def __init__(self, table, version=0):
         self.table = table
         self.version = version

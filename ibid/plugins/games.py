@@ -50,7 +50,7 @@ class DuelInitiate(Processor):
     @match(r'^(?:I\s+)?demand\s+satisfaction\s+from\s+(\S+)(?:\s+(?:over|because|for)\s+.+)?$')
     def initiate_satisfaction(self, event, recipient):
         self.initiate(event, recipient)
-    
+
     @match(r'^(?:I\s+)?challenge\s+(\S+)(?:\s+to\s+a\s+duel)?(?:\s+(?:over|because|for)\s+.+)?$')
     def initiate(self, event, recipient):
         if not event.public:
@@ -148,7 +148,7 @@ class DuelInitiate(Processor):
 
         duel.confirmed = True
         duel.cancel_callback.cancel()
-        
+
         starttime = event.time + timedelta(
                 seconds=self.start_delay + ((30 - event.time.second) % 30))
         starttime = starttime.replace(microsecond=0)
@@ -205,12 +205,12 @@ class DuelInitiate(Processor):
         else:
             message = u"VICTORY: %(loser)s hobbles off while %(winner)s looks victorious"
 
-        event.addresponse({'reply': message % { 
+        event.addresponse({'reply': message % {
                 'loser': duel.names[loser],
                 'winner': duel.names[winner],
                 'ending': choice(self.happy_endings),
         }})
-    
+
 class DuelDraw(Processor):
     u"""
     draw [my <weapon>]
@@ -276,7 +276,7 @@ class DuelDraw(Processor):
 
         duel.drawn[shooter.lower()] = True
         event.addresponse(True)
-        
+
     def setup(self):
         self.fire.im_func.pattern = re.compile(
                 r'^(%s)(?:[\s,.!:;].*)?$' % '|'.join(self.weapons.keys()),
@@ -342,7 +342,7 @@ class DuelDraw(Processor):
                 duel.stop()
             else:
                 duel.timeout_callback.delay(self.extratime)
-            
+
             params = {
                     'shooter': duel.names[shooter],
                     'enemy': duel.names[enemy],
@@ -385,7 +385,7 @@ class DuelDraw(Processor):
                 params['part'] = choice(self.extremities)
 
             event.addresponse({'reply': message % params})
-            
+
         elif shooter == recipient:
             event.addresponse({'reply': choice((
                 u"%s forget to draw his weapon. Luckily he missed his foot",
