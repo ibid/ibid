@@ -288,12 +288,11 @@ class MyLifeIsAverage(Processor):
         else:
             tree = url
 
-        storycol = [div for div in tree.findall('.//div') if div.get(u'id') in (u'leftcol', u'leftcol-wide')][0]
-        stories = [div for div in storycol.findall('div') if div.get(u'class') in (u'stories', u'stories-wide')]
+        stories = [div for div in tree.findall('.//div') if div.get(u'class') == u's']
 
         for story in stories:
-            body = story.findtext('div/span/span').strip()
-            id = story.findtext('.//a')
+            body = story.findtext('div').strip()
+            id = story.findtext('div/a')
             if isinstance(id, basestring) and id[1:].isdigit():
                 id = int(id[1:])
                 yield id, body
