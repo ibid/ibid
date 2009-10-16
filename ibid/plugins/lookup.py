@@ -213,7 +213,15 @@ class TextsFromLastNight(Processor):
         tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
         for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
             id = int(div.get('id').split('_', 1)[1])
-            message = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            message = []
+            line = ''
+            for a in div.findAll('div', attrs={'class': 'post_content'})[0].findAll('a'):
+                if 'class' in a:
+                    break
+                if a['href'].startswith('/areacode/'):
+                    line = u'%s: ' % a.contents[0]
+                else:
+                    message.append(line + a.contents[0])
             yield id, message
 
     @match(r'^tfln'
