@@ -24,12 +24,14 @@ class GoogleAPISearch(Processor):
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
 
-    def _google_api_search(self, query, resultsize="large"):
+    def _google_api_search(self, query, resultsize="large", country=None):
         params = {
             'v': '1.0',
             'q': query,
             'rsz': resultsize,
         }
+        if country is not None:
+            params['gl'] = country
         if self.api_key:
             params['key'] = self.api_key
 
@@ -39,21 +41,19 @@ class GoogleAPISearch(Processor):
         }
         return json_webservice('http://ajax.googleapis.com/ajax/services/search/web', params, headers)
 
-    @match(r'^google\s+(?:for\s+)?(.+?)$')
-    def search(self, event, query):
+    @match(r'^google(?:\.com?)?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
+    def search(self, event, country, query):
         try:
-            items = self._google_api_search(query)
+            items = self._google_api_search(query, country=country)
         except BadStatusLine:
             event.addresponse(u"Google appears to be broken (or more likely, my connection to it)")
             return
 
         results = []
         for item in items["responseData"]["results"]:
-
             title = item["titleNoFormatting"]
-
             results.append(u'"%s" %s' % (decode_htmlentities(title), item["unescapedUrl"]))
-            
+
         if results:
             event.addresponse(u' :: '.join(results))
         else:
@@ -125,31 +125,5 @@ class GoogleScrapeSearch(Processor):
             event.addresponse(u' :: '.join(definitions))
         else:
             event.addresponse(u'Are you making up words again?')
-
-    # Not supported by Google API: http://code.google.com/p/google-ajax-apis/issues/detail?id=24
-    @match(r'^google(?:\.com?)?\.([a-z]{2})(?:\s+for)?\s+(.*)$')
-    def country_search(self, event, country, terms):
-        soup = self._google_scrape_search(terms, country)
-
-        results = []
-        items = soup.findAll('li')
-        for item in items:
-            try:
-                url = item.a['href']
-                if url.startswith(u"/aclk?"):
-                    url = parse_qs(urlparse(url).query)['q'][0]
-                title = u''.join([e.string for e in item.a.contents])
-                if title.startswith("Image results for"):
-                    continue
-                results.append(u'"%s" %s ' % (decode_htmlentities(title), url))
-            except Exception:
-                pass
-            if len(results) >= 8:
-                break
-
-        if results:
-            event.addresponse(u', '.join(results))
-        else:
-            event.addresponse(u"Wow! Google couldn't find anything")
 
 # vi: set et sta sw=4 ts=4:
