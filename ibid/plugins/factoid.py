@@ -9,7 +9,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
-from ibid.config import IntOption, ListOption
+from ibid.config import Option, IntOption, ListOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
 from ibid.utils import format_date
@@ -344,6 +344,25 @@ class Search(Processor):
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
+def _interpolate(message, event):
+    "Expand factoid variables"
+    utcnow = datetime.utcnow()
+    now = utcnow.replace(tzinfo=tzutc()).astimezone(tzlocal())
+
+    message = message.replace(u'$who', event.sender['nick'])
+    message = message.replace(u'$channel', event.channel)
+    message = message.replace(u'$year', unicode(now.year))
+    message = message.replace(u'$month', unicode(now.month))
+    message = message.replace(u'$day', unicode(now.day))
+    message = message.replace(u'$hour', unicode(now.hour))
+    message = message.replace(u'$minute', unicode(now.minute))
+    message = message.replace(u'$second', unicode(now.second))
+    message = message.replace(u'$date', format_date(utcnow, 'date'))
+    message = message.replace(u'$time', format_date(utcnow, 'time'))
+    message = message.replace(u'$dow', unicode(now.strftime('%A')))
+    message = message.replace(u'$unixtime', unicode(utcnow.strftime('%s')))
+    return message
+
 class Get(Processor, RPC):
     u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
     feature = 'factoids'
@@ -384,20 +403,7 @@ class Get(Processor, RPC):
                 reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
-            reply = reply.replace(u'$who', event.sender['nick'])
-            reply = reply.replace(u'$channel', event.channel)
-            utcnow = datetime.utcnow()
-            now = utcnow.replace(tzinfo=tzutc()).astimezone(tzlocal())
-            reply = reply.replace(u'$year', unicode(now.year))
-            reply = reply.replace(u'$month', unicode(now.month))
-            reply = reply.replace(u'$day', unicode(now.day))
-            reply = reply.replace(u'$hour', unicode(now.hour))
-            reply = reply.replace(u'$minute', unicode(now.minute))
-            reply = reply.replace(u'$second', unicode(now.second))
-            reply = reply.replace(u'$date', format_date(utcnow, 'date'))
-            reply = reply.replace(u'$time', format_date(utcnow, 'time'))
-            reply = reply.replace(u'$dow', unicode(now.strftime('%A')))
-            reply = reply.replace(u'$unixtime', unicode(utcnow.strftime('%s')))
+            reply = _interpolate(reply, event)
 
             (reply, count) = action_re.subn('', reply)
             if count:
@@ -417,7 +423,7 @@ class Set(Processor):
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
 
-    priority = 910
+    priority = 800
     permission = u'factoid'
     
     def setup(self):
@@ -607,5 +613,54 @@ class Modify(Processor):
                     operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
 
             event.addresponse(True)
+
+greetings = (
+        u'lo', u'ello', u'hello', u'hi', u'hi there', u'howdy', u'hey',
+        u'heya', u'hiya', u'hola', u'salut', u'bonjour', u'sup', u'wussup',
+        u'hoezit', u'wotcha', u'wotcher', u'yo', u'word', u'good day',
+        u'wasup', u'wassup', u'howzit', u'howsit', u'buon giorno',
+        u'hoe lyk it', u'hoe gaan dit', u'good morning', u'morning',
+        u'afternoon', u'evening',
+)
+static_default = {
+    'greet': {
+        'matches': [r'\b(' + '|'.join(list(greetings) +
+            [g.replace(' ', '') for g in greetings if ' ' in g]) + r')\b'],
+        'responses': greetings,
+    },
+    'reward': {
+        'matches': [r'\bbot(\s+|\-)?snack\b'],
+        'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
+    },
+    'praise': {
+        'matches': [r'\bgood(\s+fuckin[\'g]?)?\s+(lad|bo(t|y)|g([ui]|r+)rl)\b', r'\byou\s+(rock|rocks|rewl|rule|are\s+so+\s+co+l)\b'],
+        'responses': [u'thanks, $who', u'$who: thankyou!', u':)'],
+    },
+    'thanks': {
+        'matches': [r'\bthank(s|\s*you)\b', r'^\s*ta\s*$', r'^\s*shot\s*$'],
+        'responses': [u'no problem, $who', u'$who: my pleasure', u'sure thing, $who', u'no worries, $who', u'$who: np', u'no probs, $who', u'$who: no problemo', u'$who: not at all'],
+    },
+    'criticism': {
+        'matches': [r'\b((kak|bad|st(u|oo)pid|dumb)(\s+fuckin[\'g]?)?\s+(bo(t|y)|g([ui]|r+)rl))|(bot(\s|\-)?s(mack|lap))\b'],
+        'responses': [u'*whimper*', u'sorry, $who :(', u':(', u'*cringe*'],
+    },
+}
+
+class StaticFactoid(Processor):
+    priority = 900
+
+    extras = Option('static', 'List of static factoids using regexes', {})
+
+    def setup(self):
+        self.factoids = static_default.copy()
+        self.factoids.update(self.extras)
+
+    @handler
+    def static(self, event):
+        for factoid in self.factoids.values():
+            for match in factoid['matches']:
+                if re.search(match, event.message['stripped'], re.I|re.DOTALL):
+                    event.addresponse({'reply': _interpolate(choice(factoid['responses']), event)})
+                    return
 
 # vi: set et sta sw=4 ts=4:
