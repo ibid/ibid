@@ -7,11 +7,11 @@ from sqlalchemy.sql import func
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
-from ibid.config import Option, IntOption
+from ibid.config import IntOption
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
-from ibid.utils import ago
+from ibid.utils import ago, format_date
 
 help = {'memo': u'Keeps messages for people.'}
 
@@ -28,7 +28,7 @@ class Memo(Base):
     Column('memo', UnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
     Column('delivered', Boolean, nullable=False, index=True),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class MemoSchema(VersionedSchema):
@@ -45,19 +45,21 @@ class Memo(Base):
         self.memo = memo
         self.private = private
         self.delivered = False
+        self.time = datetime.utcnow()
 
 Identity.memos_sent = relation(Memo, primaryjoin=Identity.id==Memo.from_id, backref='sender')
 Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id, backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg) <person> [on <source>] <message>
+    u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
     feature = 'memo'
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^(?:please\s+)?(tell|pm|privmsg|msg)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(?:(?:that|to)\s+)?(.+)$')
+    @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$',
+            version='deaddressed')
     @authorise
     def tell(self, event, how, who, source, memo):
         source_specified = bool(source)
@@ -108,7 +110,9 @@ class Tell(Processor):
             event.addresponse(u'Just tell %s yourself', who)
             return
 
-        memo = Memo(event.identity, to.id, memo, how.lower() in ('pm', 'privmsg', 'msg'))
+        memo = u' '.join((how, who, memo))
+
+        memo = Memo(event.identity, to.id, memo, how.lower() in (u'pm', u'privmsg', u'msg'))
         event.session.save_or_update(memo)
 
         event.session.commit()
@@ -224,7 +228,7 @@ class Deliver(Processor):
                 if public:
                     event.addresponse(u'%s: ' + message, event.sender['nick'])
                 else:
-                    event.addresponse({'reply': message, 'target': event.sender['id']})
+                    event.addresponse({'reply': message, 'target': event.sender['connection']})
                 notified_overlimit_cache.add(event.identity)
             return
 
@@ -234,20 +238,20 @@ class Deliver(Processor):
                 continue
 
             if memo.private:
-                message = u'By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago' % {
+                message = u'By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago' % {
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.utcnow()-memo.time),
+                    'ago': ago(event.time - memo.time),
                 }
-                event.addresponse({'reply': message, 'target': event.sender['id']})
+                event.addresponse({'reply': message, 'target': event.sender['connection']})
             else:
-                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me to tell you %(message)s %(ago)s ago', {
+                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago', {
                     'recipient': event.sender['nick'],
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
-                    'ago': ago(datetime.utcnow()-memo.time),
+                    'ago': ago(event.time - memo.time),
                 })
 
             memo.delivered = True
@@ -281,10 +285,10 @@ class Notify(Processor):
         if len(memos) > self.public_limit:
             event.addresponse({
                     'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos),
-                    'target': event.sender['id'],
+                    'target': event.sender['connection'],
             })
         elif len(memos) > 0:
-            event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['id']})
+            event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['connection']})
         else:
             nomemos_cache.add(event.identity)
 
@@ -294,8 +298,6 @@ class Messages(Processor):
     my messages for <person> [on <source>]"""
     feature = 'memo'
 
-    datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
-
     @match(r'^my\s+messages$')
     def messages(self, event):
         memos = get_memos(event, True)
@@ -304,7 +306,7 @@ class Messages(Processor):
                 '%s: %s (%s)' % (
                     memos.index(memo),
                     memo.sender.identity,
-                    memo.time.strftime(self.datetime_format)
+                    format_date(memo.time),
                 ) for memo in memos
             ))
         else:
@@ -335,7 +337,7 @@ class Messages(Processor):
 
         if memos:
             event.addresponse(u'Pending: ' + u', '.join(
-                '%i: %s (%s)' % (i, memo.memo, memo.time.strftime(self.datetime_format))
+                '%i: %s (%s)' % (i, memo.memo, format_date(memo.time))
                 for i, memo in enumerate(memos)
             ))
         else:
@@ -358,7 +360,7 @@ class Messages(Processor):
         event.addresponse(u"From %(sender)s on %(source)s at %(time)s: %(message)s", {
             'sender': memo.sender.identity,
             'source': memo.sender.source,
-            'time': memo.time.strftime(self.datetime_format),
+            'time': format_date(memo.time),
             'message': memo.memo,
         })
 

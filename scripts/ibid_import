@@ -62,7 +62,7 @@ def identify(session, user, source, created, create=True):
     if not user:
         return None
     user = decode(user)
-    
+
     identity = session.query(Identity) \
             .filter(func.lower(Identity.identity) == user.lower()) \
             .filter(func.lower(Identity.source) == source.lower()).first()

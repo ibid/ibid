@@ -10,7 +10,7 @@ from html2text import html2text_file
 
 from ibid.plugins import Processor, match, authorise
 from ibid.models import Base, VersionedSchema
-from ibid.utils import cacheable_download, get_html_parse_tree
+from ibid.utils import cacheable_download, get_html_parse_tree, human_join
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
@@ -31,7 +31,7 @@ class Feed(Base):
             self.add_index(self.table.c.identity_id)
 
     __table__.versioned_schema = FeedSchema(__table__, 2)
-    
+
     feed = None
     entries = None
 
@@ -39,7 +39,7 @@ class Feed(Base):
         self.name = name
         self.url = url
         self.identity_id = identity_id
-        self.time = datetime.now()
+        self.time = datetime.utcnow()
         self.update()
 
     def update(self):
@@ -64,7 +64,7 @@ class Manage(Processor):
         if feed:
             event.addresponse(u"I already have the %s feed", name)
             return
-        
+
         valid = bool(feedparser.parse(url)["version"])
 
         if not valid:
@@ -99,7 +99,7 @@ class Manage(Processor):
     def list(self, event):
         feeds = event.session.query(Feed).all()
         if feeds:
-            event.addresponse(u'I know about: %s', u', '.join(sorted([feed.name for feed in feeds])))
+            event.addresponse(u'I know about: %s', human_join(sorted([feed.name for feed in feeds])))
         else:
             event.addresponse(u"I don't know about any feeds")
 
@@ -152,7 +152,7 @@ class Retrieve(Processor):
             event.addresponse(u"I don't know about the %s feed", name)
             return
 
-        feed.update() 
+        feed.update()
         if not feed.entries:
             event.addresponse(u"I can't access that feed")
             return

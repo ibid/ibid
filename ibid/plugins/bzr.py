@@ -8,23 +8,21 @@ from bzrlib.errors import NotBranchError
 
 import ibid
 from ibid.plugins import Processor, match, RPC, handler
-from ibid.config import Option
-from ibid.utils import ago
+from ibid.config import Option, DictOption
+from ibid.utils import ago, format_date, human_join
 
 help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
 
 class LogFormatter(log.LogFormatter):
 
-    def __init__(self, f, repository, branch, full, datetime_format):
+    def __init__(self, f, repository, branch, full):
         log.LogFormatter.__init__(self, f)
         self.branch = branch
         self.full = full
         self.repository = repository
-        self.datetime_format = datetime_format
 
     def log_revision(self, revision):
         if self.full:
-            when = datetime.fromtimestamp(revision.rev.timestamp)
             delta = self.branch.repository.get_revision_delta(revision.rev.revision_id)
             changes = []
 
@@ -37,9 +35,21 @@ class LogFormatter(log.LogFormatter):
             if delta.renamed:
                 changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
-            commit = 'Commit %s by %s to %s %s: %s (%s)\n' % (revision.revno, self.short_author(revision.rev), self.repository, when.strftime(self.datetime_format), revision.rev.message.replace('\n', ' '), '; '.join(changes))
+            commit = 'Commit %s by %s to %s on %s at %s: %s (%s)\n' % (
+                    revision.revno,
+                    self.short_author(revision.rev),
+                    self.repository,
+                    format_date(revision.rev.timestamp, 'date'),
+                    format_date(revision.rev.timestamp, 'time'),
+                    revision.rev.message.replace('\n', ' '),
+                    '; '.join(changes))
         else:
-            commit = 'Commit %s by %s to %s %s ago: %s\n' % (revision.revno, self.short_author(revision.rev), self.repository, ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2), revision.rev.get_summary().replace('\n', ' '))
+            commit = 'Commit %s by %s to %s %s ago: %s\n' % (
+                    revision.revno,
+                    self.short_author(revision.rev),
+                    self.repository,
+                    ago(datetime.now() - datetime.fromtimestamp(revision.rev.timestamp), 2),
+                    revision.rev.get_summary().replace('\n', ' '))
         self.to_file.write(commit)
 
 class Bazaar(Processor, RPC):
@@ -48,11 +58,10 @@ class Bazaar(Processor, RPC):
     feature = 'bzr'
     autoload = False
 
-    datetime_format = Option('datetime_format', 'Format string for dates', 'on %Y/%m/%d at %H:%M:%S')
-    repositories = Option('repositories', 'Dict of repository names and URLs')
+    repositories = DictOption('repositories', 'Dict of repository names and URLs')
     source = Option('source', 'Source to send commit notifications to')
     channel = Option('channel', 'Channel to send commit notifications to')
-    launchpad_branches = Option('launchpad_branches', 'Branch paths in Launchpad mapped to names')
+    launchpad_branches = DictOption('launchpad_branches', 'Branch paths in Launchpad mapped to names')
 
     def __init__(self, name):
         self.log = logging.getLogger('plugins.bzr')
@@ -71,7 +80,7 @@ class Bazaar(Processor, RPC):
     def handle_repositories(self, event):
         repositories = self.branches.keys()
         if repositories:
-            event.addresponse(u'I know about: %s', u', '.join(sorted(repositories)))
+            event.addresponse(u'I know about: %s', human_join(sorted(repositories)))
         else:
             event.addresponse(u"I don't know about any repositories")
 
@@ -110,7 +119,7 @@ class Bazaar(Processor, RPC):
             start = branch.revision_id_to_revno(branch.last_revision())
 
         f=StringIO();
-        log.show_log(branch, LogFormatter(f, repository, branch, full, self.datetime_format), start_revision=start, end_revision=end or start)
+        log.show_log(branch, LogFormatter(f, repository, branch, full), start_revision=start, end_revision=end or start)
         f.seek(0)
         commits = f.readlines()
         commits.reverse()

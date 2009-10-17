@@ -1,7 +1,12 @@
-include *.ini
-include ibid.tac
-include ibid/configspec.ini
-include ibid/config.ini
-include ibid/logging.ini
-include ibid/.version
+recursive-include ibid *.py
+recursive-include ibid/templates *
+recursive-include tracibid *.py
+recursive-include contrib *
+recursive-include lib *
+recursive-include data *
+include factpacks/*.json
+include ibid/*.ini
 include twisted/plugins/ibid_plugin.py
+include INSTALL
+include COPYING
+include README

@@ -9,14 +9,15 @@ from xml.etree.cElementTree import parse
 from .. math import acos, sin, cos, radians
 from collections import defaultdict
 import re
+from sys import exc_info
 import logging
 
 import feedparser
 
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option, BoolOption
+from ibid.config import Option, BoolOption, DictOption
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice
+        cacheable_download, json_webservice, human_join
 
 log = logging.getLogger('plugins.lookup')
 
@@ -86,17 +87,20 @@ class LastFm(Processor):
         if songs['bozo']:
             event.addresponse(u'No such user')
         else:
-            event.addresponse(u', '.join(u'%s (%s ago)' % (e.title, ago(datetime.utcnow() - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)) for e in songs['entries']))
+            event.addresponse(u', '.join(u'%s (%s ago)' % (
+                    e.title,
+                    ago(event.time - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                ) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
 class Lotto(Processor):
     u"""lotto"""
 
     feature = 'lotto'
-    
+
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/balls/ball_(\d+).gif')
-    
+
     @match(r'^lotto(\s+for\s+south\s+africa)?$')
     def za(self, event, za):
         try:
@@ -104,12 +108,12 @@ class Lotto(Processor):
         except Exception, e:
             event.addresponse(u'Something went wrong getting to the Lotto site')
             return
-        
+
         s = "".join(f)
         f.close()
-        
+
         balls = self.za_re.findall(s)
-        
+
         if len(balls) != 14:
             event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
                 'expected': 14,
@@ -117,7 +121,7 @@ class Lotto(Processor):
                 'balls': u', '.join(balls),
             })
             return
-        
+
         event.addresponse(u'Latest lotto results for South Africa, '
             u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s)', {
             'lottoballs': u" ".join(balls[:6]),
@@ -152,7 +156,13 @@ class FMyLife(Processor):
             id.isalnum() and id + '/nocomment' or quote(id),
             urlencode({'language': self.fml_lang, 'key': self.api_key}))
         )
-        tree = parse(urlopen(url))
+        f = urlopen(url)
+        try:
+            tree = parse(f)
+        except SyntaxError:
+            class_, e, tb = exc_info()
+            new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))
+            raise new_exc.__class__, new_exc, tb
 
         if tree.find('.//error'):
             raise FMLException(tree.findtext('.//error'))
@@ -164,20 +174,13 @@ class FMyLife(Processor):
                 item.get('id'),
             )
             text = item.find('text').text
-
-            return u'%s : %s' % (url, text)
+            return u'%s - %s' % (text, url)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
         try:
             body = self.remote_get(id)
-        except FMLException:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except HTTPError:
-            event.addresponse(choice(self.failure_messages) % event.sender)
-            return
-        except BadStatusLine:
+        except (FMLException, HTTPError, BadStatusLine):
             event.addresponse(choice(self.failure_messages) % event.sender)
             return
 
@@ -246,11 +249,11 @@ class TextsFromLastNight(Processor):
 
         id, body = message
         if len(body) > 1:
-            event.addresponse(u'http://textsfromlastnight.com/view/%i :', id)
             for line in body:
                 event.addresponse(line)
+            event.addresponse(u'- http://textsfromlastnight.com/view/%i', id)
         else:
-            event.addresponse(u'http://textsfromlastnight.com/view/%(id)i : %(body)s', {
+            event.addresponse(u'%(body)s - http://textsfromlastnight.com/view/%(id)i', {
                 'id': id,
                 'body': body[0],
             })
@@ -282,8 +285,10 @@ class MyLifeIsAverage(Processor):
 
         for story in stories:
             body = story.findtext('div/span/span').strip()
-            id = int(story.findtext('div/div/span/a')[1:])
-            yield id, body
+            id = story.findtext('.//a')
+            if isinstance(id, basestring) and id[1:].isdigit():
+                id = int(id[1:])
+                yield id, body
 
     @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
@@ -324,7 +329,7 @@ class MyLifeIsAverage(Processor):
                 return
 
         id, body = story
-        event.addresponse(u'%(url)sstory.php?id=%(id)i : %(body)s', {
+        event.addresponse(u'%(body)s - %(url)sstory.php?id=%(id)i', {
             'url': url,
             'id': id,
             'body': body,
@@ -348,7 +353,7 @@ class Twitter(Processor):
         'identi.ca': {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
         'dent':      {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
     }
-    services = Option('services', 'Micro blogging services', default)
+    services = DictOption('services', 'Micro blogging services', default)
 
     class NoSuchUserException(Exception):
         pass
@@ -473,7 +478,7 @@ class Currency(Processor):
             return name.upper()
 
         m = self.strip_currency_re.match(name)
-        
+
         if m is None:
             return False
 
@@ -482,7 +487,7 @@ class Currency(Processor):
         # TLD -> country name
         if rough and len(name) == 2 and name.upper() in self.country_codes:
            name = self.country_codes[name.upper()].lower()
-        
+
         # Currency Name
         if name == u'dollar':
             return "USD"
@@ -541,7 +546,7 @@ class Currency(Processor):
                     break
 
         if results:
-            event.addresponse(u', '.join(results))
+            event.addresponse(human_join(results))
         else:
             event.addresponse(u'No currencies found')
 
@@ -594,7 +599,7 @@ class Weather(Processor):
                     'jhb': 'Johannesburg, South Africa',
                     'joburg': 'Johannesburg, South Africa',
                }
-    places = Option('places', 'Alternate names for places', defaults)
+    places = DictOption('places', 'Alternate names for places', defaults)
     labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
     whitespace = re.compile('\s+')
 
@@ -668,7 +673,7 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.args[0]),
+                'exception': human_join(e.args[0], separator=u';'),
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
@@ -680,7 +685,7 @@ class Weather(Processor):
         except Weather.TooManyPlacesException, e:
             event.addresponse(u'Too many places match %(place)s: %(exception)s', {
                 'place': place,
-                'exception': u'; '.join(e.args[0]),
+                'exception': human_join(e.args[0], separator=u';'),
             })
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
@@ -695,7 +700,7 @@ class Distance(Processor):
     # http://mathworld.wolfram.com/GreatCircle.html
 
     feature = 'distance'
-    
+
     default_unit_names = {
             'km': "kilometres",
             'mi': "miles",
@@ -705,9 +710,9 @@ class Distance(Processor):
             'mi': 3963.1,
             'nm': 3443.9}
 
-    unit_names = Option('unit_names', 'Names of units in which to specify distances', default_unit_names)
-    radius_values = Option('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
-    
+    unit_names = DictOption('unit_names', 'Names of units in which to specify distances', default_unit_names)
+    radius_values = DictOption('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
+
     def get_place_data(self, place, num):
         return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
 
@@ -719,16 +724,17 @@ class Distance(Processor):
         return {'name': "%s, %s, %s" % (info['name'], info['adminName1'], info['countryName']),
                 'lng': radians(info['lng']),
                 'lat': radians(info['lat'])}
-    
+
     @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
     def placesearch(self, event, place):
         js = self.get_place_data(place, 10)
         if js['totalResultsCount'] == 0:
             event.addresponse(u"I don't know of anywhere even remotely like '%s'", place)
         else:
-            event.addresponse(u"I can find: %s", 
-                    (u"; ".join(u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName']) 
-                        for p in js['geonames'][:10])))
+            event.addresponse(u"I can find: %s",
+                    (human_join([u"%s, %s, %s" % (p['name'], p['adminName1'], p['countryName'])
+                        for p in js['geonames'][:10]],
+                        separator=u';')))
 
     @match(r'^(?:how\s*far|distance)(?:\s+in\s+(\S+))?\s+'
             r'(?:(between)|from)' # Between ... and ... | from ... to ...
@@ -737,31 +743,33 @@ class Distance(Processor):
         unit_names = self.unit_names
         if unit and unit not in self.unit_names:
             event.addresponse(u"I don't know the unit '%(badunit)s'. I know about: %(knownunits)s", {
-                'badunit': unit, 
-                'knownunits': 
-                    u", ".join(u"%s (%s)" % (unit, self.unit_names[unit]) 
+                'badunit': unit,
+                'knownunits':
+                    human_join(u"%s (%s)" % (unit, self.unit_names[unit])
                         for unit in self.unit_names),
             })
             return
         if unit:
             unit_names = [unit]
-        
+
         srcp, dstp = self.get_place(src), self.get_place(dst)
         if not srcp or not dstp:
-            event.addresponse(u"I don't know of anywhere called %s", 
-                    (u" or ".join("'%s'" % place[0] 
+            event.addresponse(u"I don't know of anywhere called %s",
+                    (u" or ".join("'%s'" % place[0]
                         for place in ((src, srcp), (dst, dstp)) if not place[1])))
             return
-        
-        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) + 
-                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) + 
+
+        dist = acos(cos(srcp['lng']) * cos(dstp['lng']) * cos(srcp['lat']) * cos(dstp['lat']) +
+                    cos(srcp['lat']) * sin(srcp['lng']) * cos(dstp['lat']) * sin(dstp['lng']) +
                     sin(srcp['lat'])*sin(dstp['lat']))
-        
+
         event.addresponse(u"Approximate distance, as the bot flies, between %(srcname)s and %(dstname)s is: %(distance)s", {
             'srcname': srcp['name'],
             'dstname': dstp['name'],
-            'distance': ", ".join(u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit]) 
-                for unit in unit_names),
+            'distance': human_join([
+                u"%.02f %s" % (self.radius_values[unit]*dist, self.unit_names[unit])
+                for unit in unit_names],
+                conjunction=u'or'),
         })
 
 help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
@@ -769,17 +777,17 @@ class TVShow(Processor):
     u"""tvshow <show>"""
 
     feature = 'tvshow'
-        
+
     def remote_tvrage(self, show):
         info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
-        
+
         info = urlopen(info_url % urlencode({'show': show.encode('utf-8')}))
-        
+
         info = info.read()
         info = info.decode('utf-8')
         if info.startswith('No Show Results Were Found'):
             return
-        info = info[5:].splitlines()        
+        info = info[5:].splitlines()
         show_info = [i.split('@', 1) for i in info]
         show_dict = dict(show_info)
 
@@ -789,29 +797,35 @@ class TVShow(Processor):
 
         for field in ('Latest Episode', 'Next Episode'):
             if field in show_dict:
-                format_from = '%b/%d/%Y'
-                format_to = '%d %B %Y'
                 ep, name, date = show_dict[field].split('^', 2)
-                if date.count('/') < 2:
-                    format_from = '%b/%Y'
-                    format_to = '%B %Y'
+                count = date.count('/')
+                format_from = {
+                    0: '%Y',
+                    1: '%b/%Y',
+                    2: '%b/%d/%Y'
+                }[count]
+                format_to = ' '.join(('%d', '%B', '%Y')[-1 - count:])
                 date = strftime(format_to, strptime(date, format_from))
-                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)        
+                show_dict[field] = u'%s - "%s" - %s' % (ep, name, date)
+
+        if 'Genres' in show_dict:
+            show_dict['Genres'] = human_join(show_dict['Genres'].split(' | '))
+
         return show_dict
-    
+
     @match(r'^tv\s*show\s+(.+)$')
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
-        
+
         message = u'Show: %(Show Name)s. Premiered: %(Premiered)s. ' \
                     u'Latest Episode: %(Latest Episode)s. Next Episode: %(Next Episode)s. ' \
                     u'Airtime: %(Airtime)s on %(Network)s. Genres: %(Genres)s. ' \
-                    u'Status: %(Status)s. - %(Show URL)s'
-                    
+                    u'Status: %(Status)s. %(Show URL)s'
+
         if not retr_info:
             event.addresponse(u"I can't find anything out about '%s'", show)
             return
-        
+
         event.addresponse(message, retr_info)
 
 # vi: set et sta sw=4 ts=4:

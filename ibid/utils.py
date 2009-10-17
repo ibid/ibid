@@ -1,16 +1,18 @@
 import cgi
+from collections import defaultdict
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
 import os.path
-from pkg_resources import resource_exists, resource_string
 import re
 from StringIO import StringIO
+from threading import Lock
 import time
 from urllib import urlencode
 import urllib2
 import zlib
 
+from dateutil.tz import tzlocal, tzutc
 from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
@@ -52,11 +54,21 @@ def decode_htmlentities(text):
     text = re.sub("&(\w+);", replace, text)
     return text
 
+downloads_in_progress = defaultdict(Lock)
 def cacheable_download(url, cachefile):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
     Returns complete path to downloaded file."""
 
+    downloads_in_progress[cachefile].acquire()
+    try:
+        f = _cacheable_download(url, cachefile)
+    finally:
+        downloads_in_progress[cachefile].release()
+
+    return f
+
+def _cacheable_download(url, cachefile):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
@@ -70,7 +82,7 @@ def cacheable_download(url, cachefile):
         plugindir = os.path.join(cachedir, os.path.dirname(cachefile))
         if not os.path.isdir(plugindir):
             os.makedirs(plugindir)
-    
+
         cachefile = os.path.join(cachedir, cachefile)
 
     exists = os.path.isfile(cachefile)
@@ -89,10 +101,7 @@ def cacheable_download(url, cachefile):
             return cachefile
         else:
             raise
-    
-    # Download into a temporary file, in case something goes wrong
-    downloadfile = os.path.join(plugindir, ".download." + os.path.basename(cachefile))
-    outfile = file(downloadfile, "wb")
+
     data = connection.read()
 
     compression = connection.headers.get('content-encoding')
@@ -107,17 +116,10 @@ def cacheable_download(url, cachefile):
             gzipper = GzipFile(fileobj=compressedstream)
             data = gzipper.read()
 
+    outfile = file(cachefile, 'wb')
     outfile.write(data)
-    
     outfile.close()
 
-    try:
-        os.rename(downloadfile, cachefile)
-    except OSError:
-        # Are we on a system that doesn't support atomic renames?
-        os.remove(cachefile)
-        os.rename(downloadfile, cachefile)
-    
     return cachefile
 
 def file_in_path(program):
@@ -134,7 +136,35 @@ def unicode_output(output, errors="strict"):
     return unicode(output, encoding, errors)
 
 def ibid_version():
-    return resource_exists(__name__, '.version') and resource_string(__name__, '.version').strip() or None
+    try:
+        from pkg_resources import get_distribution, DistributionNotFound
+        try:
+            package = get_distribution('Ibid')
+            if package and hasattr(package, 'version'):
+                return package.version
+        except DistributionNotFound:
+            pass
+    except ImportError:
+        pass
+
+def format_date(timestamp, length='datetime'):
+    "Format a UTC date for displaying in a response"
+
+    defaults = {
+            u'datetime_format': u'%Y-%m-%d %H:%M:%S %Z',
+            u'date_format': u'%Y-%m-%d',
+            u'time_format': u'%H:%M:%S %Z',
+    }
+
+    length += '_format'
+    format = ibid.config.plugins.get(length, defaults[length])
+
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=tzutc())
+
+    timestamp = timestamp.astimezone(tzlocal())
+
+    return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"
@@ -194,5 +224,12 @@ def json_webservice(url, params={}, headers={}):
         return json.loads(data)
     except ValueError, e:
         raise JSONException(e)
-    
+
+def human_join(items, separator=u',', conjunction=u'and'):
+    "Create a list like: a, b, c and d"
+    items = list(items)
+    separator += u' '
+    return ((u' %s ' % conjunction)
+            .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
+
 # vi: set et sta sw=4 ts=4:

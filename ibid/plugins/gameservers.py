@@ -4,6 +4,7 @@ import struct
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
+from ibid.utils import human_join
 
 help = {}
 help['gameservers'] = u'Lists the users on Game servers'
@@ -33,9 +34,10 @@ class Bnet(Processor):
 
         s.close()
 
-        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+\S+\s+\S+"$' % gametype)
-        users = [player_re.match(line).group(1) for line in out.splitlines() if self.player_re.match(line)]
+        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+' % gametype)
+        users = [player_re.match(line).group(1) for line in out.splitlines() if player_re.match(line)]
         users.sort()
+        return users
 
     @match(r'^(?:dota\s+players|who(?:\'s|\s+is)\s+(?:playing\s+dota|on\s+bnet))$')
     def dota_players(self, event):
@@ -45,7 +47,7 @@ class Bnet(Processor):
             event.addresponse(u"Sorry, I couldn't contact the server. Maybe it's down")
             return
         if users:
-            event.addresponse(u'The battlefield contains %s', u', '.join(users))
+            event.addresponse(u'The battlefield contains %s', human_join(users))
         else:
             event.addresponse(u'Nobody. Everyone must have a lives...')
 
@@ -98,7 +100,7 @@ class CounterStrike(Processor):
                 'clients': clientcount,
                 'clientmax': clientmax,
                 'map': map,
-                'players': u', '.join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
+                'players': human_join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
             })
 
         except socket.error:

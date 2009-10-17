@@ -64,9 +64,8 @@ if options.load_base:
 
 if load:
     if 'load' in ibid.config.plugins:
-        ibid.config.plugins['load'].extend(load)
-    else:
-        ibid.config.plugins['load'] = load
+        load.extend(ibid.config.plugins['load'])
+    ibid.config.plugins['load'] = load
 
 if noload:
     if 'noload' in ibid.config.plugins:
@@ -85,7 +84,7 @@ if not username:
 
 session = ibid.databases.ibid()
 
-identity = session.query(Identity).filter_by(identity=username).first()
+identity = session.query(Identity).filter_by(identity=username, source=u'test_source').first()
 if not identity:
     identity = Identity(u'test_source',username)
     session.save(identity)

@@ -24,8 +24,12 @@ class Dispatcher(object):
             try:
                 processor.process(event)
             except:
-                self.log.exception(u"Exception occured in %s processor of %s plugin",
-                        processor.__class__.__name__, processor.name)
+                self.log.exception(
+                        u'Exception occured in %s processor of %s plugin.\n'
+                        u'Event: %s',
+                        processor.__class__.__name__,
+                        processor.name,
+                        event)
                 event.complain = u'exception'
                 if 'session' in event:
                     event.session.rollback()
@@ -72,7 +76,7 @@ class Dispatcher(object):
             self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
         else:
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
-        
+
     def dispatch(self, event):
         log_level = logging.DEBUG
         if event.type == u'clock':
@@ -124,7 +128,7 @@ class Reloader(object):
         except Exception, e:
             self.log.error(u"Failed to reload reloader: %s", unicode(e))
             return False
-        
+
     def load_source(self, name, service=None):
         type = 'type' in ibid.config.sources[name] and ibid.config.sources[name]['type'] or name
 
@@ -181,7 +185,7 @@ class Reloader(object):
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
-        
+
         for plugin in all_plugins:
             load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]
             noload_processors = [p.split('.')[1] for p in noload if p.startswith(plugin + '.')]
@@ -219,7 +223,7 @@ class Reloader(object):
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
 
             ibid.models.check_schema_versions(ibid.databases['ibid'])
-                
+
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False
@@ -238,6 +242,7 @@ class Reloader(object):
 
         if processors:
             for processor in processors:
+                processor.shutdown()
                 ibid.processors.remove(processor)
 
             self.log.info(u"Unloaded %s plugin", name)
@@ -287,13 +292,21 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]
+        echo = (u'debugging' in ibid.config and
+                u'sqlalchemy_echo' in ibid.config.debugging and
+                ibid.config.debugging.as_bool(u'sqlalchemy_echo'))
+
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
-                    creator=sqlite_creator(join(ibid.options['base'], expanduser(uri.replace('sqlite:///', '', 1)))),
-                    encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+                creator=sqlite_creator(join(ibid.options['base'],
+                    expanduser(uri.replace('sqlite:///', '', 1)))),
+                encoding='utf-8', convert_unicode=True,
+                assert_unicode=True, echo=echo
+            )
 
         else:
-            engine = create_engine(uri, encoding='utf-8', convert_unicode=True, assert_unicode=True, echo=False)
+            engine = create_engine(uri, encoding='utf-8',
+                convert_unicode=True, assert_unicode=True, echo=echo)
 
             if uri.startswith('mysql://'):
                 class MySQLModeListener(object):
@@ -304,10 +317,18 @@ class DatabaseManager(dict):
                         c.execute("SET storage_engine=%s;" % mysql_engine)
                         c.execute("SET time_zone='+0:00';")
                         c.close()
-
                 engine.pool.add_listener(MySQLModeListener())
 
                 engine.dialect.use_ansiquotes = True
+
+            elif uri.startswith('postgres://'):
+                class PGSQLModeListener(object):
+                    def connect(self, dbapi_con, con_record):
+                        c = dbapi_con.cursor()
+                        c.execute("SET TIME ZONE UTC")
+                        c.close()
+
+                engine.pool.add_listener(PGSQLModeListener())
 
         self[name] = scoped_session(sessionmaker(bind=engine))
 

@@ -5,7 +5,6 @@ from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
 
 import sys
-sys.path.append('%s/../lib/wokkel.egg' % dirname(__file__))
 sys.path.insert(0, '%s/../lib' % dirname(__file__))
 
 import twisted.python.log
@@ -59,7 +58,7 @@ def setup(opts, service=None):
 
     if not exists(options['config']):
         raise IbidException('Cannot find configuration file %s' % options['config'])
-     
+
     ibid.config = FileConfig(options['config'])
     ibid.config.merge(FileConfig(join(options['base'], 'local.ini')))
 

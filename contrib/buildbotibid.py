@@ -7,10 +7,10 @@ from zope.interface import implements
 
 class IdentityLookup(object):
     implements(IEmailLookup)
-    
+
     def __init__(self):
         pass
-    
+
     def getAddress(self, name):
         return name
 
@@ -18,7 +18,7 @@ class RegexLookup(object):
     implements(IEmailLookup)
     def __init__(self, pattern):
         self.pattern = pattern
-    
+
     def getAddress(self, name):
         m = re.search(self.pattern, name)
         if m:
@@ -30,12 +30,12 @@ class MailToUsernameLookup(RegexLookup):
     """
     Takes an email address (possibly including a name before <>) and turns
     it into a name which is just the part before the domain name.
-    
+
     This is useful with bzr (and possibly other VCS), where $who is usually
     an email address, or of that form.
     """
     implements(IEmailLookup)
-    
+
     def __init__(self, domain=None):
         usernamepart = "[^ <]+"
         if domain:
@@ -61,21 +61,21 @@ class IbidNotifier(base.StatusReceiverMultiService):
             self.lookup = IdentityLookup()
         else:
             self.lookup = lookup
-    
+
     def setServiceParent(self, parent):
         base.StatusReceiverMultiService.setServiceParent(self, parent)
         self.status = self.parent.getStatus()
         self.status.subscribe(self)
-    
+
     def builderAdded(self, name, builder):
-        return self    
+        return self
 
     def transformUsers(self, l):
         r = []
         for u in l:
             r.append(self.lookup.getAddress(u))
         return r
-    
+
     def buildFinished(self, name, build, results):
         ss = build.getSourceStamp()
         branch = "%s/%s" % (ss.branch, name)

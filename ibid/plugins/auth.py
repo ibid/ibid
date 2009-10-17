@@ -6,6 +6,7 @@ import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.models import Credential, Permission, Account
 from ibid.auth import hash
+from ibid.utils import human_join
 
 help = {}
 
@@ -111,6 +112,7 @@ class Permissions(Processor):
             event.session.save_or_update(permission)
 
         event.session.commit()
+        ibid.auth.drop_caches()
         log.info(u"%s %s permission for account %s (%s) by account %s",
                 actions[action.lower()], name, account.id, account.username, event.account)
 
@@ -132,7 +134,7 @@ class Permissions(Processor):
                 return
 
         permissions = sorted(u'%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions)
-        event.addresponse(u'Permissions: %s', u', '.join(permissions) or u'none')
+        event.addresponse(u'Permissions: %s', human_join(permissions) or u'none')
 
     @match(r'^list\s+permissions$')
     def list_permissions(self, event):
@@ -145,7 +147,7 @@ class Permissions(Processor):
                     if permission not in permissions:
                         permissions.append(permission)
 
-        event.addresponse(u'Permissions: %s', u', '.join(sorted(permissions)) or u'none')
+        event.addresponse(u'Permissions: %s', human_join(sorted(permissions)) or u'none')
 
 class Auth(Processor):
     u"""auth <credential>"""

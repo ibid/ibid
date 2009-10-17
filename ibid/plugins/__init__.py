@@ -38,6 +38,9 @@ class Processor(object):
     def setup(self):
         pass
 
+    def shutdown(self):
+        pass
+
     def process(self, event):
         if event.type not in self.event_types:
             return
@@ -51,14 +54,15 @@ class Processor(object):
         found = False
         for name, method in getmembers(self, ismethod):
             if hasattr(method, 'handler'):
-                found = True
-                if hasattr(method, 'pattern'):
+                if not hasattr(method, 'pattern'):
+                    found = True
+                    method(event)
+                elif hasattr(event, 'message'):
+                    found = True
                     match = method.pattern.search(event.message[method.message_version])
                     if match is not None:
                         if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
                             method(event, *match.groups())
-                else:
-                    method(event)
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
@@ -161,5 +165,5 @@ class RPC(pb.Referenceable, resource.Resource):
             return self.render_POST(request)
 
         return self.form.render(args=args).encode('utf-8')
- 
+
 # vi: set et sta sw=4 ts=4:

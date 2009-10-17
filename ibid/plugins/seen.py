@@ -7,9 +7,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.exceptions import IntegrityError
 
 from ibid.plugins import Processor, match
-from ibid.config import Option
 from ibid.models import Base, VersionedSchema, Identity, Account
-from ibid.utils import ago
+from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')
 
@@ -22,11 +21,11 @@ class Sighting(Base):
     Column('type', Unicode(8), nullable=False, index=True),
     Column('channel', Unicode(32)),
     Column('value', UnicodeText),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
     useexisting=True)
-    
+
     class SightingSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.identity_id)
@@ -41,6 +40,7 @@ class Sighting(Base):
         self.type = type
         self.channel = channel
         self.value = value
+        self.time = datetime.utcnow()
         self.count = 0
 
     def __repr__(self):
@@ -67,7 +67,7 @@ class See(Processor):
             sighting.value = event.public and event.message['raw'] or None
         elif event.type == 'state':
             sighting.value = event.state
-        sighting.time = datetime.now()
+        sighting.time = event.time
         sighting.count = sighting.count + 1
 
         event.session.save_or_update(sighting)
@@ -83,8 +83,6 @@ class See(Processor):
 class Seen(Processor):
     u"""seen <who>"""
     feature = 'seen'
-
-    datetime_format = Option('datetime_format', 'Format string for timestamps', '%Y/%m/%d %H:%M:%S')
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):
@@ -131,9 +129,10 @@ class Seen(Processor):
         reply = u''
         if len(messages) > 0:
             sighting = messages[0]
-            delta = datetime.now() - sighting.time
-            reply = u"%s was last seen %s ago in %s on %s" % (who, ago(delta), sighting.channel or 'private', sighting.identity.source)
-            reply += u' [%s]' % sighting.time.strftime(self.datetime_format)
+            delta = event.time - sighting.time
+            reply = u'%s was last seen %s ago in %s on %s [%s]' %(
+                    who, ago(delta), sighting.channel or 'private',
+                    sighting.identity.source, format_date(sighting.time))
 
         if len(states) > 0:
             sighting = states[0]
@@ -141,7 +140,9 @@ class Seen(Processor):
                 reply += u', and'
             else:
                 reply = who
-            reply += u" has been %s on %s since %s" % (sighting.value, sighting.identity.source, sighting.time.strftime(self.datetime_format))
+            reply += u' has been %s on %s since %s' % (
+                    sighting.value, sighting.identity.source,
+                    format_date(sighting.time))
 
         event.addresponse(reply)
 

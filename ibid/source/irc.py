@@ -7,17 +7,16 @@ from twisted.words.protocols import irc
 from twisted.internet import protocol, ssl
 from twisted.application import internet
 from sqlalchemy import or_
-from pkg_resources import resource_exists, resource_string
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption, FloatOption
+from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
 from ibid.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
+from ibid.utils import ibid_version
 
 class Ircbot(irc.IRCClient):
 
-    versionNum = resource_exists(__name__, '../.version') and resource_string(__name__, '../.version') or ''
     _ping_deferred = None
     _reconnect_deferred = None
 
@@ -25,7 +24,6 @@ class Ircbot(irc.IRCClient):
         self.nickname = self.factory.nick.encode('utf-8')
         irc.IRCClient.connectionMade(self)
         self.factory.resetDelay()
-        self.factory.send = self.send
         self.factory.proto = self
         self.auth_callbacks = {}
         self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
@@ -51,7 +49,7 @@ class Ircbot(irc.IRCClient):
             self._reconnect_deferred.cancel()
             self._reconnect_deferred = None
             self._ping_deferred = reactor.callLater(self.factory.ping_interval, self._idle_ping)
-        
+
     def dataReceived(self, data):
         irc.IRCClient.dataReceived(self, data)
         if self._ping_deferred is not None:
@@ -115,7 +113,7 @@ class Ircbot(irc.IRCClient):
         if channel.lower() == self.nickname.lower():
             event.addressed = True
             event.public = False
-            event.channel = event.sender['nick']
+            event.channel = event.sender['connection']
         else:
             event.public = True
 
@@ -140,17 +138,22 @@ class Ircbot(irc.IRCClient):
 
     def send(self, response):
         message = response['reply'].replace('\n', ' ')[:490]
+        raw_message = message.encode('utf-8')
+
+        # Target may be a connection or a plain nick
+        target = response['target'].split('!')[0]
+        raw_target = target.encode('utf-8')
+
         if 'action' in response and response['action']:
             # We can't use self.me() because it prepends a # onto channel names
-            self.ctcpMakeQuery(response['target'].encode('utf-8'), [('ACTION', message.encode('utf-8'))])
-            self.factory.log.debug(u"Sent action to %s: %s", response['target'], message)
+            self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
+            self.factory.log.debug(u"Sent action to %s: %s", target, message)
+        elif 'notice' in response and response['notice']:
+            self.notice(raw_target, raw_message)
+            self.factory.log.debug(u"Sent notice to %s: %s", target, message)
         else:
-            if response.get('notice', False):
-                send = self.notice
-            else:
-                send = self.msg
-            send(response['target'].encode('utf-8'), message.encode('utf-8'))
-            self.factory.log.debug(u"Sent privmsg to %s: %s", response['target'], message)
+            self.msg(raw_target, raw_message)
+            self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
     def join(self, channel):
         self.factory.log.info(u"Joining %s", channel)
@@ -182,11 +185,12 @@ class Ircbot(irc.IRCClient):
 
     def ctcpQuery_VERSION(self, user, channel, data):
         nick = user.split("!")[0]
-        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % self.versionNum)])
+        self.ctcpMakeReply(nick, [('VERSION', 'Ibid %s' % (ibid_version() or '',))])
 
     def ctcpQuery_SOURCE(self, user, channel, data):
         nick = user.split("!")[0]
         self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
+
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
@@ -199,7 +203,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
-    channels = Option('channels', 'Channels to autojoin', [])
+    channels = ListOption('channels', 'Channels to autojoin', [])
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:
@@ -242,6 +246,12 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def change_nick(self, nick):
         return self.proto.setNick(nick.encode('utf-8'))
+
+    def send(self, response):
+        return self.proto.send(response)
+
+    def logging_name(self, identity):
+        return identity.split('!')[0]
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)

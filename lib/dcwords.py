@@ -126,7 +126,7 @@ class DCClient(LineReceiver):
     def dc_Lock(self, params):
         "Calculate the NMDC Lock code"
         challange = params.split(' ', 1)[0]
-        
+
         key = {}
         for i in xrange(1, len(challange)):
             key[i] = ord(challange[i]) ^ ord(challange[i-1])
@@ -139,7 +139,7 @@ class DCClient(LineReceiver):
                 response += "/%%DCN%03d%%/" % (key[i],)
             else:
                 response += chr(key[i])
-    
+
         if challange.startswith('EXTENDEDPROTOCOL'):
             self.sendLine('$Supports HubTopic QuickList NoHello')
 
@@ -187,6 +187,8 @@ class DCClient(LineReceiver):
     def dc_Hello(self, params):
         "Someone arrived"
         nick = _decode_htmlent(params)
+        if nick == self.my_nickname:
+            return
         if nick not in self.hub_users:
             self.hub_users[nick] = User(nick)
             self.userJoined(nick)
@@ -207,7 +209,7 @@ class DCClient(LineReceiver):
 
         self._sendMyINFO()
 
-    _myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?\$([AP5 ])\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
+    _myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
     def dc_MyINFO(self, params):
         "Information about a user"
         self._state_Connected()
@@ -218,6 +220,9 @@ class DCClient(LineReceiver):
             return
 
         nick = _decode_htmlent(m.group(1))
+        if nick == self.my_nickname:
+            return
+
         if nick in self.hub_users:
             user = self.hub_users[nick]
         else:
@@ -254,16 +259,18 @@ class DCClient(LineReceiver):
         user.connection = _decode_htmlent(m.group(6))
         user.away = m.group(7) in _raway and _raway[m.group(7)] or 'normal'
         user.email = _decode_htmlent(m.group(8))
-        user.sharesize = int(m.group(9))
+        user.sharesize = m.group(9) and int(m.group(9)) or 0
 
         if nick not in self.hub_users:
             self.hub_users[nick] = user
             self.userJoined(nick)
-    
+
     def dc_OpList(self, params):
         "List of Ops received"
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             user.op = True
             if nick not in self.hub_users:
@@ -274,6 +281,8 @@ class DCClient(LineReceiver):
         "List of Bots received"
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             user.bot = True
             if nick not in self.hub_users:
@@ -294,6 +303,8 @@ class DCClient(LineReceiver):
 
         for nick in params.split('$$'):
             nick = _decode_htmlent(nick)
+            if nick == self.my_nickname:
+                continue
             user = nick in self.hub_users and self.hub_users[nick] or User(nick)
             if nick in self.hub_users:
                 oldlist.remove(nick)
@@ -340,11 +351,11 @@ class DCClient(LineReceiver):
     def dc_To(self, params):
         "Received a private message"
         m = self._to_re.match(params)
-        
+
         if m is None:
             log.error('Cannot parse message: %s', params)
             return
-        
+
         self.privmsg(_decode_htmlent(m.group(1)), True, _decode_htmlent(m.group(2)))
 
     # Helpers:
@@ -399,12 +410,12 @@ class DCClient(LineReceiver):
     def connectionMade(self):
         if self.keepalive:
             self._ping_deferred = reactor.callLater(self.ping_interval, self._idle_ping)
-    
+
     def sendLine(self, line):
         if self._ping_deferred:
             self._ping_deferred.reset(self.ping_interval)
         return LineReceiver.sendLine(self, line)
-    
+
     def lineReceived(self, line):
         if self._ping_deferred:
             self._ping_deferred.reset(self.ping_interval)
@@ -452,7 +463,7 @@ def _encode_htmlent(message, extra_enc=''):
     return re.sub(r'([$|%s])' % extra_enc, replace, message)
 
 def _decode_htmlent(message):
-    "DC uses HTML entities to encode non-ASCII text. Decode." 
+    "DC uses HTML entities to encode non-ASCII text. Decode."
     replace = lambda match: unichr(int(match.group(1)))
     message = unicode(message, 'utf-8', 'replace')
     message = re.sub(r'&#(\d+);', replace, message)
@@ -490,7 +501,7 @@ def main():
             if 'test' in message:
                 self.say(private and user or None, '%s said %s' % (user, message))
                 self.say(None, '+me waves a test message')
-        
+
         def sendLine(self, line):
             log.debug('> %s', line)
             DCClient.sendLine(self, line)
@@ -509,7 +520,7 @@ def main():
         def clientConnectionFailed(self, connector, reason):
             log.info('Failed')
             reactor.stop()
-    
+
     f = DCFactory()
     reactor.connectTCP('localhost', 411, f)
 

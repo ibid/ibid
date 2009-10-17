@@ -6,7 +6,7 @@ from .. silc import SilcClient, create_key_pair, load_key_pair
 import ibid
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
-from ibid.config import Option, IntOption
+from ibid.config import Option, IntOption, ListOption
 
 import logging
 
@@ -29,12 +29,15 @@ class SilcBot(SilcClient):
         event.sender['nick'] = unicode(user.nickname, 'utf-8', 'replace')
         event.sender['connection'] = self._to_hex(user.user_id)
         event.sender['id'] = self._to_hex(user.fingerprint)
-        event.channel = channel and unicode(channel.channel_name, 'utf-8', 'replace') or event.sender['connection']
+        if channel:
+            event.channel = unicode(channel.channel_name, 'utf-8', 'replace')
+        else:
+            event.channel = event.sender['connection']
         event.public = True
         event.source = self.factory.name
 
-        if event.sender['connection'] not in self.users:
-            self.users[event.sender['connection']] = user
+        self.users[event.sender['connection']] = user
+        self.users[event.sender['id']] = user
 
         return event
 
@@ -68,18 +71,41 @@ class SilcBot(SilcClient):
 
     def send(self, response):
         message = response['reply'].replace('\n', ' ').encode('utf-8')
+        flags=0
+        if 'action' in response and response['action']:
+            flags=4
 
         if response['target'] in self.users:
             target = self.users[response['target']]
-            self.send_private_message(target, message, flags='action' in response and response['action'] and 4 or 0)
+            self.send_private_message(target, message, flags=flags)
         elif response['target'] in self.channels:
             target = self.channels[response['target']]
-            self.send_channel_message(target, message, flags='action' in response and response['action'] and 4 or 0)
+            self.send_channel_message(target, message, flags=flags)
         else:
+            for user in self.users.itervalues():
+                if user.nickname == response['target']:
+                    self.send_private_message(user, message, flags=flags)
+                    return
+
             self.factory.log.debug(u"Unknown target: %s" % response['target'])
             return
 
         self.factory.log.debug(u"Sent message to %s: %s", response['target'], message)
+
+    def logging_name(self, identity):
+        format_user = lambda user: u'-'.join((user.nickname,
+                                              self._to_hex(user.fingerprint)))
+        if identity in self.users:
+            user = self.users[identity]
+            return format_user(user)
+        if identity in self.channels:
+            return identity
+        # Only really used for saydo
+        for user in self.users.itervalues():
+            if user.nickname == identity:
+                return format_user(user)
+        self.factory.log.error(u"Unknown identity: %s", identity)
+        return identity
 
     def join(self, channel):
         self.command_call('JOIN %s' % channel)
@@ -91,6 +117,10 @@ class SilcBot(SilcClient):
 
         self.command_call('LEAVE %s' % channel)
         del self.channels[channel]
+
+        # TODO: When pysilc gets channel.user_list support
+        # we should remove stale users
+
         return True
 
     def _to_hex(self, string):
@@ -110,12 +140,16 @@ class SilcBot(SilcClient):
 
     def notify_signoff(self, user, channel):
         self._state_event(user, channel, u'offline')
+        del self.users[self._to_hex(user.user_id)]
+        del self.users[self._to_hex(user.fingerprint)]
 
     def notify_kicked(self, user, message, kicker, channel):
         self._state_event(user, channel, u'kicked', kicker, message)
 
     def notify_killed(self, user, message, kicker, channel):
         self._state_event(user, channel, u'killed', kicker, message)
+        del self.users[self._to_hex(user.user_id)]
+        del self.users[self._to_hex(user.fingerprint)]
 
     def running(self):
         self.connect_to_server(self.factory.server, self.factory.port)
@@ -131,7 +165,9 @@ class SilcBot(SilcClient):
         self.command_call('QUIT')
 
     def disconnected(self, message):
-       self.factory.s.stopService()
+        self.factory.s.stopService()
+        self.channels.clear()
+        self.users.clear()
 
 class SourceFactory(IbidSourceFactory):
 
@@ -141,7 +177,7 @@ class SourceFactory(IbidSourceFactory):
     server = Option('server', 'Server hostname')
     port = IntOption('port', 'Server port number', 706)
     nick = Option('nick', 'Nick', ibid.config['botname'])
-    channels = Option('channels', 'Channels to autojoin', [])
+    channels = ListOption('channels', 'Channels to autojoin', [])
     realname = Option('realname', 'Real Name', ibid.config['botname'])
     public_key = Option('public_key', 'Filename of public key', 'silc.pub')
     private_key = Option('private_key', 'Filename of private key', 'silc.prv')
@@ -159,7 +195,7 @@ class SourceFactory(IbidSourceFactory):
 
     def run_one(self):
         self.client.run_one()
-    
+
     def setServiceParent(self, service):
         self.s = internet.TimerService(0.2, self.run_one)
         if service is None:
@@ -173,5 +209,8 @@ class SourceFactory(IbidSourceFactory):
 
     def url(self):
         return u'silc://%s@%s:%s' % (self.nick, self.server, self.port)
+
+    def logging_name(self, identity):
+        return self.client.logging_name(identity)
 
 # vi: set et sta sw=4 ts=4:

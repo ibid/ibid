@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 import logging
 
@@ -5,7 +6,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, Table
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.config import Option, BoolOption, IntOption
+from ibid.config import BoolOption, IntOption, ListOption
 from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -15,22 +16,25 @@ log = logging.getLogger('plugins.karma')
 class Karma(Base):
     __table__ = Table('karma', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('subject', Unicode(128), unique=True, nullable=False, index=True),
+    Column('subject', Unicode(64), unique=True, nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
-    Column('time', DateTime, nullable=False, default=func.current_timestamp()),
+    Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class KarmaSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.subject, unique=True)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('subject', Unicode(64), unique=True, nullable=False, index=True))
 
-    __table__.versioned_schema = KarmaSchema(__table__, 2)
+    __table__.versioned_schema = KarmaSchema(__table__, 3)
 
     def __init__(self, subject):
         self.subject = subject
         self.changes = 0
         self.value = 0
+        self.time = datetime.utcnow()
 
 class Set(Processor):
     u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
@@ -41,12 +45,12 @@ class Set(Processor):
 
     permission = u'karma'
 
-    increase = Option('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
-    decrease = Option('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
-    neutral = Option('neutral', 'Suffixes which indicate neutral karma', ('==',))
+    increase = ListOption('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
+    decrease = ListOption('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
+    neutral = ListOption('neutral', 'Suffixes which indicate neutral karma', ('==',))
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
-    ignore = Option('ignore', 'Karma subjects to silently ignore', ())
+    ignore = ListOption('ignore', 'Karma subjects to silently ignore', ())
     importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
 
     def setup(self):

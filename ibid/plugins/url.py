@@ -5,11 +5,12 @@ from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPB
 import logging
 import re
 
+from pkg_resources import resource_exists, resource_stream
 from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 
 import ibid
 from ibid.plugins import Processor, match, handler
-from ibid.config import Option
+from ibid.config import Option, ListOption
 from ibid.models import Base, VersionedSchema
 from ibid.utils  import get_html_parse_tree
 
@@ -36,13 +37,13 @@ class URL(Base):
         self.url = url
         self.channel = channel
         self.identity_id = identity_id
-        self.time = datetime.now()
+        self.time = datetime.utcnow()
 
 class Delicious(object):
     def add_post(self, username, password, event, url=None):
         "Posts a URL to delicious.com"
 
-        date  = datetime.utcnow()
+        date = datetime.utcnow()
         title = self._get_title(url)
 
         con_re = re.compile(r'!n=|!')
@@ -112,7 +113,26 @@ class Grab(Processor):
     password  = Option('delicious_password', 'delicious account password')
     delicious = Delicious()
 
-    @match(r'((?:\S+://|(?:www|ftp)\.)\S+|\S+\.(?:com|org|net|za)\S*)')
+    def setup(self):
+        if resource_exists(__name__, '../../data/tlds-alpha-by-domain.txt'):
+            tlds = [tld.strip().lower() for tld
+                    in resource_stream(__name__, '../../data/tlds-alpha-by-domain.txt')
+                        .readlines()
+                    if not tld.startswith('#')
+            ]
+
+        else:
+            log.warning(u"Couldn't open TLD list, falling back to minimal default")
+            tlds = 'com.org.net.za'.split('.')
+
+        self.grab.im_func.pattern = re.compile((
+            r'(?:[^@.]\b(?!\.)|\A)('        # Match a boundry, but not on an e-mail address
+            r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
+            r'|[^@\s:]+\.(?:%s)(?:/\S*?)?'  # Guess at the URL based on TLD
+            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End Boundry
+        ) % '|'.join(tlds), re.I | re.DOTALL)
+
+    @handler
     def grab(self, event, url):
         if url.find('://') == -1:
             if url.lower().startswith('ftp'):
@@ -144,29 +164,36 @@ class NullRedirect(HTTPRedirectHandler):
         return None
 
 class Lengthen(Processor):
-    u"""<url>"""
+    u"""<url>
+    expand <url>"""
     feature = 'url'
 
-    services = Option('services', 'List of URL prefixes of URL shortening services', (
+    services = ListOption('services', 'List of URL prefixes of URL shortening services', (
         'http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/',
         'http://shorl.com/', 'http://icanhaz.com/', 'http://url.omnia.za.net/',
-        'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/'
+        'http://snipurl.com/', 'http://tr.im/', 'http://snipr.com/',
+        'http://bit.ly/', 'http://cli.gs/', 'http://zi.ma/', 'http://twurl.nl/',
+        'http://xrl.us/', 'http://lnk.in/', 'http://url.ie/', 'http://ne1.net/',
+        'http://turo.us/', 'http://301url.com/', 'http://u.nu/', 'http://twi.la/',
+        'http://ow.ly/', 'http://su.pr/', 'http://tiny.cc/', 'http://ur1.ca/',
     ))
 
     def setup(self):
-        self.lengthen.im_func.pattern = re.compile(r'^((?:%s)\S+)$' % '|'.join([re.escape(service) for service in self.services]), re.I)
+        self.lengthen.im_func.pattern = re.compile(r'^(?:((?:%s)\S+)|(?:lengthen\s+|expand\s+)(http://\S+))$' % '|'.join([re.escape(service) for service in self.services]), re.I|re.DOTALL)
 
     @handler
-    def lengthen(self, event, url):
+    def lengthen(self, event, url1, url2):
+        url = url1 or url2
         opener = build_opener(NullRedirect())
         try:
             f = opener.open(url)
+            f.close()
         except HTTPError, e:
             if e.code in (301, 302, 303, 307):
                 event.addresponse(u'That expands to: %s', e.hdrs['location'])
                 return
+            raise
 
-        f.close()
         event.addresponse(u"No redirect")
 
 # vi: set et sta sw=4 ts=4:

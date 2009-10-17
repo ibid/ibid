@@ -14,11 +14,11 @@ Add the Ibid PPA to your APT sources:
 
 Install required modules:
 # aptitude install python-beautifulsoup python-celementtree \
-	python-configobj python-dictclient python-dnspython \
+	python-configobj python-dateutil python-dnspython \
 	python-feedparser python-html5lib python-imdbpy \
 	python-jinja python-pinder python-pysilc \
 	python-pysqlite2 python-simplejson python-soappy \
-	python-sqlalchemy python-twisted
+	python-sqlalchemy python-twisted python-wokkel
 
 Switch to the user ibid will be running as.
 $ export PYTHONPATH=.
@@ -32,6 +32,7 @@ $ scripts/ibid
 
 Other things we recommend:
 * Install a dictd on localhost for the dict plugin (debian/ubuntu package "dictd")
+  Also, the python dict client library ("python-dictclient")
 * Install GNU units for the unit conversion plugin ("units")
 * Install bc for "bc" calculations ("bc")
 * Install ipcalc ("ipcalc")

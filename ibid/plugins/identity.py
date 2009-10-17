@@ -9,6 +9,7 @@ from sqlalchemy.exceptions import IntegrityError
 import ibid
 from ibid.plugins import Processor, match, auth_responses
 from ibid.models import Account, Identity, Attribute
+from ibid.utils import human_join
 
 help = {}
 identify_cache = {}
@@ -91,7 +92,7 @@ class Accounts(Processor):
                 return
             elif not admin or username != account.username:
                 return
-        
+
         event.session.delete(account)
         event.session.commit()
         identify_cache.clear()
@@ -120,7 +121,7 @@ class Accounts(Processor):
                 return
             elif not admin and username != account.username:
                 return
-        
+
         oldname = account.username
         account.username = newname
 
@@ -132,7 +133,8 @@ class Accounts(Processor):
                 account.id, oldname, account.username, event.account, event.identity, event.sender['connection'])
         event.addresponse(True)
 
-chars = string.letters + string.digits
+# Don't include possibly ambiguous characters:
+chars = [x for x in string.letters + string.digits if x not in '01lOIB86G']
 
 class Identities(Processor):
     u"""(I am|<username> is) <identity> on <source>
@@ -155,10 +157,10 @@ class Identities(Processor):
                 account = event.session.query(Account).get(event.account)
             else:
                 account = event.session.query(Account) \
-                        .join(Identity.account) \
+                        .join('identities') \
                         .filter(func.lower(Identity.identity) == identity.lower()) \
                         .filter(func.lower(Identity.source) == source.lower()).first()
-                
+
                 if account:
                     reverse_attach = True
                 else:
@@ -364,7 +366,7 @@ class Describe(Processor):
 
         event.addresponse(u'%(accountname)s is %(identities)s', {
             'accountname': account.username,
-            'identities': u', '.join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
+            'identities': human_join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
 
 class Identify(Processor):

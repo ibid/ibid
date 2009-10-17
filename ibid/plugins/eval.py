@@ -30,7 +30,7 @@ class Python(Processor):
             result = eval(code, globals, {})
         except Exception, e:
             result = e
-        event.addresponse(result)
+        event.addresponse(repr(result))
 
 class Perl(Processor):
     u"""pl <code>"""
@@ -46,7 +46,7 @@ class Perl(Processor):
         except Exception, e:
             result = e
 
-        event.addresponse(result)
+        event.addresponse(repr(result))
 
 class Lua(Processor):
     u"""lua <code>"""
@@ -62,6 +62,6 @@ class Lua(Processor):
         except Exception, e:
             result = e
 
-        event.addresponse(result)
+        event.addresponse(repr(result))
 
 # vi: set et sta sw=4 ts=4:

@@ -1,4 +1,5 @@
 import logging
+from socket import timeout
 from urlparse import urlparse
 
 from pinder import Campfire
@@ -7,7 +8,7 @@ from twisted.application import internet
 import ibid
 from ibid import AuthException, SourceException
 from ibid.event import Event
-from ibid.config import Option
+from ibid.config import Option, ListOption
 from ibid.source import IbidSourceFactory
 
 class CampfireBot(Campfire):
@@ -29,7 +30,12 @@ class CampfireBot(Campfire):
                 self.join(room)
 
         for room in self.rooms.values():
-            for message in room.messages():
+            try:
+                messages = room.messages()
+            except timeout, e:
+                self.factory.log.debug(u"Campfire timed out on us")
+                break
+            for message in messages:
                 self.factory.log.debug('Received message: %s', str(message))
                 self._create_message(message, room.name)
 
@@ -75,7 +81,7 @@ class SourceFactory(IbidSourceFactory):
     subdomain = Option('subdomain', 'Campfire subdomain')
     username = Option('username', 'Email address')
     password = Option('password', 'Campfire password')
-    rooms = Option('rooms', 'Rooms to join', [])
+    rooms = ListOption('rooms', 'Rooms to join', [])
 
     def __init__(self, name):
         super(SourceFactory, self).__init__(name)

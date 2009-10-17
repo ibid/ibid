@@ -17,7 +17,7 @@ class HTTP(Processor):
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
 
-    @match(r'^(get|head)\s+(.+)$')
+    @match(r'^(get|head)\s+(\S+\.\S+)$')
     def handler(self, event, action, url):
         if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
             url = "http://" + url

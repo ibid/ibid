@@ -1,19 +1,19 @@
 import re
-from time import time
+from datetime import datetime, timedelta
 from random import choice
 import logging
 
 import ibid
 from ibid.plugins import Processor, handler
-from ibid.config import Option, IntOption
+from ibid.config import IntOption, ListOption, DictOption
 
 class Addressed(Processor):
 
     priority = -1500
     addressed = False
 
-    names = Option('names', 'Names to respond to', [ibid.config['botname']])
-    verbs = Option('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
+    names = ListOption('names', 'Names to respond to', [ibid.config['botname']])
+    verbs = ListOption('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
@@ -29,7 +29,7 @@ class Addressed(Processor):
             matches = pattern.search(event.message['stripped'])
             if matches:
                 new_message = pattern.sub('', event.message['stripped'])
-                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(self.verbs):
+                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(tuple(self.verbs)):
                     return
 
                 event.addressed = matches.group(1)
@@ -57,11 +57,25 @@ class Ignore(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
+    nicks = ListOption('ignore', 'List of nicks to ignore', [])
+
     @handler
     def handle_ignore(self, event):
-        for who in ibid.config.plugins[self.name]['ignore']:
+        for who in self.nicks:
             if event.sender['nick'] == who:
                 event.processed = True
+
+class IgnorePublic(Processor):
+
+    priority = -1490
+
+    @handler
+    def ignore_public(self, event):
+        if event.public and not ibid.auth.authorise(event, u'publicresponse'):
+            event.addresponse(
+                u"Sorry, I'm not allowed to talk to you in public. "
+                'Ask me by private message.'
+            )
 
 class Responses(Processor):
 
@@ -92,9 +106,9 @@ class Address(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
-    acknowledgements = Option('acknowledgements', 'Responses for positive acknowledgements',
+    acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
-    refusals = Option('refusals', 'Responses for negative acknowledgements',
+    refusals = ListOption('refusals', 'Responses for negative acknowledgements',
             (u'No', u"I won't", u"Shan't", u"I'm sorry, but I can't do that"))
 
     @handler
@@ -118,16 +132,16 @@ class Timestamp(Processor):
     priority = -1900
 
     def process(self, event):
-        event.time = time()
+        event.time = datetime.utcnow()
 
 class Complain(Processor):
 
     priority = 950
     event_types = ('message', 'action')
 
-    complaints = Option('complaints', 'Complaint responses', {
+    complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
-            u'Huh?', u'Sorry...', u'?',
+            u'Huh?', u'Sorry...',
             u'Excuse me?', u'*blink*', u'What?',
         ),
         'notauthed': (
@@ -162,7 +176,9 @@ class RateLimit(Processor):
             self.messages[event.identity] = [event.time]
         else:
             self.messages[event.identity].append(event.time)
-            self.messages[event.identity] = filter(lambda x: event.time-x < self.limit_time, self.messages[event.identity])
+            self.messages[event.identity] = filter(
+                lambda x: event.time - x < timedelta(seconds=self.limit_time),
+                self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
                     event.addresponse({'reply': u'Geez, give me some time to think!'})

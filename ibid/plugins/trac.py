@@ -20,7 +20,7 @@ if 'trac' in ibid.databases:
     metadata = MetaData(bind=ibid.databases.trac().bind)
     ticket_table = Table('ticket', metadata, autoload=True)
     mapper(Ticket, ticket_table)
-    
+
 class Tickets(Processor, RPC):
     u"""ticket <number>
     (open|my|<who>'s) tickets"""
@@ -88,7 +88,7 @@ class Tickets(Processor, RPC):
                 'milestone': ticket.milestone,
                 'ago': ago(datetime.now() - datetime.fromtimestamp(ticket.time), 2),
                 'owner': ticket.owner,
-                'summary': ticket.summary, 
+                'summary': ticket.summary,
                 'url': self.url,
             })
         else:
@@ -103,7 +103,7 @@ class Tickets(Processor, RPC):
             statuses = (u'new', u'assigned', u'reopened')
         else:
             statuses = (status.lower(),)
-        
+
         query = session.query(Ticket).filter(Ticket.status.in_(statuses))
 
         if owner:

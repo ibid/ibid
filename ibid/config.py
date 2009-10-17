@@ -57,4 +57,35 @@ class IntOption(Option):
 class FloatOption(Option):
     accessor = 'as_float'
 
+class ListOption(Option):
+
+    def __get__(self, instance, owner):
+        value = Option.__get__(self, instance, owner)
+        if not isinstance(value, (list, tuple)):
+            value = [value]
+
+        if value and not value[0] and self.default:
+            both = []
+            both.extend(self.default)
+            both.extend(value[1:])
+            value = both
+
+        return value
+
+class DictOption(Option):
+
+    def __get__(self, instance, owner):
+        value = Option.__get__(self, instance, owner)
+
+        if self.default and value is not self.default:
+            both = self.default.copy()
+            both.update(value)
+            value = both
+
+            for k, v in value.items():
+                if not v:
+                    del value[k]
+
+        return value
+
 # vi: set et sta sw=4 ts=4:
