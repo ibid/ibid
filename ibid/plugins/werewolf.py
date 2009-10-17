@@ -8,10 +8,23 @@ from ibid.config import IntOption, BoolOption
 from ibid.plugins import Processor, match, handler
 
 log = logging.getLogger('plugins.werewolf')
+help = {}
 
 games = []
 
+help['werewolf'] = (u'Play the werewolf game. '
+    u'Channel becomes a village containing a werewolf, seer and villagers. '
+    u'Every night, the werewolf can kill a villager, and the seer can test '
+    u'a villager for werewolf symptoms. '
+    u'Villagers then vote to lynch a wolf during the day.')
 class WerewolfGame(Processor):
+    u"""
+    start a game of werewolf
+    join
+    ( kill | see | eat) <villager>
+    vote for <villager>
+    """
+
     feature = 'werewolf'
     state = None
 
