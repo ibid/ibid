@@ -61,7 +61,7 @@ class Processor(object):
                     found = True
                     match = method.pattern.search(event.message[method.message_version])
                     if match is not None:
-                        if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
+                        if not getattr(method, 'authorised', False) or auth_responses(event, self.permission):
                             method(event, *match.groups())
                         elif not getattr(method, 'auth_passthrough', True):
                             event.processed = True
