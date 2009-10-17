@@ -57,7 +57,7 @@ class Set(Processor):
         self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
 
     @handler
-    @authorise(passthrough=False)
+    @authorise(fail_silently=False)
     def set(self, event, subject, adjust, reason):
         if self.public and not event.public:
             event.addresponse(u'Karma must be done in public')
@@ -141,7 +141,7 @@ class Forget(Processor):
     permission = u'karmaadmin'
 
     @match(r'^forget\s+karma\s+for\s+(.+?)(?:\s*[[{(]+\s*(.+?)\s*[\]})]+)?$')
-    @authorise(passthrough=False)
+    @authorise(fail_silently=False)
     def forget(self, event, subject, reason):
         karma = event.session.query(Karma) \
                 .filter(func.lower(Karma.subject) == subject.lower()).first()

@@ -12,7 +12,7 @@ class Admin(Processor):
     permission = u'sources'
 
     @match(r'^connect\s+(?:to\s+)?(\S+)$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def connect(self, event, source):
         if source not in ibid.sources:
             event.addresponse(u"I don't have a source called %s", source)
@@ -22,7 +22,7 @@ class Admin(Processor):
             event.addresponse(u"I couldn't connect to %s", source)
 
     @match(r'^disconnect\s+(?:from\s+)?(\S+)$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def disconnect(self, event, source):
         if source not in ibid.sources:
             event.addresponse(u"I am not connected to %s", source)
@@ -32,7 +32,7 @@ class Admin(Processor):
             event.addresponse(u"I couldn't disconnect from %s", source)
 
     @match(r'^(?:re)?load\s+(\S+)\s+source$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def load(self, event, source):
         if ibid.reloader.load_source(source, ibid.service):
             event.addresponse(u"%s source loaded", source)

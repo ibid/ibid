@@ -100,10 +100,10 @@ def auth_responses(event, permission):
 
     return True
 
-def authorise(passthrough=True):
+def authorise(fail_silently=True):
     def wrap(function):
         function.authorised = True
-        function.auth_passthrough = passthrough
+        function.auth_passthrough = fail_silently
         return function
     return wrap
 

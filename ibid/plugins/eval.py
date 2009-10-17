@@ -19,7 +19,7 @@ class Python(Processor):
     permission = u'eval'
 
     @match(r'^py(?:thon)?\s+(.+)$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def eval(self, event, code):
         try:
             globals = {}
@@ -39,7 +39,7 @@ class Perl(Processor):
     permission = u'eval'
 
     @match(r'^(?:perl|pl)\s+(.+)$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def eval(self, event, code):
         try:
             result = perl.eval(code)
@@ -55,7 +55,7 @@ class Lua(Processor):
     permission = u'eval'
 
     @match(r'^lua\s+(.+)$')
-    @authorise(passthrough=True)
+    @authorise(fail_silently=True)
     def eval(self, event, code):
         try:
             result = lua.eval(code)
