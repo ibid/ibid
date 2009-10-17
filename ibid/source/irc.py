@@ -316,7 +316,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         return self.proto.send(response)
 
     def logging_name(self, identity):
-        return identity.split('!')[0]
+        if identity is None:
+            return u''
+        return identity.split(u'!')[0]
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
