@@ -101,7 +101,7 @@ class Log(Processor):
         else:
             fields['message'] = event.message
 
-        file = self.get_logfile(event.source, event.channel or '', event.time)
+        file = self.get_logfile(event)
 
         file.write((format % fields).encode('utf-8') + '\n')
         file.flush()
