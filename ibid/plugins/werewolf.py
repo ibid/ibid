@@ -21,7 +21,7 @@ class WerewolfGame(Processor):
     u"""
     start a game of werewolf
     join
-    ( kill | see | eat) <villager>
+    ( kill | see | eat ) <villager>
     vote for <villager>
     """
 
