@@ -48,6 +48,7 @@ Python Libraries:
 * `Wokkel <http://wokkel.ik.nu/>`_. (XMPP)
 * `SQLAlchemy <http://www.sqlalchemy.org/>`_ 0.5 preferred, 0.4 compatible.
 * `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ (configuration)
+* `python-dateutil <http://labix.org/python-dateutil>`_
 
 Many core plugins require the following Web scraping & parsing libraries:
 
@@ -182,7 +183,7 @@ Install the required python modules:
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
      python-html5lib python-pysqlite2 python-simplejson \
-     python-soappy python-jinja
+     python-soappy python-jinja python-dateutil
 
 Create a user to run your bot as::
 
