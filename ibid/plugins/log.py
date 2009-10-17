@@ -63,10 +63,9 @@ class Log(Processor):
         return self.logs[filename]
 
     def log_event(self, event):
-        if self.date_utc:
-            when = gmtime(event.time)
-        else:
-            when = localtime(event.time)
+        when = event.time
+        if not self.date_utc:
+            when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())
 
         format = {
                 'message': self.message_format,
@@ -87,7 +86,9 @@ class Log(Processor):
                 'sender_connection': event.sender['connection'],
                 'sender_id': event.sender['id'],
                 'sender_nick': event.sender['nick'],
-                'timestamp': strftime(self.timestamp_format, when),
+                'timestamp': unicode(
+                    when.strftime(self.timestamp_format.encode('utf8')),
+                    'utf8')
         }
 
         if event.type == 'state':
