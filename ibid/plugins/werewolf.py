@@ -1,9 +1,10 @@
-from random import shuffle, choice
-import ibid
-import logging
-from ibid.plugins import Processor, match, handler
-from ibid.config import IntOption, BoolOption
 from collections import defaultdict
+import logging
+from random import shuffle, choice
+
+import ibid
+from ibid.config import IntOption, BoolOption
+from ibid.plugins import Processor, match, handler
 
 log = logging.getLogger('plugins.werewolf')
 
