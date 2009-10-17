@@ -129,7 +129,7 @@ class Tell(Processor):
             r'(?:memo|message|msg)\s+'
             r'(?(1)|#?(\d+)\s+)?' # 2nd way
             r'(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
-    @authorise
+    @authorise(passthrough=False)
     def forget(self, event, num1, num2, who, source):
         if not source:
             source = event.source
