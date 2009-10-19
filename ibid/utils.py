@@ -16,19 +16,8 @@ from dateutil.tz import tzlocal, tzutc
 from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
-# json only in Python >=2.6
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
-# xml.etree only in Python >= 2.5
-try:
-    from xml.etree import cElementTree as ElementTree
-except ImportError:
-    import cElementTree as ElementTree
-
 import ibid
+from ibid.compat import ElementTree, json
 
 def ago(delta, units=None):
     parts = []
