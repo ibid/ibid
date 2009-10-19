@@ -5,8 +5,7 @@ from urlparse import urljoin
 from time import time, strptime, strftime
 from datetime import datetime
 from random import choice, shuffle, randint
-from xml.etree.cElementTree import parse
-from .. math import acos, sin, cos, radians
+from math import acos, sin, cos, radians
 from collections import defaultdict
 import re
 from sys import exc_info
@@ -14,8 +13,9 @@ import logging
 
 import feedparser
 
-from ibid.plugins import Processor, match, handler
+from ibid.compat import ElementTree
 from ibid.config import Option, BoolOption, DictOption
+from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice, human_join
 
@@ -158,7 +158,7 @@ class FMyLife(Processor):
         )
         f = urlopen(url)
         try:
-            tree = parse(f)
+            tree = ElementTree.parse(f)
         except SyntaxError:
             class_, e, tb = exc_info()
             new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))

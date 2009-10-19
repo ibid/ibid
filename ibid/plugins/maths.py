@@ -22,7 +22,7 @@ except ImportError:
     transform_method='compiler'
 
 help = {}
-log = logging.getLogger('math')
+log = logging.getLogger('maths')
 
 help['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
