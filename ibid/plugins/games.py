@@ -490,7 +490,7 @@ class WerewolfGame(Processor):
         """
         if self.state:
             log.debug(u'Not starting game: already in state %s.',
-                    self.state.__name__)
+                    self.state_name())
             return
 
         if not event.public:
@@ -517,7 +517,7 @@ class WerewolfGame(Processor):
     def join(self, event):
         if self.state != self.prestart:
             log.debug(u'Not joining: already in state %s.',
-                    self.state.__name__)
+                    self.state_name())
             return
 
         if event.sender['nick'] not in self.players:
@@ -815,7 +815,7 @@ class WerewolfGame(Processor):
 
         from_state = self.state
         log.debug(u'Going from state %s to %s in %i seconds.',
-                from_state.__name__, target.__name__, delay)
+                self.state_name(), target.__name__, delay)
         def goto (evt):
             """Change state if it hasn't already changed."""
             if self.state == from_state:
@@ -855,6 +855,12 @@ class WerewolfGame(Processor):
                     'target': self.channel,
                 })
                 self.death(nick)
+
+    def state_name(self):
+        "Return a printable version of the current state"
+        if self.state is None:
+            return 'stopped'
+        return self.__name__
 
 class WerewolfState(Processor):
     feature = 'werewolf'
