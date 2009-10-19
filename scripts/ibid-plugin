@@ -53,6 +53,7 @@ class TestSource(dict):
     type = 'test'
     permissions = []
     supports = []
+    logging_name = lambda self, name: name
 
 ibid.sources[u'test_source'] = TestSource()
 
