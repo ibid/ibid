@@ -98,7 +98,10 @@ class Address(Processor):
                     response['reply'] = choice(self.acknowledgements)
                 else:
                     response['reply'] = choice(self.refusals)
-            if 'address' in response and response['address'] and event.public:
+            if (response.get('address', False)
+                    and not response.get('action', False)
+                    and not response.get('notice', False)
+                    and event.public):
                 response['reply'] = ('%s: %s' % (
                     event.sender['nick'], response['reply']))
 
@@ -156,7 +159,7 @@ class RateLimit(Processor):
                 self.messages[event.identity])
             if len(self.messages[event.identity]) > self.limit_messages:
                 if event.public:
-                    event.addresponse({'reply': u'Geez, give me some time to think!'})
+                    event.addresponse(u'Geez, give me some time to think!', address=False)
                 else:
                     event.processed = True
 

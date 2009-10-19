@@ -228,7 +228,7 @@ class Deliver(Processor):
                 if public:
                     event.addresponse(u'%s: ' + message, event.sender['nick'])
                 else:
-                    event.addresponse({'reply': message, 'target': event.sender['connection']})
+                    event.addresponse(message, target=event.sender['connection'])
                 notified_overlimit_cache.add(event.identity)
             return
 
@@ -244,7 +244,7 @@ class Deliver(Processor):
                     'message': memo.memo,
                     'ago': ago(event.time - memo.time),
                 }
-                event.addresponse({'reply': message, 'target': event.sender['connection']})
+                event.addresponse(message, target=event.sender['connection'])
             else:
                 event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago', {
                     'recipient': event.sender['nick'],
@@ -283,12 +283,13 @@ class Notify(Processor):
         memos = get_memos(event)
 
         if len(memos) > self.public_limit:
-            event.addresponse({
-                    'reply': u'You have %s messages, too many for me to tell you in public, so ask me in private.' % len(memos),
-                    'target': event.sender['connection'],
-            })
+            event.addresponse(
+                u'You have %s messages, too many for me to tell you in public,'
+                u' so ask me in private.',
+                len(memos), target=event.sender['connection'])
         elif len(memos) > 0:
-            event.addresponse({'reply': u'You have %s messages' % len(memos), 'target': event.sender['connection']})
+            event.addresponse(u'You have %s messages', len(memos),
+                target=event.sender['connection'])
         else:
             nomemos_cache.add(event.identity)
 
