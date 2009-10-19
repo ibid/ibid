@@ -1,5 +1,4 @@
 import cgi
-from collections import defaultdict
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
@@ -17,7 +16,7 @@ from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
 import ibid
-from ibid.compat import ElementTree, json
+from ibid.compat import defaultdict, ElementTree, json
 
 def ago(delta, units=None):
     parts = []
