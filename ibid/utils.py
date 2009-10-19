@@ -166,7 +166,7 @@ def format_date(timestamp, length='datetime'):
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
-class ContetTypeException(Exception):
+class ContentTypeException(Exception):
     pass
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
@@ -177,7 +177,7 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
 
     if f.info().gettype() not in ('text/html', 'application/xhtml+xml'):
         f.close()
-        raise ContetTypeException("Content type isn't HTML, but " + f.info().gettype())
+        raise ContentTypeException("Content type isn't HTML, but " + f.info().gettype())
 
     data = f.read()
     f.close()
