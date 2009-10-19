@@ -213,7 +213,13 @@ class TextsFromLastNight(Processor):
         tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
         for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
             id = int(div.get('id').split('_', 1)[1])
-            message = [line.strip() for line in div.div.contents if isinstance(line, unicode)]
+            message = []
+            line = ''
+            for a in div.findAll('div', attrs={'class': 'post_content'})[0].findAll('a'):
+                if a['href'].startswith('/areacode/'):
+                    line = u'%s: ' % a.contents[0]
+                else:
+                    message.append(line + a.contents[0])
             yield id, message
 
     @match(r'^tfln'
@@ -280,12 +286,11 @@ class MyLifeIsAverage(Processor):
         else:
             tree = url
 
-        storycol = [div for div in tree.findall('.//div') if div.get(u'id') in (u'leftcol', u'leftcol-wide')][0]
-        stories = [div for div in storycol.findall('div') if div.get(u'class') in (u'stories', u'stories-wide')]
+        stories = [div for div in tree.findall('.//div') if div.get(u'class') == u's']
 
         for story in stories:
-            body = story.findtext('div/span/span').strip()
-            id = story.findtext('.//a')
+            body = story.findtext('div').strip()
+            id = story.findtext('div/a')
             if isinstance(id, basestring) and id[1:].isdigit():
                 id = int(id[1:])
                 yield id, body
