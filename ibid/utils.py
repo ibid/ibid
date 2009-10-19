@@ -240,4 +240,10 @@ def human_join(items, separator=u',', conjunction=u'and'):
     return ((u' %s ' % conjunction)
             .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
 
+def plural(count, singular, plural):
+    "Return sigular or plural depending on count"
+    if count == 1:
+        return singular
+    return plural
+
 # vi: set et sta sw=4 ts=4:
