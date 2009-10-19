@@ -77,34 +77,13 @@ class IgnorePublic(Processor):
                 'Ask me by private message.'
             )
 
-class Responses(Processor):
-
-    priority = 1600
-
-    def process(self, event):
-        if 'responses' not in event:
-            event.responses = []
-            return
-
-        converted = []
-        for response in event.responses:
-            if isinstance(response, basestring):
-                response = {'reply': response}
-            if 'target' not in response:
-                response['target'] = event.channel
-            if 'source' not in response:
-                response['source'] = event.source
-            if 'action' in response and 'action' not in ibid.sources[response['source']].supports:
-                response['reply'] = '* %s %s' % (ibid.config['botname'], response['reply'])
-            converted.append(response)
-
-        event.responses = converted
-
 class Address(Processor):
 
+    priority = 1600
     processed = True
     addressed = False
-    event_types = ('message', 'action', 'notice')
+
+    event_types = ('message', 'action', 'notice', 'state')
 
     acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
@@ -113,19 +92,15 @@ class Address(Processor):
 
     @handler
     def address(self, event):
-        addressed = []
         for response in event.responses:
-            if isinstance(response, bool):
+            if isinstance(response['reply'], bool):
                 if response:
-                    response = choice(self.acknowledgements)
+                    response['reply'] = choice(self.acknowledgements)
                 else:
-                    response = choice(self.refusals)
-            if isinstance(response, basestring) and event.public:
-                addressed.append('%s: %s' % (event.sender['nick'], response))
-            else:
-                addressed.append(response)
-
-        event.responses = addressed
+                    response['reply'] = choice(self.refusals)
+            if 'address' in response and response['address'] and event.public:
+                response['reply'] = ('%s: %s' % (
+                    event.sender['nick'], response['reply']))
 
 class Timestamp(Processor):
 
