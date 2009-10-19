@@ -1,7 +1,21 @@
-# collections.defaultdict only in Python 2.5
-try:
+"""
+Compatibility functions for older versions of Python.
+We support 2.4 <= x < 3.
+"""
+
+import sys
+(maj, min) = sys.version_info[:2]
+
+if maj == 2 and min >= 5:
     from collections import defaultdict
-except ImportError:
+    import email.utils as email_utils
+    import hashlib
+    from xml.etree import cElementTree as ElementTree
+
+else:
+    import cElementTree as ElementTree
+    import email.Utils as email_utils
+
     class defaultdict(dict):
         def __init__(self, default_factory=None, *rest):
             dict.__init__(self, *rest)
@@ -20,16 +34,6 @@ except ImportError:
             except KeyError:
                 return self.__missing__(key)
 
-# email.Utils was renamed in Python 2.5
-try:
-    import email.utils as email_utils
-except ImportError:
-    import email.Utils as email_utils
-
-# hashlib only in Python >= 2.5
-try:
-    import hashlib
-except ImportError:
     import md5, sha
     class hashlib(object):
         @staticmethod
@@ -50,27 +54,18 @@ except ImportError:
 
         sha512 = sha384 = sha224
 
-# xml.etree only in Python >= 2.5
-try:
-    from xml.etree import cElementTree as ElementTree
-except ImportError:
-    import cElementTree as ElementTree
-
-# math.factorial only in Python >= 2.6
-try:
+if maj == 2 and min >= 6:
+    import json
     from math import factorial
-except ImportError:
+
+else:
+    import simplejson as json
+
     def factorial(x):
         if not isinstance(x, int) or x < 0:
             raise ValueError
         if x == 0:
             return 1
         return reduce(lambda a, b: a * b, xrange(1, x + 1))
-
-# json only in Python >= 2.6
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 # vi: set et sta sw=4 ts=4:
