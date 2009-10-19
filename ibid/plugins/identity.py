@@ -377,7 +377,8 @@ class Summon(Processor):
     feature = 'summon'
     permission = u'summon'
 
-    default_source = Option('default_source', u'Default source to summon people via', u'jabber')
+    default_source = Option('default_source',
+            u'Default source to summon people via', u'jabber')
 
     @authorise
     @match(r'^summon\s+(\S+)(?:\s+(?:via|on|using)\s+(\S+))?$')
@@ -390,39 +391,46 @@ class Summon(Processor):
             return
 
         account = event.session.query(Account) \
-                .options(eagerload('identities')) \
-                .join(Identity) \
-                .filter(
-                    or_(
-                        and_(
-                            func.lower(Identity.identity) == who.lower(),
-                            func.lower(Identity.source) == event.source.lower(),
-                        ),
-                        func.lower(Account.username) == who.lower(),
-                    )) \
-                .first()
+            .options(eagerload('identities')) \
+            .join(Identity) \
+            .filter(
+                or_(
+                    and_(
+                        func.lower(Identity.identity) == who.lower(),
+                        func.lower(Identity.source) == event.source.lower(),
+                    ),
+                    func.lower(Account.username) == who.lower(),
+                )) \
+            .first()
 
         if account:
-            for other_identity in account.identities:
-                if other_identity.source.lower() == source.lower():
-                    if [True for channel in ibid.channels[other_identity.source].itervalues()
-                            if other_identity.id in channel]:
-                        event.addresponse({
-                            'reply': u"Your presence has been requested by %(who)s in %(channel)s on %(source)s." % {
-                                'who': event.sender['nick'],
-                                'channel': (not event.public) and u'private' or event.channel,
-                                'source': event.source,
-                            },
-                            'target': other_identity.identity,
-                            'source': other_identity.source,
-                        })
-                        event.addresponse(True)
-                    else:
-                        event.addresponse(u"Sorry %s doesn't appear to be available right now.", who)
-                    return
+            for other_identity in [id for id
+                    in account.identities
+                    if id.source.lower() == source.lower()]:
+                if any(True for channel
+                        in ibid.channels[other_identity.source].itervalues()
+                        if other_identity.id in channel):
+                    event.addresponse({
+                        'reply': u'Your presence has been requested by '
+                                u'%(who)s in %(channel)s on %(source)s.' % {
+                            'who': event.sender['nick'],
+                            'channel': (not event.public)
+                                    and u'private' or event.channel,
+                            'source': event.source,
+                        },
+                        'target': other_identity.identity,
+                        'source': other_identity.source,
+                    })
+                    event.addresponse(True)
+                else:
+                    event.addresponse(
+                        u"Sorry %s doesn't appear to be available right now.",
+                        who)
+                return
 
-        event.addresponse(u"Sorry, I don't know how to find %(who)s on %(source)s. "
-                u"%(who)s must first link an identity on %(source)s.", {
+        event.addresponse(
+                u"Sorry, I don't know how to find %(who)s on %(source)s. "
+                u'%(who)s must first link an identity on %(source)s.', {
                     'who': who,
                     'source': source,
         })
