@@ -157,7 +157,7 @@ class Complain(Processor):
 
     @handler
     def complain(self, event):
-        if 'complain' in event:
+        if 'complain' in event and not event.responses:
             event.addresponse(choice(self.complaints[event.complain]))
         elif event.processed:
             return
