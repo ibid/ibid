@@ -12,9 +12,24 @@ if maj == 2 and min >= 5:
     import hashlib
     from xml.etree import cElementTree as ElementTree
 
+    all = all
+    any = any
+
 else:
     import cElementTree as ElementTree
     import email.Utils as email_utils
+
+    def all(iterable):
+        for element in iterable:
+            if not element:
+                return False
+        return True
+
+    def any(iterable):
+        for element in iterable:
+            if element:
+                return True
+        return False
 
     class defaultdict(dict):
         def __init__(self, default_factory=None, *rest):
