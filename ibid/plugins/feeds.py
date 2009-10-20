@@ -56,7 +56,7 @@ class Manage(Processor):
     permission = u'feeds'
 
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
-    @authorise(fail_silently=True)
+    @authorise()
     def add(self, event, url, name):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()
@@ -104,7 +104,7 @@ class Manage(Processor):
             event.addresponse(u"I don't know about any feeds")
 
     @match(r'^remove\s+(.+?)\s+feed$')
-    @authorise(fail_silently=True)
+    @authorise()
     def remove(self, event, name):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()

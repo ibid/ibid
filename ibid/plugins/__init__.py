@@ -61,9 +61,10 @@ class Processor(object):
                     found = True
                     match = method.pattern.search(event.message[method.message_version])
                     if match is not None:
-                        if not getattr(method, 'authorised', False) or auth_responses(event, self.permission):
+                        if (not getattr(method, 'auth_required', False)
+                                or auth_responses(event, self.permission)):
                             method(event, *match.groups())
-                        elif not getattr(method, 'auth_passthrough', True):
+                        elif not getattr(method, 'auth_fallthrough', True):
                             event.processed = True
 
         if not found:
@@ -100,10 +101,14 @@ def auth_responses(event, permission):
 
     return True
 
-def authorise(fail_silently=False):
+def authorise(fallthrough=True):
+    """Require the permission specified in Processer.permission for the sender
+    On failure, flags the event for Complain to respond appropriatly.
+    If fallthrough=False, set the processed Flag to bypass later plugins.
+    """
     def wrap(function):
-        function.authorised = True
-        function.auth_passthrough = fail_silently
+        function.auth_required = True
+        function.auth_fallthrough = fallthrough
         return function
     return wrap
 

@@ -60,7 +60,7 @@ class Tell(Processor):
 
     @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$',
             version='deaddressed')
-    @authorise(fail_silently=False)
+    @authorise(fallthrough=False)
     def tell(self, event, how, who, source, memo):
         source_specified = bool(source)
         if not source:
@@ -129,7 +129,7 @@ class Tell(Processor):
             r'(?:memo|message|msg)\s+'
             r'(?(1)|#?(\d+)\s+)?' # 2nd way
             r'(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
-    @authorise(fail_silently=False)
+    @authorise(fallthrough=False)
     def forget(self, event, num1, num2, who, source):
         if not source:
             source = event.source
