@@ -12,7 +12,7 @@ import logging
 
 import feedparser
 
-from ibid.compat import defaultdict, ElementTree
+from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
 from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
@@ -88,7 +88,7 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (
                     e.title,
-                    ago(event.time - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                    ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
                 ) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
@@ -389,7 +389,7 @@ class Twitter(Processor):
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - datetime.strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y'), 1),
+            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             'url': url,
         }
 

@@ -8,6 +8,10 @@ import sys
 
 if maj == 2 and min >= 5:
     from collections import defaultdict
+
+    from datetime import datetime
+    dt_strptime = datetime.strptime
+
     import email.utils as email_utils
     import hashlib
     from xml.etree import cElementTree as ElementTree
@@ -68,6 +72,11 @@ else:
             return unsupported
 
         sha512 = sha384 = sha224
+
+    from datetime import datetime
+    import time
+    def dt_strptime(date_string, format):
+        return datetime(*(time.strptime(date_string, format)[:6]))
 
 if maj == 2 and min >= 6:
     import json
