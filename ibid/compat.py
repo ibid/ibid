@@ -14,14 +14,14 @@ Use this instead of:
 * xml.etree (cElementTree)
 """
 
-import sys
-(maj, min) = sys.version_info[:2]
+from sys import version_info as _version_info
+_minor = _version_info[1]
 
-if maj == 2 and min >= 5:
+if _minor >= 5:
     from collections import defaultdict
 
-    from datetime import datetime
-    dt_strptime = datetime.strptime
+    from datetime import datetime as _datetime
+    dt_strptime = _datetime.strptime
 
     import email.utils as email_utils
     import hashlib
@@ -64,15 +64,16 @@ else:
             except KeyError:
                 return self.__missing__(key)
 
-    import md5, sha
+    import md5 as _md5
+    import sha as _sha
     class hashlib(object):
         @staticmethod
         def md5(x):
-            return md5.new(x)
+            return _md5.new(x)
 
         @staticmethod
         def sha1(x):
-            return sha.new(x)
+            return _sha.new(x)
 
         @staticmethod
         def sha224(x):
@@ -84,12 +85,12 @@ else:
 
         sha512 = sha384 = sha224
 
-    from datetime import datetime
-    import time
+    from datetime import datetime as _datetime
+    import time as _time
     def dt_strptime(date_string, format):
-        return datetime(*(time.strptime(date_string, format)[:6]))
+        return _datetime(*(_time.strptime(date_string, format)[:6]))
 
-if maj == 2 and min >= 6:
+if _minor >= 6:
     import json
     from math import factorial
 
