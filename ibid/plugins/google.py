@@ -138,8 +138,8 @@ class Youtube(Processor):
     feature = 'youtube'
 
     @match(r'^(?:youtube(?:\.com)?\s+)?'
-        r'(?:(?:http://)?(?:\w+\.)?youtube\.com/'
-            r'(?:v/|(?:watch(?:\.php)?)?\?(?:.+&)?v=))?'
+        r'(?:http://)?(?:\w+\.)?youtube\.com/'
+        r'(?:v/|(?:watch(?:\.php)?)?\?(?:.+&)?v=)'
         r'([0-9A-Za-z_-]+)(?(1)[&/].*)?$')
     def youtube(self, event, id):
         url = 'http://www.youtube.com/watch?v=' + id
