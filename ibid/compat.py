@@ -1,6 +1,17 @@
 """
 Compatibility functions for older versions of Python.
 We support 2.4 <= x < 3.
+
+Use this instead of:
+* all
+* any
+* collections.defaultdict
+* datetime.strptime
+* email.utils
+* hashlib
+* (simple)json
+* math.factorial
+* xml.etree (cElementTree)
 """
 
 import sys
