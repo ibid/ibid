@@ -141,9 +141,14 @@ while True:
                 del event['session']
 
     for response in event.responses:
-        if isinstance(response, dict):
-            response = response['reply']
-        print 'Response: %s' % response
+        if isinstance(response, basestring):
+            print 'Response: %s' % response
+        elif response.get('action', False):
+            print 'Action: %s' % response['reply']
+        elif response.get('notice', False):
+            print 'Notice: %s' % response['reply']
+        else:
+            print 'Response: %s' % response['reply']
 
     event.session.close()
 

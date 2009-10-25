@@ -72,8 +72,15 @@ class Dispatcher(object):
     def send(self, response):
         source = response['source']
         if source in ibid.sources:
-            reactor.callFromThread(ibid.sources[source].send, response)
-            self.log.debug(u"Sent response to non-origin source %s: %s", source, response['reply'])
+            source = ibid.sources[source]
+            if (response.get('action', False)
+                    and 'action' not in source.supports):
+                response['reply'] = '* %s %s' % (
+                        ibid.config['botname'],
+                        response['reply'],
+                )
+            reactor.callFromThread(source.send, response)
+            self.log.debug(u"Sent response to non-origin source %s: %s", response['source'], response['reply'])
         else:
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])
 

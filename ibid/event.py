@@ -47,13 +47,6 @@ class Event(dict):
         for arg, val in kwargs.iteritems():
             response[arg] = val
 
-        if (response.get('action', False)
-                and 'action' not in ibid.sources[response['source']].supports):
-            response['reply'] = '* %s %s' % (
-                    ibid.config['botname'],
-                    response['reply'],
-            )
-
         self.responses.append(response)
 
         if processed:
