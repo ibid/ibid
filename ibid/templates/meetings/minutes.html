@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<title>Minutes: {{ meeting.title|e|default("Untitled") }}</title>
+</head>
+<body>
+	<h1>Meeting about {{ meeting.title|e|default("something or the other") }}</h1>
+	<div id="meetingmeta">
+		Convened at {{ meeting.starttime }} by {{ meeting.convenor|e }}
+		in {{ meeting.channel|e }} on {{ meeting.source|e }}
+	</div>
+
+	<h2>Minutes</h2>
+	<div id="minutes">
+{%- for event in meeting.minutes %}
+		<div class="line {{ event.type }}">
+			<span class="time">[{{ event.time.strftime('%H:%M:%S') }}]</span>
+			<span class="type">{{ event.type|e|upper }}{{ ':' if event.subject else '' }}</span>
+{%- if event.subject %}
+			<span class="subject">{{ event.subject|e }}</span>
+{%- endif %}
+			<span class="nick">({{ event.nick|e }})</span>
+		</div>
+{%- endfor %}
+	</div>
+
+	<h2>Present</h2>
+	<ul id="present">
+{%- for nick, name in meeting.attendees.iteritems() %}
+		<li>
+{%- if name %}
+			<span class="name">{{ name|e }}</span>
+			<span class="nick hasname">({{ nick|e }})</span>
+{%- else %}
+			<span class="nick noname">{{ nick|e }}</span>
+{%- endif %}
+		</li>
+{%- endfor %}
+	</ul>
+
+	<h2>Raw Log</h2>
+	<div id="log">
+{%- for event in meeting.log %}
+		<div class="line {{ event.type }}">
+			<span class="time">[{{ event.time.strftime('%H:%M:%S') }}]</span>
+{%- if event.type == 'message' %}
+			<span class="nick">&lt;{{ event.nick|e }}&gt;</span>
+{%- elif event.type == 'action' %}
+			<span class="nick">* {{ event.nick|e }}</span>
+{%- elif event.type == 'notice' %}
+			<span class="nick">- {{ event.nick|e }}</span>
+{%- endif %}
+			<span class="message">{{ event.message|e }}</span>
+		</div>
+{%- endfor %}
+	</div>
+</body>
+</html>
