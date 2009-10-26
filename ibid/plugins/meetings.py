@@ -36,7 +36,7 @@ class Meeting(Processor):
     logfile = Option('logfile', u'File name for meeting logs. '
             u'Can contain substitutions: source, channel, date, format',
             'logs/meetings/%(source)s-%(channel)s-%(date)s.%(format)s')
-    logurl = Option('logfile', u'Public URL for meeting logs. '
+    logurl = Option('logurl', u'Public URL for meeting logs. '
             u'Can contain substitutions: source, channel, date, format '
             u'If unset, will use a pastebin.',
             None)
@@ -109,11 +109,11 @@ class Meeting(Processor):
             message = u'Accepted: %s'
         elif action == 'rejected':
             message = u'Rejected: %s'
-        event.addresponse(message, subject, addressed=False)
+        event.addresponse(message, subject, address=False)
 
     @authorise()
-    @match(r'^end\s+meeting$')
-    def end_meeting(self, event):
+    @match(r'^meeting\s+title\s+is\s+(.+)$')
+    def set_title(self, event, title):
         if not event.public:
             event.addresponse(u'Sorry, must be done in public')
             return
@@ -121,24 +121,21 @@ class Meeting(Processor):
             event.addresponse(u'Sorry, no meeting in progress.')
             return
         meeting = meetings[(event.source, event.channel)]
-        del meetings[(event.source, event.channel)]
+        meeting['title'] = title
+        event.addresponse(True)
 
-        meeting['endtime'] = event.time
+    @match(r'^minutes(?:\s+(?:so\s+far|please))?$')
+    def write_minutes(self, event):
+        if not event.public:
+            event.addresponse(u'Sorry, must be done in public')
+            return
+        if (event.source, event.channel) not in meetings:
+            event.addresponse(u'Sorry, no meeting in progress.')
+            return
+        meeting = meetings[(event.source, event.channel)]
         meeting['attendees'].update((e['nick'], None) for e in meeting['log']
                 if e['nick'] not in meeting['attendees']
                 and e['nick'] != ibid.config['botname'])
-        meeting['log'].append({
-            'nick': event.sender['nick'],
-            'type': event.type,
-            'message': event.message['raw'],
-            'time': event.time,
-        })
-        meeting['minutes'].append({
-            'time': event.time,
-            'type': 'ended',
-            'subject': None,
-            'nick': event.sender['nick'],
-        })
 
         render_to = set()
         if self.logurl is None:
@@ -154,7 +151,6 @@ class Meeting(Processor):
                         return json.JSONEncoder.default(self, o)
                 minutes[format] = json.dumps(meeting, cls=DTJSONEncoder,
                         indent=2)
-
             else:
                 template = templates.get_template('meetings/minutes.' + format)
                 minutes[format] = template.render(meeting=meeting) \
@@ -183,10 +179,51 @@ class Meeting(Processor):
                     'text/plain', False)
 
             url = u'http://paste.pocoo.org/show/' + id
+        elif u'%(format)s' not in self.logurl:
+            # Content Negotiation
+            url = self.logurl % {
+                'source': event.source.replace('/', '-'),
+                'channel': meeting['channel'].replace('/', '-'),
+                'date': meeting['starttime'].strftime(self.date_format)
+            }
         else:
-            url = self.logurl
+            url = u' :: '.join(u'%s: %s' % (format, self.logurl % {
+                    'source': event.source.replace('/', '-'),
+                    'channel': meeting['channel'].replace('/', '-'),
+                    'date': meeting['starttime'].strftime(self.date_format),
+                    'format': format,
+                }) for format in self.formats)
 
-        event.addresponse(u'Meeting Ended. Minutes available at %s', url)
+        event.addresponse(u'Minutes available at %s', url, address=False)
+
+    @authorise()
+    @match(r'^end\s+meeting$')
+    def end_meeting(self, event):
+        if not event.public:
+            event.addresponse(u'Sorry, must be done in public')
+            return
+        if (event.source, event.channel) not in meetings:
+            event.addresponse(u'Sorry, no meeting in progress.')
+            return
+        meeting = meetings[(event.source, event.channel)]
+
+        meeting['endtime'] = event.time
+        meeting['log'].append({
+            'nick': event.sender['nick'],
+            'type': event.type,
+            'message': event.message['raw'],
+            'time': event.time,
+        })
+        meeting['minutes'].append({
+            'time': event.time,
+            'type': 'ended',
+            'subject': None,
+            'nick': event.sender['nick'],
+        })
+
+        event.addresponse(u'Meeting Ended', address=False)
+        self.write_minutes(event)
+        del meetings[(event.source, event.channel)]
 
 class MeetingLogger(Processor):
     addressed = False
