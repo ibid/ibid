@@ -5,14 +5,11 @@ import optparse
 import sys
 
 import dateutil
-try:
-    from simplejson import loads
-except ImportError:
-    from json import loads
-
 import matplotlib.pyplot as pyplot
 from matplotlib.dates import date2num
 import numpy
+
+from ibid.compat import json
 
 parser = optparse.OptionParser(usage="""%prog [arguments] logfile types...
 logfile is an object log file (possibly gzipped)
@@ -50,7 +47,7 @@ for line in f:
 
     times.append(date2num(dateutil.parser.parse(timestamp)))
 
-    json = loads(json)
+    json = json.loads(json)
     data.append([json.get(type, 0) for type in types])
 
 times = numpy.array(times, dtype=float)

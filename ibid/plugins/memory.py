@@ -5,16 +5,12 @@ import gzip
 import os
 import os.path
 
-try:
-    from json import dumps
-except ImportError:
-    from simplejson import dumps
-
 import objgraph
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.compat import json
 from ibid.config import Option, IntOption
+from ibid.plugins import Processor, match
 
 help = {}
 
@@ -94,7 +90,7 @@ class MemoryLog(Processor):
         stats = objgraph.typestats()
         self.obj_file.write('%s %s\n' % (
             datetime.utcnow().isoformat(),
-            dumps(objgraph.typestats())
+            json.dumps(objgraph.typestats())
         ))
         self.obj_file.flush()
 

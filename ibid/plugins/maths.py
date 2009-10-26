@@ -6,8 +6,9 @@ from subprocess import Popen, PIPE
 from time import time, sleep
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.compat import factorial
 from ibid.config import Option, FloatOption
+from ibid.plugins import Processor, match, handler
 from ibid.utils import file_in_path, unicode_output
 
 try:
@@ -21,7 +22,7 @@ except ImportError:
     transform_method='compiler'
 
 help = {}
-log = logging.getLogger('math')
+log = logging.getLogger('maths')
 
 help['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
@@ -89,17 +90,6 @@ def limited_pow(*args):
             raise LimitException(e)
 
     return pow(*args)
-
-# Factorial is only available in 2.6:
-try:
-    from .. math import factorial
-except ImportError:
-    def factorial(x):
-        if not isinstance(x, int) or x < 0:
-            raise ValueError
-        if x == 0:
-            return 1
-        return reduce(lambda a, b: a * b, xrange(1, x + 1))
 
 def limited_factorial(x):
     if x >= 500:

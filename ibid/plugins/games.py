@@ -1,12 +1,12 @@
-from collections import defaultdict
 from datetime import timedelta
 import logging
 from random import choice, gauss, random, shuffle
 import re
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.compat import defaultdict
 from ibid.config import IntOption, BoolOption, FloatOption, ListOption, DictOption
+from ibid.plugins import Processor, match, handler
 from ibid.utils import format_date, human_join, plural
 
 help = {}

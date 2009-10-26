@@ -5,17 +5,16 @@ from urlparse import urljoin
 from time import time, strptime, strftime
 from datetime import datetime
 from random import choice, shuffle, randint
-from xml.etree.cElementTree import parse
-from .. math import acos, sin, cos, radians
-from collections import defaultdict
+from math import acos, sin, cos, radians
 import re
 from sys import exc_info
 import logging
 
 import feedparser
 
-from ibid.plugins import Processor, match, handler
+from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
+from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice, human_join
 
@@ -89,7 +88,7 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (
                     e.title,
-                    ago(event.time - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                    ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
                 ) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
@@ -158,7 +157,7 @@ class FMyLife(Processor):
         )
         f = urlopen(url)
         try:
-            tree = parse(f)
+            tree = ElementTree.parse(f)
         except SyntaxError:
             class_, e, tb = exc_info()
             new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))
@@ -390,7 +389,7 @@ class Twitter(Processor):
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - datetime.strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y'), 1),
+            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             'url': url,
         }
 

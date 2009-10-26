@@ -4,8 +4,9 @@ from random import choice
 import logging
 
 import ibid
-from ibid.plugins import Processor, handler
+from ibid.compat import any
 from ibid.config import IntOption, ListOption, DictOption
+from ibid.plugins import Processor, handler
 
 class Addressed(Processor):
 
@@ -29,7 +30,9 @@ class Addressed(Processor):
             matches = pattern.search(event.message['stripped'])
             if matches:
                 new_message = pattern.sub('', event.message['stripped'])
-                if len(matches.groups()) > 1 and not matches.group(2) and new_message.lower().startswith(tuple(self.verbs)):
+                if (len(matches.groups()) > 1 and not matches.group(2) and
+                        any(new_message.lower().startswith(verb)
+                            for verb in self.verbs)):
                     return
 
                 event.addressed = matches.group(1)
