@@ -3,7 +3,6 @@
 import logging
 from optparse import OptionParser
 from os import getenv
-from sys import exit
 from os.path import exists
 
 try:
@@ -13,7 +12,6 @@ try:
 except ImportError:
     pass
 
-from twisted.python.modules import getModule
 from sqlalchemy.exceptions import IntegrityError
 
 import ibid
@@ -133,7 +131,7 @@ while True:
             try:
                 event.session.commit()
             except IntegrityError:
-                self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                log.exception(u"Exception occured committing session from the %s processor of %s plugin",
                         processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
                 event.session.rollback()
