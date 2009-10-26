@@ -147,11 +147,12 @@ class Meeting(Processor):
         minutes = {}
         for format in render_to:
             if format == 'json':
-                def datetime_encoder(o):
-                    if not isinstance(o, datetime):
-                        raise TypeError(repr(o) + ' is not JSON serializable')
-                    return o.strftime('%Y-%m-%dT%H:%M:%SZ')
-                minutes[format] = json.dumps(meeting, default=datetime_encoder,
+                class DTJSONEncoder(json.JSONEncoder):
+                    def default(self, o):
+                        if isinstance(o, datetime):
+                            return o.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        return json.JSONEncoder.default(self, o)
+                minutes[format] = json.dumps(meeting, cls=DTJSONEncoder,
                         indent=2)
 
             else:
