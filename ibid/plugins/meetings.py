@@ -27,6 +27,8 @@ class Meeting(Processor):
     I am <True Name>
     topic <topic>
     (agreed | idea | accepted | rejected) <statement>
+    minutes so far
+    meeting title is <title>
     """
     feature = 'meeting'
     permission = u'chairmeeting'
