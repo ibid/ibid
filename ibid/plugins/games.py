@@ -112,14 +112,14 @@ class DuelInitiate(Processor):
 
         duel.cancel_callback = ibid.dispatcher.call_later(self.accept_timeout, self.cancel, event)
 
-        event.addresponse({'reply': (u'%(recipient)s: ' + choice((
+        event.addresponse(u'%(recipient)s: ' + choice((
             u"The gauntlet has been thrown at your feet. Do you accept?",
             u"You have been challenged. Do you accept?",
             u"%(aggressor)s wishes to meet you at dawn on the field of honour. Do you accept?",
-        ))) % {
+        )), {
             'recipient': recipient,
             'aggressor': event.sender['nick'],
-        }})
+        }, address=False)
 
     def cancel(self, event):
         duel = duels[(event.source, event.channel)]
@@ -158,20 +158,18 @@ class DuelInitiate(Processor):
 
         duel.start_callback = ibid.dispatcher.call_later(delay, self.start, event)
 
-        event.addresponse({'reply': (
-            u"%(aggressor)s, %(recipient)s: "
+        event.addresponse(u"%(aggressor)s, %(recipient)s: "
             u"The duel shall begin on the stroke of %(starttime)s (in %(delay)s seconds). "
             + choice((
                 u"You may clean your pistols.",
                 u"Prepare yourselves.",
                 u"Get ready",
-            ))
-        ) % {
-            'aggressor': duel.names[duel.aggressor],
-            'recipient': duel.names[duel.recipient],
-            'starttime': format_date(starttime, 'time'),
-            'delay': (starttime - event.time).seconds,
-        }})
+            )), {
+                'aggressor': duel.names[duel.aggressor],
+                'recipient': duel.names[duel.recipient],
+                'starttime': format_date(starttime, 'time'),
+                'delay': (starttime - event.time).seconds,
+        }, address=False)
 
     def start(self, event):
         duel = duels[(event.source, event.channel)]
@@ -179,13 +177,12 @@ class DuelInitiate(Processor):
         duel.started = True
         duel.timeout_callback = ibid.dispatcher.call_later(self.timeout, self.end, event)
 
-        event.addresponse({'reply':
-            u"%s, %s: %s" % tuple(duel.names.values() + [choice((
+        event.addresponse(u'%s, %s: %s' % tuple(duel.names.values() + [choice((
             u'aaaand ... go!',
             u'5 ... 4 ... 3 ... 2 ... 1 ... fire!',
             u'match on!',
             u'ready ... aim ... fire!'
-        ))])})
+        ))]), address=False)
 
     def end(self, event):
         duel = duels[(event.source, event.channel)]
@@ -206,11 +203,11 @@ class DuelInitiate(Processor):
         else:
             message = u"VICTORY: %(loser)s hobbles off while %(winner)s looks victorious"
 
-        event.addresponse({'reply': message % {
-                'loser': duel.names[loser],
-                'winner': duel.names[winner],
-                'ending': choice(self.happy_endings),
-        }})
+        event.addresponse(message, {
+            'loser': duel.names[loser],
+            'winner': duel.names[winner],
+            'ending': choice(self.happy_endings),
+        }, address=False)
 
 class DuelDraw(Processor):
     u"""
@@ -325,10 +322,10 @@ class DuelDraw(Processor):
                     u"FOUL! The duel is not yet confirmed. %(shooter)s is marched away in handcuffs",
                     u"FOUL! Arrest %(shooter)s! Firing a weapon within city limits is not permitted",
                 ))
-            event.addresponse({'reply': message % {
+            event.addresponse(message, {
                 'shooter': duel.names[shooter],
                 'enemy': duel.names[enemy],
-            }})
+            }, address=False)
             del duels[(event.source, event.channel)]
             duel.stop()
             return
@@ -385,20 +382,20 @@ class DuelDraw(Processor):
                 ))
                 params['part'] = choice(self.extremities)
 
-            event.addresponse({'reply': message % params})
+            event.addresponse(message, params, address=False)
 
         elif shooter == recipient:
-            event.addresponse({'reply': choice((
+            event.addresponse(choice((
                 u"%s forget to draw his weapon. Luckily he missed his foot",
                 u"%s fires a holstered weapon. Luckily it only put a hole in his jacket",
                 u"%s won't win at this rate. He forgot to draw before firing. He missed himself too",
-            )) % duel.names[shooter]})
+            )), duel.names[shooter], address=False)
         else:
-            event.addresponse({'reply': choice((
+            event.addresponse(choice((
                 u'%s misses',
                 u'%s aims wide',
                 u'%s is useless with a weapon'
-            )) % duel.names[shooter]})
+            )), duel.names[shooter], address=False)
 
 class DuelFlee(Processor):
     feature = 'duel'
@@ -426,28 +423,22 @@ class DuelFlee(Processor):
                 else:
                     duel.recipient = newnamekey
 
-                event.addresponse({
-                    'target': channel,
-                    'reply': choice((
+                event.addresponse(choice((
                         "%s: Changing your identity won't help",
                         "%s: You think I didn't see that?",
                         "%s: There's no escape, you know",
-                    )) % event.othername,
-                })
+                    )), event.othername, target=channel, address=False)
 
             else:
                 del duels[(source, channel)]
                 duel.stop()
-                event.addresponse({
-                    'target': channel,
-                    'reply': choice((
-                            "VICTORY: %(winner)s: %(fleer)s has fled the country during the night",
-                            "VICTORY: %(winner)s: The cowardly %(fleer)s has run for his life",
-                        )) % {
-                            'winner': duel.names[[name for name in duel.names if name != fleer][0]],
-                            'fleer': duel.names[fleer],
-                    },
-                })
+                event.addresponse(choice((
+                        "VICTORY: %(winner)s: %(fleer)s has fled the country during the night",
+                        "VICTORY: %(winner)s: The cowardly %(fleer)s has run for his life",
+                    )), {
+                        'winner': duel.names[[name for name in duel.names if name != fleer][0]],
+                        'fleer': duel.names[fleer],
+                    }, target=channel)
 
 werewolf_games = []
 
@@ -508,8 +499,8 @@ class WerewolfGame(Processor):
         starter = event.sender['nick']
         self.players = set((starter,))
         event.addresponse(u'You have started a game of Werewolf. '
-            u'Everybody has %i seconds to join the game.'
-            % self.start_delay)
+            u'Everybody has %i seconds to join the game.',
+            self.start_delay)
 
         self.timed_goto(event, self.start_delay, self.start)
 
@@ -522,13 +513,10 @@ class WerewolfGame(Processor):
 
         if event.sender['nick'] not in self.players:
             self.players.add(event.sender['nick'])
-            event.addresponse({
-                'reply': u'%(player)s has joined (%(num)i players).' % {
-                        'num': len(self.players),
-                        'player': event.sender['nick']
-                    },
-                'target': self.channel,
-            })
+            event.addresponse(u'%(player)s has joined (%(num)i players).', {
+                    'num': len(self.players),
+                    'player': event.sender['nick']
+                }, target=self.channel, address=False)
         else:
             event.addresponse(u'You have already joined the game.')
 
@@ -567,13 +555,10 @@ class WerewolfGame(Processor):
             self.roles[player] = 'seer'
 
         for player, role in self.roles.iteritems():
-            event.addresponse({
-                'reply': u'%(name)s, you are a %(role)s.' % {
+            event.addresponse(u'%(name)s, you are a %(role)s.', {
                     'name': player,
                     'role': role,
-                },
-                'target': player,
-            })
+                }, target=player, address=False)
 
         if nwolves > 1 and nseers > 1:
             event.addresponse(
@@ -670,16 +655,13 @@ class WerewolfGame(Processor):
                     msg = u'The wolves also had %s in mind last night.' \
                         % target
 
-                event.addresponse({
-                    'reply': msg,
-                    'target': seer,
-                })
+                event.addresponse(msg, target=seer)
         self.seer_targets = {}
 
         if not self.endgame(event):
             event.addresponse(u'Villagers, you have %i seconds '
-                    u'to discuss suspicions and cast accusations.'
-                    % self.day_length)
+                    u'to discuss suspicions and cast accusations.',
+                    self.day_length)
             self.say_survivors(event)
 
             self.timed_goto(event, self.day_length, self.noon)
@@ -691,8 +673,8 @@ class WerewolfGame(Processor):
         """
         self.state = self.noon
         event.addresponse(u'Villagers, you have %i seconds to cast '
-                u'your vote to lynch somebody.'
-                % self.day_length)
+                u'your vote to lynch somebody.',
+                self.day_length)
 
         self.votes = {}
 
@@ -710,13 +692,10 @@ class WerewolfGame(Processor):
             event.addresponse(u'%s is not playing.', target_nick)
         else:
             self.votes[event.sender['nick']] = target
-            event.addresponse({
-                'reply': u'%(voter)s voted for %(target)s.' % {
+            event.addresponse(u'%(voter)s voted for %(target)s.', {
                     'target': target,
                     'voter': event.sender['nick'],
-                },
-                'target': self.channel,
-            })
+                }, target=self.channel, address=False)
 
     def dusk(self, event):
         """Counting of votes and lynching.
@@ -850,10 +829,8 @@ class WerewolfGame(Processor):
                 self.rename(event.othername, nick)
             elif ((self.state == self.prestart and nick in self.players) or
                 nick in self.roles):
-                event.addresponse({
-                    'reply': u'%s has fled the game in terror.' % nick,
-                    'target': self.channel,
-                })
+                event.addresponse(u'%s has fled the game in terror.', nick,
+                        target=self.channel, address=False)
                 self.death(nick)
 
     def state_name(self):

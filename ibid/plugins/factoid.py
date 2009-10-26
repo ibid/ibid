@@ -411,7 +411,7 @@ class Get(Processor, RPC):
 
             (reply, count) = reply_re.subn('', reply)
             if count:
-                return {'reply': reply}
+                return {'address': False, 'reply': reply}
 
             reply = u'%s %s' % (unescape_name(fname.name), reply)
             return reply
@@ -660,7 +660,8 @@ class StaticFactoid(Processor):
         for factoid in self.factoids.values():
             for match in factoid['matches']:
                 if re.search(match, event.message['stripped'], re.I|re.DOTALL):
-                    event.addresponse({'reply': _interpolate(choice(factoid['responses']), event)})
+                    event.addresponse(_interpolate(choice(factoid['responses']), event),
+                            address=False)
                     return
 
 # vi: set et sta sw=4 ts=4:
