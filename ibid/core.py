@@ -60,6 +60,12 @@ class Dispatcher(object):
         for response in event['responses']:
             source = response['source'].lower()
             if source == event.source.lower():
+                if (response.get('action', False)
+                        and 'action' not in ibid.sources[source].supports):
+                    response['reply'] = '* %s %s' % (
+                            ibid.config['botname'],
+                            response['reply'],
+                    )
                 filtered.append(response)
             else:
                 self.send(response)
