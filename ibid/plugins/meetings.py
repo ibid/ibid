@@ -3,6 +3,7 @@ import logging
 from os import makedirs
 from os.path import dirname, expanduser, join
 import re
+from urllib import quote
 from xmlrpclib import ServerProxy
 
 from jinja import Environment, PackageLoader
@@ -182,17 +183,17 @@ class Meeting(Processor):
         elif u'%(format)s' not in self.logurl:
             # Content Negotiation
             url = self.logurl % {
-                'source': event.source.replace('/', '-'),
-                'channel': meeting['channel'].replace('/', '-'),
-                'date': meeting['starttime'].strftime(self.date_format)
+                'source': quote(event.source.replace('/', '-')),
+                'channel': quote(meeting['channel'].replace('/', '-')),
+                'date': quote(meeting['starttime'].strftime(self.date_format)),
             }
         else:
             url = u' :: '.join(u'%s: %s' % (format, self.logurl % {
-                    'source': event.source.replace('/', '-'),
-                    'channel': meeting['channel'].replace('/', '-'),
-                    'date': meeting['starttime'].strftime(self.date_format),
-                    'format': format,
-                }) for format in self.formats)
+                'source': quote(event.source.replace('/', '-')),
+                'channel': quote(meeting['channel'].replace('/', '-')),
+                'date': quote(meeting['starttime'].strftime(self.date_format)),
+                'format': quote(format),
+            }) for format in self.formats)
 
         event.addresponse(u'Minutes available at %s', url, address=False)
 
