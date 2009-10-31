@@ -144,7 +144,10 @@ class Ircbot(irc.IRCClient):
         target = response['target'].split('!')[0]
         raw_target = target.encode('utf-8')
 
-        if response.get('action', False):
+        if response.get('topic', False):
+            self.topic(raw_target, raw_message)
+            self.factory.log.debug(u"Set topic in %s to %s", target, message)
+        elif response.get('action', False):
             # We can't use self.me() because it prepends a # onto channel names
             self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
             self.factory.log.debug(u"Sent action to %s: %s", target, message)
@@ -196,7 +199,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
     auth = ('hostmask', 'nickserv')
-    supports = ('action', 'notice')
+    supports = ('action', 'notice', 'topic')
 
     port = IntOption('port', 'Server port number', 6667)
     ssl = BoolOption('ssl', 'Use SSL', False)

@@ -118,6 +118,10 @@ class DCClient(LineReceiver):
         self.away = 'normal'
         self._sendMyINFO()
 
+    def topic(self, topic):
+        "Set a new topic"
+        self.say(None, u'!topic ' + topic)
+
     # Code:
     # High Level Protocol:
     def dc_HubIsFull(self, params):
