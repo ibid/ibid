@@ -1,5 +1,5 @@
 from cStringIO import StringIO
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from bzrlib.branch import Branch
@@ -7,8 +7,8 @@ from bzrlib import log
 from bzrlib.errors import NotBranchError
 
 import ibid
-from ibid.plugins import Processor, match, RPC, handler
-from ibid.config import Option, DictOption
+from ibid.plugins import Processor, match, RPC, handler, periodic
+from ibid.config import DictOption, IntOption
 from ibid.utils import ago, format_date, human_join
 
 help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
@@ -35,12 +35,13 @@ class LogFormatter(log.LogFormatter):
             if delta.renamed:
                 changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
+            timestamp = datetime.utcfromtimestamp(revision.rev.timestamp)
             commit = 'Commit %s by %s to %s on %s at %s: %s (%s)\n' % (
                     revision.revno,
                     self.short_author(revision.rev),
                     self.repository,
-                    format_date(revision.rev.timestamp, 'date'),
-                    format_date(revision.rev.timestamp, 'time'),
+                    format_date(timestamp, 'date'),
+                    format_date(timestamp, 'time'),
                     revision.rev.message.replace('\n', ' '),
                     '; '.join(changes))
         else:
@@ -58,10 +59,9 @@ class Bazaar(Processor, RPC):
     feature = 'bzr'
     autoload = False
 
-    repositories = DictOption('repositories', 'Dict of repository names and URLs')
-    source = Option('source', 'Source to send commit notifications to')
-    channel = Option('channel', 'Channel to send commit notifications to')
-    launchpad_branches = DictOption('launchpad_branches', 'Branch paths in Launchpad mapped to names')
+    repositories = DictOption('repositories', 'Dict of repositories names and URLs')
+    interval = IntOption('interval',
+            'Interval inbetween checks for new revisions', 300)
 
     def __init__(self, name):
         self.log = logging.getLogger('plugins.bzr')
@@ -70,11 +70,17 @@ class Bazaar(Processor, RPC):
 
     def setup(self):
         self.branches = {}
+        must_monitor = False
         for name, repository in self.repositories.items():
             try:
-                self.branches[name.lower()] = Branch.open(repository)
+                self.branches[name.lower()] = Branch.open(repository['url'])
             except NotBranchError, e:
                 self.log.error(u'%s is not a branch', repository)
+            if 'lp_branch' not in repository:
+                must_monitor = True
+        if must_monitor:
+            self.check.im_func.interval = timedelta(seconds=self.interval)
+            self.seen_revisions = {}
 
     @match(r'^(?:repos|repositories)$')
     def handle_repositories(self, event):
@@ -86,8 +92,12 @@ class Bazaar(Processor, RPC):
 
     def remote_committed(self, repository, start, end=None):
         commits = self.get_commits(repository, start, end)
+        repo = self.repositories[repository]
         for commit in commits:
-            ibid.dispatcher.send({'reply': commit, 'source': self.source, 'target': self.channel})
+            ibid.dispatcher.send({'reply': commit,
+                'source': repo['source'],
+                'target': repo['channel'],
+            })
 
         return True
 
@@ -136,7 +146,33 @@ class Bazaar(Processor, RPC):
         if 'X-Launchpad-Branch' not in event.headers or 'X-Launchpad-Branch-Revision-Number' not in event.headers:
             return
 
-        if event.headers['X-Launchpad-Branch'] in self.launchpad_branches:
-            self.remote_committed(self.launchpad_branches[event.headers['X-Launchpad-Branch']], int(event.headers['X-Launchpad-Branch-Revision-Number']))
+        for name, repository in self.repositories.iteritems():
+            if (event.headers['X-Launchpad-Branch']
+                    == repository.get('lp_branch', None)):
+                self.remote_committed(name,
+                    int(event.headers['X-Launchpad-Branch-Revision-Number']))
+
+    @periodic(0)
+    def check(self, event):
+        self.log.debug(u'Checking bzr branches for new commits')
+        for name, repo in self.repositories.iteritems():
+            if 'lp_branch' in repo:
+                continue
+            branch = self.branches[name]
+            lastrev = branch.last_revision()
+            if name not in self.seen_revisions:
+                self.seen_revisions[name] = lastrev
+                continue
+            if lastrev == self.seen_revisions[name]:
+                continue
+            self.seen_revisions[name] = lastrev
+
+            commits = self.get_commits(name, None, False)
+
+            if commits:
+                event.addresponse(commits[0].strip(),
+                    source=repo['source'],
+                    target=repo['channel'],
+                    address=False)
 
 # vi: set et sta sw=4 ts=4:
