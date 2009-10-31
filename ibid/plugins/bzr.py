@@ -156,7 +156,7 @@ class Bazaar(Processor, RPC):
     def check(self, event):
         self.log.debug(u'Checking bzr branches for new commits')
         for name, repo in self.repositories.iteritems():
-            if 'lp_branch' in repo:
+            if repo.get('lp_branch', ''):
                 continue
             branch = self.branches[name]
             lastrev = branch.last_revision()
