@@ -11,6 +11,20 @@ import ibid
 from ibid.compat import json
 
 class Processor(object):
+    """Base class for Ibid plugins.
+    Processors receive events and (optionally) do things with them.
+
+    Events are filtered in process() by to the following attributes:
+    event_types: Only these types of events
+    addressed: Require the bot to be addressed for public messages
+    processed: Process events marked as already having been handled
+    permission: The permission to check when calling @authorised handlers
+
+    priority: Low priority Processors are handled first
+
+    autoload: Load this Processor, when loading the plugin, even if not
+    explicitly required in the configuration file
+    """
 
     event_types = ('message',)
     addressed = True
@@ -42,6 +56,7 @@ class Processor(object):
         pass
 
     def process(self, event):
+        "Process a single event"
         if event.type == 'clock':
             for name, method in getmembers(self, ismethod):
                 if hasattr(method, 'periodic') and method.interval.seconds > 0:
@@ -107,11 +122,13 @@ options = {
 }
 
 def handler(function):
+    "Wrapper: Handle all events"
     function.handler = True
     function.message_version = 'clean'
     return function
 
 def match(regex, version='clean'):
+    "Wrapper: Handle all events where the message matches the regex"
     pattern = re.compile(regex, re.I | re.DOTALL)
     def wrap(function):
         function.handler = True
@@ -121,6 +138,9 @@ def match(regex, version='clean'):
     return wrap
 
 def auth_responses(event, permission):
+    """Mark an event as having required authorisation, and return True if the
+    event sender has permission.
+    """
     if not ibid.auth.authorise(event, permission):
         event.complain = u'notauthed'
         return False
@@ -128,10 +148,12 @@ def auth_responses(event, permission):
     return True
 
 def authorise(function):
+    "Wrapper: Require Processor.permission before calling this handler"
     function.authorised = True
     return function
 
 def periodic(interval):
+    "Wrapper: Run this handler every interval seconds"
     def wrap(function):
         function.periodic = True
         function.last_called = None
