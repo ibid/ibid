@@ -84,9 +84,11 @@ class Processor(object):
                     method(event)
                 elif hasattr(event, 'message'):
                     found = True
-                    match = method.pattern.search(event.message[method.message_version])
+                    match = method.pattern.search(
+                            event.message[method.message_version])
                     if match is not None:
-                        if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
+                        if (not hasattr(method, 'authorised')
+                                or auth_responses(event, self.permission)):
                             method(event, *match.groups())
 
         if not found:
@@ -97,8 +99,10 @@ class Processor(object):
 # This is a bit yucky, but necessary since ibid.config imports Processor
 from ibid.config import BoolOption, IntOption
 options = {
-    'addressed': BoolOption('addressed', u'Only process events if bot was addressed'),
-    'processed': BoolOption('processed', u"Process events even if they've already been processed"),
+    'addressed': BoolOption('addressed',
+        u'Only process events if bot was addressed'),
+    'processed': BoolOption('processed',
+        u"Process events even if they've already been processed"),
     'priority': IntOption('priority', u'Processor priority'),
 }
 
@@ -175,8 +179,6 @@ class RPC(pb.Referenceable, resource.Resource):
         if not function:
             return "Not found"
 
-        #self.log.debug(u'%s(%s, %s)', function, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
-
         try:
             result = function(*args, **kwargs)
             return json.dumps(result)
@@ -191,7 +193,8 @@ class RPC(pb.Referenceable, resource.Resource):
                 if name.startswith('remote_'):
                     functions.append(name.replace('remote_', '', 1))
 
-            return self.list.render(object=self.feature, functions=functions).encode('utf-8')
+            return self.list.render(object=self.feature, functions=functions) \
+                    .encode('utf-8')
 
         args, varargs, varkw, defaults = getargspec(function)
         del args[0]
