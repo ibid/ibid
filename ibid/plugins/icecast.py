@@ -3,7 +3,7 @@ import logging
 from urllib2 import HTTPError
 
 from ibid.config import DictOption, IntOption
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match, periodic
 from ibid.utils import get_html_parse_tree, human_join
 
 log = logging.getLogger('plugins.icecast')
@@ -14,8 +14,6 @@ class ICECast(Processor):
     what's playing [on <stream>]?
     """
     feature = 'icecast'
-    event_types = ('message', 'clock')
-    addressed = False
 
     interval = IntOption('interval',
             'Interval between checking for song changes', 60)
@@ -24,6 +22,9 @@ class ICECast(Processor):
 
     last_checked = None
     last_songs = {}
+
+    def setup(self):
+        self.check.im_func.interval = timedelta(seconds=self.interval)
 
     def scrape_status(self, stream):
         tree = get_html_parse_tree(self.streams[stream]['url'] + 'status.xsl',
@@ -70,30 +71,26 @@ class ICECast(Processor):
         except HTTPError:
             event.addresponse(u'The stream must be down, back to the MP3 collection for you')
 
-    @handler
-    def periodic(self, event):
-        if event.type == 'clock' and (self.last_checked is None
-                or event.time - self.last_checked
-                > timedelta(seconds=self.interval)):
-            self.last_checked = event.time
-            for name, stream in self.streams.iteritems():
-                if 'source' in stream and 'channel' in stream:
-                    log.debug(u'Probing %s', name)
-                    status = self.scrape_status(name)
-                    if self.last_songs.get(name, '') != status['Current Song']:
-                        self.last_songs[name] = status['Current Song']
-                        event.addresponse(u'Now Playing on %(stream)s: '
-                            u'%(song)s - %(description)s '
-                            u'(Listeners: %(listeners)s)', {
-                                'stream': name,
-                                'song': status['Current Song'],
-                                'description': status['Stream Description'],
-                                'listeners': status['Current Listeners'],
-                            }, source=stream['source'],
-                            target=stream['channel'],
-                            topic=(stream.get('topic', 'False').lower()
-                                in ('yes', 'true')),
-                            address=False,
-                        )
+    @periodic(60)
+    def check(self, event):
+        for name, stream in self.streams.iteritems():
+            if 'source' in stream and 'channel' in stream:
+                log.debug(u'Probing %s', name)
+                status = self.scrape_status(name)
+                if self.last_songs.get(name, '') != status['Current Song']:
+                    self.last_songs[name] = status['Current Song']
+                    event.addresponse(u'Now Playing on %(stream)s: '
+                        u'%(song)s - %(description)s '
+                        u'(Listeners: %(listeners)s)', {
+                            'stream': name,
+                            'song': status['Current Song'],
+                            'description': status['Stream Description'],
+                            'listeners': status['Current Listeners'],
+                        }, source=stream['source'],
+                        target=stream['channel'],
+                        topic=(stream.get('topic', 'False').lower()
+                            in ('yes', 'true')),
+                        address=False,
+                    )
 
 # vi: set et sta sw=4 ts=4:
