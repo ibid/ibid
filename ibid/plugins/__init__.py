@@ -1,5 +1,7 @@
-from inspect import getargspec, getmembers, ismethod
 from copy import copy
+from datetime import timedelta
+from inspect import getargspec, getmembers, ismethod
+import logging
 import re
 
 from twisted.spread import pb
@@ -15,6 +17,8 @@ class Processor(object):
     processed = False
     priority = 0
     autoload = True
+
+    __log = logging.getLogger('plugins')
 
     def __new__(cls, *args):
         if cls.processed and cls.priority == 0:
@@ -38,6 +42,31 @@ class Processor(object):
         pass
 
     def process(self, event):
+        if event.type == 'clock':
+            for name, method in getmembers(self, ismethod):
+                if hasattr(method, 'periodic') and method.interval.seconds > 0:
+                    if method.last_called is None:
+                        # Don't fire first time
+                        # Give sources a chance to connect
+                        method.im_func.last_called = event.time
+                    elif event.time - method.last_called >= method.interval:
+                        method.im_func.last_called = event.time
+                        try:
+                            method(event)
+                            if method.failing:
+                                self.__log.info(u'No longer failing: %s.%s',
+                                        self.__class__.__name__, name)
+                                method.im_func.failing = False
+                        except:
+                            if not method.failing:
+                                method.im_func.failing = True
+                                self.__log.exception(
+                                        u'Periodic method failing: %s.%s',
+                                        self.__class__.__name__, name)
+                            else:
+                                self.__log.debug(u'Still failing: %s.%s',
+                                        self.__class__.__name__, name)
+
         if event.type not in self.event_types:
             return
 
@@ -97,6 +126,15 @@ def auth_responses(event, permission):
 def authorise(function):
     function.authorised = True
     return function
+
+def periodic(interval):
+    def wrap(function):
+        function.periodic = True
+        function.last_called = None
+        function.interval = timedelta(seconds=interval)
+        function.failing = False
+        return function
+    return wrap
 
 from ibid.source.http import templates
 
