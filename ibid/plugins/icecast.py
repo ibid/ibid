@@ -92,7 +92,8 @@ class ICECast(Processor):
                             }, source=stream['source'],
                             target=stream['channel'],
                             topic=(stream.get('topic', 'False').lower()
-                                in ('yes', 'true'))
+                                in ('yes', 'true')),
+                            address=False,
                         )
 
 # vi: set et sta sw=4 ts=4:
