@@ -3,7 +3,7 @@ import logging
 from urllib2 import HTTPError
 
 from ibid.config import DictOption, IntOption
-from ibid.plugins import Processor, match, periodic
+from ibid.plugins import Processor, match, run_every
 from ibid.utils import get_html_parse_tree, human_join
 
 log = logging.getLogger('plugins.icecast')
@@ -71,7 +71,7 @@ class ICECast(Processor):
         except HTTPError:
             event.addresponse(u'The stream must be down, back to the MP3 collection for you')
 
-    @periodic(60)
+    @run_every(60)
     def check(self, event):
         for name, stream in self.streams.iteritems():
             if 'source' in stream and 'channel' in stream:

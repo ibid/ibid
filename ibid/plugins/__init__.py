@@ -59,7 +59,7 @@ class Processor(object):
         "Process a single event"
         if event.type == 'clock':
             for name, method in getmembers(self, ismethod):
-                if hasattr(method, 'periodic') and method.interval.seconds > 0:
+                if hasattr(method, 'run_every') and method.interval.seconds > 0:
                     if method.last_called is None:
                         # Don't fire first time
                         # Give sources a chance to connect
@@ -152,10 +152,10 @@ def authorise(function):
     function.authorised = True
     return function
 
-def periodic(interval):
+def run_every(interval):
     "Wrapper: Run this handler every interval seconds"
     def wrap(function):
-        function.periodic = True
+        function.run_every = True
         function.last_called = None
         function.interval = timedelta(seconds=interval)
         function.failing = False
