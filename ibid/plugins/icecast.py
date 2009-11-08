@@ -1,4 +1,3 @@
-from datetime import timedelta
 import logging
 from urllib2 import HTTPError
 
@@ -22,9 +21,6 @@ class ICECast(Processor):
 
     last_checked = None
     last_songs = {}
-
-    def setup(self):
-        self.check.im_func.interval = timedelta(seconds=self.interval)
 
     def scrape_status(self, stream):
         tree = get_html_parse_tree(self.streams[stream]['url'] + 'status.xsl',
@@ -71,7 +67,7 @@ class ICECast(Processor):
         except HTTPError:
             event.addresponse(u'The stream must be down, back to the MP3 collection for you')
 
-    @run_every(60)
+    @run_every(config_key='interval')
     def check(self, event):
         for name, stream in self.streams.iteritems():
             if 'source' in stream and 'channel' in stream:
