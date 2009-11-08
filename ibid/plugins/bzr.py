@@ -76,7 +76,8 @@ class Bazaar(Processor, RPC):
                 self.branches[name.lower()] = Branch.open(repository['url'])
             except NotBranchError, e:
                 self.log.error(u'%s is not a branch', repository)
-            if 'lp_branch' not in repository:
+                continue
+            if repository.get('poll', 'False').lower() in ('yes', 'true'):
                 must_monitor = True
         if must_monitor:
             self.check.im_func.interval = timedelta(seconds=self.interval)
@@ -156,7 +157,7 @@ class Bazaar(Processor, RPC):
     def check(self, event):
         self.log.debug(u'Checking bzr branches for new commits')
         for name, repo in self.repositories.iteritems():
-            if repo.get('lp_branch', ''):
+            if repo.get('poll', 'False').lower() not in ('yes', 'true'):
                 continue
             branch = self.branches[name]
             lastrev = branch.last_revision()
