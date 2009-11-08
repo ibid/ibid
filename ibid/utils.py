@@ -43,20 +43,20 @@ def decode_htmlentities(text):
     return text
 
 downloads_in_progress = defaultdict(Lock)
-def cacheable_download(url, cachefile):
+def cacheable_download(url, cachefile, headers={}):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
     Returns complete path to downloaded file."""
 
     downloads_in_progress[cachefile].acquire()
     try:
-        f = _cacheable_download(url, cachefile)
+        f = _cacheable_download(url, cachefile, headers)
     finally:
         downloads_in_progress[cachefile].release()
 
     return f
 
-def _cacheable_download(url, cachefile):
+def _cacheable_download(url, cachefile, headers={}):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
@@ -76,6 +76,10 @@ def _cacheable_download(url, cachefile):
     exists = os.path.isfile(cachefile)
 
     req = urllib2.Request(url)
+    for name, value in headers:
+        req.add_header(name, value)
+    if not req.has_header('user-agent'):
+        req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
 
     if exists:
         modified = os.path.getmtime(cachefile)
