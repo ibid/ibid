@@ -171,7 +171,7 @@ class Bazaar(Processor, RPC):
             commits = self.get_commits(name, None, False)
 
             if commits:
-                event.addresponse(commits[0].strip(),
+                event.addresponse(unicode(commits[0].strip()),
                     source=repo['source'],
                     target=repo['channel'],
                     address=False)
