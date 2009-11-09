@@ -63,7 +63,10 @@ class Processor(object):
         "Process a single event"
         if event.type == 'clock':
             for name, method in getmembers(self, ismethod):
-                if hasattr(method, 'run_every') and method.interval.seconds > 0:
+                if (hasattr(method, 'run_every')
+                        and method.interval.seconds > 0
+                        and not method.running):
+                    method.im_func.running = True
                     if method.last_called is None:
                         # Don't fire first time
                         # Give sources a chance to connect
@@ -85,6 +88,7 @@ class Processor(object):
                             else:
                                 self.__log.debug(u'Still failing: %s.%s',
                                         self.__class__.__name__, name)
+                    method.im_func.running = False
 
         if event.type not in self.event_types:
             return
@@ -160,6 +164,7 @@ def run_every(interval=0, config_key=None):
     "Wrapper: Run this handler every interval seconds"
     def wrap(function):
         function.run_every = True
+        function.running = False
         function.last_called = None
         function.interval = timedelta(seconds=interval)
         if config_key is not None:
