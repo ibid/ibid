@@ -265,9 +265,9 @@ class Retrieve(Processor):
             seen = {}
             log.debug(u'Feed: %s', repr(feed.entries))
             for entry in feed.entries:
-                seen[entry.get('id', entry.title)] = entry.updated_parsed
-                if (entry.updated_parsed
-                        != old_seen.get(entry.get('id', entry.title))):
+                id = entry.get('id', entry.title)
+                seen[id] = entry.updated_parsed
+                if entry.updated_parsed != old_seen.get(id):
                     event.addresponse(u"New item in %(feed)s: %(title)s", {
                         'feed': feed.name,
                         'title': feed.entries[0].title,
