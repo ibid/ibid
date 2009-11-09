@@ -259,13 +259,19 @@ class Retrieve(Processor):
             if not feed.entries:
                 log.warning(u'Error polling feed %s', feed.name)
                 continue
-            latest = feed.entries[0].updated_parsed
-            if (feed.name in self.last_seen
-                    and latest > self.last_seen[feed.name]):
-                event.addresponse(u"New item in %(feed)s: %(title)s", {
-                    'feed': feed.name,
-                    'title': feed.entries[0].title,
-                }, source=feed.source, target=feed.target, adress=False)
-            self.last_seen[feed.name] = latest
+            if feed.name not in self.last_seen:
+                self.last_seen[feed.name] = {}
+            old_seen = self.last_seen[feed.name]
+            seen = {}
+            log.debug(u'Feed: %s', repr(feed.entries))
+            for entry in feed.entries:
+                seen[entry.get('id', entry.title)] = entry.updated_parsed
+                if (entry.updated_parsed
+                        != old_seen.get(entry.get('id', entry.title))):
+                    event.addresponse(u"New item in %(feed)s: %(title)s", {
+                        'feed': feed.name,
+                        'title': feed.entries[0].title,
+                    }, source=feed.source, target=feed.target, adress=False)
+            self.last_seen[feed.name] = seen
 
 # vi: set et sta sw=4 ts=4:
