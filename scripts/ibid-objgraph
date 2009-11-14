@@ -43,12 +43,12 @@ times = []
 data = []
 
 for line in f:
-    timestamp, json = line.split(' ', 1)
+    timestamp, stats = line.split(' ', 1)
 
     times.append(date2num(dateutil.parser.parse(timestamp)))
 
-    json = json.loads(json)
-    data.append([json.get(type, 0) for type in types])
+    stats = json.loads(stats)
+    data.append([stats.get(type, 0) for type in types])
 
 times = numpy.array(times, dtype=float)
 data = numpy.array(data, dtype=int)
