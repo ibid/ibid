@@ -270,7 +270,7 @@ class Retrieve(Processor):
 
             old_seen = self.last_seen[feed.name]
             seen = {}
-            for entry in feed.entries:
+            for entry in reversed(feed.entries):
                 id = entry.get('id', entry.title)
                 seen[id] = entry.updated_parsed
                 if entry.updated_parsed != old_seen.get(id):
