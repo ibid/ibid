@@ -252,7 +252,7 @@ class Deliver(Processor):
                     'source': memo.sender.source,
                     'message': memo.memo,
                     'ago': ago(event.time - memo.time),
-                })
+                }, address=False)
 
             memo.delivered = True
             event.session.save_or_update(memo)
