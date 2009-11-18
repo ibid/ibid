@@ -246,8 +246,7 @@ class Deliver(Processor):
                 }
                 event.addresponse(message, target=event.sender['connection'])
             else:
-                event.addresponse(u'%(recipient)s: By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago', {
-                    'recipient': event.sender['nick'],
+                event.addresponse(u'By the way, %(sender)s on %(source)s told me "%(message)s" %(ago)s ago', {
                     'sender': memo.sender.identity,
                     'source': memo.sender.source,
                     'message': memo.memo,
