@@ -172,7 +172,7 @@ class Insult(Processor):
         u'urine samples', u'waffle-house grits', u'yoo-hoo',
     ))
 
-    @match(r'^\s*(?:insult|flame)\s+(.+)$')
+    @match(r'^(?:insult|flame)\s+(.+)$')
     def insult(self, event, insultee):
         articleadj = choice(self.adjectives)
         articleadj = (articleadj[0] in u'aehiou' and u'an ' or u'a ') + articleadj
