@@ -4,7 +4,7 @@ import logging
 
 from bzrlib.branch import Branch
 from bzrlib import log
-from bzrlib.errors import NotBranchError
+from bzrlib.errors import NotBranchError, RevisionNotPresent
 
 import ibid
 from ibid.plugins import Processor, match, RPC, handler, run_every
@@ -168,7 +168,11 @@ class Bazaar(Processor, RPC):
                 continue
             self.seen_revisions[name] = lastrev
 
-            commits = self.get_commits(name, None, False)
+            try:
+                commits = self.get_commits(name, None, False)
+            except RevisionNotPresent:
+                log.debug(u"Got a RevisionNotPresent, hoping it won't be there next time...")
+                continue
 
             if commits:
                 event.addresponse(unicode(commits[0].strip()),
