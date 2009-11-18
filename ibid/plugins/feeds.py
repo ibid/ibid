@@ -274,10 +274,13 @@ class Retrieve(Processor):
                 id = entry.get('id', entry.title)
                 seen[id] = entry.updated_parsed
                 if entry.updated_parsed != old_seen.get(id):
-                    event.addresponse(u"New item in %(feed)s: %(title)s", {
-                        'feed': feed.name,
-                        'title': entry.title,
-                    }, source=feed.source, target=feed.target, adress=False)
+                    event.addresponse(
+                        u"%(status)s item in %(feed)s: %(title)s", {
+                            'status': id in old_seen and u'Updated' or u'New',
+                            'feed': feed.name,
+                            'title': entry.title,
+                        },
+                        source=feed.source, target=feed.target, adress=False)
             self.last_seen[feed.name] = seen
 
 # vi: set et sta sw=4 ts=4:
