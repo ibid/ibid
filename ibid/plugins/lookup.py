@@ -904,7 +904,7 @@ class Bible(Processor):
                 message.append(u'(%s %s:%s)' % ref)
             elif oldref[1] != ref[1]:
                 message.append(u'(%s:%s)' % ref[1:])
-            elif oldref[2] != ref[2]:
+            else:
                 message.append(u'%s' % ref[2])
             oldref = ref
 
