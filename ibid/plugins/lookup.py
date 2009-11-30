@@ -881,14 +881,16 @@ class Bible(Processor):
         message = self.formatPassage(tree)
         if message:
             event.addresponse(message)
-        errors = list(tree.findall('error'))
+        errors = list(tree.findall('.//error'))
         if errors:
             event.addresponse('There were errors: %s.', '. '.join(err.text for err in errors))
+        elif not message:
+            event.addresponse("I couldn't find that passage.")
    
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
     # by book names, chapters and verses.
-    @match(r'^((?:' + '|'.join(books) + r'|\d|[-:,]\s)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    @match(r'^((?:(?:' + '|'.join(books) + ')(?:\d|[-:,]|\s)*)*?)(?:\s+(?:in|from)\s+(.*))?$')
     def bookbible(self, *args):
         self.bible(*args)
 
