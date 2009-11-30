@@ -166,13 +166,13 @@ class Bazaar(Processor, RPC):
                 continue
             if lastrev == self.seen_revisions[name]:
                 continue
-            self.seen_revisions[name] = lastrev
 
             try:
                 commits = self.get_commits(name, None, False)
             except RevisionNotPresent:
-                log.debug(u"Got a RevisionNotPresent, hoping it won't be there next time...")
+                self.log.debug(u"Got a RevisionNotPresent, hoping it won't be there next time...")
                 continue
+            self.seen_revisions[name] = lastrev
 
             if commits:
                 event.addresponse(unicode(commits[0].strip()),
