@@ -852,10 +852,10 @@ class Bible(Processor):
 
     # The API doesn't seem to work with the apocrypha, even when looking in
     # versions that include it
-    books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+    books = '|'.join(['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
     'Joshua', 'Judges', 'Ruth', '(?:1|2|I|II) Samuel', '(?:1|2|I|II) Kings',
     '(?:1|2|I|II) Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms?',
-    'Proverbs', 'Ecclesiastes', 'Song(?:\s+of\s+(?:Songs|Solomon)?)?',
+    'Proverbs', 'Ecclesiastes', 'Song(?: of (?:Songs|Solomon)?)?',
     'Canticles', 'Isaiah', 'Jeremiah', 'Lamentations',
     'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
     'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
@@ -863,7 +863,8 @@ class Bible(Processor):
     '(?:1|2|I|II) Corinthians', 'Galatians', 'Ephesians', 'Philippians',
     'Colossians', '(?:1|2|I|II) Thessalonians', '(?:1|2|I|II) Timothy',
     'Titus', 'Philemon', 'Hebrews', 'James', '(?:1|2|I|II) Peter',
-    '(?:1|2|3|I|II|III) John', 'Jude', 'Revelation']
+    '(?:1|2|3|I|II|III) John', 'Jude',
+    'Revelations?(?: of (?:St.|Saint) John)?']).replace(' ', '\s*')
 
     @match(r'^bible\s+(.*?)(?:\s+(?:in|from)\s+(.*))?$')
     def bible(self, event, passage, version=None):
@@ -890,7 +891,7 @@ class Bible(Processor):
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
     # by book names, chapters and verses.
-    @match(r'^((?:(?:' + '|'.join(books) + ')(?:\d|[-:,]|\s)*)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    @match(r'^((?:(?:' + books + ')(?:\d|[-:,]|\s)*)*?)(?:\s+(?:in|from)\s+(.*))?$')
     def bookbible(self, *args):
         self.bible(*args)
 
