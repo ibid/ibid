@@ -37,24 +37,25 @@ class ICECast(Processor):
         if not event.get('addressed', False):
             return
 
-        if stream is None:
-            if len(self.streams) == 1:
-                stream = self.streams.keys()[0]
-            else:
-                event.addresponse(u'I know about the following streams, '
-                        u'please choose one: %s',
-                        human_join(self.streams.keys()))
-                return
-        if stream not in self.streams:
+        if len(self.streams) == 0:
+            event.addresponse(u"Sorry, I don't know about any streams")
+            return
+        elif stream is None and len(self.streams) == 1:
+            stream = self.streams.keys()[0]
+        elif stream is not None and stream not in self.streams:
             for name in self.streams.iterkeys():
                 if name.lower() == stream.lower():
                     stream = name
                     break
             else:
-                event.addresponse(
-                        u'Sorry, I only know about the following streams: %s',
-                        human_join(self.streams.keys()))
-                return
+                stream = None
+        if stream is None:
+            event.addresponse(
+                    u'Sorry, I only know about the following streams, '
+                    u'please choose one: %s',
+                    human_join(self.streams.keys()))
+            return
+
         try:
             status = self.scrape_status(stream)
             event.addresponse(u'Currently Playing on %(stream)s: '
