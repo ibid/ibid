@@ -882,7 +882,7 @@ class Bible(Processor):
         if message:
             event.addresponse(message)
         else:
-            event.addresponse("I couldn't find that passage.")
+            event.addresponse(u"I couldn't find that passage.")
    
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
@@ -897,16 +897,16 @@ class Bible(Processor):
         for item in xml.findall('.//item'):
             ref, text = self.verseInfo(item)
             if oldref[0] != ref[0]:
-                message.append('(%s %s:%s)' % ref)
+                message.append(u'(%s %s:%s)' % ref)
             elif oldref[1] != ref[1]:
-                message.append('(%s:%s)' % ref[1:])
+                message.append(u'(%s:%s)' % ref[1:])
             elif oldref[2] != ref[2]:
-                message.append('%s' % ref[2])
+                message.append(u'%s' % ref[2])
             oldref = ref
 
             message.append(text)
 
-        return ' '.join(message)
+        return u' '.join(message)
     
     def verseInfo(self, xml):
         book, chapter, verse, text = map(xml.findtext,
