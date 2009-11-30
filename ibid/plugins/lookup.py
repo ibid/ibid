@@ -836,4 +836,80 @@ class TVShow(Processor):
 
         event.addresponse(message, retr_info)
 
+help['bible'] = u'Retrieves Bible verses'
+class Bible(Processor):
+    u"""bible <passages> [in <version>]
+    <book> <verses> [in <version>]"""
+
+    feature = 'bible'
+    # http://labs.bible.org/api/ is an alternative
+    # Their feature set is a little different, but they should be fairly
+    # compatible
+    api_url = Option('bible_api_url', 'Bible API URL base',
+                    'http://api.preachingcentral.com/bible.php?%s')
+
+    psalm_pat = re.compile(r'psalm\b')
+
+    # The API doesn't seem to work with the apocrypha, even when looking in
+    # versions that include it
+    books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+    'Joshua', 'Judges', 'Ruth', '(?:1|2|I|II) Samuel', '(?:1|2|I|II) Kings',
+    '(?:1|2|I|II) Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms?',
+    'Proverbs', 'Ecclesiastes', 'Song', 'Isaiah', 'Jeremiah', 'Lamentations',
+    'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
+    'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+    'Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans',
+    '(?:1|2|I|II) Corinthians', 'Galatians', 'Ephesians', 'Philippians',
+    'Colossians', '(?:1|2|I|II) Thessalonians', '(?:1|2|I|II) Timothy',
+    'Titus', 'Philemon', 'Hebrews', 'James', '(?:1|2|I|II) Peter',
+    '(?:1|2|3|I|II|III) John', 'Jude', 'Revelation']
+
+    @match(r'^bible\s+(.*?)(?:\s+(?:in|from)\s+(.*))?$')
+    def bible(self, event, passage, version=None):
+        passage = self.psalm_pat.sub('psalms', passage)
+
+        params = {'passage': passage.encode('utf-8'),
+                  'type': 'xml',
+                  'formatting': 'plain'}
+        if version:
+            params['version'] = version.lower().encode('utf-8')
+
+        f = urlopen(self.api_url % urlencode(params))
+        tree = ElementTree.parse(f)
+
+        message = self.formatPassage(tree)
+        if message:
+            event.addresponse(message)
+        else:
+            event.addresponse("I couldn't find that passage.")
+   
+    # Allow queries which are quite definitely bible references to omit "bible".
+    # Specifically, they must start with the name of a book and be followed only
+    # by chapters and verses.
+    @match(r'^((?:' + '|'.join(books) + r')\s+(?:\d|:|-|,)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    def bookbible(self, *args):
+        self.bible(*args)
+
+    def formatPassage(self, xml):
+        message = []
+        oldref = (None, None, None)
+        for item in xml.findall('.//item'):
+            ref, text = self.verseInfo(item)
+            if oldref[0] != ref[0]:
+                message.append('(%s %s:%s)' % ref)
+            elif oldref[1] != ref[1]:
+                message.append('(%s:%s)' % ref[1:])
+            elif oldref[2] != ref[2]:
+                message.append('%s' % ref[2])
+            oldref = ref
+
+            message.append(text)
+
+        return ' '.join(message)
+    
+    def verseInfo(self, xml):
+        book, chapter, verse, text = map(xml.findtext,
+                                        ('bookname', 'chapter', 'verse', 'text'))
+        return ((book, chapter, verse), text)
+
 # vi: set et sta sw=4 ts=4:
