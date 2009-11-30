@@ -3,7 +3,8 @@ from datetime import datetime
 import logging
 from urlparse import urljoin
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
+from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, \
+        ForeignKey, Table
 from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
@@ -22,7 +23,8 @@ class Feed(Base):
     Column('id', Integer, primary_key=True),
     Column('name', Unicode(32), unique=True, nullable=False, index=True),
     Column('url', UnicodeText, nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('identity_id', Integer, ForeignKey('identities.id'),
+        nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     Column('source', Unicode(32), index=True),
     Column('target', Unicode(32), index=True),
@@ -52,7 +54,8 @@ class Feed(Base):
         self.update()
 
     def update(self):
-        feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (re.sub(r'\W+', '_', self.name), self.identity_id))
+        feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (
+                re.sub(r'\W+', '_', self.name), self.identity_id))
         self.feed = feedparser.parse(feedfile)
         self.entries = self.feed['entries']
 
@@ -103,17 +106,20 @@ class Manage(Processor):
                 pass
 
         if not valid:
-            event.addresponse(u"Sorry, I could not add the %(name)s feed. %(url)s is not a valid feed", {
-                'name': name,
-                'url': url,
-            })
+            event.addresponse(u'Sorry, I could not add the %(name)s feed. '
+                u'%(url)s is not a valid feed', {
+                    'name': name,
+                    'url': url,
+                })
             return
 
         feed = Feed(unicode(name), unicode(url), event.identity)
         event.session.save(feed)
         event.session.commit()
         event.addresponse(True)
-        log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)", name, event.account, event.identity, event.sender['connection'], url, len(feed.entries))
+        log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)",
+                name, event.account, event.identity,
+                event.sender['connection'], url, len(feed.entries))
 
     @match(r'^(?:list\s+)?feeds$')
     def list(self, event):
@@ -135,7 +141,9 @@ class Manage(Processor):
         else:
             event.session.delete(feed)
             event.session.commit()
-            log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name, event.account, event.identity, event.sender['connection'], feed.url)
+            log.info(u"Deleted feed '%s' by %s/%s (%s): %s", name,
+                    event.account, event.identity,
+                    event.sender['connection'], feed.url)
             event.addresponse(True)
 
     @match(r'^(?:stop|don\'t)\s+poll(?:ing)?\s(.+)\s+feed$')
@@ -179,7 +187,8 @@ class Retrieve(Processor):
 
     interval = IntOption('interval', 'Feed Poll interval (in seconds)', 300)
 
-    @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?articles\s+from\s+(.+?)(?:\s+start(?:ing)?\s+(?:at\s+|from\s+)?(\d+))?$')
+    @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?articles\s+from\s+(.+?)'
+           r'(?:\s+start(?:ing)?\s+(?:at\s+|from\s+)?(\d+))?$')
     def list(self, event, number, name, start):
         number = number and int(number) or 10
         start = start and int(start) or 0
@@ -197,7 +206,10 @@ class Retrieve(Processor):
             return
 
         articles = feed.entries[start:number+start]
-        articles = [u'%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
+        articles = [u'%s: "%s"' % (
+                feed.entries.index(entry),
+                html2text_file(entry.title, None).strip()
+            ) for entry in articles]
         event.addresponse(u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
@@ -235,7 +247,8 @@ class Retrieve(Processor):
         if 'summary' in article:
             summary = html2text_file(article.summary, None)
         else:
-            if article.content[0].type in ('application/xhtml+xml', 'text/html'):
+            if article.content[0].type in \
+                    ('application/xhtml+xml', 'text/html'):
                 summary = html2text_file(article.content[0].value, None)
             else:
                 summary = article.content[0].value
