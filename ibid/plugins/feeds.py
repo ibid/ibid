@@ -42,7 +42,7 @@ class Feed(Base):
     feed = None
     entries = None
 
-    def __init__(self, name, url, identity_id, source, target):
+    def __init__(self, name, url, identity_id, source=None, target=None):
         self.name = name
         self.url = url
         self.identity_id = identity_id
@@ -109,7 +109,7 @@ class Manage(Processor):
             })
             return
 
-        feed = Feed(unicode(name), unicode(url), event.identity, None, None)
+        feed = Feed(unicode(name), unicode(url), event.identity)
         event.session.save(feed)
         event.session.commit()
         event.addresponse(True)
