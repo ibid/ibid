@@ -98,7 +98,7 @@ class Lotto(Processor):
     feature = 'lotto'
 
     za_url = 'http://www.nationallottery.co.za/'
-    za_re = re.compile(r'images/balls/ball_(\d+).gif')
+    za_re = re.compile(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif')
 
     @match(r'^lotto(\s+for\s+south\s+africa)?$')
     def za(self, event, za):
@@ -113,20 +113,24 @@ class Lotto(Processor):
 
         balls = self.za_re.findall(s)
 
-        if len(balls) != 14:
+        if len(balls) != 20:
             event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
-                'expected': 14,
+                'expected': 20,
                 'found': len(balls),
                 'balls': u', '.join(balls),
             })
             return
 
         event.addresponse(u'Latest lotto results for South Africa, '
-            u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s)', {
-            'lottoballs': u" ".join(balls[:6]),
+            u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), '
+            u'Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s), '
+            u'PowerBall: %(powerballs)s PB: %(powerball)s', {
+            'lottoballs': u' '.join(balls[:6]),
             'lottobonus': balls[6],
-            'plusballs':  u" ".join(balls[7:13]),
+            'plusballs':  u' '.join(balls[7:13]),
             'plusbonus':  balls[13],
+            'powerballs': u' '.join(balls[14:19]),
+            'powerball': balls[19],
         })
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
