@@ -848,7 +848,7 @@ class Bible(Processor):
     api_url = Option('bible_api_url', 'Bible API URL base',
                     'http://api.preachingcentral.com/bible.php?%s')
 
-    psalm_pat = re.compile(r'psalm\b', re.IGNORECASE)
+    psalm_pat = re.compile(r'\bpsalm\b', re.IGNORECASE)
 
     # The API doesn't seem to work with the apocrypha, even when looking in
     # versions that include it
@@ -886,8 +886,8 @@ class Bible(Processor):
    
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
-    # by chapters and verses.
-    @match(r'^((?:' + '|'.join(books) + r')\s+(?:\d|:|-|,)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    # by book names, chapters and verses.
+    @match(r'^((?:' + '|'.join(books) + r'|\d|[-:,]\s)*?)(?:\s+(?:in|from)\s+(.*))?$')
     def bookbible(self, *args):
         self.bible(*args)
 
