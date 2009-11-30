@@ -848,7 +848,7 @@ class Bible(Processor):
     api_url = Option('bible_api_url', 'Bible API URL base',
                     'http://api.preachingcentral.com/bible.php?%s')
 
-    psalm_pat = re.compile(r'psalm\b')
+    psalm_pat = re.compile(r'psalm\b', re.IGNORECASE)
 
     # The API doesn't seem to work with the apocrypha, even when looking in
     # versions that include it
