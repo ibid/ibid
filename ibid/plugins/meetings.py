@@ -269,7 +269,7 @@ class Poll(Processor):
     end poll
     """
     feature = 'poll'
-    permission = u'meetingchair'
+    permission = u'chairmeeting'
 
     polls = {}
 
