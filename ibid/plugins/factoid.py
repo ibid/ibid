@@ -417,7 +417,10 @@ class Get(Processor, RPC):
             return reply
 
 class Set(Processor):
-    u"""<name> (<verb>|=<verb>=) [also] <value>"""
+    u"""
+    <name> (<verb>|=<verb>=) [also] <value>
+    last set factoid
+    """
     feature = 'factoids'
 
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
@@ -425,6 +428,7 @@ class Set(Processor):
 
     priority = 800
     permission = u'factoid'
+    last_set_factoid = None
 
     def setup(self):
         self.set_factoid.im_func.pattern = re.compile(
@@ -474,10 +478,18 @@ class Set(Processor):
         factoid.values.append(fvalue)
         event.session.save_or_update(factoid)
         event.session.commit()
+        self.last_set_factoid=factoid.names[0].name
         log.info(u"Added value '%s' to factoid %s (%s) by %s/%s (%s)",
                 fvalue.value, factoid.id, factoid.names[0].name,
                 event.account, event.identity, event.sender['connection'])
         event.addresponse(True)
+
+    @match(r'^(?:last\s+set\s+factoid|what\s+did\s+\S+\s+just\s+set)$')
+    def last_set(self, event):
+        if self.last_set_factoid is None:
+            event.addresponse(u'Sorry, nobody has taught me anything recently')
+        else:
+            event.addresponse(u'It was: %s', self.last_set_factoid)
 
 class Modify(Processor):
     u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
