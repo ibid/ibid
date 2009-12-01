@@ -482,7 +482,12 @@ class Set(Processor):
         log.info(u"Added value '%s' to factoid %s (%s) by %s/%s (%s)",
                 fvalue.value, factoid.id, factoid.names[0].name,
                 event.account, event.identity, event.sender['connection'])
-        event.addresponse(True)
+        event.addresponse(choice((
+                u'If you say so',
+                u'One learns a new thing every day',
+                u"I'll remember that",
+                'Got it',
+            )))
 
     @match(r'^(?:last\s+set\s+factoid|what\s+did\s+\S+\s+just\s+set)$')
     def last_set(self, event):
