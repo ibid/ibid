@@ -846,7 +846,7 @@ class Bible(Processor):
     # Their feature set is a little different, but they should be fairly
     # compatible
     api_url = Option('bible_api_url', 'Bible API URL base',
-                    'http://api.preachingcentral.com/bible.php?%s')
+                    'http://api.preachingcentral.com/bible.php')
 
     psalm_pat = re.compile(r'\bpsalm\b', re.IGNORECASE)
 
@@ -876,7 +876,7 @@ class Bible(Processor):
         if version:
             params['version'] = version.lower().encode('utf-8')
 
-        f = urlopen(self.api_url % urlencode(params))
+        f = urlopen(self.api_url + '?' + urlencode(params))
         tree = ElementTree.parse(f)
 
         message = self.formatPassage(tree)
