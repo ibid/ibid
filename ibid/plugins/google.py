@@ -146,7 +146,8 @@ class Youtube(Processor):
         opener = build_opener(HTTPCookieProcessor())
         opener.addheaders = [('User-Agent', default_user_agent)]
         video_webpage = opener.open(url).read()
-        title = re.search(r'<title>YouTube - ([^<]*)</title>', video_webpage, re.M | re.I).group(1)
+        title = re.search(r'<title>\s*YouTube\s+-\s+([^<]*)</title>',
+                video_webpage, re.M | re.I | re.DOTALL).group(1).strip()
         t = re.search(r', "t": "([^"]+)"', video_webpage).group(1)
         event.addresponse(u'%(title)s: %(url)s', {
             'title': title,
