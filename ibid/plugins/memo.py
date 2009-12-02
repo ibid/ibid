@@ -137,14 +137,17 @@ class Tell(Processor):
             source = source.lower()
         number = num1 or num2 or 'last'
         number = number.lower()
-        if number.isdigit():
-            number = int(number)
+        if number == 0:
+            # Don't wrap around to last message, that'd be unexpected
+            number = 1
+        elif number.isdigit():
+            number = int(number) - 1
         elif number == 'first':
             number = 0
         elif number == 'last':
             number = -1
         else:
-            number = int(number[:-2])
+            number = int(number[:-2]) - 1
 
         # Join on column x isn't possible in SQLAlchemy 0.4:
         identities_to = event.session.query(Identity) \
@@ -304,7 +307,7 @@ class Messages(Processor):
         if memos:
             event.addresponse(u', '.join(
                 '%s: %s (%s)' % (
-                    memos.index(memo),
+                    memos.index(memo) + 1,
                     memo.sender.identity,
                     format_date(memo.time),
                 ) for memo in memos
@@ -337,7 +340,7 @@ class Messages(Processor):
 
         if memos:
             event.addresponse(u'Pending: ' + u', '.join(
-                '%i: %s (%s)' % (i, memo.memo, format_date(memo.time))
+                '%i: %s (%s)' % (i + 1, memo.memo, format_date(memo.time))
                 for i, memo in enumerate(memos)
             ))
         else:
@@ -350,8 +353,8 @@ class Messages(Processor):
     def message(self, event, number):
         memos = get_memos(event, True)
 
-        number = int(number)
-        if number >= len(memos):
+        number = int(number) - 1
+        if number >= len(memos) or number == -1:
             event.addresponse(u'Sorry, no such message in your archive')
             return
 
