@@ -159,7 +159,7 @@ See also:
 * `Bazaar User Guide
   <http://doc.bazaar-vcs.org/latest/en/user-guide/>`_
 * `Bazaar Reference
-  <http://doc.bazaar-vcs.org/latest/en/user-reference/bzr_man.html>`_
+  <http://doc.bazaar-vcs.org/latest/en/user-reference/index.html>`_
 
 
 .. _dev-instance:
