@@ -172,9 +172,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
     if number:
         try:
             if literal:
-                return query.order_by(FactoidValue.id)[int(number):]
+                return query.order_by(FactoidValue.id)[int(number) - 1:]
             else:
-                factoid = query.order_by(FactoidValue.id)[int(number)]
+                factoid = query.order_by(FactoidValue.id)[int(number) - 1]
         except IndexError:
             return
     if all or literal:
@@ -188,11 +188,13 @@ class Utils(Processor):
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     def literal(self, event, name, number, pattern, is_regex):
-        factoids = get_factoid(event.session, name, number, pattern, is_regex, literal=True)
-        number = number and int(number) or 0
+        factoids = get_factoid(event.session, name, number, pattern, is_regex,
+                literal=True)
+        number = number and int(number) or 1
         if factoids:
             event.addresponse(u', '.join(u'%i: %s'
-                % (index + number, value.value) for index, (factoid, name, value) in enumerate(factoids)))
+                % (index + number, value.value)
+                  for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
     u"""forget <name> [( #<number> | /<pattern>/[r] )]
