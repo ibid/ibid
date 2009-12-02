@@ -26,6 +26,8 @@ parser.add_option("-o", "--only", dest="load_base", action="store_false", defaul
         help="Only load the specified plugins, not the common base plugins")
 parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
         help="Load all all configured plugins")
+parser.add_option("-p", "--public", dest="public", action="store_true", default=False,
+        help="Make testchan public, it's private by default")
 
 (options, args) = parser.parse_args()
 
@@ -37,7 +39,13 @@ if options.load_configured and not options.load_base:
 def auth_responses(event, permission):
     return True
 
-ibid.plugins.auth_responses = auth_responses
+class FakeAuth(object):
+    def authorise(self, event, permission):
+        return True
+
+ibid.auth = FakeAuth()
+
+#ibid.plugins.auth_responses = auth_responses
 ibid.options = {'base': '.'}
 
 logging.basicConfig(level=logging.DEBUG)
@@ -106,7 +114,7 @@ while True:
     event.identity = identity_id
     event.account =  None
     event.addressed = True
-    event.public = False
+    event.public = options.public
     event.channel = u"testchan"
 
     try:
