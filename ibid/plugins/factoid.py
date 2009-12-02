@@ -486,7 +486,7 @@ class Set(Processor):
                 u'If you say so',
                 u'One learns a new thing every day',
                 u"I'll remember that",
-                'Got it',
+                u'Got it',
             )))
 
     @match(r'^(?:last\s+set\s+factoid|what\s+did\s+\S+\s+just\s+set)$')
