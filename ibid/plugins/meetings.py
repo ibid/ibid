@@ -6,6 +6,8 @@ import re
 from urllib import quote
 from xmlrpclib import ServerProxy
 
+from dateutil.parser import parse
+from dateutil.tz import tzlocal, tzutc
 from jinja import Environment, PackageLoader
 
 import ibid
@@ -264,7 +266,7 @@ class MeetingLogger(Processor):
 help['poll'] = u'Does a quick poll of channel members'
 class Poll(Processor):
     u"""
-    poll on <topic> vote <option> [or <option>]...
+    [secret] poll on <topic> [until <time>] vote <option> [or <option>]...
     vote (<id> | <option>) [on <topic>]
     end poll
     """
@@ -273,12 +275,13 @@ class Poll(Processor):
 
     polls = {}
 
-    allow_private = BoolOption('allow_private', u'Allow secret ballots', True)
-    time = IntOption('poll_time', u'Poll length', 5 * 60)
+    date_utc = BoolOption('date_utc', u'Interpret poll end times as UTC', False)
+    poll_time = IntOption('poll_time', u'Default poll length', 5 * 60)
 
     @authorise
-    @match(r'^poll\s+on\s+(.+?)\s+vote\s+(.+\sor\s.+)$')
-    def start_poll(self, event, topic, options):
+    @match(r'^(secret\s+)?(?:poll|ballot)\s+on\s+(.+?)\s+'
+            r'(?:until\s+(.+?)\s+)?vote\s+(.+\sor\s.+)$')
+    def start_poll(self, event, secret, topic, end, options):
         if not event.public:
             event.addresponse(u'Sorry, must be done in public')
             return
@@ -293,6 +296,19 @@ class Poll(Processor):
         poll = PollContainer()
         self.polls[(event.source, event.channel)] = poll
 
+        poll.secret = secret is not None
+        if end is None:
+            poll.end = event.time + timedelta(seconds=self.poll_time)
+        else:
+            poll.end = parse(end)
+            if poll.end.tzinfo is None and not self.date_utc:
+                poll.end = poll.end.replace(tzinfo=tzlocal())
+            if poll.end.tzinfo is not None:
+                poll.end = poll.end.astimezone(tzutc()).replace(tzinfo=None)
+        if poll.end < event.time:
+            event.addresponse(u"I can't end a poll in the past")
+            return
+
         poll.topic = topic
         poll.options = re.split(r'\s+or\s+', options)
         poll.lower_options = [o.lower() for o in poll.options]
@@ -303,11 +319,10 @@ class Poll(Processor):
             u'The polls close at %(end)s. '
             u'%(private)s'
             u'The Options Are:', {
-                'private': self.allow_private
+                'private': poll.secret
                     and u'You may vote in public or private. '
                     or u'',
-                'end': format_date(event.time + timedelta(seconds=self.time),
-                    'time'),
+                'end': format_date(poll.end),
             }, address=False)
 
         for i, o in enumerate(poll.options):
@@ -316,7 +331,9 @@ class Poll(Processor):
                 'option': o,
             }, address=False)
 
-        poll.delayed_call = ibid.dispatcher.call_later(self.time,
+        delay = poll.end - event.time
+        poll.delayed_call = ibid.dispatcher.call_later(
+                delay.days * 86400 + delay.seconds,
                 self.end_poll, event)
 
     def locate_poll(self, event, selection, topic):
