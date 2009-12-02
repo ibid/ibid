@@ -327,7 +327,7 @@ class Poll(Processor):
 
         for i, o in enumerate(poll.options):
             event.addresponse(u'%(id)i: %(option)s', {
-                'id': i,
+                'id': i + 1,
                 'option': o,
             }, address=False)
 
@@ -369,8 +369,9 @@ class Poll(Processor):
         if poll is None:
             return
 
-        if selection.isdigit() and int(selection) < len(poll.options):
-            selection = int(selection)
+        if selection.isdigit() and int(selection) > 0 \
+                and int(selection) <= len(poll.options):
+            selection = int(selection) - 1
         else:
             try:
                 selection = poll.lower_options.index(selection)
