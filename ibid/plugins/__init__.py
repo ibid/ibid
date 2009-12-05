@@ -5,12 +5,8 @@ import re
 from twisted.spread import pb
 from twisted.web import resource
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 import ibid
+from ibid.compat import json
 
 class Processor(object):
 

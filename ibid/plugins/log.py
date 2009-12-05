@@ -112,8 +112,12 @@ class Log(Processor):
 
         for response in event.responses:
             if 'reply' in response and isinstance(response['reply'], basestring):
-                e = Event(response['source'],
-                        'action' in response and 'action' or 'message')
+                type = 'message'
+                if response.get('action', False):
+                    type = 'action'
+                elif response.get('notice', False):
+                    type = 'notice'
+                e = Event(response['source'], type)
                 e.source = response['source']
                 e.channel = response['target']
                 e.time = datetime.utcnow()

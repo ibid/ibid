@@ -3,10 +3,6 @@ from datetime import datetime
 from email import message_from_string
 from socket import gethostname
 import re
-try:
-    from email.utils import parseaddr
-except ImportError:
-    from email.Utils import parseaddr
 
 from twisted.application import internet
 from twisted.internet import defer, reactor
@@ -14,9 +10,10 @@ from twisted.mail import smtp
 from zope.interface import implements
 
 import ibid
-from ibid.source import IbidSourceFactory
+from ibid.compat import email_utils
 from ibid.config import Option, IntOption, ListOption
 from ibid.event import Event
+from ibid.source import IbidSourceFactory
 
 stripsig = re.compile(r'^-- $.*', re.M+re.S)
 
@@ -55,7 +52,7 @@ class Message:
         mail = message_from_string('\n'.join(self.lines))
 
         event = Event(self.name, u'message')
-        (realname, address) = parseaddr(mail['from'])
+        (realname, address) = email_utils.parseaddr(mail['from'])
         event.channel = event.sender['connection'] = event.sender['id'] = unicode(address, 'utf-8', 'replace')
         event.sender['nick'] = realname != '' and unicode(realname, 'utf-8', 'replace') or event.channel
         event.public = False

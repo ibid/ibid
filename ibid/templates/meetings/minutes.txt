@@ -1,0 +1,34 @@
+Minutes from Meeting about {{ meeting.title|default("something or the other") }}
+Convened at {{ meeting.starttime }} by {{ meeting.convenor }}
+in {{ meeting.channel }} on {{ meeting.source }}
+
+Minutes
+=======
+
+{% for event in meeting.minutes -%}
+[{{ event.time.strftime('%H:%M:%S') }}] {{ event.type | upper }}
+{{- ': ' + event.subject if event.subject else '' }} ({{ event.nick }})
+{% endfor %}
+Present
+=======
+
+{% for nick, name in meeting.attendees.iteritems() -%}
+{%- if name -%}
+* {{ name }} ({{ nick }})
+{%- else -%}
+* {{ nick }}
+{%- endif %}
+{% endfor %}
+Raw Log
+=======
+
+{% for event in meeting.log -%}
+[{{ event.time.strftime('%H:%M:%S') }}] {# Preserve the space after the timestamp #}
+{%- if event.type == 'message' -%}
+<{{ event.nick }}> {{ event.message }}
+{%- elif event.type == 'action' -%}
+* {{ event.nick }} {{ event.message }}
+{%- elif event.type == 'notice' -%}
+- {{ event.nick }} {{ event.message }}
+{%- endif %}
+{% endfor %}

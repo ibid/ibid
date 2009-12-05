@@ -123,7 +123,7 @@ class DCBot(dcwords.DCClient):
         if target == '$public':
             target = None
 
-        if 'action' in response and response['action']:
+        if response.get('action', False):
             if self.factory.action_prefix and target is None:
                 self.say(target, u'%s %s' % (self.factory.action_prefix, message))
             else:

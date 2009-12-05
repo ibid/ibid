@@ -5,17 +5,16 @@ from urlparse import urljoin
 from time import time, strptime, strftime
 from datetime import datetime
 from random import choice, shuffle, randint
-from xml.etree.cElementTree import parse
-from .. math import acos, sin, cos, radians
-from collections import defaultdict
+from math import acos, sin, cos, radians
 import re
 from sys import exc_info
 import logging
 
 import feedparser
 
-from ibid.plugins import Processor, match, handler
+from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
+from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
         cacheable_download, json_webservice, human_join
 
@@ -89,7 +88,7 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (
                     e.title,
-                    ago(event.time - datetime.strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                    ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
                 ) for e in songs['entries']))
 
 help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
@@ -99,7 +98,7 @@ class Lotto(Processor):
     feature = 'lotto'
 
     za_url = 'http://www.nationallottery.co.za/'
-    za_re = re.compile(r'images/balls/ball_(\d+).gif')
+    za_re = re.compile(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif')
 
     @match(r'^lotto(\s+for\s+south\s+africa)?$')
     def za(self, event, za):
@@ -114,20 +113,24 @@ class Lotto(Processor):
 
         balls = self.za_re.findall(s)
 
-        if len(balls) != 14:
+        if len(balls) != 20:
             event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
-                'expected': 14,
+                'expected': 20,
                 'found': len(balls),
                 'balls': u', '.join(balls),
             })
             return
 
         event.addresponse(u'Latest lotto results for South Africa, '
-            u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s)', {
-            'lottoballs': u" ".join(balls[:6]),
+            u'Lotto: %(lottoballs)s (Bonus: %(lottobonus)s), '
+            u'Lotto Plus: %(plusballs)s (Bonus: %(plusbonus)s), '
+            u'PowerBall: %(powerballs)s PB: %(powerball)s', {
+            'lottoballs': u' '.join(balls[:6]),
             'lottobonus': balls[6],
-            'plusballs':  u" ".join(balls[7:13]),
+            'plusballs':  u' '.join(balls[7:13]),
             'plusbonus':  balls[13],
+            'powerballs': u' '.join(balls[14:19]),
+            'powerball': balls[19],
         })
 
 help['fml'] = u'Retrieves quotes from fmylife.com.'
@@ -158,7 +161,7 @@ class FMyLife(Processor):
         )
         f = urlopen(url)
         try:
-            tree = parse(f)
+            tree = ElementTree.parse(f)
         except SyntaxError:
             class_, e, tb = exc_info()
             new_exc = FMLException(u'XML Parsing Error: %s' % unicode(e))
@@ -390,7 +393,7 @@ class Twitter(Processor):
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - datetime.strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y'), 1),
+            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             'url': url,
         }
 
@@ -832,5 +835,86 @@ class TVShow(Processor):
             return
 
         event.addresponse(message, retr_info)
+
+help['bible'] = u'Retrieves Bible verses'
+class Bible(Processor):
+    u"""bible <passages> [in <version>]
+    <book> <verses> [in <version>]"""
+
+    feature = 'bible'
+    # http://labs.bible.org/api/ is an alternative
+    # Their feature set is a little different, but they should be fairly
+    # compatible
+    api_url = Option('bible_api_url', 'Bible API URL base',
+                    'http://api.preachingcentral.com/bible.php')
+
+    psalm_pat = re.compile(r'\bpsalm\b', re.IGNORECASE)
+
+    # The API doesn't seem to work with the apocrypha, even when looking in
+    # versions that include it
+    books = '|'.join(['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+    'Joshua', 'Judges', 'Ruth', '(?:1|2|I|II) Samuel', '(?:1|2|I|II) Kings',
+    '(?:1|2|I|II) Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms?',
+    'Proverbs', 'Ecclesiastes', 'Song(?: of (?:Songs|Solomon)?)?',
+    'Canticles', 'Isaiah', 'Jeremiah', 'Lamentations',
+    'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
+    'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+    'Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans',
+    '(?:1|2|I|II) Corinthians', 'Galatians', 'Ephesians', 'Philippians',
+    'Colossians', '(?:1|2|I|II) Thessalonians', '(?:1|2|I|II) Timothy',
+    'Titus', 'Philemon', 'Hebrews', 'James', '(?:1|2|I|II) Peter',
+    '(?:1|2|3|I|II|III) John', 'Jude',
+    'Revelations?(?: of (?:St.|Saint) John)?']).replace(' ', '\s*')
+
+    @match(r'^bible\s+(.*?)(?:\s+(?:in|from)\s+(.*))?$')
+    def bible(self, event, passage, version=None):
+        passage = self.psalm_pat.sub('psalms', passage)
+
+        params = {'passage': passage.encode('utf-8'),
+                  'type': 'xml',
+                  'formatting': 'plain'}
+        if version:
+            params['version'] = version.lower().encode('utf-8')
+
+        f = urlopen(self.api_url + '?' + urlencode(params))
+        tree = ElementTree.parse(f)
+
+        message = self.formatPassage(tree)
+        if message:
+            event.addresponse(message)
+        errors = list(tree.findall('.//error'))
+        if errors:
+            event.addresponse('There were errors: %s.', '. '.join(err.text for err in errors))
+        elif not message:
+            event.addresponse("I couldn't find that passage.")
+   
+    # Allow queries which are quite definitely bible references to omit "bible".
+    # Specifically, they must start with the name of a book and be followed only
+    # by book names, chapters and verses.
+    @match(r'^((?:(?:' + books + ')(?:\d|[-:,]|\s)*)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    def bookbible(self, *args):
+        self.bible(*args)
+
+    def formatPassage(self, xml):
+        message = []
+        oldref = (None, None, None)
+        for item in xml.findall('.//item'):
+            ref, text = self.verseInfo(item)
+            if oldref[0] != ref[0]:
+                message.append(u'(%s %s:%s)' % ref)
+            elif oldref[1] != ref[1]:
+                message.append(u'(%s:%s)' % ref[1:])
+            else:
+                message.append(u'%s' % ref[2])
+            oldref = ref
+
+            message.append(text)
+
+        return u' '.join(message)
+    
+    def verseInfo(self, xml):
+        book, chapter, verse, text = map(xml.findtext,
+                                        ('bookname', 'chapter', 'verse', 'text'))
+        return ((book, chapter, verse), text)
 
 # vi: set et sta sw=4 ts=4:
