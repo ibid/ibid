@@ -4,13 +4,10 @@ from sys import argv, exit, stderr
 from os.path import basename, exists
 from optparse import OptionParser
 
-try:
-    from simplejson import loads
-except ImportError:
-    from json import loads
 from sqlalchemy.sql import func
 
 import ibid
+from ibid.compat import json
 from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, escape_name
 
@@ -65,7 +62,7 @@ if not exists(filename):
     exit(3)
 
 try:
-    facts = loads(open(filename).read())
+    facts = json.loads(open(filename).read())
 except ValueError, e:
     print >> stderr, u"Invalid factpack"
     exit(4)

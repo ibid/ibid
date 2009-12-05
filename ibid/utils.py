@@ -1,5 +1,4 @@
 import cgi
-from collections import defaultdict
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
@@ -16,19 +15,8 @@ from dateutil.tz import tzlocal, tzutc
 from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
-# json only in Python >=2.6
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
-# xml.etree only in Python >= 2.5
-try:
-    from xml.etree import cElementTree as ElementTree
-except ImportError:
-    import cElementTree as ElementTree
-
 import ibid
+from ibid.compat import defaultdict, ElementTree, json
 
 def ago(delta, units=None):
     parts = []
@@ -166,11 +154,19 @@ def format_date(timestamp, length='datetime'):
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
+class ContentTypeException(Exception):
+    pass
+
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"
 
     req = urllib2.Request(url, data, headers)
     f = urllib2.urlopen(req)
+
+    if f.info().gettype() not in ('text/html', 'application/xhtml+xml'):
+        f.close()
+        raise ContentTypeException("Content type isn't HTML, but " + f.info().gettype())
+
     data = f.read()
     f.close()
 
@@ -231,5 +227,11 @@ def human_join(items, separator=u',', conjunction=u'and'):
     separator += u' '
     return ((u' %s ' % conjunction)
             .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
+
+def plural(count, singular, plural):
+    "Return sigular or plural depending on count"
+    if count == 1:
+        return singular
+    return plural
 
 # vi: set et sta sw=4 ts=4:

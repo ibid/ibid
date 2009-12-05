@@ -144,11 +144,11 @@ class Ircbot(irc.IRCClient):
         target = response['target'].split('!')[0]
         raw_target = target.encode('utf-8')
 
-        if 'action' in response and response['action']:
+        if response.get('action', False):
             # We can't use self.me() because it prepends a # onto channel names
             self.ctcpMakeQuery(raw_target, [('ACTION', raw_message)])
             self.factory.log.debug(u"Sent action to %s: %s", target, message)
-        elif 'notice' in response and response['notice']:
+        elif response.get('notice', False):
             self.notice(raw_target, raw_message)
             self.factory.log.debug(u"Sent notice to %s: %s", target, message)
         else:
@@ -196,7 +196,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
     auth = ('hostmask', 'nickserv')
-    supports = ('action',)
+    supports = ('action', 'notice')
 
     port = IntOption('port', 'Server port number', 6667)
     ssl = BoolOption('ssl', 'Use SSL', False)

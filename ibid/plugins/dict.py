@@ -18,6 +18,16 @@ class Dict(Processor):
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
 
+    @staticmethod
+    def reduce_suggestions(suggestions):
+        "Remove duplicate suggestions and suffixes"
+        output = []
+        for s in suggestions:
+            s = s.getword()
+            if not s.startswith('-') and s not in output:
+                output.append(s)
+        return output
+
     @match(r'^(?:define|dict)\s+(.+?)(?:\s+using\s+(.+))?$')
     def define(self, event, word, dictionary):
         connection = Connection(self.server, self.port)
@@ -39,7 +49,9 @@ class Dict(Processor):
                 event.addresponse(
                         u"I don't know about %(word)s. Maybe you meant %(suggestions)s?", {
                             'word': word,
-                            'suggestions': human_join([d.getword() for d in suggestions], conjunction=u'or'),
+                            'suggestions': human_join(
+                                self.reduce_suggestions(suggestions),
+                                conjunction=u'or'),
                 })
             else:
                 event.addresponse(u"I don't have a definition for that. Is it even a word?")
@@ -67,7 +79,8 @@ class Dict(Processor):
 
         suggestions = connection.match('*', strategy, word)
         if suggestions:
-            event.addresponse(u'Suggestions: %s', human_join(d.getword() for d in suggestions))
+            event.addresponse(u'Suggestions: %s', human_join(
+                    self.reduce_suggestions(suggestions), conjunction=u'or'))
         else:
             event.addresponse(u"That doesn't seem correct, but I can't find anything to suggest")
 

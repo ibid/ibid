@@ -6,10 +6,8 @@ from optparse import OptionParser, OptionGroup
 from twisted.spread import pb
 from twisted.internet import reactor
 from twisted.python import util
-try:
-    import simplejson as json
-except ImportError:
-    import json
+
+from ibid.compat import json
 
 parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <parameters>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
