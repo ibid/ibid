@@ -837,7 +837,7 @@ class WerewolfGame(Processor):
         "Return a printable version of the current state"
         if self.state is None:
             return 'stopped'
-        return self.__name__
+        return self.state.__name__
 
 class WerewolfState(Processor):
     feature = 'werewolf'
