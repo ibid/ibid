@@ -10,13 +10,9 @@ from sys import stdin, stdout, stderr, exit
 
 from sqlalchemy import select, DateTime, Unicode, UnicodeText
 from twisted.python.modules import getModule
-# json only in Python >=2.6
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 import ibid
+from ibid.compat import json
 from ibid.config import FileConfig
 from ibid.core import DatabaseManager
 from ibid.models import metadata, upgrade_schemas

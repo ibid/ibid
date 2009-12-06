@@ -3,14 +3,11 @@ from random import choice
 import string
 import logging
 import re
-try:
-    from hashlib import sha1
-except ImportError:
-    from sha import new as sha1
 
 from sqlalchemy import or_
 
 import ibid
+from ibid.compat import hashlib
 from ibid.models import Credential, Permission
 
 chars = string.letters + string.digits
@@ -21,7 +18,7 @@ def hash(password, salt=None):
         salt = salt[:8]
     else:
         salt = ''.join([choice(chars) for i in xrange(8)])
-    return unicode(salt + sha1(salt + password).hexdigest())
+    return unicode(salt + hashlib.sha1(salt + password).hexdigest())
 
 def permission(name, account, source, session):
     if account:

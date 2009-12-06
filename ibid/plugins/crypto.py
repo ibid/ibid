@@ -2,31 +2,8 @@ from crypt import crypt
 import base64
 import re
 
+from ibid.compat import hashlib
 from ibid.plugins import Processor, match
-
-# hashlib only in Python >= 2.5
-try:
-    import hashlib
-except ImportError:
-    import md5, sha
-    class hashlib(object):
-        @staticmethod
-        def md5(x):
-            return md5.new(x)
-
-        @staticmethod
-        def sha1(x):
-            return sha.new(x)
-
-        @staticmethod
-        def sha224(x):
-            class unsupported(object):
-                @staticmethod
-                def hexdigest():
-                    return 'Not Supported'
-            return unsupported
-
-        sha512 = sha384 = sha224
 
 help = {}
 

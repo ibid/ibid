@@ -3,7 +3,6 @@
 import logging
 from optparse import OptionParser
 from os import getenv
-from sys import exit
 from os.path import exists
 
 try:
@@ -13,7 +12,6 @@ try:
 except ImportError:
     pass
 
-from twisted.python.modules import getModule
 from sqlalchemy.exceptions import IntegrityError
 
 import ibid
@@ -28,6 +26,8 @@ parser.add_option("-o", "--only", dest="load_base", action="store_false", defaul
         help="Only load the specified plugins, not the common base plugins")
 parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
         help="Load all all configured plugins")
+parser.add_option("-p", "--public", dest="public", action="store_true", default=False,
+        help="Make testchan public, it's private by default")
 
 (options, args) = parser.parse_args()
 
@@ -39,7 +39,13 @@ if options.load_configured and not options.load_base:
 def auth_responses(event, permission):
     return True
 
-ibid.plugins.auth_responses = auth_responses
+class FakeAuth(object):
+    def authorise(self, event, permission):
+        return True
+
+ibid.auth = FakeAuth()
+
+#ibid.plugins.auth_responses = auth_responses
 ibid.options = {'base': '.'}
 
 logging.basicConfig(level=logging.DEBUG)
@@ -52,7 +58,8 @@ ibid.reloader.reload_dispatcher()
 class TestSource(dict):
     type = 'test'
     permissions = []
-    supports = []
+    supports = ('action', 'notice')
+    logging_name = lambda self, name: name
 
 ibid.sources[u'test_source'] = TestSource()
 
@@ -107,7 +114,7 @@ while True:
     event.identity = identity_id
     event.account =  None
     event.addressed = True
-    event.public = False
+    event.public = options.public
     event.channel = u"testchan"
 
     try:
@@ -132,7 +139,7 @@ while True:
             try:
                 event.session.commit()
             except IntegrityError:
-                self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                log.exception(u"Exception occured committing session from the %s processor of %s plugin",
                         processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
                 event.session.rollback()
@@ -140,9 +147,14 @@ while True:
                 del event['session']
 
     for response in event.responses:
-        if isinstance(response, dict):
-            response = response['reply']
-        print 'Response: %s' % response
+        if isinstance(response, basestring):
+            print 'Response: %s' % response
+        elif response.get('action', False):
+            print 'Action: %s' % response['reply']
+        elif response.get('notice', False):
+            print 'Notice: %s' % response['reply']
+        else:
+            print 'Response: %s' % response['reply']
 
     event.session.close()
 

@@ -172,9 +172,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
     if number:
         try:
             if literal:
-                return query.order_by(FactoidValue.id)[int(number):]
+                return query.order_by(FactoidValue.id)[int(number) - 1:]
             else:
-                factoid = query.order_by(FactoidValue.id)[int(number)]
+                factoid = query.order_by(FactoidValue.id)[int(number) - 1]
         except IndexError:
             return
     if all or literal:
@@ -188,11 +188,13 @@ class Utils(Processor):
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     def literal(self, event, name, number, pattern, is_regex):
-        factoids = get_factoid(event.session, name, number, pattern, is_regex, literal=True)
-        number = number and int(number) or 0
+        factoids = get_factoid(event.session, name, number, pattern, is_regex,
+                literal=True)
+        number = number and int(number) or 1
         if factoids:
             event.addresponse(u', '.join(u'%i: %s'
-                % (index + number, value.value) for index, (factoid, name, value) in enumerate(factoids)))
+                % (index + number, value.value)
+                  for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
     u"""forget <name> [( #<number> | /<pattern>/[r] )]
@@ -411,13 +413,16 @@ class Get(Processor, RPC):
 
             (reply, count) = reply_re.subn('', reply)
             if count:
-                return {'reply': reply}
+                return {'address': False, 'reply': reply}
 
             reply = u'%s %s' % (unescape_name(fname.name), reply)
             return reply
 
 class Set(Processor):
-    u"""<name> (<verb>|=<verb>=) [also] <value>"""
+    u"""
+    <name> (<verb>|=<verb>=) [also] <value>
+    last set factoid
+    """
     feature = 'factoids'
 
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
@@ -425,6 +430,7 @@ class Set(Processor):
 
     priority = 800
     permission = u'factoid'
+    last_set_factoid = None
 
     def setup(self):
         self.set_factoid.im_func.pattern = re.compile(
@@ -474,10 +480,23 @@ class Set(Processor):
         factoid.values.append(fvalue)
         event.session.save_or_update(factoid)
         event.session.commit()
+        self.last_set_factoid=factoid.names[0].name
         log.info(u"Added value '%s' to factoid %s (%s) by %s/%s (%s)",
                 fvalue.value, factoid.id, factoid.names[0].name,
                 event.account, event.identity, event.sender['connection'])
-        event.addresponse(True)
+        event.addresponse(choice((
+                u'If you say so',
+                u'One learns a new thing every day',
+                u"I'll remember that",
+                u'Got it',
+            )))
+
+    @match(r'^(?:last\s+set\s+factoid|what\s+did\s+\S+\s+just\s+set)$')
+    def last_set(self, event):
+        if self.last_set_factoid is None:
+            event.addresponse(u'Sorry, nobody has taught me anything recently')
+        else:
+            event.addresponse(u'It was: %s', self.last_set_factoid)
 
 class Modify(Processor):
     u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
@@ -660,7 +679,8 @@ class StaticFactoid(Processor):
         for factoid in self.factoids.values():
             for match in factoid['matches']:
                 if re.search(match, event.message['stripped'], re.I|re.DOTALL):
-                    event.addresponse({'reply': _interpolate(choice(factoid['responses']), event)})
+                    event.addresponse(_interpolate(choice(factoid['responses']), event),
+                            address=False)
                     return
 
 # vi: set et sta sw=4 ts=4:

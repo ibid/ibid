@@ -140,7 +140,9 @@ class Retrieve(Processor):
             return
 
         articles = feed.entries[start:number+start]
-        articles = [u'%s: "%s"' % (feed.entries.index(entry), html2text_file(entry.title, None).strip()) for entry in articles]
+        articles = [u'%s: "%s"' % (feed.entries.index(entry) + 1,
+                                   html2text_file(entry.title, None).strip())
+                    for entry in articles]
         event.addresponse(u', '.join(articles))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
@@ -159,10 +161,10 @@ class Retrieve(Processor):
         article = None
 
         if number:
-            if int(number) >= len(feed.entries):
+            if int(number) > len(feed.entries) or 1 > int(number):
                 event.addresponse(u"That's old news dude")
                 return
-            article = feed.entries[int(number)]
+            article = feed.entries[int(number) - 1]
 
         else:
             pattern = re.compile(pattern, re.I)

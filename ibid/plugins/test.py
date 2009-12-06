@@ -23,7 +23,7 @@ class Email(Processor):
 
     @match(r'^email\s+(.+)$')
     def email(self, event, address):
-        event.addresponse({'reply': u'Test message', 'source': 'email', 'target': unicode(address)})
+        event.addresponse(u'Test message', source='email', target=unicode(address))
         event.addresponse(u"I've emailed %s", address)
 
 class Except(Processor):

@@ -38,15 +38,12 @@ class Coffee(Processor):
         self.pots[(event.source, event.channel)] = [event.sender['nick']]
         ibid.dispatcher.call_later(self.time, self.coffee_announce, event)
 
-        event.addresponse({
-            'action': True,
-            'reply': choice((
+        event.addresponse(choice((
                 u'puts the kettle on',
                 u'starts grinding coffee',
                 u'flips the salt-timer',
                 u'washes some mugs',
-            )),
-        })
+            )), action=True)
 
     @match('^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
@@ -175,15 +172,15 @@ class Insult(Processor):
         u'urine samples', u'waffle-house grits', u'yoo-hoo',
     ))
 
-    @match(r'^.*\b(?:insult|flame)\s+(.+)$')
+    @match(r'^(?:insult|flame)\s+(.+)$')
     def insult(self, event, insultee):
         articleadj = choice(self.adjectives)
         articleadj = (articleadj[0] in u'aehiou' and u'an ' or u'a ') + articleadj
 
-        event.addresponse({'reply': choice((
+        event.addresponse(choice((
             u'%(insultee)s, thou %(adj1)s, %(adj2)s %(noun)s',
             u'%(insultee)s is nothing but %(articleadj)s %(collection)s of %(adj1)s %(plnoun)s',
-        )) % {
+        )), {
             'insultee': insultee,
             'adj1': choice(self.adjectives),
             'adj2': choice(self.adjectives),
@@ -191,6 +188,6 @@ class Insult(Processor):
             'collection': choice(self.collections),
             'noun': choice(self.nouns),
             'plnoun': choice(self.plnouns),
-        }})
+        }, address=False)
 
 # vi: set et sta sw=4 ts=4:

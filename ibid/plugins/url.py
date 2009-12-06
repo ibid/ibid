@@ -1,7 +1,8 @@
 from datetime import datetime
 from httplib import BadStatusLine
 from urllib import urlencode
-from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, HTTPBasicAuthHandler, install_opener
+from urllib2 import urlopen, HTTPRedirectHandler, build_opener, HTTPError, \
+    HTTPBasicAuthHandler, install_opener
 import logging
 import re
 
@@ -44,7 +45,10 @@ class Delicious(object):
         "Posts a URL to delicious.com"
 
         date = datetime.utcnow()
-        title = self._get_title(url)
+        try:
+            title = self._get_title(url)
+        except HTTPError:
+            return
 
         con_re = re.compile(r'!n=|!')
         connection_body = con_re.split(event.sender['connection'])
@@ -74,7 +78,7 @@ class Delicious(object):
             'extended' : event.message['raw'],
             }
 
-        self._set_auth(username,password)
+        self._set_auth(username, password)
         posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
 
         try:
@@ -94,6 +98,8 @@ class Delicious(object):
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title
+        except HTTPError, e:
+            raise
         except Exception, e:
             log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
