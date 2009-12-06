@@ -7,7 +7,6 @@ from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, \
         __version__ as sqlalchemy_version
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
         ProgrammingError
 
