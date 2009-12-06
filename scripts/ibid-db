@@ -5,7 +5,6 @@ import gzip
 import logging
 from optparse import OptionParser, OptionGroup
 from os.path import exists
-import re
 from sys import stdin, stdout, stderr, exit
 
 from sqlalchemy import select, DateTime, Unicode, UnicodeText
@@ -18,10 +17,10 @@ from ibid.core import DatabaseManager
 from ibid.models import metadata, upgrade_schemas
 from ibid.utils import ibid_version
 
-parser = OptionParser(usage='%prog [options...]',
-        description="""Ibid Database management tool. Used for import, export,
-and upgrades. Export format is a header-line followed by JSON. FILE can be -
-for stdin/stdout or can end in .gz for automatic Gzip compression.""")
+parser = OptionParser(usage='%prog [options...]', description=
+"""Ibid Database management tool. Used for import, export, and upgrades.
+Export format is JSON. FILE can be - for stdin/stdout or can end
+in .gz for automatic Gzip compression.""")
 commands = OptionGroup(parser, 'Modes')
 commands.add_option('-e', '--export', dest='export', metavar='FILE',
         help='Export DB contents to FILE.')
@@ -126,17 +125,7 @@ elif options.import_ is not None:
     else:
         input = open(options.import_, 'rb')
 
-    version = input.readline().strip()
-    version = re.match(r'^# Ibid (.+) Database dump for', version).group(1)
-    if version != (ibid_version() or 'bzr'):
-        print >> stderr, (
-            'Ibid version differs between dump (%(dump)s) and '
-            'local install (%(local)s). Aborting.') % {
-                'dump': version,
-                'local': ibid_version() or 'bzr',
-        }
-        exit(1)
-
+    version = input.readline()
     dump = json.loads(input.read())
 
     dump_schema = dict((table['table'], table['version'])
@@ -165,7 +154,7 @@ elif options.import_ is not None:
             dependancy = fk.target_fullname.split('.')[0]
             if dependancy not in loaded:
                 load_table(dependancy, dump[dependancy])
-            
+
         maxid = 0
         for row in data:
             if row['id'] > maxid:
