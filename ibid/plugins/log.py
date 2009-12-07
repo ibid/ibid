@@ -2,13 +2,13 @@
 
 from datetime import datetime
 from os.path import dirname, join, expanduser
-from os import makedirs
+from os import chmod, makedirs
 
 from dateutil.tz import tzlocal, tzutc
 
 import ibid
 from ibid.plugins import Processor
-from ibid.config import Option, BoolOption
+from ibid.config import Option, BoolOption, IntOption
 from ibid.event import Event
 
 class Log(Processor):
@@ -31,6 +31,8 @@ class Log(Processor):
             u'%(timestamp)s -%(sender_nick)s- %(message)s')
     presence_format = Option('presence_format', 'Format string for presence events',
             u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) is now %(state)s')
+
+    file_mode = IntOption('file_mode', u'File Permissions mode, in octal', 644)
 
     logs = {}
 
@@ -57,6 +59,7 @@ class Log(Processor):
 
             file = open(filename, 'a')
             self.logs[filename] = file
+            chmod(filename, int(str(self.file_mode), 8))
 
         return self.logs[filename]
 
