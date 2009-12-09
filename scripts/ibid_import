@@ -248,8 +248,11 @@ if __name__ == '__main__':
 
     source = unicode(argv[2])
 
-    config = len(argv) > 3 and argv[3] or 'ibid.ini'
-    config = FileConfig(config)
+    if len(argv) > 3:
+        config = FileConfig(argv[3])
+    else:
+        config = FileConfig('ibid.ini')
+        config.merge(FileConfig('local.ini'))
 
     ibidengine = create_engine(config.databases['ibid'], encoding='utf-8')
     IbidSession = sessionmaker(bind=ibidengine, transactional=False)
