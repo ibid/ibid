@@ -2,7 +2,9 @@
 
 from sys import argv, exit, stderr, stdout
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, or_, ForeignKey, Boolean, Text
+from chardet import detect
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
+                       or_, ForeignKey, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
@@ -13,6 +15,24 @@ from ibid.plugins.seen import Sighting
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 from ibid.plugins.karma import Karma
 from ibid.plugins.url import URL
+
+def decode(string):
+    if string is None:
+        return None
+
+    string = string.replace('\x00', '')
+    try:
+        decoded = unicode(string, 'utf-8')
+    except UnicodeDecodeError, e:
+        guessed = detect(string)
+        charset = guessed['encoding']
+        if guessed['confidence'] < 0.5:
+            charset = 'iso-8859-15'
+        decoded = unicode(string, charset, errors='replace')
+        print >> stderr, "Decoded '%s' as %s to '%s'\n" \
+                % (string, charset, decoded.encode('utf-8'))
+
+    return decoded
 
 Base = declarative_base()
 
@@ -26,6 +46,11 @@ class KnabFactoid(Base):
     flags = Column(Integer)
     time = Column(DateTime)
 
+    def decode(self):
+        self.decoded_fact = decode(self.fact)
+        self.decoded_verb = decode(self.verb)
+        self.decoded_value = decode(self.value)
+
     def __repr__(self):
         return u'<KnabFactoid %s %s %s>' % (self.fact, self.verb, self.value)
 
@@ -37,6 +62,10 @@ class KnabSighting(Base):
     channel = Column(String(30))
     message = Column(Text)
 
+    def decode(self):
+        self.decoded_channel = decode(self.channel)
+        self.decoded_message = decode(self.message)
+
     def __repr__(self):
         return u'<KnabSighting %s>' % self.nick
 
@@ -46,6 +75,9 @@ class KnabKarma(Base):
     person = Column(String(100), primary_key=True)
     karma = Column(Integer)
     time = Column(DateTime)
+
+    def decode(self):
+        self.decoded_person = decode(self.person)
 
     def __repr__(self):
         return u'<KnabKarma %s %s>' % (self.person, self.karma)
@@ -57,6 +89,13 @@ class KnabURL(Base):
     channel = Column(String(30))
     url = Column(String(250))
     time = Column(DateTime, primary_key=True)
+
+    def decode(self):
+        self.decoded_channel = decode(self.channel)
+        self.decoded_url = decode(self.url)
+
+    def __repr__(self):
+        return u'<KnabURL %s>' % self.url
 
 def identify(session, user, source, created, create=True):
     if not user:
@@ -77,54 +116,44 @@ def identify(session, user, source, created, create=True):
 
     return identity.id
 
-def decode(string):
-    if string is None:
-        return None
-
-    string = string.replace('\x00', '')
-    try:
-        decoded = unicode(string, 'utf-8')
-    except UnicodeDecodeError, e:
-        decoded = unicode(string, 'iso-8859-15', errors='replace')
-        print >> stderr, 'Decoded to %s\n' % decoded
-
-    return decoded
-
 def import_factoids(knab, ibid, source):
     ibid.begin()
 
-    print
-    print u"Importing factoids"
+    print u'\nImporting factoids'
     position = 0
     total = knab.query(KnabFactoid).count()
-    for index, kfactoid in enumerate(knab.query(KnabFactoid).order_by(KnabFactoid.time.asc()).all()):
-
+    for index, kfactoid in enumerate(knab.query(KnabFactoid)
+                                         .order_by(KnabFactoid.time.asc())
+                                         .all()):
         if not kfactoid:
             continue
-
-        kfactoid.fact = decode(kfactoid.fact)
-        kfactoid.verb = decode(kfactoid.verb)
-        kfactoid.value = decode(kfactoid.value)
+        kfactoid.decode()
 
         if index % 100 == 0:
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
-        fname = ibid.query(FactoidName).filter(func.lower(FactoidName.name)==unicode(kfactoid.fact.lower())).first()
+        fname = ibid.query(FactoidName) \
+                    .filter(func.lower(FactoidName.name)
+                            == kfactoid.decoded_fact.lower()) \
+                    .first()
         if not fname:
             factoid = Factoid()
-            fname = FactoidName(kfactoid.fact, identify(ibid, kfactoid.who, source, kfactoid.time))
+            fname = FactoidName(kfactoid.decoded_fact,
+                    identify(ibid, kfactoid.who, source, kfactoid.time))
             fname.time = factoid.time = kfactoid.time
             factoid.names.append(fname)
         else:
             factoid = fname.factoid
 
-        if kfactoid.value.strip().lower().startswith('<reply>') or kfactoid.value.strip().lower().startswith('<action>'):
-            value = kfactoid.value
+        lvalue = kfactoid.decoded_value.strip().lower()
+        if lvalue.startswith('<reply>') or lvalue.startswith('<action>'):
+            value = kfactoid.decoded_value
         else:
-            value = u'%s %s' % (kfactoid.verb, kfactoid.value)
+            value = kfactoid.decoded_verb + u' ' + kfactoid.decoded_value
 
-        fvalue = FactoidValue(value, identify(ibid, kfactoid.who, source, kfactoid.time))
+        fvalue = FactoidValue(value,
+                 identify(ibid, kfactoid.who, source, kfactoid.time))
         fvalue.time = kfactoid.time
 
         factoid.values.append(fvalue)
@@ -135,23 +164,24 @@ def import_factoids(knab, ibid, source):
 def import_sightings(knab, ibid, source):
     ibid.begin()
 
-    print
-    print u"Importing sightings"
+    print u'\nImporting sightings'
     position = 0
     total = knab.query(KnabSighting).count()
-    for index, ksighting in enumerate(knab.query(KnabSighting).order_by(KnabSighting.time.asc()).all()):
-
+    for index, ksighting in enumerate(knab.query(KnabSighting)
+                                          .order_by(KnabSighting.time.asc())
+                                          .all()):
         if not ksighting:
             continue
-
-        ksighting.channel = decode(ksighting.channel)
-        ksighting.message = decode(ksighting.message)
+        ksighting.decode()
 
         if index % 100 == 0:
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
-        sighting = Sighting(identify(ibid, ksighting.nick, source, ksighting.time), u'message', ksighting.channel, ksighting.message)
+        sighting = Sighting(
+                identify(ibid, ksighting.nick, source, ksighting.time),
+                u'message', ksighting.decoded_channel,
+                ksighting.decoded_message)
         sighting.time = ksighting.time
 
         ibid.save(sighting)
@@ -162,19 +192,19 @@ def import_sightings(knab, ibid, source):
 def import_karma(knab, ibid, source):
     ibid.begin()
 
-    print
-    print u"Importing karma"
+    print u'\nImporting karma'
     position = 0
     total = knab.query(KnabKarma).count()
-    for index, kkarma in enumerate(knab.query(KnabKarma).order_by(KnabKarma.time.asc()).all()):
-
-        kkarma.person = decode(kkarma.person)
+    for index, kkarma in enumerate(knab.query(KnabKarma)
+                                       .order_by(KnabKarma.time.asc())
+                                       .all()):
+        kkarma.decode()
 
         if index % 100 == 0:
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
-        karma = Karma(kkarma.person)
+        karma = Karma(kkarma.decoded_person)
         karma.value = kkarma.karma
         karma.changes = abs(karma.value)
         karma.time = kkarma.time
@@ -190,16 +220,17 @@ def import_urls(knab, ibid, source):
     print u"Importing URLs"
     position = 0
     total = knab.query(KnabURL).count()
-    for index, kurl in enumerate(knab.query(KnabURL).order_by(KnabURL.time.asc()).all()):
-
-        kurl.channel = decode(kurl.channel)
-        kurl.url = decode(kurl.url)
+    for index, kurl in enumerate(knab.query(KnabURL)
+                                     .order_by(KnabURL.time.asc())
+                                     .all()):
+        kurl.decode()
 
         if index % 100 == 0:
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
-        url = URL(kurl.url, kurl.channel, identify(ibid, kurl.nick, source, kurl.time))
+        url = URL(kurl.decoded_url, kurl.decoded_channel,
+                  identify(ibid, kurl.nick, source, kurl.time))
         url.time = kurl.time
 
         ibid.save(url)
@@ -208,7 +239,7 @@ def import_urls(knab, ibid, source):
 
 if __name__ == '__main__':
     if len(argv) < 3:
-        print 'Usage: %s <knab database> <source> [<ibid config>]' % (argv[0], )
+        print u'Usage: %s <knab database> <source> [<ibid config>]' % argv[:1]
         exit(1)
 
     knabengine = create_engine(argv[1])
@@ -229,8 +260,7 @@ if __name__ == '__main__':
     import_sightings(knab, ibid, source)
     import_karma(knab, ibid, source)
 
-    print
-    print 'Done'
+    print u'\nDone'
 
     knab.close()
     ibid.close()
