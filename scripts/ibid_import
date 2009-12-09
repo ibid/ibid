@@ -27,7 +27,10 @@ def decode(string):
         guessed = detect(string)
         charset = guessed['encoding']
         if guessed['confidence'] < 0.5:
-            charset = 'iso-8859-15'
+            charset = 'ISO-8859-15'
+        # Common gussing mistake:
+        if charset.startswith('ISO-8859') and '\x92' in string:
+            charset = 'windows-1252'
         decoded = unicode(string, charset, errors='replace')
         print >> stderr, "Decoded '%s' as %s to '%s'\n" \
                 % (string, charset, decoded.encode('utf-8'))
