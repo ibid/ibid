@@ -116,6 +116,12 @@ def identify(session, user, source, created, create=True):
 
     return identity.id
 
+def too_long(value, max_length, name):
+    if value is not None and len(value) > max_length:
+        print >> stderr, "%s '%s' (%i) is too long" % (name, value, len(value))
+        return True
+    return False
+
 def import_factoids(knab, ibid, source):
     ibid.begin()
 
@@ -133,14 +139,22 @@ def import_factoids(knab, ibid, source):
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
+        if too_long(kfactoid.decoded_fact,
+                    FactoidName.__table__.c.name.type.length, 'Factoid name'):
+            continue
+
         fname = ibid.query(FactoidName) \
                     .filter(func.lower(FactoidName.name)
                             == kfactoid.decoded_fact.lower()) \
                     .first()
         if not fname:
             factoid = Factoid()
-            fname = FactoidName(kfactoid.decoded_fact,
-                    identify(ibid, kfactoid.who, source, kfactoid.time))
+            try:
+                fname = FactoidName(kfactoid.decoded_fact,
+                        identify(ibid, kfactoid.who, source, kfactoid.time))
+            except TypeError:
+                print index, kfactoid
+                raise
             fname.time = factoid.time = kfactoid.time
             factoid.names.append(fname)
         else:
@@ -178,6 +192,10 @@ def import_sightings(knab, ibid, source):
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
+        if too_long(ksighting.decoded_channel,
+                    Sighting.__table__.c.channel.type.length, 'Channel name'):
+            continue
+
         sighting = Sighting(
                 identify(ibid, ksighting.nick, source, ksighting.time),
                 u'message', ksighting.decoded_channel,
@@ -204,6 +222,10 @@ def import_karma(knab, ibid, source):
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
+        if too_long(kkarma.decoded_person,
+                    Karma.__table__.c.subject.type.length, 'Karma subject'):
+            continue
+
         karma = Karma(kkarma.decoded_person)
         karma.value = kkarma.karma
         karma.changes = abs(karma.value)
@@ -216,8 +238,7 @@ def import_karma(knab, ibid, source):
 def import_urls(knab, ibid, source):
     ibid.begin()
 
-    print
-    print u"Importing URLs"
+    print u'\nImporting URLs'
     position = 0
     total = knab.query(KnabURL).count()
     for index, kurl in enumerate(knab.query(KnabURL)
@@ -228,6 +249,10 @@ def import_urls(knab, ibid, source):
         if index % 100 == 0:
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
+
+        if too_long(kurl.decoded_channel, URL.__table__.c.channel.type.length,
+                    'Channel name'):
+            continue
 
         url = URL(kurl.decoded_url, kurl.decoded_channel,
                   identify(ibid, kurl.nick, source, kurl.time))

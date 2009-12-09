@@ -458,7 +458,7 @@ class Identity(Base):
         self.source = source
         self.identity = identity
         self.account_id = account_id
-        created = datetime.utcnow()
+        self.created = datetime.utcnow()
 
     def __repr__(self):
         return '<Identity %s on %s>' % (self.identity, self.source)
