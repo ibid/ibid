@@ -29,7 +29,8 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64), nullable=False, unique=True, index=True),
+    Column('name', UnicodeText, nullable=False, unique=True, index=True,
+            info={'ibid_mysql_index_length': 32}),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
@@ -48,8 +49,11 @@ class FactoidName(Base):
             self.add_index(self.table.c.factpack)
         def upgrade_4_to_5(self):
             self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
+        def upgrade_5_to_6(self):
+            self.alter_column(Column('name', UnicodeText, nullable=False,
+                unique=True, index=True, info={'ibid_mysql_index_length': 32}))
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 5)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 6)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name

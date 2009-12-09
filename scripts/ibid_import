@@ -142,10 +142,6 @@ def import_factoids(knab, ibid, source):
             stdout.write('\r%s/%s' % (index, total))
             stdout.flush()
 
-        if too_long(kfactoid.decoded_fact,
-                    FactoidName.__table__.c.name.type.length, 'Factoid name'):
-            continue
-
         fname = ibid.query(FactoidName) \
                     .filter(func.lower(FactoidName.name)
                             == kfactoid.decoded_fact.lower()) \
