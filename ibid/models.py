@@ -59,10 +59,10 @@ class VersionedSchema(object):
         "Upgrade the table's schema to the latest version."
 
         for fk in self.table.foreign_keys:
-            dependancy = fk.target_fullname.split('.')[0]
+            dependency = fk.target_fullname.split('.')[0]
             log.debug("Upgrading table %s before %s",
-                    dependancy, self.table.name)
-            metadata.tables[dependancy].versioned_schema \
+                    dependency, self.table.name)
+            metadata.tables[dependency].versioned_schema \
                     .upgrade_schema(sessionmaker)
 
         self.upgrade_session = session = sessionmaker()
@@ -116,7 +116,7 @@ class VersionedSchema(object):
 
     def _index_name(self, col):
         """
-        We'd like to not duplicate an existing index so try to abide by the
+        We'd like not to duplicate an existing index so try to abide by the
         local customs
         """
         session = self.upgrade_session

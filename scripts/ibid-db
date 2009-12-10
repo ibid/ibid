@@ -151,9 +151,9 @@ elif options.import_ is not None:
 
         dbtable = metadata.tables[table]
         for fk in dbtable.foreign_keys:
-            dependancy = fk.target_fullname.split('.')[0]
-            if dependancy not in loaded:
-                load_table(dependancy, dump[dependancy])
+            dependency = fk.target_fullname.split('.')[0]
+            if dependency not in loaded:
+                load_table(dependency, dump[dependency])
 
         maxid = 0
         for row in data:
