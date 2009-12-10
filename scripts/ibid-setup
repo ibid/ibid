@@ -75,7 +75,7 @@ upgrade_schemas(Session)
 
 print u'Database tables created'
 
-print u'Please enter the details for you account. This account will be given full admin permissions.'
+print u'Please enter the details for your account. This account will be given full admin permissions.'
 identity = unicode(raw_input('Nick/JID: '))
 source = sname or unicode(raw_input('Source name: '))
 pass1 = getpass('Password: ')
