@@ -109,7 +109,10 @@ class DCBot(dcwords.DCClient):
         if target == '$public':
             target = None
 
-        if response.get('action', False):
+        if response.get('topic', False):
+            self.topic(message)
+            self.factory.log.debug(u'Set topic to %s', topic)
+        elif response.get('action', False):
             if self.factory.action_prefix and target is None:
                 self.say(target, u'%s %s' % (self.factory.action_prefix, message))
             else:
@@ -139,7 +142,7 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    supports = ('action',)
+    supports = ('action', 'topic')
     auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)
