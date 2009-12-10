@@ -235,8 +235,10 @@ class Reloader(object):
                     else:
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
 
-            ibid.models.check_schema_versions(ibid.databases['ibid'])
-
+            try:
+                ibid.models.check_schema_versions(ibid.databases['ibid'])
+            except ibid.models.SchemaVersionException, e:
+                self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"', e.message)
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
             return False
@@ -301,7 +303,11 @@ class DatabaseManager(dict):
             self.load(database)
 
         if check_schema_versions:
-            ibid.models.check_schema_versions(self['ibid'])
+            try:
+                ibid.models.check_schema_versions(self['ibid'])
+            except ibid.models.SchemaVersionException, e:
+                self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"', e.message)
+                raise
 
     def load(self, name):
         uri = ibid.config.databases[name]
