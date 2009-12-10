@@ -79,7 +79,7 @@ class Manage(Processor):
     permission = u'feeds'
 
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
-    @authorise
+    @authorise()
     def add(self, event, url, name):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()
@@ -131,7 +131,7 @@ class Manage(Processor):
             event.addresponse(u"I don't know about any feeds")
 
     @match(r'^remove\s+(.+?)\s+feed$')
-    @authorise
+    @authorise()
     def remove(self, event, name):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()
@@ -147,7 +147,7 @@ class Manage(Processor):
             event.addresponse(True)
 
     @match(r'^(?:stop|don\'t)\s+poll(?:ing)?\s(.+)\s+feed$')
-    @authorise
+    @authorise()
     def no_poll(self, event, name):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()
@@ -164,7 +164,7 @@ class Manage(Processor):
             event.addresponse(True)
 
     @match(r'^poll\s(.+)\s+feed\s+(?:to|notify)\s+(.+)\s+on\s+(.+)$')
-    @authorise
+    @authorise(fallthrough=False)
     def enable_poll(self, event, name, target, source):
         feed = event.session.query(Feed) \
                 .filter(func.lower(Feed.name) == name.lower()).first()

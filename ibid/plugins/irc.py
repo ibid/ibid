@@ -18,7 +18,7 @@ class Actions(Processor):
     permission = 'sources'
 
     @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
-    @authorise
+    @authorise()
     def channel(self, event, action, channel, source):
         action = action.lower()
 
@@ -47,7 +47,7 @@ class Actions(Processor):
             event.addresponse(u'Parting %s', channel)
 
     @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
-    @authorise
+    @authorise()
     def change_nick(self, event, nick, source):
 
         if not source:

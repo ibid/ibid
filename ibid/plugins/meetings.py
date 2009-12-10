@@ -48,7 +48,7 @@ class Meeting(Processor):
     date_format = Option('date_format', 'Format to substitute %(date)s with',
             '%Y-%m-%d-%H-%M-%S')
 
-    @authorise
+    @authorise(fallthrough=False)
     @match(r'^start\s+meeting(?:\s+about\s+(.+))?$')
     def start_meeting(self, event, title):
         if not event.public:
@@ -88,7 +88,7 @@ class Meeting(Processor):
 
         event.addresponse(True)
 
-    @authorise
+    @authorise()
     @match(r'^(topic|idea|agreed|accepted|rejected)\s+(.+)$')
     def identify(self, event, action, subject):
         if not event.public or (event.source, event.channel) not in meetings:
@@ -116,7 +116,7 @@ class Meeting(Processor):
             message = u'Rejected: %s'
         event.addresponse(message, subject, address=False)
 
-    @authorise
+    @authorise()
     @match(r'^meeting\s+title\s+is\s+(.+)$')
     def set_title(self, event, title):
         if not event.public:
@@ -201,7 +201,7 @@ class Meeting(Processor):
 
         event.addresponse(u'Minutes available at %s', url, address=False)
 
-    @authorise
+    @authorise()
     @match(r'^end\s+meeting$')
     def end_meeting(self, event):
         if not event.public:
@@ -278,7 +278,7 @@ class Poll(Processor):
     date_utc = BoolOption('date_utc', u'Interpret poll end times as UTC', False)
     poll_time = IntOption('poll_time', u'Default poll length', 5 * 60)
 
-    @authorise
+    @authorise(fallthrough=False)
     @match(r'^(secret\s+)?(?:poll|ballot)\s+on\s+(.+?)\s+'
             r'(?:until\s+(.+?)\s+)?vote\s+(.+\sor\s.+)$')
     def start_poll(self, event, secret, topic, end, options):
@@ -391,7 +391,7 @@ class Poll(Processor):
             event.processed = True
 
     @match('^end\s+poll$')
-    @authorise
+    @authorise()
     def end_poll(self, event):
         if not event.public:
             event.addresponse(u'Sorry, must be done in public')

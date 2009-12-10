@@ -14,7 +14,7 @@ class SayDo(Processor):
     permission = u'saydo'
 
     @match(r'^(say|do)\s+(?:in\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$', 'deaddressed')
-    @authorise
+    @authorise()
     def saydo(self, event, action, channel, source, what):
         event.addresponse(what, address=False, target=channel, source=source,
                 action=(action.lower() == u"do"))
@@ -28,7 +28,7 @@ class RedirectCommand(Processor):
     permission = u'saydo'
 
     @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
-    @authorise
+    @authorise()
     def redirect(self, event, channel, source, command):
         if source:
             if source.lower() not in ibid.sources:
