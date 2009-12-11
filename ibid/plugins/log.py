@@ -35,7 +35,7 @@ class Log(Processor):
     public_mode = Option('public_mode',
             u'File Permissions mode for public channels, in octal', '644')
     private_mode = Option('private_mode',
-            u'File Permissions mode for private chats, in octal', '644')
+            u'File Permissions mode for private chats, in octal', '640')
     dir_mode = Option('dir_mode',
             u'Directory Permissions mode, in octal', '755')
 
