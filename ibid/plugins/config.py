@@ -20,7 +20,7 @@ class Config(Processor):
     permission = u'config'
 
     @match(r'^reread\s+config$')
-    @authorise
+    @authorise()
     def reload(self, event):
         ibid.config.reload()
         ibid.config.merge(FileConfig(join(ibid.options['base'], 'local.ini')))
@@ -30,7 +30,7 @@ class Config(Processor):
         log.info(u'Reread configuration file')
 
     @match(r'^(?:set\s+config|config\s+set)\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
-    @authorise
+    @authorise()
     def set(self, event, key, value):
         config = ibid.config
         for part in key.split('.')[:-1]:

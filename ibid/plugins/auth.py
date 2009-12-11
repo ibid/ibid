@@ -70,7 +70,7 @@ class Permissions(Processor):
     permission = u'admin'
 
     @match(r'^(grant|revoke|remove)\s+(.+?)(?:\s+permission)?\s+(?:to|from|on)\s+(.+?)(\s+(?:with|when|if)\s+(?:auth|authed|authenticated))?$')
-    @authorise
+    @authorise()
     def grant(self, event, action, name, username, auth):
 
         account = event.session.query(Account).filter_by(username=username).first()
