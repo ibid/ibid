@@ -8,7 +8,7 @@ from dateutil.tz import tzlocal, tzutc
 
 import ibid
 from ibid.plugins import Processor
-from ibid.config import Option, BoolOption, IntOption
+from ibid.config import Option, BoolOption
 from ibid.event import Event
 
 class Log(Processor):
@@ -32,7 +32,12 @@ class Log(Processor):
     presence_format = Option('presence_format', 'Format string for presence events',
             u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) is now %(state)s')
 
-    file_mode = IntOption('file_mode', u'File Permissions mode, in octal', 644)
+    public_mode = Option('public_mode',
+            u'File Permissions mode for public channels, in octal', '644')
+    private_mode = Option('private_mode',
+            u'File Permissions mode for private chats, in octal', '644')
+    dir_mode = Option('dir_mode',
+            u'Directory Permissions mode, in octal', '755')
 
     logs = {}
 
@@ -52,14 +57,17 @@ class Log(Processor):
         filename = join(ibid.options['base'], expanduser(filename))
         if filename not in self.logs:
             try:
-                makedirs(dirname(filename))
+                makedirs(dirname(filename), int(self.dir_mode, 8))
             except OSError, e:
                 if e.errno != 17:
                     raise e
 
             file = open(filename, 'a')
             self.logs[filename] = file
-            chmod(filename, int(str(self.file_mode), 8))
+            if getattr(event, 'public', True):
+                chmod(filename, int(self.public_mode, 8))
+            else:
+                chmod(filename, int(self.private_mode, 8))
 
         return self.logs[filename]
 
