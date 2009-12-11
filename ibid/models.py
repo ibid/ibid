@@ -179,6 +179,8 @@ class VersionedSchema(object):
                         ))
 
                         getattr(self.table, type).remove(constraint)
+            # In case the database's DEFAULT CHARSET isn't set to UTF8
+            self.table.kwargs['mysql_charset'] = 'utf8'
 
         self.table.create(bind=session.bind)
 
