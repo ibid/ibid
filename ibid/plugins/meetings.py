@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import logging
-from os import makedirs
+from os import chmod, makedirs
 from os.path import dirname, expanduser, join
 import re
 from urllib import quote
@@ -47,6 +47,10 @@ class Meeting(Processor):
             None)
     date_format = Option('date_format', 'Format to substitute %(date)s with',
             '%Y-%m-%d-%H-%M-%S')
+
+    file_mode = Option('file_mode', u'File Permissions mode, in octal', '644')
+    dir_mode = Option('dir_mode',
+            u'Directory Permissions mode, in octal', '755')
 
     @authorise(fallthrough=False)
     @match(r'^start\s+meeting(?:\s+about\s+(.+))?$')
@@ -169,11 +173,12 @@ class Meeting(Processor):
             }
             filename = join(ibid.options['base'], expanduser(filename))
             try:
-                makedirs(dirname(filename))
+                makedirs(dirname(filename), int(self.dir_mode, 8))
             except OSError, e:
                 if e.errno != 17:
                     raise e
             f = open(filename, 'w+')
+            chmod(filename, int(self.file_mode, 8))
             f.write(minutes[format])
             f.close()
 

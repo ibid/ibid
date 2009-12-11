@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from os.path import dirname, join, expanduser
-from os import makedirs
+from os import chmod, makedirs
 
 from dateutil.tz import tzlocal, tzutc
 
@@ -32,6 +32,13 @@ class Log(Processor):
     presence_format = Option('presence_format', 'Format string for presence events',
             u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) is now %(state)s')
 
+    public_mode = Option('public_mode',
+            u'File Permissions mode for public channels, in octal', '644')
+    private_mode = Option('private_mode',
+            u'File Permissions mode for private chats, in octal', '640')
+    dir_mode = Option('dir_mode',
+            u'Directory Permissions mode, in octal', '755')
+
     logs = {}
 
     def get_logfile(self, event):
@@ -50,13 +57,17 @@ class Log(Processor):
         filename = join(ibid.options['base'], expanduser(filename))
         if filename not in self.logs:
             try:
-                makedirs(dirname(filename))
+                makedirs(dirname(filename), int(self.dir_mode, 8))
             except OSError, e:
                 if e.errno != 17:
                     raise e
 
             file = open(filename, 'a')
             self.logs[filename] = file
+            if getattr(event, 'public', True):
+                chmod(filename, int(self.public_mode, 8))
+            else:
+                chmod(filename, int(self.private_mode, 8))
 
         return self.logs[filename]
 
