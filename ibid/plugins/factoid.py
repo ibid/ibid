@@ -306,14 +306,15 @@ class Search(Processor):
 
     regex_re = re.compile(r'^/(.*)/(r?)$')
 
-    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$',
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from)?(?:\s+(\d+))?\s*$',
             version='deaddressed')
     def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
-        start = start and int(start) or 0
+        start = start and int(start)-1 or 0
 
         search_type = search_type and search_type.lower() or u""
 
+        origpattern = pattern
         m = self.regex_re.match(pattern)
         is_regex = False
         if m:
@@ -348,7 +349,7 @@ class Search(Processor):
         if matches:
             event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
         else:
-            event.addresponse(u"I couldn't find anything with that name")
+            event.addresponse(u"I couldn't find anything that matched '%s'" % origpattern)
 
 def _interpolate(message, event):
     "Expand factoid variables"
