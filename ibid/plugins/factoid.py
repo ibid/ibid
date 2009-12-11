@@ -310,7 +310,7 @@ class Search(Processor):
             version='deaddressed')
     def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
-        start = start and int(start)-1 or 0
+        start = start and max(int(start) - 1, 0) or 0
 
         search_type = search_type and search_type.lower() or u""
 
