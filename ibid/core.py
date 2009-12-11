@@ -324,6 +324,14 @@ class DatabaseManager(dict):
             )
 
         else:
+            if uri.startswith(u'mysql://'):
+                if u'?' not in uri:
+                    uri += u'?charset=utf8'
+                else:
+                    params = parse_qs(uri.split(u'?', 1)[1])
+                    if u'charset' not in params:
+                        uri += u'&charset=utf8'
+
             engine = create_engine(uri, encoding='utf-8',
                 convert_unicode=True, assert_unicode=True, echo=echo)
 
