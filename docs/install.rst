@@ -127,11 +127,11 @@ Switch to the bot user::
 Then you'll need to create a directory for your bot to live in::
 
    ibid@box $ mkdir botdir
-   ibid@bot $ cd botdir
+   ibid@box $ cd botdir
 
 Now you can install the bot::
 
-   ibid@bot $ ibid-setup
+   ibid@box $ ibid-setup
    Couldn't load core plugin: botname
    Couldn't load knab plugin: No module named perl
    Couldn't load trac plugin: argument of type 'NoneType' is not iterable
@@ -192,9 +192,9 @@ Create a user to run your bot as::
 Checkout the latest version of ibid (instead of this, you could extract a
 source tarball)::
 
-   user@bot $ sudo -u ibid -i
-   ibid@bot $ bzr branch lp:ibid
-   ibid@bot $ cd ibid
+   user@box $ sudo -u ibid -i
+   ibid@box $ bzr branch lp:ibid
+   ibid@box $ cd ibid
 
 Tell Python that it can find libraries under the current directory (you could
 also do virtualenv install)::
