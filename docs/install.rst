@@ -78,6 +78,70 @@ MySQL, PostgreSQL, and SQLite are all supported as first-class citizens.
 Using the database-independent backup & restore tool, it is straightforward to
 migrate between database engines at any time.
 
+.. _db-setup:
+
+Database Creation
+-----------------
+
+By default Ibid will use SQLite, which is a perfectly capable database,
+but if you have a MySQL or PostgreSQL server handy, you may prefer to
+use it to save some memory or take advantage of the more powerful
+feature-set.
+
+If you are using SQLite, you can skip over this section, but for MySQL
+or PostgreSQL, you'll need to create a database and DB user before
+running ``ibid-setup``.
+
+MySQL
+^^^^^
+
+Install MySQL. On Debian/Ubuntu::
+
+   user@box $ sudo aptitude install mysql-server python-mysqldb
+
+You'll be prompted to set a root password for your server. You should
+probably do that.
+
+Create a database for your bot::
+
+   user@box $ mysql -u root -p
+   Enter password:
+   Welcome to the MySQL monitor.
+   mysql> CREATE DATABASE joebot CHARSET utf8;
+   Query OK, 1 row affected (0.02 sec)
+   
+   mysql> GRANT ALL PRIVILEGES ON joebot.* TO joebot@localhost IDENTIFIED BY 'mysecret';
+   Query OK, 0 rows affected (0.13 sec)
+   
+   mysql> quit
+   Bye
+
+In this example, the database is called ``joebot``, the user ``joebot``
+and the password is ``mysecret``, so the DB URL will be::
+
+   mysql://joebot:mysecret@localhost/joebot
+
+PostgreSQL
+^^^^^^^^^^
+
+Install PostgreSQL. On Debian/Ubuntu::
+
+   user@box $ sudo aptitude install postgresql python-psycopg2
+
+Create a database for your bot::
+
+   user@box $ sudo -u postgres -i
+   postgres@box $ createuser -D -R -S -P joebot
+   Enter password for new role:
+   Enter it again:
+   postgres@box $ createdb -O joebot joebot
+   postgres@box $ logout
+
+In this example, the database is called ``joebot`` and the user
+``joebot`` if the password were ``mysecret``, the DB URL would be::
+
+   postgres://joebot:mysecret@localhost/joebot
+
 .. _package-managed:
 
 Package Managed Installation
@@ -124,14 +188,17 @@ Switch to the bot user::
    user@box $ sudo -u ibid -i
    ibid@box $
 
+If you are going to be using MySQL or PostgreSQL :ref:`set up your
+database now <db-setup>`.
+
 Then you'll need to create a directory for your bot to live in::
 
    ibid@box $ mkdir botdir
-   ibid@bot $ cd botdir
+   ibid@box $ cd botdir
 
 Now you can install the bot::
 
-   ibid@bot $ ibid-setup
+   ibid@box $ ibid-setup
    Couldn't load core plugin: botname
    Couldn't load knab plugin: No module named perl
    Couldn't load trac plugin: argument of type 'NoneType' is not iterable
@@ -192,9 +259,9 @@ Create a user to run your bot as::
 Checkout the latest version of ibid (instead of this, you could extract a
 source tarball)::
 
-   user@bot $ sudo -u ibid -i
-   ibid@bot $ bzr branch lp:ibid
-   ibid@bot $ cd ibid
+   user@box $ sudo -u ibid -i
+   ibid@box $ bzr branch lp:ibid
+   ibid@box $ cd ibid
 
 Tell Python that it can find libraries under the current directory (you could
 also do virtualenv install)::
@@ -203,6 +270,9 @@ also do virtualenv install)::
 
 Either edit the bot's configuration file (``ibid.ini``) or delete it (the
 install process will create one for you).
+
+If you are going to be using MySQL or PostgreSQL :ref:`set up your
+database now <db-setup>`.
 
 Set up your bot::
 
