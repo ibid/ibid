@@ -3,6 +3,7 @@
 from sys import argv, exit, stderr, stdout
 
 from chardet import detect
+from dateutil.tz import tzlocal, tzutc
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
                        or_, ForeignKey, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -37,6 +38,11 @@ def decode(string):
 
     return decoded
 
+def to_utc(date):
+    date = date.replace(tzinfo=tzlocal())
+    date = date.astimezone(tzutc())
+    return date.replace(tzinfo=None)
+
 Base = declarative_base()
 
 class KnabFactoid(Base):
@@ -53,6 +59,7 @@ class KnabFactoid(Base):
         self.decoded_fact = decode(self.fact)
         self.decoded_verb = decode(self.verb)
         self.decoded_value = decode(self.value)
+        self.utc_time = to_utc(self.time)
 
     def __repr__(self):
         return u'<KnabFactoid %s %s %s>' % (self.fact, self.verb, self.value)
@@ -68,6 +75,7 @@ class KnabSighting(Base):
     def decode(self):
         self.decoded_channel = decode(self.channel)
         self.decoded_message = decode(self.message)
+        self.utc_time = to_utc(self.time)
 
     def __repr__(self):
         return u'<KnabSighting %s>' % self.nick
@@ -81,6 +89,7 @@ class KnabKarma(Base):
 
     def decode(self):
         self.decoded_person = decode(self.person)
+        self.utc_time = to_utc(self.time)
 
     def __repr__(self):
         return u'<KnabKarma %s %s>' % (self.person, self.karma)
@@ -96,6 +105,7 @@ class KnabURL(Base):
     def decode(self):
         self.decoded_channel = decode(self.channel)
         self.decoded_url = decode(self.url)
+        self.utc_time = to_utc(self.time)
 
     def __repr__(self):
         return u'<KnabURL %s>' % self.url
@@ -150,11 +160,11 @@ def import_factoids(knab, ibid, source):
             factoid = Factoid()
             try:
                 fname = FactoidName(kfactoid.decoded_fact,
-                        identify(ibid, kfactoid.who, source, kfactoid.time))
+                        identify(ibid, kfactoid.who, source, kfactoid.utc_time))
             except TypeError:
                 print index, kfactoid
                 raise
-            fname.time = factoid.time = kfactoid.time
+            fname.time = factoid.time = kfactoid.utc_time
             factoid.names.append(fname)
         else:
             factoid = fname.factoid
@@ -166,8 +176,8 @@ def import_factoids(knab, ibid, source):
             value = kfactoid.decoded_verb + u' ' + kfactoid.decoded_value
 
         fvalue = FactoidValue(value,
-                 identify(ibid, kfactoid.who, source, kfactoid.time))
-        fvalue.time = kfactoid.time
+                 identify(ibid, kfactoid.who, source, kfactoid.utc_time))
+        fvalue.time = kfactoid.utc_time
 
         factoid.values.append(fvalue)
         ibid.save_or_update(factoid)
@@ -196,10 +206,10 @@ def import_sightings(knab, ibid, source):
             continue
 
         sighting = Sighting(
-                identify(ibid, ksighting.nick, source, ksighting.time),
+                identify(ibid, ksighting.nick, source, ksighting.utc_time),
                 u'message', ksighting.decoded_channel,
                 ksighting.decoded_message)
-        sighting.time = ksighting.time
+        sighting.time = ksighting.utc_time
 
         ibid.save(sighting)
         ibid.flush()
@@ -228,7 +238,7 @@ def import_karma(knab, ibid, source):
         karma = Karma(kkarma.decoded_person)
         karma.value = kkarma.karma
         karma.changes = abs(karma.value)
-        karma.time = kkarma.time
+        karma.time = kkarma.utc_time
 
         ibid.save(karma)
 
@@ -254,8 +264,8 @@ def import_urls(knab, ibid, source):
             continue
 
         url = URL(kurl.decoded_url, kurl.decoded_channel,
-                  identify(ibid, kurl.nick, source, kurl.time))
-        url.time = kurl.time
+                  identify(ibid, kurl.nick, source, kurl.utc_time))
+        url.time = kurl.utc_time
 
         ibid.save(url)
 
