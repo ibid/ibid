@@ -5,7 +5,7 @@ import re
 
 from dateutil.tz import tzlocal, tzutc
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.orm import relation
+from sqlalchemy.orm import relation, synonym
 from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
@@ -24,13 +24,22 @@ default_verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can',
 default_interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
 
 def strip_name(unstripped):
+    "Apply to factoid names, as we use unstripped matches"
     return re.match(r'^\s*(.*?)[?!.]*\s*$', unstripped, re.DOTALL).group(1)
+
+def escape_name(name):
+    "Turn a $arg factoid name to _%"
+    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
+
+def unescape_name(name):
+    "Turn a _% factoid name to $arg"
+    return name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_')
 
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', UnicodeText, nullable=False, unique=True, index=True,
-            info={'ibid_mysql_index_length': 32}),
+    Column('name', UnicodeText, key='_name', nullable=False, unique=True, index=True,
+           info={'ibid_mysql_index_length': 32}),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
@@ -48,10 +57,12 @@ class FactoidName(Base):
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
         def upgrade_4_to_5(self):
-            self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
+            self.alter_column(Column('name', Unicode(64), key='_name', nullable=False,
+                                     unique=True, index=True))
         def upgrade_5_to_6(self):
-            self.alter_column(Column('name', UnicodeText, nullable=False,
-                unique=True, index=True, info={'ibid_mysql_index_length': 32}))
+            self.alter_column(Column('name', UnicodeText, key='_name', nullable=False,
+                                     unique=True, index=True,
+                                     info={'ibid_mysql_index_length': 32}))
 
     __table__.versioned_schema = FactoidNameSchema(__table__, 6)
 
@@ -64,6 +75,14 @@ class FactoidName(Base):
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
+
+    def _get_name(self):
+        return unescape_name(self._name)
+
+    def _set_name(self, name):
+        self._name = escape_name(name)
+
+    name = synonym('_name', descriptor=property(_get_name, _set_name))
 
 class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
@@ -141,12 +160,6 @@ class Factpack(Base):
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 escape_like_re = re.compile(r'([%_\\])')
-
-def escape_name(name):
-    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
-
-def unescape_name(name):
-    return name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_')
 
 def get_factoid(session, name, number, pattern, is_regex, all=False, literal=False):
     """session: SQLAlchemy session
@@ -286,7 +299,7 @@ class Forget(Processor):
                 event.addresponse(u"I already know stuff about %s", target)
                 return
 
-            name = FactoidName(escape_name(unicode(target)), event.identity)
+            name = FactoidName(unicode(target), event.identity)
             factoid.names.append(name)
             event.session.save_or_update(factoid)
             event.session.commit()
@@ -346,7 +359,9 @@ class Search(Processor):
         matches = [match for match in query[start:start+limit]]
 
         if matches:
-            event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
+            event.addresponse(u'; '.join(
+                u'%s [%s]' % (fname.name, len(factoid.values))
+                for factoid, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything with that name")
 
@@ -400,7 +415,7 @@ class Get(Processor, RPC):
         if factoid:
             (factoid, fname, fvalue) = factoid
             reply = fvalue.value
-            pattern = re.escape(fname.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
+            pattern = re.escape(fname.name).replace(r'\$arg', '(.*)')
 
             position = 1
             for capture in re.match(pattern, name, re.I).groups():
@@ -419,7 +434,7 @@ class Get(Processor, RPC):
             if count:
                 return {'address': False, 'reply': reply}
 
-            reply = u'%s %s' % (unescape_name(fname.name), reply)
+            reply = u'%s %s' % (fname.name, reply)
             return reply
 
 class Set(Processor):
@@ -472,7 +487,7 @@ class Set(Processor):
                 return
         else:
             factoid = Factoid()
-            fname = FactoidName(escape_name(unicode(name)), event.identity)
+            fname = FactoidName(unicode(name), event.identity)
             factoid.names.append(fname)
             event.session.save_or_update(factoid)
             event.session.flush()
