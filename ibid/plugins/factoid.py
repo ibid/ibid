@@ -191,8 +191,6 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
         passes = (False,)
     else:
         passes = (False, True)
-    another_pass = len(passes) > 1
-
     for wild in passes:
         factoid = None
         query = session.query(Factoid)\
@@ -227,9 +225,7 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
                 else:
                     factoid = query.order_by(FactoidValue.id)[int(number) - 1]
             except IndexError:
-                if another_pass:
-                    continue
-                return
+                continue
         if all or literal:
             if factoid is not None:
                 return [factoid]
@@ -237,9 +233,8 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
                 factoid = query.all()
         else:
             factoid = factoid or query.order_by(func.random()).first()
-        if factoid or not another_pass:
+        if factoid:
             return factoid
-        another_pass = False
 
 class Utils(Processor):
     u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
