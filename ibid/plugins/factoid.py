@@ -4,11 +4,13 @@ from random import choice
 import re
 
 from dateutil.tz import tzlocal, tzutc
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
+from sqlalchemy import Column, Table, ForeignKey, or_, Boolean, Integer, \
+                       Unicode, UnicodeText, DateTime
 from sqlalchemy.orm import relation, synonym
 from sqlalchemy.sql import func
 
-from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
+from ibid.plugins import Processor, match, handler, authorise, auth_responses, \
+                         RPC
 from ibid.config import Option, IntOption, ListOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
@@ -44,6 +46,7 @@ class FactoidName(Base):
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
+    Column('wild', Boolean, nullable=False, default=False, index=True),
     useexisting=True)
 
     class FactoidNameSchema(VersionedSchema):
@@ -63,8 +66,16 @@ class FactoidName(Base):
             self.alter_column(Column('name', UnicodeText, key='_name', nullable=False,
                                      unique=True, index=True,
                                      info={'ibid_mysql_index_length': 32}))
+        def upgrade_6_to_7(self):
+            self.add_column(Column('wild', Boolean, nullable=False, index=True,
+                                   default=False, server_default='0'))
+            for row in self.upgrade_session.query(FactoidName) \
+                   .filter(FactoidName.name.like(u'%\\_\\%%', escape='\\')) \
+                   .all():
+                row.wild = True
+                self.upgrade_session.save_or_update(row)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 6)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 7)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -80,6 +91,7 @@ class FactoidName(Base):
         return unescape_name(self._name)
 
     def _set_name(self, name):
+        self.wild = u'$arg' in name
         self._name = escape_name(name)
 
     name = synonym('_name', descriptor=property(_get_name, _set_name))
