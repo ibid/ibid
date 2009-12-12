@@ -69,8 +69,11 @@ class FactoidName(Base):
         def upgrade_6_to_7(self):
             self.add_column(Column('wild', Boolean, nullable=False, index=True,
                                    default=False, server_default='0'))
+            # http://www.sqlalchemy.org/trac/ticket/1400:
+            # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
-                   .filter(FactoidName.name.like(u'%\\_\\%%', escape='\\')) \
+                    .filter('name LIKE :pattern ESCAPE :escape') \
+                    .params(pattern='%\\_\\%%', escape='\\') \
                    .all():
                 row.wild = True
                 self.upgrade_session.save_or_update(row)
