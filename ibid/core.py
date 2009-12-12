@@ -1,3 +1,4 @@
+from cgi import parse_qs
 import inspect
 import re
 import logging
