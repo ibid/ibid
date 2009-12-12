@@ -419,8 +419,6 @@ class Get(Processor, RPC):
 
             position = 1
             for capture in re.match(pattern, name, re.I).groups():
-                if capture.startswith('$arg'):
-                    return
                 reply = reply.replace('$%s' % position, capture)
                 position = position + 1
 
