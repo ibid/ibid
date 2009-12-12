@@ -176,7 +176,8 @@ action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 escape_like_re = re.compile(r'([%_\\])')
 
-def get_factoid(session, name, number, pattern, is_regex, all=False, literal=False):
+def get_factoid(session, name, number, pattern, is_regex, all=False,
+                literal=False):
     """session: SQLAlchemy session
     name: Factoid name (can contain arguments unless literal query)
     number: Return factoid[number] (or factoid[number:] for literal queries)
@@ -185,34 +186,60 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
     all: Return a random factoid from the set if False
     literal: Match factoid name literally (implies all)
     """
-    factoid = None
-    # Reversed LIKE because factoid name contains SQL wildcards if factoid supports arguments
-    query = session.query(Factoid)\
-            .add_entity(FactoidName).join(Factoid.names)\
-            .add_entity(FactoidValue).join(Factoid.values)
+    # First pass for exact matches, if necessary again for wildcard matches
     if literal:
-        query = query.filter(func.lower(FactoidName.name)==escape_name(name).lower())
+        passes = (False,)
     else:
-        query = query.filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
-    if pattern:
-        if is_regex:
-            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        passes = (False, True)
+    another_pass = len(passes) > 1
+
+    for wild in passes:
+        factoid = None
+        query = session.query(Factoid)\
+                .add_entity(FactoidName).join(Factoid.names)\
+                .add_entity(FactoidValue).join(Factoid.values)
+        if wild:
+            # Reversed LIKE because factoid name contains SQL wildcards if
+            # factoid supports arguments
+            query = query.filter(':fact LIKE name ESCAPE :escape') \
+                         .params(fact=name, escape='\\')
         else:
-            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            # http://www.sqlalchemy.org/trac/ticket/1400: We can't use .like() in MySQL
-            query = query.filter('value LIKE :pattern ESCAPE :escape').params(pattern=pattern, escape='\\')
-    if number:
-        try:
-            if literal:
-                return query.order_by(FactoidValue.id)[int(number) - 1:]
+            query = query.filter(func.lower(FactoidName.name) \
+                                 == escape_name(name).lower())
+        # For normal matches, restrict to the subset applicable
+        if not literal:
+            query = query.filter(FactoidName.wild == wild)
+
+        if pattern:
+            if is_regex:
+                query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
             else:
-                factoid = query.order_by(FactoidValue.id)[int(number) - 1]
-        except IndexError:
-            return
-    if all or literal:
-        return factoid and [factoid] or query.all()
-    else:
-        return factoid or query.order_by(func.random()).first()
+                pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
+                # http://www.sqlalchemy.org/trac/ticket/1400:
+                # We can't use .like() in MySQL
+                query = query.filter('value LIKE :pattern ESCAPE :escape') \
+                             .params(pattern=pattern, escape='\\')
+
+        if number:
+            try:
+                if literal:
+                    return query.order_by(FactoidValue.id)[int(number) - 1:]
+                else:
+                    factoid = query.order_by(FactoidValue.id)[int(number) - 1]
+            except IndexError:
+                if another_pass:
+                    continue
+                return
+        if all or literal:
+            if factoid is not None:
+                return [factoid]
+            else:
+                factoid = query.all()
+        else:
+            factoid = factoid or query.order_by(func.random()).first()
+        if factoid or not another_pass:
+            return factoid
+        another_pass = False
 
 class Utils(Processor):
     u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
