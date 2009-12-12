@@ -415,12 +415,12 @@ class Get(Processor, RPC):
         if factoid:
             (factoid, fname, fvalue) = factoid
             reply = fvalue.value
+            oname = fname.name
             pattern = re.escape(fname.name).replace(r'\$arg', '(.*)')
 
-            position = 1
-            for capture in re.match(pattern, name, re.I).groups():
-                reply = reply.replace('$%s' % position, capture)
-                position = position + 1
+            for i, capture in enumerate(re.match(pattern, name, re.I).groups()):
+                reply = reply.replace('$%s' % (i + 1), capture)
+                oname = oname.replace('$arg', capture, 1)
 
             reply = _interpolate(reply, event)
 
@@ -432,7 +432,7 @@ class Get(Processor, RPC):
             if count:
                 return {'address': False, 'reply': reply}
 
-            reply = u'%s %s' % (fname.name, reply)
+            reply = u'%s %s' % (oname, reply)
             return reply
 
 class Set(Processor):
