@@ -1,4 +1,4 @@
 [
 [["How are you"], ["<reply> $who: I'm doing well thanks", "<reply> $who: Same as yesterday"]],
-[["Bye", "kbye", "Night", "Good Night"], ["<reply> kbye $who", "<reply> $who: Bye", "<reply> Cheers $who"]],
+[["Bye", "kbye", "Night", "Good Night"], ["<reply> kbye $who", "<reply> $who: Bye", "<reply> Cheers $who"]]
 ]
