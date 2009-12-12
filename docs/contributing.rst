@@ -20,6 +20,8 @@ that caused the bug, and any logging information / exceptions from
 Submitting Patches
 ------------------
 
+.. highlight:: console
+
 Want to go one step further, and fix your bug or add a new feature.
 We welcome contributions from everyone.
 The best way to get a patch merged quickly is to follow the same
@@ -133,7 +135,9 @@ When you wish to create a new branch::
    ~/code/ibid $ bzr branch trunk feature-1234
 
 If you want to easily push this to Launchpad, create a
-``~/.bazaar/locations.conf`` with the following contents::
+``~/.bazaar/locations.conf`` with the following contents:
+
+.. code-block:: ini
 
    [/home/apewtey/code/ibid]
    pull_location = lp:~apewtey/ibid/
@@ -148,7 +152,7 @@ That will allow you to push your branch to
 
    ~/code/ibid/feature-1234 $ bzr push
 
-To delete a branch, you can simply ``rm -rf`` it.
+To delete a branch, you can simply ``rm -r`` it.
 
 See also:
 

@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ============
 
@@ -94,6 +96,8 @@ running ``ibid-setup``.
 
 MySQL
 ^^^^^
+
+.. highlight:: console
 
 Install MySQL. On Debian/Ubuntu::
 

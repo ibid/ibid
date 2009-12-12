@@ -1,22 +1,24 @@
 Factoids
 ========
 
+.. highlight:: irc
+
 Factoids are one of the most important Ibid plugins.
 They are what give a bot most of its personality, and after a few years
 on IRC, it can expect to pick up a few thousand of them from its users.
 
 While it can store simple factoids like::
 
-   Me: Ibid is an awesome bot written in Python
-   ibid: If you say so
-   Me: Ibid
-   ibid: Ibid is an awesome bot written in Python
+   <Me> Ibid is an awesome bot written in Python
+   <ibid> If you say so
+   <Me> Ibid
+   <ibid> Ibid is an awesome bot written in Python
 
 It can also allow for some basic behaviour programming::
 
-   Me: slap $arg is <action>slaps $1 and runs for his life
-   ibid: Got it
-   Me: slap Knab
+   <Me> slap $arg is <action>slaps $1 and runs for his life
+   <ibid> Got it
+   <Me> slap Knab
    * ibid slaps Knab and runs for his life
 
 Basics
