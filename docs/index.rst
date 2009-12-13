@@ -7,6 +7,7 @@ Contents
    intro
    install
    plugins
+   tutorial
    contributing
 
 
