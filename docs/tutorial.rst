@@ -258,6 +258,70 @@ The module-level ``help`` dict specifies descriptions for features
 *usage*.
 "reload tutorial" and you should see "dice" appear in *features*.
 
+Configuration
+-------------
+
+Ibid has a configuration system that may be useful for your plugin.
+Configuration values can be set at runtime or by editing ``ibid.ini``.
+
+Let's make the number of dice sides be configurable::
+
+   from random import randint
+
+   from ibid.config import IntOption
+   from ibid.plugins import Processor, match
+   from ibid.utils import human_join
+
+   class Dice(Processor):
+       sides = IntOption('sides', 'Number of sides to each die', 6)
+
+       @match(r'^roll\s+(\d+)\s+dic?e$')
+       def multithrow(self, event, number):
+           number = int(number)
+           throws = [unicode(randint(1, self.sides)) for i in range(number)]
+           event.addresponse(u'I threw %s', human_join(throws))
+
+:class:`IntOption() <ibid.config.IntOption>` creates a configuration
+value called ``plugins.tutorial.sides`` with a default value of 6.
+There are also configuration helpers for other data types.
+
+If you merge the following into your ``ibid.ini``, you can change to 21
+sided dice:
+
+.. code-block:: ini
+
+   [plugins]
+      [[tutorial]]
+         sides = 21
+
+Style
+-----
+
+Now that you've got all the basics, here are some other things you
+should know about writing Ibid plugins.
+
+Error Handling
+^^^^^^^^^^^^^^
+
+You might have noticed that we haven't said anything about error
+handling.
+That was intentional.
+All exceptions in plugins are caught at the dispatcher level, and an
+appropriate response will be returned to the user, as well as tracebacks
+logged.
+The only time you should worry about handling errors is if you can
+recover gracefully or you want to return a specific response (such as an
+explanation).
+
+Responses
+^^^^^^^^^
+
+The general Ibid style is that the bot should be something people can
+relate to, not too mechanical.
+So many Ibid responses are playful and maybe a little snarky.
+Also, many responses aren't static, but rather chosen from a list of 3
+or 4 at random (:func:`random.choice` is good for that).
+
 Next Steps
 ----------
 
