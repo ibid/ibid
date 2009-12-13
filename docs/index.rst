@@ -9,6 +9,7 @@ Contents
    plugins
    tutorial
    contributing
+   api/index
 
 
 Indices and tables
