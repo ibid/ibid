@@ -38,8 +38,8 @@ SQLite database called ``ibid.db`` in your current directory::
    full admin permissions.
    Nick/JID: ^D
 
-You can abort it at that point with a Ctrl-D, because we'll only be
-debugging locally.
+You can abort it at that point with a :kbd:`Control-D`, because we'll
+only be debugging locally.
 It'll be set up with a basic configuration for joining the current Ibid
 developer IRC channel (#ibid on irc.atrum.org), as well as a SILC
 network and Jabber, but we don't need that yet.
@@ -63,13 +63,13 @@ It looks like this::
    Query: features
    Response: Features: config, core, die, help and plugins
 
-To exit, press ``^C`` or ``^D``.
+To exit, press :kbd:`Control-C` or :kbd:`Control-D`.
 
 As you can see, there is almost nothing loaded.
 It can't even respond to "hello", the code for that is in the
-``factoid`` module.
-If you want to load the ``factoid`` module, you can either say ``load
-factoid`` or you can tell ``ibid-plugin`` to load it on startup, by
+*factoid* module.
+If you want to load the *factoid* module, you can either say "load
+factoid" or you can tell ``ibid-plugin`` to load it on startup, by
 adding it as a parameter::
 
    user@box ~/ibid $ scripts/ibid-plugin factoid
@@ -134,7 +134,7 @@ Processors and Handlers
 
 Let's see what that looks like in practice.
 Here's a simple hello world plugin.
-Create a file called ``hello.py`` in the ``ibid/plugins`` directory,
+Create a file called ``tutorial.py`` in the ``ibid/plugins`` directory,
 with the following contents::
 
    from ibid.plugins import Processor, handler
@@ -149,8 +149,8 @@ Each one is a self-contained part of the event handling chain.
 It can register an interest in certain types of event, or a specific
 place in the chain, but for most plugins the defaults are sufficient.
 
-Inside the processor, any functions decorated with ``@handler`` will get
-a chance to look at the event.
+Inside the processor, any functions decorated with :func:`@handler
+<ibid.plugins.handler>` will get a chance to look at the event.
 If it choses to add a response to the event, the response will be
 returned to the user.
 
@@ -165,7 +165,7 @@ response:
 
 .. code-block:: console
 
-   user@box ~/ibid $ scripts/ibid-plugin hello
+   user@box ~/ibid $ scripts/ibid-plugin tutorial
    ... Messages about loading plugins
    Query: hello
    Response: Hello World!
@@ -173,7 +173,7 @@ response:
 Now, you could include code inside your handler to determine if you want
 to reply to a message or not, but must of the time you are after
 messages that look like something particular, so we have another
-decorator, ``@match``, to help you::
+decorator, :func:`@match() <ibid.plugins.match>`, to help you::
 
    from ibid.plugins import Processor, match
 
@@ -186,13 +186,13 @@ Match takes a regular expression as a parameter, and will only run your
 handler function if the regex matches the event's message.
 In this case, it'll only fire if you say "hello".
 It'll ignore trailing punctuation and whitespace, as that's removed by
-the ``core.Strip`` plugin.
+the :class:`core.Strip <ibid.plugins.core.Strip>` plugin.
 
 Match Groups
 ^^^^^^^^^^^^
 
 Time for a more complex example, a multiple dice roller, you can add it
-as another Processor in your hello plugin::
+as another Processor in your tutorial plugin::
 
    from random import randint
 
@@ -206,7 +206,7 @@ as another Processor in your hello plugin::
            throws = [unicode(randint(1, 6)) for i in range(number)]
            event.addresponse(u'I threw %s', human_join(throws))
 
-If you still have an ``ibid-plugin`` open you can ``reload hello`` to
+If you still have an ``ibid-plugin`` open you can "reload tutorial" to
 reload your plugin.
 
 Any match groups you put in the regex will be passed to the handler as
@@ -214,12 +214,13 @@ arguments, in this case the number of dice to throw.
 If you want brackets without creating a match group, you can use the
 non-grouping syntax ``(?: )``.
 
-``ibid.utils`` contains many handy helper functions.
-``human_join`` is the equivalent of ``u', '.join()``, with an "and"
-before the last item.
+:mod:`ibid.utils` contains many handy helper functions.
+:func:`human_join() <ibid.utils.human_join>` is the equivalent of ``u',
+'.join()``, with an "and" before the last item.
 
-``addresponse()`` takes a second argument for string substitution.
-If you want to substitute multiple items, use the dict syntax::
+:meth:`addresponse() <ibid.event.Event.addresponse>` takes a second
+argument for string substitution.  If you want to substitute multiple
+items, use the dict syntax::
 
    event.addresponse(u'Nobody %(verb)s the %(noun)s!', {
        'verb': u'expects',
@@ -229,7 +230,7 @@ If you want to substitute multiple items, use the dict syntax::
 Documentation
 ^^^^^^^^^^^^^
 
-At the moment you'll see that your plugin doesn't appear in "features",
+At the moment you'll see that your plugin doesn't appear in *features*,
 you can fix that with a little more code::
 
    from random import randint
@@ -253,9 +254,9 @@ you can fix that with a little more code::
            event.addresponse(u'I threw %s', human_join(throws))
 
 The module-level ``help`` dict specifies descriptions for features
-(``help`` command) and the doc-string of the processor gives the
-``usage``.
-``reload hello`` and you should see ``dice`` appear in ``features``.
+(*help* command) and the doc-string of the processor gives the
+*usage*.
+"reload tutorial" and you should see "dice" appear in *features*.
 
 Next Steps
 ----------
