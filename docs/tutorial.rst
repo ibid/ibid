@@ -68,7 +68,7 @@ To exit, press ``^C`` or ``^D``.
 As you can see, there is almost nothing loaded.
 It can't even respond to "hello", the code for that is in the
 ``factoid`` module.
-If you want to lead the ``factoid`` module, you can either say ``load
+If you want to load the ``factoid`` module, you can either say ``load
 factoid`` or you can tell ``ibid-plugin`` to load it on startup, by
 adding it as a parameter::
 
@@ -98,6 +98,7 @@ won't work, but it's good enough for testing.
 Some examples:
 
 * Karma, because it's disabled for private conversations by default.
+  You can switch to public mode with ``-p``.
 * The games, because they require some advanced Twisted functionality
   (as well as other channel members).
 

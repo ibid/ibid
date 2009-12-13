@@ -164,6 +164,7 @@ you just want to make a small change::
 And finally, removal::
 
    <tumbleweed> tibid: forget ibid
+   <tibid> tumbleweed: Sure
    <tumbleweed> tibid: ibid
    <tibid> tumbleweed: What?
 
