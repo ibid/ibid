@@ -169,7 +169,7 @@ You can follow `these instructions
 <https://launchpad.net/+help/soyuz/ppa-sources-list.html>`_ or add it from a
 terminal like this::
 
-   user@box $ echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -c | cut -f2` main | sudo tee /etc/apt/sources.list.d/ibid.list
+   user@box $ echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -cs` main | sudo tee /etc/apt/sources.list.d/ibid.list
    user@box $ sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xFD1C44BA
    user@box $ sudo aptitude update
 
