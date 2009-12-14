@@ -126,10 +126,10 @@
          event.addresponse(u'Jo said "%s"', message)
          # Sends u'user: Jo said "hello"' if message was u'hello'
          event.addresponse(u'%(key)s is %(value)s', {
-            'key': u'Dinsdale',
+            'key': u'Spiny Norman',
             'value': u'a Hedgehog',
          })
-         # Sends u'user: Dinsdale is a Hedgehog'
+         # Sends u'user: Spiny Norman is a Hedgehog'
          event.addresponse(u'Look at me', address=False)
          # Sends u'Look at me'
          event.addresponse(u'dances', action=True)
