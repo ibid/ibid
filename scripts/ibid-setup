@@ -56,6 +56,7 @@ else:
         source['auth'] = ['hostmask', 'nickserv']
     elif source['type'].lower() == 'jabber':
         source['jid'] = raw_input(u'JID: ')
+        source['password'] = getpass(u'Password: ')
         source['rooms'] = [r.strip() for r in raw_input(u'Default rooms to join (comma separated): ').split(',')]
         source['auth'] = ['implicit']
         source['ssl'] = raw_input(u'SSL (Y/N): ').lower() in ('y', 'yes', 'true')
