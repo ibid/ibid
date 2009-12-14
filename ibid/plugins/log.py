@@ -64,7 +64,7 @@ class Log(Processor):
 
             file = open(filename, 'a')
             self.logs[filename] = file
-            if getattr(event, 'public', True):
+            if event.get('public', True):
                 chmod(filename, int(self.public_mode, 8))
             else:
                 chmod(filename, int(self.private_mode, 8))
