@@ -32,4 +32,9 @@ class Except(Processor):
     def handler(self, event):
         raise Exception("Ow, that hurt.")
 
+class Topic(Processor):
+    @match(r'^topic\s+(.+)$')
+    def handler(self, event, topic):
+        event.addresponse(topic, topic=True, address=False)
+
 # vi: set et sta sw=4 ts=4:

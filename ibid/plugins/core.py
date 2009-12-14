@@ -118,7 +118,8 @@ class Timestamp(Processor):
 class Complain(Processor):
 
     priority = 950
-    event_types = (u'message', u'action')
+    processed = True
+    event_types = ('message', 'action')
 
     complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
@@ -137,8 +138,10 @@ class Complain(Processor):
 
     @handler
     def complain(self, event):
-        if 'complain' in event:
+        if 'complain' in event and not event.responses:
             event.addresponse(choice(self.complaints[event.complain]))
+        elif event.processed:
+            return
         else:
             event.addresponse(choice(self.complaints['nonsense']))
 

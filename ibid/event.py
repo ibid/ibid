@@ -38,7 +38,7 @@ class Event(dict):
         if not isinstance(response, dict):
             response = {'reply': response}
 
-        for k, val in (('target', self.channel),
+        for k, val in (('target', self.get('channel', None)),
                 ('source', self.source),
                 ('address', True)):
             if k not in response:

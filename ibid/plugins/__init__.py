@@ -1,5 +1,7 @@
-from inspect import getargspec, getmembers, ismethod
 from copy import copy
+from datetime import timedelta
+from inspect import getargspec, getmembers, ismethod
+import logging
 import re
 
 from twisted.spread import pb
@@ -9,12 +11,28 @@ import ibid
 from ibid.compat import json
 
 class Processor(object):
+    """Base class for Ibid plugins.
+    Processors receive events and (optionally) do things with them.
+
+    Events are filtered in process() by to the following attributes:
+    event_types: Only these types of events
+    addressed: Require the bot to be addressed for public messages
+    processed: Process events marked as already having been handled
+    permission: The permission to check when calling @authorised handlers
+
+    priority: Low priority Processors are handled first
+
+    autoload: Load this Processor, when loading the plugin, even if not
+    explicitly required in the configuration file
+    """
 
     event_types = (u'message',)
     addressed = True
     processed = False
     priority = 0
     autoload = True
+
+    __log = logging.getLogger('plugins')
 
     def __new__(cls, *args):
         if cls.processed and cls.priority == 0:
@@ -32,12 +50,46 @@ class Processor(object):
         self.setup()
 
     def setup(self):
-        pass
+        "Apply configuration. Called on every config reload"
+        for name, method in getmembers(self, ismethod):
+            if hasattr(method, 'run_every_config_key'):
+                method.im_func.interval = timedelta(
+                        seconds=getattr(self, method.run_every_config_key, 0))
 
     def shutdown(self):
         pass
 
     def process(self, event):
+        "Process a single event"
+        if event.type == 'clock':
+            for name, method in getmembers(self, ismethod):
+                if (hasattr(method, 'run_every')
+                        and method.interval.seconds > 0
+                        and not method.running):
+                    method.im_func.running = True
+                    if method.last_called is None:
+                        # Don't fire first time
+                        # Give sources a chance to connect
+                        method.im_func.last_called = event.time
+                    elif event.time - method.last_called >= method.interval:
+                        method.im_func.last_called = event.time
+                        try:
+                            method(event)
+                            if method.failing:
+                                self.__log.info(u'No longer failing: %s.%s',
+                                        self.__class__.__name__, name)
+                                method.im_func.failing = False
+                        except:
+                            if not method.failing:
+                                method.im_func.failing = True
+                                self.__log.exception(
+                                        u'Periodic method failing: %s.%s',
+                                        self.__class__.__name__, name)
+                            else:
+                                self.__log.debug(u'Still failing: %s.%s',
+                                        self.__class__.__name__, name)
+                    method.im_func.running = False
+
         if event.type not in self.event_types:
             return
 
@@ -55,10 +107,14 @@ class Processor(object):
                     method(event)
                 elif hasattr(event, 'message'):
                     found = True
-                    match = method.pattern.search(event.message[method.message_version])
+                    match = method.pattern.search(
+                            event.message[method.message_version])
                     if match is not None:
-                        if not hasattr(method, 'authorised') or auth_responses(event, self.permission):
+                        if (not getattr(method, 'auth_required', False)
+                                or auth_responses(event, self.permission)):
                             method(event, *match.groups())
+                        elif not getattr(method, 'auth_fallthrough', True):
+                            event.processed = True
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
@@ -68,17 +124,21 @@ class Processor(object):
 # This is a bit yucky, but necessary since ibid.config imports Processor
 from ibid.config import BoolOption, IntOption
 options = {
-    'addressed': BoolOption('addressed', u'Only process events if bot was addressed'),
-    'processed': BoolOption('processed', u"Process events even if they've already been processed"),
+    'addressed': BoolOption('addressed',
+        u'Only process events if bot was addressed'),
+    'processed': BoolOption('processed',
+        u"Process events even if they've already been processed"),
     'priority': IntOption('priority', u'Processor priority'),
 }
 
 def handler(function):
+    "Wrapper: Handle all events"
     function.handler = True
     function.message_version = 'clean'
     return function
 
 def match(regex, version='clean'):
+    "Wrapper: Handle all events where the message matches the regex"
     pattern = re.compile(regex, re.I | re.DOTALL)
     def wrap(function):
         function.handler = True
@@ -88,15 +148,38 @@ def match(regex, version='clean'):
     return wrap
 
 def auth_responses(event, permission):
+    """Mark an event as having required authorisation, and return True if the
+    event sender has permission.
+    """
     if not ibid.auth.authorise(event, permission):
         event.complain = u'notauthed'
         return False
 
     return True
 
-def authorise(function):
-    function.authorised = True
-    return function
+def authorise(fallthrough=True):
+    """Require the permission specified in Processer.permission for the sender
+    On failure, flags the event for Complain to respond appropriatly.
+    If fallthrough=False, set the processed Flag to bypass later plugins.
+    """
+    def wrap(function):
+        function.auth_required = True
+        function.auth_fallthrough = fallthrough
+        return function
+    return wrap
+
+def run_every(interval=0, config_key=None):
+    "Wrapper: Run this handler every interval seconds"
+    def wrap(function):
+        function.run_every = True
+        function.running = False
+        function.last_called = None
+        function.interval = timedelta(seconds=interval)
+        if config_key is not None:
+            function.run_every_config_key = config_key
+        function.failing = False
+        return function
+    return wrap
 
 from ibid.source.http import templates
 
@@ -137,8 +220,6 @@ class RPC(pb.Referenceable, resource.Resource):
         if not function:
             return "Not found"
 
-        #self.log.debug(u'%s(%s, %s)', function, ', '.join([str(arg) for arg in args]), ', '.join(['%s=%s' % (k,v) for k,v in kwargs.items()]))
-
         try:
             result = function(*args, **kwargs)
             return json.dumps(result)
@@ -153,7 +234,8 @@ class RPC(pb.Referenceable, resource.Resource):
                 if name.startswith('remote_'):
                     functions.append(name.replace('remote_', '', 1))
 
-            return self.list.render(object=self.feature, functions=functions).encode('utf-8')
+            return self.list.render(object=self.feature, functions=functions) \
+                    .encode('utf-8')
 
         args, varargs, varkw, defaults = getargspec(function)
         del args[0]

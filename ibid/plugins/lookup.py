@@ -891,7 +891,7 @@ class Bible(Processor):
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
     # by book names, chapters and verses.
-    @match(r'^((?:(?:' + books + ')(?:\d|[-:,]|\s)*)*?)(?:\s+(?:in|from)\s+(.*))?$')
+    @match(r'^((?:(?:' + books + ')(?:\d|[-:,]|\s)*)+?)(?:\s+(?:in|from)\s+(.*))?$')
     def bookbible(self, *args):
         self.bible(*args)
 

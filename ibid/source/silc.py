@@ -79,7 +79,10 @@ class SilcBot(SilcClient):
             self.send_private_message(target, message, flags=flags)
         elif response['target'] in self.channels:
             target = self.channels[response['target']]
-            self.send_channel_message(target, message, flags=flags)
+            if response.get('topic', False):
+                self.command_call('TOPIC %s %s' % (target, message))
+            else:
+                self.send_channel_message(target, message, flags=flags)
         else:
             for user in self.users.itervalues():
                 if user.nickname == response['target']:
@@ -196,7 +199,7 @@ class SilcBot(SilcClient):
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
-    supports = ('action',)
+    supports = ('action', 'topic')
 
     server = Option('server', 'Server hostname')
     port = IntOption('port', 'Server port number', 706)

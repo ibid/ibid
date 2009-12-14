@@ -29,7 +29,7 @@ class ReloadCoreModules(Processor):
     permission = u'core'
 
     @match(r'^reload\s+(reloader|dispatcher|databases|auth)$')
-    @authorise
+    @authorise()
     def reload(self, event, module):
         module = module.lower()
         if module == 'reloader':
@@ -46,14 +46,14 @@ class LoadModules(Processor):
     permission = u'plugins'
 
     @match(r'^(?:re)?load\s+(\S+)(?:\s+plugin)?$')
-    @authorise
+    @authorise()
     def load(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         result = ibid.reloader.load_processor(plugin)
         event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", plugin)
 
     @match(r'^unload\s+(\S+)$')
-    @authorise
+    @authorise()
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         event.addresponse(result and u'%s unloaded' or u"Couldn't unload %s", plugin)
@@ -66,7 +66,7 @@ class Die(Processor):
     permission = u'admin'
 
     @match(r'^die$')
-    @authorise
+    @authorise()
     def die(self, event):
         reactor.stop()
 

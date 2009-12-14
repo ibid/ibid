@@ -29,7 +29,8 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64), nullable=False, unique=True, index=True),
+    Column('name', UnicodeText, nullable=False, unique=True, index=True,
+            info={'ibid_mysql_index_length': 32}),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
@@ -48,8 +49,11 @@ class FactoidName(Base):
             self.add_index(self.table.c.factpack)
         def upgrade_4_to_5(self):
             self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
+        def upgrade_5_to_6(self):
+            self.alter_column(Column('name', UnicodeText, nullable=False,
+                unique=True, index=True, info={'ibid_mysql_index_length': 32}))
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 5)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 6)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -206,7 +210,7 @@ class Forget(Processor):
     permissions = (u'factoidadmin',)
 
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
-    @authorise
+    @authorise(fallthrough=False)
     def forget(self, event, name, number, pattern, is_regex):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if factoids:
@@ -264,7 +268,7 @@ class Forget(Processor):
             event.addresponse(u"I didn't know about %s anyway", name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
-    @authorise
+    @authorise(fallthrough=False)
     def alias(self, event, target, source):
 
         target = strip_name(target)
@@ -302,14 +306,15 @@ class Search(Processor):
 
     regex_re = re.compile(r'^/(.*)/(r?)$')
 
-    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from\s+)?(\d+)?$',
+    @match(r'^search\s+(?:for\s+)?(?:(\d+)\s+)?(?:(facts?|values?)\s+)?(?:containing\s+)?(.+?)(?:\s+from)?(?:\s+(\d+))?\s*$',
             version='deaddressed')
     def search(self, event, limit, search_type, pattern, start):
         limit = limit and min(int(limit), self.limit) or self.default
-        start = start and int(start) or 0
+        start = start and max(int(start) - 1, 0) or 0
 
         search_type = search_type and search_type.lower() or u""
 
+        origpattern = pattern
         m = self.regex_re.match(pattern)
         is_regex = False
         if m:
@@ -344,7 +349,7 @@ class Search(Processor):
         if matches:
             event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
         else:
-            event.addresponse(u"I couldn't find anything with that name")
+            event.addresponse(u"I couldn't find anything that matched '%s'" % origpattern)
 
 def _interpolate(message, event):
     "Expand factoid variables"
@@ -439,7 +444,7 @@ class Set(Processor):
         self.set_factoid.im_func.message_version = 'deaddressed'
 
     @handler
-    @authorise
+    @authorise(fallthrough=False)
     def set_factoid(self, event, correction, name, addition1, verb1, verb2, addition2, value):
         verb = verb1 or verb2
         addition = addition1 or addition2
@@ -508,7 +513,7 @@ class Modify(Processor):
     priority = 190
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*\+=(.+)$', version='deaddressed')
-    @authorise
+    @authorise(fallthrough=False)
     def append(self, event, name, number, pattern, is_regex, suffix):
         name = strip_name(name)
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
@@ -541,7 +546,7 @@ class Modify(Processor):
             event.addresponse(True)
 
     @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
-    @authorise
+    @authorise(fallthrough=False)
     def modify(self, event, name, number, pattern, is_regex, operation, separator):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
