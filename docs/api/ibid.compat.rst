@@ -48,8 +48,8 @@ Classes
 
    Standard Python :class:`collections.defaultdict`.
 
-   Returns a dict which defaults to the value returned by
-   *default_factory()*.
+   Returns a dict-like-object where all unset values contain the value
+   returned by *default_factory()*.
 
 Functions
 ---------
