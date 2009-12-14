@@ -4,6 +4,7 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
+   ibid.compat
    ibid.plugins
    ibid.utils
 
