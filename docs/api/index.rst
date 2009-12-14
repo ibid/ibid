@@ -5,6 +5,7 @@ API Reference
    :maxdepth: 2
 
    ibid.compat
+   ibid.event
    ibid.plugins
    ibid.utils
 
