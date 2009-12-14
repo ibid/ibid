@@ -58,13 +58,13 @@ Functions
 
    Standard Python :func:`all`.
 
-   Return ``True`` if every item in *interable* is ``True``.
+   Return ``True`` if every item in *iterable* is ``True``.
 
-.. function:: any(interable)
+.. function:: any(iterable)
 
    Standard Python :func:`any`.
 
-   Return ``True`` if any single item in *interable* is ``True``.
+   Return ``True`` if any single item in *iterable* is ``True``.
 
 .. function:: strptime(date_string, format)
 
