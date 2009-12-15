@@ -960,14 +960,14 @@ class OEIS(Processor):
         if results_m:
             f.next()
             sequence = Sequence(f)
-            event.addresponse(u'%(name)s (%(url)s): %(values)s', 
+            event.addresponse(u'%(name)s - %(url)s - %(values)s', 
                                 {'name': sequence.name,
                                  'url': sequence.url(),
                                  'values': sequence.values})
         
             results = int(results_m.group(1))
             if results > 1:
-                event.addresponse(u'There %(was)s %(count)d more %(results)s.'
+                event.addresponse(u'There %(was)s %(count)d more %(results)s. '
                                   u'See %(url)s%(query)s for more.',
                     {'was': plural(results-1, 'was', 'were'),
                      'count': results-1,
