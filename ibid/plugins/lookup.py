@@ -16,7 +16,7 @@ from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
 from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice, human_join
+        cacheable_download, json_webservice, human_join, plural
 
 log = logging.getLogger('plugins.lookup')
 
@@ -949,9 +949,9 @@ class OEIS(Processor):
     
     feature = 'oeis'
 
-    @match(r'^oeis\s+(A\d+|M\d+|N\d+|-?\d(?:\d|-|,|\s)*)$')
+    @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
     def oeis (self, event, query):
-        query = re.sub(r',?\s+', ',', query)
+        query = re.sub(r'(,|\s)+', ',', query)
         f = urlopen('http://www.research.att.com/~njas/sequences/?n=1&fmt=3&q='
                     + query)
 
@@ -960,17 +960,22 @@ class OEIS(Processor):
         if results_m:
             f.next()
             sequence = Sequence(f)
-            event.addresponse('%s (%s): %s', 
-                                (sequence.name, sequence.url(), sequence.values))
+            event.addresponse(u'%(name)s (%(url)s): %(values)s', 
+                                {'name': sequence.name,
+                                 'url': sequence.url(),
+                                 'values': sequence.values})
         
             results = int(results_m.group(1))
             if results > 1:
-                event.addresponse('There %s %d more result%s. See http://www.research.att.com/~njas/sequences/?fmt=1&q=%s for more.',
-                                    ('was' if results == 2 else 'were',
-                                    results-1,
-                                    's' if results > 2 else '',
-                                    query))
+                event.addresponse(u'There %(was)s %(count)d more %(results)s.'
+                                  u'See %(url)s%(query)s for more.',
+                    {'was': plural(results-1, 'was', 'were'),
+                     'count': results-1,
+                     'results': plural(results-1, 'result', 'results'),
+                     'url':
+                      'http://www.research.att.com/~njas/sequences/?fmt=1&q=',
+                     'query': query})
         else:
-            event.addresponse("I couldn't find that sequence.")
+            event.addresponse(u"I couldn't find that sequence.")
 
 # vi: set et sta sw=4 ts=4:
