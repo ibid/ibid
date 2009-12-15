@@ -957,8 +957,8 @@ class OEIS(Processor):
 
         f.next() # the first line is uninteresting
         results_m = re.search(r'(\d+) results found', f.next())
-        f.next()
         if results_m:
+            f.next()
             sequence = Sequence(f)
             event.addresponse('%s (%s): %s', 
                                 (sequence.name, sequence.url(), sequence.values))
