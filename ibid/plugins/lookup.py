@@ -917,4 +917,60 @@ class Bible(Processor):
                                         ('bookname', 'chapter', 'verse', 'text'))
         return ((book, chapter, verse), text)
 
+class Sequence(object):
+    def __init__ (self, lines):
+        cmds = defaultdict(list)
+        for line in lines:
+            line = line.lstrip()[:-1]
+            if not line:
+                break
+
+            line_m = re.match(r'%([A-Z]) (A\d+)(?: (.*))?$', line)
+            if line_m:
+                cmd, self.catalog_num, info = line_m.groups()
+                cmds[cmd].append(info)
+            else:
+                cmds[cmd][-1] += line
+
+        # %V, %W and %X give signed values if the sequence is signed.
+        # Otherwise, only %S, %T and %U are given.
+        self.values = (''.join(cmds['V'] + cmds['W'] + cmds['X']) or
+                        ''.join(cmds['S'] + cmds['T'] + cmds['U']))
+        
+        self.name = ''.join(cmds['N'])
+
+    def url (self):
+        return 'http://www.research.att.com/~njas/sequences/' + self.catalog_num
+
+help['oeis'] = 'Query the Online Encyclopedia of Integer Sequences'
+class OEIS(Processor):
+    u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
+    oeis <term>[, ...]"""
+    
+    feature = 'oeis'
+
+    @match(r'^oeis\s+(A\d+|M\d+|N\d+|-?\d(?:\d|-|,|\s)*)$')
+    def oeis (self, event, query):
+        query = re.sub(r',?\s+', ',', query)
+        f = urlopen('http://www.research.att.com/~njas/sequences/?n=1&fmt=3&q='
+                    + query)
+
+        f.next() # the first line is uninteresting
+        results_m = re.search(r'(\d+) results found', f.next())
+        f.next()
+        if results_m:
+            sequence = Sequence(f)
+            event.addresponse('%s (%s): %s', 
+                                (sequence.name, sequence.url(), sequence.values))
+        
+            results = int(results_m.group(1))
+            if results > 1:
+                event.addresponse('There %s %d more result%s. See http://www.research.att.com/~njas/sequences/?fmt=1&q=%s for more.',
+                                    ('was' if results == 2 else 'were',
+                                    results-1,
+                                    's' if results > 2 else '',
+                                    query))
+        else:
+            event.addresponse("I couldn't find that sequence.")
+
 # vi: set et sta sw=4 ts=4:
