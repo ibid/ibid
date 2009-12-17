@@ -278,27 +278,35 @@ class MyLifeIsAverage(Processor):
 
     feature = 'mlia'
 
-    public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
+    public_browse = BoolOption('public_browse',
+                               'Allow random quotes in public', True)
 
     random_pool = {}
     pages = {}
 
-    def find_stories(self, url):
+    def find_stories(self, url, site='mlia'):
         if isinstance(url, basestring):
             tree = get_html_parse_tree(url, treetype='etree')
         else:
             tree = url
 
-        stories = [div for div in tree.findall('.//div') if div.get(u'class') == u's']
+        stories = [div for div in tree.findall('.//div')
+                       if div.get(u'class') in
+                            (u'story s', # mlia
+                             u'stories', u'stories-wide')] # mlig
 
         for story in stories:
-            body = story.findtext('div').strip()
-            id = story.findtext('div/a')
+            if site == 'mlia':
+                body = story.findtext('div').strip()
+            else:
+                body = story.findtext('div/span/span').strip()
+            id = story.findtext('.//a')
             if isinstance(id, basestring) and id[1:].isdigit():
                 id = int(id[1:])
                 yield id, body
 
-    @match(r'^(mli[ag])(?:\s+this)?(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
+    @match(r'^(mli[ag])(?:\s+this)?'
+           r'(?:\s+(\d+|random|recent|today|yesterday|week|month|year))?$')
     def mlia(self, event, site, query):
         query = query is None and u'random' or query.lower()
 
@@ -314,36 +322,64 @@ class MyLifeIsAverage(Processor):
 
         if query == u'random' or query is None:
             if not self.random_pool.get(site):
-                tree = get_html_parse_tree(
-                        url + 'index.php?' + urlencode({'page': randint(1, self.pages.get(site, 1))}),
-                        treetype='etree')
-                self.random_pool[site] = [story for story in self.find_stories(tree)]
+                if site == 'mlia':
+                    purl = url + str(randint(1, self.pages.get(site, 1)))
+                else:
+                    purl = url + 'index.php?' + urlencode({
+                            'page': randint(1, self.pages.get(site, 1))
+                        })
+                tree = get_html_parse_tree(purl, treetype='etree')
+                self.random_pool[site] = [story for story
+                        in self.find_stories(tree, site=site)]
                 shuffle(self.random_pool[site])
 
-                pagination = [div for div in tree.findall('.//div') if div.get(u'class') == u'pagination'][0]
-                self.pages[site] = sorted(int(a.text) for a in pagination.findall('.//a') if a.text.isdigit())[-1]
+                if site == 'mlia':
+                    pagination = [ul for ul in tree.findall('.//ul')
+                                           if ul.get(u'class') == u'pages'][0]
+                    self.pages[site] = int(
+                        [li for li in pagination.findall('li')
+                            if li.get(u'class') == u'last'][0]
+                        .find(u'a').get(u'href'))
+                else:
+                    pagination = [div for div in tree.findall('.//div')
+                                      if div.get(u'class') == u'pagination'][0]
+                    self.pages[site] = sorted(int(a.text) for a
+                            in pagination.findall('.//a')
+                            if a.text.isdigit())[-1]
 
             story = self.random_pool[site].pop()
 
         else:
             try:
-                if query.isdigit():
-                    story = self.find_stories(url + 'story.php?' + urlencode({'id': query})).next()
+                if site == 'mlia':
+                    if query.isdigit():
+                        surl = url + '/s/' + query
+                    else:
+                        surl = url + '/best/' + query
                 else:
-                    story = self.find_stories(url + 'index.php?' + urlencode({'part': query})).next()
+                    if query.isdigit():
+                        surl = url + 'story.php?' + urlencode({'id': query})
+                    else:
+                        surl = url + 'index.php?' + urlencode({'part': query})
+
+                story = self.find_stories(surl, site=site).next()
 
             except StopIteration:
                 event.addresponse(u'No such quote')
                 return
 
         id, body = story
-        event.addresponse(u'%(body)s - %(url)sstory.php?id=%(id)i', {
+        if site == 'mlia':
+            url += 's/%i' % id
+        else:
+            url += 'story.php?id=%i' % id
+        event.addresponse(u'%(body)s - %(url)s', {
             'url': url,
-            'id': id,
             'body': body,
         })
 
-    @match(r'^(?:http://)?(?:www\.)?mylifeis(average|g)\.com/story\.php\?id=(\d+)$')
+    @match(r'^(?:http://)?(?:www\.)?mylifeis(average|g)\.com'
+           r'/story\.php\?id=(\d+)$')
     def mlia_url(self, event, site, id):
         self.mlia(event, 'mli' + site[0].lower(), id)
 
