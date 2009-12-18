@@ -6,6 +6,7 @@ API Reference
 
    ibid.compat
    ibid.config
+   ibid.core
    ibid.event
    ibid.plugins
    ibid.utils
