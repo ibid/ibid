@@ -4,12 +4,11 @@ from random import choice
 import re
 
 from dateutil.tz import tzlocal, tzutc
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.orm import relation
-from sqlalchemy.sql import func
 
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption, ListOption
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, relation, func, or_
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
 from ibid.utils import format_date
@@ -29,9 +28,10 @@ def strip_name(unstripped):
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', UnicodeText, nullable=False, unique=True, index=True,
-            info={'ibid_mysql_index_length': 32}),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
+    Column('name', IbidUnicodeText(32), nullable=False, unique=True,
+           index=True),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False,
+           index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
@@ -39,7 +39,8 @@ class FactoidName(Base):
 
     class FactoidNameSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+            self.add_column(Column('factpack', Integer,
+                                   ForeignKey('factpacks.id')))
         def upgrade_2_to_3(self):
             self.add_index(self.table.c.name, unique=True)
         def upgrade_3_to_4(self):
@@ -48,10 +49,11 @@ class FactoidName(Base):
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
         def upgrade_4_to_5(self):
-            self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
+            self.alter_column(Column('name', IbidUnicode(64), nullable=False,
+                                     unique=True, index=True))
         def upgrade_5_to_6(self):
-            self.alter_column(Column('name', UnicodeText, nullable=False,
-                unique=True, index=True, info={'ibid_mysql_index_length': 32}))
+            self.alter_column(Column('name', IbidUnicodeText(32),
+                                     nullable=False, unique=True, index=True))
 
     __table__.versioned_schema = FactoidNameSchema(__table__, 6)
 
@@ -68,8 +70,9 @@ class FactoidName(Base):
 class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('value', UnicodeText, nullable=False),
-    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
+    Column('value', IbidUnicodeText, nullable=False),
+    Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False,
+           index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
@@ -107,7 +110,8 @@ class Factoid(Base):
 
     class FactoidSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_column(Column('factpack', Integer, ForeignKey('factpacks.id')))
+            self.add_column(Column('factpack', Integer,
+                                   ForeignKey('factpacks.id')))
         def upgrade_2_to_3(self):
             self.add_index(self.table.c.factpack)
 
@@ -123,7 +127,7 @@ class Factoid(Base):
 class Factpack(Base):
     __table__ = Table('factpacks', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(64), nullable=False, unique=True, index=True),
+    Column('name', IbidUnicode(64), nullable=False, unique=True, index=True),
     useexisting=True)
 
     class FactpackSchema(VersionedSchema):

@@ -3,13 +3,12 @@ from datetime import datetime
 import logging
 from urlparse import urljoin
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, \
-        ForeignKey, Table
-from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
 
 from ibid.config import IntOption
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, func
 from ibid.plugins import Processor, match, authorise, run_every
 from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree, human_join
@@ -21,13 +20,13 @@ log = logging.getLogger('plugins.feeds')
 class Feed(Base):
     __table__ = Table('feeds', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(32), unique=True, nullable=False, index=True),
-    Column('url', UnicodeText, nullable=False),
+    Column('name', IbidUnicode(32), unique=True, nullable=False, index=True),
+    Column('url', IbidUnicodeText, nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id'),
-        nullable=False, index=True),
+           nullable=False, index=True),
     Column('time', DateTime, nullable=False),
-    Column('source', Unicode(32), index=True),
-    Column('target', Unicode(32), index=True),
+    Column('source', IbidUnicode(32), index=True),
+    Column('target', IbidUnicode(32), index=True),
     useexisting=True)
 
     class FeedSchema(VersionedSchema):
@@ -35,9 +34,9 @@ class Feed(Base):
             self.add_index(self.table.c.name, unique=True)
             self.add_index(self.table.c.identity_id)
         def upgrade_2_to_3(self):
-            from sqlalchemy import Column, Unicode
-            self.add_column(Column('source', Unicode(32), index=True))
-            self.add_column(Column('target', Unicode(32), index=True))
+            from ibid.db import IbidUnicode, Column
+            self.add_column(Column('source', IbidUnicode(32), index=True))
+            self.add_column(Column('target', IbidUnicode(32), index=True))
 
     __table__.versioned_schema = FeedSchema(__table__, 3)
 

@@ -1,11 +1,9 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
-from sqlalchemy.orm import relation
-from sqlalchemy.sql import func
-from sqlalchemy.exceptions import IntegrityError
-
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, UniqueConstraint, \
+                    relation, func, IntegrityError
 from ibid.plugins import Processor, match
 from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago, format_date
@@ -17,10 +15,11 @@ help = {'seen': u'Records when people were last seen.'}
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
-    Column('type', Unicode(8), nullable=False, index=True),
-    Column('channel', Unicode(32)),
-    Column('value', UnicodeText),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False,
+           index=True),
+    Column('type', IbidUnicode(8), nullable=False, index=True),
+    Column('channel', IbidUnicode(32)),
+    Column('value', IbidUnicodeText),
     Column('time', DateTime, nullable=False),
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),

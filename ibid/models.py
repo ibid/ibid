@@ -2,9 +2,8 @@ from datetime import datetime
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, \
-        ForeignKey, UniqueConstraint, MetaData, Table, Index, \
-        __version__ as sqlalchemy_version
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, MetaData, Table, \
+                       Index, __version__ as sqlalchemy_version
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
@@ -14,6 +13,8 @@ if sqlalchemy_version < '0.5':
     NoResultFound = InvalidRequestError
 else:
     from sqlalchemy.orm.exc import NoResultFound
+
+from ibid.db.types import Integer, IbidUnicode, IbidUnicodeText, DateTime
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
@@ -137,14 +138,15 @@ class VersionedSchema(object):
         Generate the description of a constraint for insertion into a CREATE
         string
         """
-        return ', '.join(
-            (isinstance(column.type, UnicodeText)
-                    and '"%(name)s"(%(length)i)'
-                    or '"%(name)s"') % {
-                'name': column.name,
-                'length': column.info.get('ibid_mysql_index_length', 8),
-            } for column in constraint.columns
-        )
+        names = []
+        for column in constraint.columns:
+            if isinstance(column.type, IbidUnicodeText):
+                names.append('"%s"(%i)'
+                             % (column.name, column.type.index_length))
+            else:
+                names.append(column.name)
+
+        return ', '.join(names)
 
     def _create_table(self):
         """
@@ -172,7 +174,7 @@ class VersionedSchema(object):
                     ('indexes', old_indexes)):
                 for constraint in old_list:
                     if any(True for column in constraint.columns
-                            if isinstance(column.type, UnicodeText)):
+                            if isinstance(column.type, IbidUnicodeText)):
                         indices.append((
                             isinstance(constraint, UniqueConstraint),
                             self._mysql_constraint_createstring(constraint)
@@ -300,10 +302,10 @@ class VersionedSchema(object):
         old_col = table.c[old_name or col.name]
 
         if session.bind.engine.name == 'sqlite':
-            if (isinstance(col.type, (UnicodeText, Unicode))
-                        and isinstance(old_col.type, (UnicodeText, Unicode))
-                    ) or (isinstance(col.type, Integer)
-                        and isinstance(old_col.type, (Integer))):
+            if (isinstance(col.type, (IbidUnicodeText, IbidUnicode))
+                    and isinstance(old_col.type, (IbidUnicodeText, IbidUnicode))
+                ) or (isinstance(col.type, Integer)
+                    and isinstance(old_col.type, (Integer))):
                 # SQLite doesn't enforce value length restrictions
                 # only type changes have a real effect
                 return
@@ -315,8 +317,8 @@ class VersionedSchema(object):
             # Special handling for columns of TEXT type, because SQLAlchemy
             # can't create indexes for them
             recreate = []
-            if isinstance(col.type, UnicodeText) \
-                    or isinstance(old_col.type, UnicodeText):
+            if isinstance(col.type, IbidUnicodeText) \
+                    or isinstance(old_col.type, IbidUnicodeText):
                 for type in (table.constraints, table.indexes):
                     for constraint in list(type):
                         if any(True for column in constraint.columns
@@ -414,7 +416,8 @@ class VersionedSchema(object):
 class Schema(Base):
     __table__ = Table('schema', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('table', Unicode(32), unique=True, nullable=False, index=True),
+        Column('table', IbidUnicode(32), unique=True, nullable=False,
+               index=True),
         Column('version', Integer, nullable=False),
         useexisting=True)
 
@@ -435,9 +438,8 @@ class Identity(Base):
     __table__ = Table('identities', Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
-        Column('source', Unicode(32), nullable=False, index=True),
-        Column('identity', UnicodeText, nullable=False, index=True,
-            info={'ibid_mysql_index_length': 32}),
+        Column('source', IbidUnicode(32), nullable=False, index=True),
+        Column('identity', IbidUnicodeText(32), nullable=False, index=True),
         Column('created', DateTime),
         UniqueConstraint('source', 'identity'),
         useexisting=True)
@@ -450,9 +452,9 @@ class Identity(Base):
 
         def upgrade_2_to_3(self):
             self.alter_column(Column('source',
-                    Unicode(32), nullable=False, index=True))
+                    IbidUnicode(32), nullable=False, index=True))
             self.alter_column(Column('identity',
-                    UnicodeText, nullable=False, index=True))
+                    IbidUnicodeText, nullable=False, index=True))
 
     __table__.versioned_schema = IdentitySchema(__table__, 3)
 
@@ -470,8 +472,8 @@ class Attribute(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'),
             nullable=False, index=True),
-        Column('name', Unicode(32), nullable=False, index=True),
-        Column('value', UnicodeText, nullable=False),
+        Column('name', IbidUnicode(32), nullable=False, index=True),
+        Column('value', IbidUnicodeText, nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
@@ -480,7 +482,7 @@ class Attribute(Base):
             self.add_index(self.table.c.account_id)
             self.add_index(self.table.c.name)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('value', UnicodeText, nullable=False))
+            self.alter_column(Column('value', IbidUnicodeText, nullable=False))
 
     __table__.versioned_schema = AttributeSchema(__table__, 3)
 
@@ -496,9 +498,9 @@ class Credential(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'),
                 nullable=False, index=True),
-        Column('source', Unicode(32), index=True),
-        Column('method', Unicode(16), nullable=False, index=True),
-        Column('credential', UnicodeText, nullable=False),
+        Column('source', IbidUnicode(32), index=True),
+        Column('method', IbidUnicode(16), nullable=False, index=True),
+        Column('credential', IbidUnicodeText, nullable=False),
         useexisting=True)
 
     class CredentialSchema(VersionedSchema):
@@ -507,9 +509,9 @@ class Credential(Base):
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.method)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('source', Unicode(32), index=True))
+            self.alter_column(Column('source', IbidUnicode(32), index=True))
             self.alter_column(Column('credential',
-                    UnicodeText, nullable=False))
+                    IbidUnicodeText, nullable=False))
 
     __table__.versioned_schema = CredentialSchema(__table__, 3)
 
@@ -524,8 +526,8 @@ class Permission(Base):
         Column('id', Integer, primary_key=True),
         Column('account_id', Integer, ForeignKey('accounts.id'),
                 nullable=False, index=True),
-        Column('name', Unicode(16), nullable=False, index=True),
-        Column('value', Unicode(4), nullable=False),
+        Column('name', IbidUnicode(16), nullable=False, index=True),
+        Column('value', IbidUnicode(4), nullable=False),
         UniqueConstraint('account_id', 'name'),
         useexisting=True)
 
@@ -543,7 +545,7 @@ class Permission(Base):
 class Account(Base):
     __table__ = Table('accounts', Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('username', Unicode(32), unique=True, nullable=False,
+        Column('username', IbidUnicode(32), unique=True, nullable=False,
                 index=True),
         useexisting=True)
 

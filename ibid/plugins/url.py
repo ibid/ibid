@@ -7,11 +7,12 @@ import logging
 import re
 
 from pkg_resources import resource_exists, resource_stream
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, ListOption
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey
 from ibid.models import Base, VersionedSchema
 from ibid.utils  import get_html_parse_tree
 
@@ -22,8 +23,8 @@ log = logging.getLogger('plugins.url')
 class URL(Base):
     __table__ = Table('urls', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('url', UnicodeText, nullable=False),
-    Column('channel', Unicode(32), nullable=False),
+    Column('url', IbidUnicodeText, nullable=False),
+    Column('channel', IbidUnicode(32), nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)

@@ -2,11 +2,9 @@ from datetime import datetime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, Table
-from sqlalchemy.sql import func
-
-from ibid.plugins import Processor, match, handler, authorise
 from ibid.config import BoolOption, IntOption, ListOption
+from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, func
+from ibid.plugins import Processor, match, handler, authorise
 from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
@@ -16,7 +14,7 @@ log = logging.getLogger('plugins.karma')
 class Karma(Base):
     __table__ = Table('karma', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('subject', Unicode(64), unique=True, nullable=False, index=True),
+    Column('subject', IbidUnicode(64), unique=True, nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
     Column('time', DateTime, nullable=False),
@@ -26,7 +24,8 @@ class Karma(Base):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.subject, unique=True)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('subject', Unicode(64), unique=True, nullable=False, index=True))
+            self.alter_column(Column('subject', IbidUnicode(64), unique=True,
+                                     nullable=False, index=True))
 
     __table__.versioned_schema = KarmaSchema(__table__, 3)
 

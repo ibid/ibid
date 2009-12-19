@@ -1,13 +1,11 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Boolean, UnicodeText, Table
-from sqlalchemy.orm import relation
-from sqlalchemy.sql import func
-
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
 from ibid.config import IntOption
+from ibid.db import IbidUnicodeText, Boolean, Integer, DateTime, \
+                    Table, Column, ForeignKey, relation, func
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema, Identity, Account
@@ -25,7 +23,7 @@ class Memo(Base):
     Column('id', Integer, primary_key=True),
     Column('from_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
     Column('to_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
-    Column('memo', UnicodeText, nullable=False),
+    Column('memo', IbidUnicodeText, nullable=False),
     Column('private', Boolean, nullable=False),
     Column('delivered', Boolean, nullable=False, index=True),
     Column('time', DateTime, nullable=False),
