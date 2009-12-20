@@ -214,7 +214,7 @@ class Insult(Processor):
             'vokker', 'kakrooker',
     ))
 
-    swearlength = IntOption('swearlength', 'Number of explitives to swear with',
+    swearlength = IntOption('swearlength', 'Number of expletives to swear with',
                             15)
 
     @match(r'^(?:swear|cuss|explete)(?:\s+at\s+(?:the\s+)?(.*))?$')
