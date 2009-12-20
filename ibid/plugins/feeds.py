@@ -43,14 +43,16 @@ class Feed(Base):
             self.drop_index(self.table.c.target)
             self.alter_column(Column('name',
                                      IbidUnicode(32, case_insensitive=True),
-                                     unique=True, nullable=False, index=True))
-            self.alter_column(Column('url', IbidUnicodeText, nullable=False))
+                                     unique=True, nullable=False, index=True),
+                              force_rebuild=True)
+            self.alter_column(Column('url', IbidUnicodeText, nullable=False),
+                              force_rebuild=True)
             self.alter_column(Column('source',
                                      IbidUnicode(32, case_insensitive=True),
-                                     index=True))
+                                     index=True), force_rebuild=True)
             self.alter_column(Column('target',
                                      IbidUnicode(32, case_insensitive=True),
-                                     index=True))
+                                     index=True), force_rebuild=True)
             self.add_index(self.table.c.name)
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.target)

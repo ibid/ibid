@@ -32,9 +32,11 @@ class Sighting(Base):
         def upgrade_2_to_3(self):
             self.drop_index(self.table.c.type)
             self.alter_column(Column('type', IbidUnicode(8), nullable=False,
-                                     index=True))
-            self.alter_column(Column('channel', IbidUnicode(32)))
-            self.alter_column(Column('value', IbidUnicodeText))
+                                     index=True), force_rebuild=True)
+            self.alter_column(Column('channel', IbidUnicode(32)),
+                              force_rebuild=True)
+            self.alter_column(Column('value', IbidUnicodeText),
+                              force_rebuild=True)
             self.add_index(self.table.c.type)
 
     __table__.versioned_schema = SightingSchema(__table__, 3)

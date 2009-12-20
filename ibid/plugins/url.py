@@ -36,7 +36,7 @@ class URL(Base):
             self.alter_column(Column('url', IbidUnicodeText, nullable=False))
             self.alter_column(Column('channel',
                                      IbidUnicode(32, case_insensitive=True),
-                                     nullable=False))
+                                     nullable=False), force_rebuild=True)
 
     __table__.versioned_schema = URLSchema(__table__, 3)
 

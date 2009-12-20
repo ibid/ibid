@@ -31,7 +31,8 @@ class Karma(Base):
             self.drop_index(self.table.c.subject)
             self.alter_column(Column('subject',
                                      IbidUnicode(64, case_insensitive=True),
-                                     unique=True, nullable=False, index=True))
+                                     unique=True, nullable=False, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.subject)
 
     __table__.versioned_schema = KarmaSchema(__table__, 4)

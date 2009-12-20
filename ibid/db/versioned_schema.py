@@ -305,7 +305,7 @@ class VersionedSchema(object):
             session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";'
                     % (table.name, old_name, col.name))
 
-    def alter_column(self, col, old_name=None):
+    def alter_column(self, col, old_name=None, force_rebuild=False):
         """Change a column (possibly renaming from old_name) to Column col."""
 
         session = self.upgrade_session
@@ -321,12 +321,11 @@ class VersionedSchema(object):
         # SQLite doesn't enforce value length restrictions
         # only type changes have a real effect
         if session.bind.engine.name == 'sqlite':
-            if (isinstance(col.type, (IbidUnicodeText, IbidUnicode))
+            if not force_rebuild and (
+                (isinstance(col.type, (IbidUnicodeText, IbidUnicode))
                     and isinstance(old_col.type, (IbidUnicodeText, IbidUnicode)
-                    and col.type.case_insensitive
-                        == old_col.type.case_insensitive)
                 ) or (isinstance(col.type, Integer)
-                    and isinstance(old_col.type, (Integer))):
+                    and isinstance(old_col.type, Integer)))):
                 return
 
             self._rebuild_sqlite(

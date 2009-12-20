@@ -58,7 +58,8 @@ class FactoidName(Base):
             self.drop_index(self.table.c.name)
             self.alter_column(Column('name',
                                      IbidUnicodeText(32, case_insensitive=True),
-                                     nullable=False, unique=True, index=True))
+                                     nullable=False, unique=True, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.name)
 
     __table__.versioned_schema = FactoidNameSchema(__table__, 7)
@@ -92,7 +93,8 @@ class FactoidValue(Base):
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
         def upgrade_3_to_4(self):
-            self.alter_column(Column('value', IbidUnicodeText, nullable=False))
+            self.alter_column(Column('value', IbidUnicodeText, nullable=False),
+                              force_rebuild=True)
 
     __table__.versioned_schema = FactoidValueSchema(__table__, 4)
 
@@ -146,7 +148,8 @@ class Factpack(Base):
             self.drop_index(self.table.c.name)
             self.alter_column(Column('name',
                                      IbidUnicode(64, case_insensitive=True),
-                                     nullable=False, unique=True, index=True))
+                                     nullable=False, unique=True, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.name)
 
     __table__.versioned_schema = FactpackSchema(__table__, 3)

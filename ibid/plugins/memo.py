@@ -38,7 +38,8 @@ class Memo(Base):
             self.add_index(self.table.c.to_id)
             self.add_index(self.table.c.delivered)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('memo', IbidUnicodeText, nullable=False))
+            self.alter_column(Column('memo', IbidUnicodeText, nullable=False),
+                              force_rebuild=True)
 
     __table__.versioned_schema = MemoSchema(__table__, 3)
 

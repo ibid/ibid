@@ -20,7 +20,7 @@ class Schema(Base):
         def upgrade_2_to_3(self):
             self.drop_index(self.table.c.table)
             self.alter_column(Column('table', IbidUnicode(32), unique=True,
-                              nullable=False, index=True))
+                              nullable=False, index=True), force_rebuild=True)
             self.add_index(self.table.c.table)
 
     __table__.versioned_schema = SchemaSchema(__table__, 3)
@@ -60,10 +60,12 @@ class Identity(Base):
             self.drop_index(self.table.c.identity)
             self.alter_column(Column('source',
                                      IbidUnicode(32, case_insensitive=True),
-                                     nullable=False, index=True))
+                                     nullable=False, index=True),
+                              force_rebuild=True)
             self.alter_column(Column('identity',
                                      IbidUnicodeText(32, case_insensitive=True),
-                                     nullable=False, index=True))
+                                     nullable=False, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.identity)
 
@@ -99,8 +101,10 @@ class Attribute(Base):
             self.drop_index(self.table.c.name)
             self.alter_column(Column('name',
                                      IbidUnicode(32, case_insensitive=True),
-                                     nullable=False, index=True))
-            self.alter_column(Column('value', IbidUnicodeText, nullable=False))
+                                     nullable=False, index=True),
+                              force_rebuild=True)
+            self.alter_column(Column('value', IbidUnicodeText, nullable=False),
+                              force_rebuild=True)
             self.add_index(self.table.c.name)
 
     __table__.versioned_schema = AttributeSchema(__table__, 4)
@@ -137,12 +141,13 @@ class Credential(Base):
             self.drop_index(self.table.c.method)
             self.alter_column(Column('source',
                                      IbidUnicode(32, case_insensitive=True),
-                                     index=True))
+                                     index=True), force_rebuild=True)
             self.alter_column(Column('method',
                                      IbidUnicode(16, case_insensitive=True),
-                                     nullable=False, index=True))
+                                     nullable=False, index=True),
+                              force_rebuild=True)
             self.alter_column(Column('credential', IbidUnicodeText,
-                                     nullable=False))
+                                     nullable=False), force_rebuild=True)
             self.add_index(self.table.c.source)
             self.add_index(self.table.c.method)
 
@@ -171,15 +176,14 @@ class Permission(Base):
             self.add_index(self.table.c.name)
         def upgrade_2_to_3(self):
             self.drop_index(self.table.c.name)
-            self.drop_index(self.table.c.value)
             self.alter_column(Column('name',
                                      IbidUnicode(16, case_insensitive=True),
-                                     index=True))
+                                     index=True), force_rebuild=True)
             self.alter_column(Column('value',
                                      IbidUnicode(4, case_insensitive=True),
-                                     nullable=False, index=True))
+                                     nullable=False, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.name)
-            self.add_index(self.table.c.value)
 
     __table__.versioned_schema = PermissionSchema(__table__, 3)
 
@@ -201,7 +205,8 @@ class Account(Base):
             self.drop_index(self.table.c.username)
             self.alter_column(Column('username',
                                      IbidUnicode(32, case_insensitive=True),
-                                     unique=True, nullable=False, index=True))
+                                     unique=True, nullable=False, index=True),
+                              force_rebuild=True)
             self.add_index(self.table.c.username)
 
     __table__.versioned_schema = AccountSchema(__table__, 3)
