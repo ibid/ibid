@@ -4,8 +4,8 @@ import logging
 
 import ibid
 from ibid.db import eagerload, IntegrityError
+from ibid.db.models import Account, Identity, Attribute
 from ibid.plugins import Processor, match, auth_responses
-from ibid.models import Account, Identity, Attribute
 from ibid.utils import human_join
 
 help = {}

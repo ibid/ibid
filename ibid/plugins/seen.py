@@ -3,9 +3,9 @@ import logging
 
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, UniqueConstraint, \
-                    relation, IntegrityError
+                    relation, IntegrityError, Base, VersionedSchema
+from ibid.db.models import Identity, Account
 from ibid.plugins import Processor, match
-from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')

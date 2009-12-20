@@ -10,7 +10,7 @@ from sqlalchemy import or_
 
 import ibid
 from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
-from ibid.models import Credential
+from ibid.db.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 from ibid.utils import ibid_version

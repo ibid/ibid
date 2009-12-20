@@ -8,7 +8,7 @@ from sqlalchemy import or_
 
 import ibid
 from ibid.compat import hashlib
-from ibid.models import Credential, Permission
+from ibid.db.models import Credential, Permission
 
 chars = string.letters + string.digits
 permission_re = re.compile('^([+-]?)(\S+)$')

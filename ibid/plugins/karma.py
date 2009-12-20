@@ -3,9 +3,9 @@ import re
 import logging
 
 from ibid.config import BoolOption, IntOption, ListOption
-from ibid.db import IbidUnicode, DateTime, Integer, Table, Column
+from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
+                    VersionedSchema
 from ibid.plugins import Processor, match, handler, authorise
-from ibid.models import Base, VersionedSchema
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 

@@ -1,8 +1,8 @@
 import logging
 
 import ibid
+from ibid.db.models import Credential, Permission, Account
 from ibid.plugins import Processor, match, auth_responses, authorise
-from ibid.models import Credential, Permission, Account
 from ibid.auth import hash
 from ibid.utils import human_join
 

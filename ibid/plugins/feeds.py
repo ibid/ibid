@@ -8,9 +8,8 @@ from html2text import html2text_file
 
 from ibid.config import IntOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
-                    Table, Column, ForeignKey
+                    Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.plugins import Processor, match, authorise, run_every
-from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree, human_join
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}

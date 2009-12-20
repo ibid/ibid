@@ -12,8 +12,7 @@ import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, ListOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
-                    Table, Column, ForeignKey
-from ibid.models import Base, VersionedSchema
+                    Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.utils  import get_html_parse_tree
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}

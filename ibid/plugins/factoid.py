@@ -8,9 +8,9 @@ from dateutil.tz import tzlocal, tzutc
 from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
 from ibid.config import Option, IntOption, ListOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
-                    Table, Column, ForeignKey, relation, func, or_
+                    Table, Column, ForeignKey, relation, func, or_, \
+                    Base, VersionedSchema
 from ibid.plugins.identity import get_identities
-from ibid.models import Base, VersionedSchema
 from ibid.utils import format_date
 
 help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '

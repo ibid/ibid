@@ -6,10 +6,10 @@ from ibid.plugins import Processor, handler, match, authorise
 from ibid.compat import any
 from ibid.config import IntOption
 from ibid.db import IbidUnicodeText, Boolean, Integer, DateTime, \
-                    Table, Column, ForeignKey, relation
+                    Table, Column, ForeignKey, relation, Base, VersionedSchema
+from ibid.db.models import Identity, Account
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
-from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago, format_date
 
 help = {'memo': u'Keeps messages for people.'}
