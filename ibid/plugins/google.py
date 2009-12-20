@@ -127,7 +127,7 @@ class GoogleScrapeSearch(Processor):
         else:
             event.addresponse(u'Are you making up words again?')
 
-help['translate'] = '''Translate a phrase. By default, detects source language 
+help['translate'] = u'''Translate a phrase. By default, detects source language 
 and translates to English.'''
 class Translate(Processor):
     u"""translate <phrase> [from <language code>] [to <language code>]"""
@@ -137,7 +137,7 @@ class Translate(Processor):
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
 
-    @match(r'^translate\s+(.*?)(?:\s+from\s+([a-z]+))?(?:\s+to\s+([a-z]+))?$')
+    @match(r'^translate\s+(.*?)(?:\s+from\s+([a-z-]+))?(?:\s+to\s+([a-z-]+))?$')
     def translate (self, event, phrase, src_lang, dest_lang):
         params = {'v': '1.0',
                     'q': phrase,
@@ -154,10 +154,21 @@ class Translate(Processor):
             'http://ajax.googleapis.com/ajax/services/language/translate',
             params, headers)
 
-        translated = decode_htmlentities(
-            response['responseData']['translatedText'])
+        if response['responseStatus'] == 200:
+            translated = decode_htmlentities(
+                response['responseData']['translatedText'])
+            
+            event.addresponse(translated)
+        else:
+            errors = {'invalid translation language pair':
+                        "I don't know that language",
+                     'invalid text':
+                        "there's not much to go on"}
 
-        event.addresponse(translated)
+            msg = errors.get(response['responseDetails'],
+                            response['responseDetails'])
+
+            event.addresponse(u"I couldn't translate that: %s.", msg)
 
 # This Plugin uses code from youtube-dl
 # Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
