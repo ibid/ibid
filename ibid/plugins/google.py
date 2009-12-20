@@ -127,6 +127,38 @@ class GoogleScrapeSearch(Processor):
         else:
             event.addresponse(u'Are you making up words again?')
 
+help['translate'] = '''Translate a phrase. By default, detects source language 
+and translates to English.'''
+class Translate(Processor):
+    u"""translate <phrase> [from <language code>] [to <language code>]"""
+
+    feature = 'translate'
+    
+    api_key = Option('api_key', 'Your Google API Key (optional)', None)
+    referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
+
+    @match(r'^translate\s+(.*?)(?:\s+from\s+([a-z]+))?(?:\s+to\s+([a-z]+))?$')
+    def translate (self, event, phrase, src_lang, dest_lang):
+        params = {'v': '1.0',
+                    'q': phrase,
+                    'langpair': (src_lang or '') + '|' + (dest_lang or 'en')}
+        if self.api_key:
+            params['key'] = self.api_key
+
+        headers={
+            'user-agent': "Ibid/%s" % ibid_version() or "dev",
+            'referrer': self.referrer,
+        }
+
+        response = json_webservice(
+            'http://ajax.googleapis.com/ajax/services/language/translate',
+            params, headers)
+
+        translated = decode_htmlentities(
+            response['responseData']['translatedText'])
+
+        event.addresponse(translated)
+
 # This Plugin uses code from youtube-dl
 # Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
 # Released under MIT Licence
