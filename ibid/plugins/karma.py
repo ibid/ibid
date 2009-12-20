@@ -14,7 +14,8 @@ log = logging.getLogger('plugins.karma')
 class Karma(Base):
     __table__ = Table('karma', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('subject', IbidUnicode(64), unique=True, nullable=False, index=True),
+    Column('subject', IbidUnicode(64, case_insensitive=True), unique=True,
+           nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
     Column('time', DateTime, nullable=False),
@@ -22,12 +23,18 @@ class Karma(Base):
 
     class KarmaSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_index(self.table.c.subject, unique=True)
+            self.add_index(self.table.c.subject)
         def upgrade_2_to_3(self):
             self.alter_column(Column('subject', IbidUnicode(64), unique=True,
                                      nullable=False, index=True))
+        def upgrade_3_to_4(self):
+            self.drop_index(self.table.c.subject)
+            self.alter_column(Column('subject',
+                                     IbidUnicode(64, case_insensitive=True),
+                                     unique=True, nullable=False, index=True))
+            self.add_index(self.table.c.subject)
 
-    __table__.versioned_schema = KarmaSchema(__table__, 3)
+    __table__.versioned_schema = KarmaSchema(__table__, 4)
 
     def __init__(self, subject):
         self.subject = subject

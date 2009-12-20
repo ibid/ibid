@@ -24,16 +24,22 @@ class URL(Base):
     __table__ = Table('urls', Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('url', IbidUnicodeText, nullable=False),
-    Column('channel', IbidUnicode(32), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('channel', IbidUnicode(32, case_insensitive=True), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'),
+           nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class URLSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.identity_id)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('url', IbidUnicodeText, nullable=False))
+            self.alter_column(Column('channel',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     nullable=False))
 
-    __table__.versioned_schema = URLSchema(__table__, 2)
+    __table__.versioned_schema = URLSchema(__table__, 3)
 
     def __init__(self, url, channel, identity_id):
         self.url = url

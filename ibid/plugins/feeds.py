@@ -20,25 +20,43 @@ log = logging.getLogger('plugins.feeds')
 class Feed(Base):
     __table__ = Table('feeds', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', IbidUnicode(32), unique=True, nullable=False, index=True),
+    Column('name', IbidUnicode(32, case_insensitive=True),
+           unique=True, nullable=False, index=True),
     Column('url', IbidUnicodeText, nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id'),
            nullable=False, index=True),
     Column('time', DateTime, nullable=False),
-    Column('source', IbidUnicode(32), index=True),
-    Column('target', IbidUnicode(32), index=True),
+    Column('source', IbidUnicode(32, case_insensitive=True), index=True),
+    Column('target', IbidUnicode(32, case_insensitive=True), index=True),
     useexisting=True)
 
     class FeedSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_index(self.table.c.name, unique=True)
+            self.add_index(self.table.c.name)
             self.add_index(self.table.c.identity_id)
         def upgrade_2_to_3(self):
             from ibid.db import IbidUnicode, Column
             self.add_column(Column('source', IbidUnicode(32), index=True))
             self.add_column(Column('target', IbidUnicode(32), index=True))
+        def upgrade_3_to_4(self):
+            self.drop_index(self.table.c.name)
+            self.drop_index(self.table.c.source)
+            self.drop_index(self.table.c.target)
+            self.alter_column(Column('name',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     unique=True, nullable=False, index=True))
+            self.alter_column(Column('url', IbidUnicodeText, nullable=False))
+            self.alter_column(Column('source',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     index=True))
+            self.alter_column(Column('target',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     index=True))
+            self.add_index(self.table.c.name)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.target)
 
-    __table__.versioned_schema = FeedSchema(__table__, 3)
+    __table__.versioned_schema = FeedSchema(__table__, 4)
 
     feed = None
     entries = None
