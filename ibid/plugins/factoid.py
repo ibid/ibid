@@ -182,7 +182,7 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
             .add_entity(FactoidName).join(Factoid.names)\
             .add_entity(FactoidValue).join(Factoid.values)
     if literal:
-        query = query.filter(func.lower(FactoidName.name)==escape_name(name).lower())
+        query = query.filter(FactoidName.name==escape_name(name))
     else:
         query = query.filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
     if pattern:
@@ -297,10 +297,10 @@ class Forget(Processor):
             return
 
         factoid = event.session.query(Factoid).join(Factoid.names) \
-                .filter(func.lower(FactoidName.name)==escape_name(source).lower()).first()
+                .filter(FactoidName.name==escape_name(source)).first()
         if factoid:
             target_factoid = event.session.query(FactoidName) \
-                    .filter(func.lower(FactoidName.name)==escape_name(target).lower()).first()
+                    .filter(FactoidName.name==escape_name(target)).first()
             if target_factoid:
                 event.addresponse(u"I already know stuff about %s", target)
                 return
@@ -479,7 +479,7 @@ class Set(Processor):
             return
 
         factoid = event.session.query(Factoid).join(Factoid.names)\
-                .filter(func.lower(FactoidName.name)==escape_name(name).lower()).first()
+                .filter(FactoidName.name==escape_name(name)).first()
         if factoid:
             if correction:
                 identities = get_identities(event)

@@ -8,7 +8,7 @@ from html2text import html2text_file
 
 from ibid.config import IntOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
-                    Table, Column, ForeignKey, func
+                    Table, Column, ForeignKey
 from ibid.plugins import Processor, match, authorise, run_every
 from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, get_html_parse_tree, human_join
@@ -98,8 +98,7 @@ class Manage(Processor):
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
     @authorise()
     def add(self, event, url, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if feed:
             event.addresponse(u"I already have the %s feed", name)
@@ -150,8 +149,7 @@ class Manage(Processor):
     @match(r'^remove\s+(.+?)\s+feed$')
     @authorise()
     def remove(self, event, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -166,8 +164,7 @@ class Manage(Processor):
     @match(r'^(?:stop|don\'t)\s+poll(?:ing)?\s(.+)\s+feed$')
     @authorise()
     def no_poll(self, event, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -183,8 +180,7 @@ class Manage(Processor):
     @match(r'^poll\s(.+)\s+feed\s+(?:to|notify)\s+(.+)\s+on\s+(.+)$')
     @authorise(fallthrough=False)
     def enable_poll(self, event, name, target, source):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -210,8 +206,7 @@ class Retrieve(Processor):
         number = number and int(number) or 10
         start = start and int(start) or 0
 
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)
@@ -230,8 +225,7 @@ class Retrieve(Processor):
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)

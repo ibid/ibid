@@ -1,7 +1,5 @@
 import logging
 
-from sqlalchemy.sql import func
-
 import ibid
 from ibid.plugins import Processor, match, auth_responses, authorise
 from ibid.models import Credential, Permission, Account
@@ -79,8 +77,7 @@ class Permissions(Processor):
             return
 
         permission = event.session.query(Permission) \
-                .filter_by(account_id=account.id) \
-                .filter(func.lower(Permission.name) == name.lower()).first()
+                .filter_by(account_id=account.id, name=name).first()
         if action.lower() == 'remove':
             if permission:
                 event.session.delete(permission)
@@ -128,7 +125,8 @@ class Permissions(Processor):
         else:
             if not auth_responses(event, u'accounts'):
                 return
-            account = event.session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account) \
+                    .filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return

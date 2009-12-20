@@ -3,7 +3,7 @@ import logging
 
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, UniqueConstraint, \
-                    relation, func, IntegrityError
+                    relation, IntegrityError
 from ibid.plugins import Processor, match
 from ibid.models import Base, VersionedSchema, Identity, Account
 from ibid.utils import ago, format_date
@@ -41,7 +41,8 @@ class Sighting(Base):
 
     identity = relation('Identity')
 
-    def __init__(self, identity_id=None, type='message', channel=None, value=None):
+    def __init__(self, identity_id=None, type='message', channel=None,
+                 value=None):
         self.identity_id = identity_id
         self.type = type
         self.channel = channel
@@ -50,7 +51,8 @@ class Sighting(Base):
         self.count = 0
 
     def __repr__(self):
-        return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
+        return u'<Sighting %s %s in %s at %s: %s>' % (
+               self.type, self.identity_id, self.channel, self.time, self.value)
 
 class See(Processor):
     feature = 'seen'
@@ -62,8 +64,7 @@ class See(Processor):
             return
 
         sighting = event.session.query(Sighting) \
-                .filter_by(identity_id=event.identity) \
-                .filter_by(type=event.type).first()
+                .filter_by(identity_id=event.identity, type=event.type).first()
         if not sighting:
             sighting = Sighting(event.identity, event.type)
 
@@ -95,13 +96,14 @@ class Seen(Processor):
 
         account = None
         identity = event.session.query(Identity) \
-                .filter(func.lower(Identity.source) == (source and source or event.source).lower()) \
-                .filter(func.lower(Identity.identity) == who.lower()).first()
+                .filter_by(source=(source or event.source), identity=who) \
+                .first()
         if identity and identity.account and not source:
             account = identity.account
 
         if not identity and not source:
-            account = event.session.query(Account).filter_by(username=who).first()
+            account = event.session.query(Account).filter_by(username=who) \
+                    .first()
 
         if not identity and not account:
             event.addresponse(u"I don't know who %s is", who)

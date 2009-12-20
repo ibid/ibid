@@ -59,8 +59,8 @@ class Dispatcher(object):
 
         filtered = []
         for response in event['responses']:
-            source = response['source'].lower()
-            if source == event.source.lower():
+            source = response['source']
+            if source == event.source:
                 if (response.get('action', False)
                         and 'action' not in ibid.sources[source].supports):
                     response['reply'] = '* %s %s' % (

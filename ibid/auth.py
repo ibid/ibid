@@ -23,8 +23,8 @@ def hash(password, salt=None):
 def permission(name, account, source, session):
     if account:
         permission = session.query(Permission) \
-                .filter_by(account_id=account) \
-                .filter_by(name=name).first()
+                .filter_by(account_id=account, name=name) \
+                .first()
 
         if permission:
             return permission.value
@@ -123,9 +123,10 @@ class Auth(object):
             return False
 
         for credential in event.session.query(Credential) \
-                .filter_by(method=u'password') \
-                .filter_by(account_id=event.account) \
-                .filter(or_(Credential.source == event.source, Credential.source == None)).all():
+                .filter_by(method=u'password', account_id=event.account) \
+                .filter(or_(Credential.source == event.source,
+                            Credential.source == None)) \
+                .all():
             if hash(password, credential.credential) == credential.credential:
                 return True
 
