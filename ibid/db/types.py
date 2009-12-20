@@ -27,6 +27,8 @@ class _CIDecorator(TypeDecorator):
                     collation = 'NOCASE'
                 else:
                     collation = 'BINARY'
+            elif self.dialect == 'postgres' and self.case_insensitive:
+                return 'CITEXT'
 
             if collation is not None:
                 return colspec + ' COLLATE ' + collation
