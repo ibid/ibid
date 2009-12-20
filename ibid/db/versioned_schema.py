@@ -1,10 +1,10 @@
 import logging
 import re
 
-from sqlalchemy import Index, UniqueConstraint, MetaData, \
+from sqlalchemy import Column, Index, UniqueConstraint, MetaData, \
                        __version__ as _sqlalchemy_version
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
-                                  ProgrammingError
+                                  ProgrammingError, InternalError
 if _sqlalchemy_version < '0.5':
     NoResultFound = InvalidRequestError
 else:
@@ -238,10 +238,24 @@ class VersionedSchema(object):
         "Add an index to the table"
 
         engine = self.upgrade_session.bind.engine.name
+        query = None
+
+        if engine == 'mysql' and isinstance(col.type, IbidUnicodeText):
+            query = 'ALTER TABLE "%s" ADD %s INDEX "%s" ("%s"(%i));' % (
+                    self.table.name, col.unique and 'UNIQUE' or '',
+                    self._index_name(col), col.name, col.type.index_length)
+        elif engine == 'postgres':
+            # SQLAlchemy hangs if it tries to do this, because it forgets the ;
+            query = 'CREATE %s INDEX "%s" ON "%s" ("%s")' % (
+                    col.unique and 'UNIQUE' or '',self._index_name(col),
+                    self.table.name, col.name)
 
         try:
-            Index(self._index_name(col), col, unique=col.unique) \
-                    .create(bind=self.upgrade_session.bind)
+            if query is not None:
+                self.upgrade_session.execute(query)
+            else:
+                Index(self._index_name(col), col, unique=col.unique) \
+                        .create(bind=self.upgrade_session.bind)
 
         # We understand that occasionaly we'll duplicate an Index.
         # This is due to differences in index-creation requirements
@@ -263,16 +277,32 @@ class VersionedSchema(object):
         engine = self.upgrade_session.bind.engine.name
 
         try:
-            Index(self._index_name(col), col, unique=col.unique) \
-                    .drop(bind=self.upgrade_session.bind)
+            if isinstance(col, Column):
+                Index(self._index_name(col), col, unique=col.unique) \
+                        .drop(bind=self.upgrade_session.bind)
+            else:
+                col.drop()
+
         except OperationalError, e:
             if engine == 'sqlite' and u'no such index' in unicode(e):
                 return
+            if engine == 'mysql' \
+                    and u'check that column/key exists' in unicode(e):
+                return
             raise
+
         except ProgrammingError, e:
             if engine == 'postgres' and u'does not exist' in unicode(e):
                 return
             raise
+
+        # Postgres constraints can be attached to tables and can't be dropped
+        # at DB level.
+        except InternalError, e:
+            if engine == 'postgres':
+                self.upgrade_session.execute(
+                        'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
+                        self.table.name, self._index_name(col)))
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
@@ -341,7 +371,8 @@ class VersionedSchema(object):
                     for constraint in list(type):
                         if any(True for column in constraint.columns
                                 if old_col.name == column.name):
-                            constraint.drop()
+
+                            self.drop_index(constraint)
 
                             constraint.columns = [
                                 (old_col.name == column.name) and col or column
