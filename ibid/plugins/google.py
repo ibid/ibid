@@ -37,7 +37,6 @@ class GoogleAPISearch(Processor):
             params['key'] = self.api_key
 
         headers={
-            'user-agent': "Ibid/%s" % ibid_version() or "dev",
             'referrer': self.referrer,
         }
         return json_webservice('http://ajax.googleapis.com/ajax/services/search/web', params, headers)
@@ -145,10 +144,7 @@ class Translate(Processor):
         if self.api_key:
             params['key'] = self.api_key
 
-        headers={
-            'user-agent': "Ibid/%s" % ibid_version() or "dev",
-            'referrer': self.referrer,
-        }
+        headers = {'referrer': self.referrer}
 
         response = json_webservice(
             'http://ajax.googleapis.com/ajax/services/language/translate',
