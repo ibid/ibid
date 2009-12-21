@@ -9,7 +9,15 @@ class _CIDecorator(TypeDecorator):
         super(_CIDecorator, self).__init__(length=length)
 
     def load_dialect_impl(self, dialect):
-        self.dialect = dialect.name
+        if hasattr(dialect, 'name'):
+            self.dialect = dialect.name
+        # SQLAlchemy 0.4:
+        else:
+            self.dialect = {
+                'SQLiteDialect': 'sqlite',
+                'PGDialect': 'postgres',
+                'MySQLDialect': 'mysql',
+            }[dialect.__class__.__name__]
 
         return dialect.type_descriptor(self.impl)
 

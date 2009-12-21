@@ -294,6 +294,13 @@ class VersionedSchema(object):
         except ProgrammingError, e:
             if engine == 'postgres' and u'does not exist' in unicode(e):
                 return
+            # In SQLAlchemy 0.4, the InternalError below is a ProgrammingError
+            # and can't be executed in the upgrade transaction:
+            if engine == 'postgres' and u'requires' in unicode(e):
+                self.upgrade_session.bind.execute(
+                        'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
+                        self.table.name, self._index_name(col)))
+                return
             raise
 
         # Postgres constraints can be attached to tables and can't be dropped
