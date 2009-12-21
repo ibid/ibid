@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-from sys import argv, exit, stderr
+from sys import exit, stderr
 from os.path import basename, exists
 from optparse import OptionParser
-
-from sqlalchemy.sql import func
 
 import ibid
 from ibid.compat import json
@@ -80,7 +78,7 @@ existing = []
 for names, values in facts:
     factoid = Factoid(factpack.id)
     for name in names:
-        if session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first():
+        if session.query(FactoidName).filter_by(name=escape_name(name)).first():
             existing.append(name)
             continue
         fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
