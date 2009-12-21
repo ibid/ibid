@@ -65,7 +65,7 @@ except ValueError, e:
     print >> stderr, u"Invalid factpack"
     exit(4)
 
-name = basename(filename).replace('.json', '')
+name = unicode(basename(filename).replace('.json', ''))
 factpack = session.query(Factpack).filter_by(name=name).first()
 if factpack:
     print >> stderr, u'Factpack is already imported'
@@ -73,15 +73,17 @@ if factpack:
 
 factpack = Factpack(name)
 session.save(factpack)
+session.flush()
 
 existing = []
 for names, values in facts:
     factoid = Factoid(factpack.id)
     for name in names:
+        name = unicode(name)
         if session.query(FactoidName).filter_by(name=escape_name(name)).first():
             existing.append(name)
             continue
-        fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
+        fname = FactoidName(escape_name(name), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
         fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
