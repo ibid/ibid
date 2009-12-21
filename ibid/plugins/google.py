@@ -9,7 +9,7 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import decode_htmlentities, ibid_version, json_webservice
+from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cacheable_download
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
@@ -124,6 +124,8 @@ class GoogleScrapeSearch(Processor):
         else:
             event.addresponse(u'Are you making up words again?')
 
+class UnknownLanguageException (Exception): pass
+
 help['translate'] = u'''Translate a phrase. By default, detects source language 
 and translates to English.'''
 class Translate(Processor):
@@ -133,12 +135,28 @@ class Translate(Processor):
     
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
+    dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
 
-    @match(r'^translate\s+(.*?)(?:\s+from\s+([a-z-]+))?(?:\s+to\s+([a-z-]+))?$')
+    @match(r'^translate\s+(.*?)(?:\s+from\s+(.+?))?(?:\s+to\s+(.+?))?$')
     def translate (self, event, phrase, src_lang, dest_lang):
+        try:
+            if dest_lang:
+                dest_lang = self.language_code(dest_lang)
+            else:
+                dest_lang = self.dest_lang
+
+            if src_lang:
+                src_lang = self.language_code(src_lang)
+            else:
+                src_lang = ''
+        except UnknownLanguageException:
+            event.addresponse("I've never heard of that language.")
+            return
+
+        dest_lang = dest_lang or self.dest_lang
         params = {'v': '1.0',
                     'q': phrase,
-                    'langpair': (src_lang or '') + '|' + (dest_lang or 'en')}
+                    'langpair': (src_lang or '') + '|' + dest_lang}
         if self.api_key:
             params['key'] = self.api_key
 
@@ -157,12 +175,42 @@ class Translate(Processor):
             errors = {'invalid translation language pair':
                         "I don't know that language",
                      'invalid text':
-                        "there's not much to go on"}
+                        "there's not much to go on",
+                     'could not reliably detect source language':
+                        "I'm not sure what language that was"}
 
             msg = errors.get(response['responseDetails'],
                             response['responseDetails'])
 
             event.addresponse(u"I couldn't translate that: %s.", msg)
+
+    def language_code (self, name):
+        name = name.lower()
+
+        if re.match('^[a-z]{2}(?:-[a-z]{2})?$', name):
+            return name
+        if 'simplified' in name:
+            return 'zh-CN'
+        if 'traditional' in name:
+            return 'zh-TW'
+        if re.search(u'bokm[a\N{LATIN SMALL LETTER A WITH RING ABOVE}]l', name):
+            # what Google calls Norwegian seems to be Bokmal
+            return 'no'
+
+        filename = cacheable_download('http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt',
+                                        'google/ISO-639-2_utf-8.txt')
+
+        pat = r'^.*(?:^|[;|])' + name + '(?:$| languages|, langues|[;|]).*$'
+        m = re.search(pat, file(filename).read(), re.IGNORECASE | re.MULTILINE)
+
+        if m is None:
+            raise UnknownLanguageException
+        else:
+            code = m.group(0).split('|')[2]
+            if code:
+                return code
+            else:
+                raise UnknownLanguageException
 
 # This Plugin uses code from youtube-dl
 # Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
