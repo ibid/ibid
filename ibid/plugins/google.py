@@ -36,9 +36,7 @@ class GoogleAPISearch(Processor):
         if self.api_key:
             params['key'] = self.api_key
 
-        headers={
-            'referrer': self.referrer,
-        }
+        headers = {'referer': self.referrer}
         return json_webservice('http://ajax.googleapis.com/ajax/services/search/web', params, headers)
 
     @match(r'^google(?:\.com?)?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
@@ -144,7 +142,7 @@ class Translate(Processor):
         if self.api_key:
             params['key'] = self.api_key
 
-        headers = {'referrer': self.referrer}
+        headers = {'referer': self.referrer}
 
         response = json_webservice(
             'http://ajax.googleapis.com/ajax/services/language/translate',
