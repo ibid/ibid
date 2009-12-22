@@ -14,7 +14,7 @@ from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cache
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
 default_user_agent = 'Mozilla/5.0'
-default_referrer = "http://ibid.omnia.za.net/"
+default_referer = "http://ibid.omnia.za.net/"
 
 class GoogleAPISearch(Processor):
     u"""google [for] <term>
@@ -23,7 +23,7 @@ class GoogleAPISearch(Processor):
     feature = 'google'
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
-    referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
+    referer = Option('referer', 'The referer string to use (API searches)', default_referer)
 
     def _google_api_search(self, query, resultsize="large", country=None):
         params = {
@@ -36,7 +36,7 @@ class GoogleAPISearch(Processor):
         if self.api_key:
             params['key'] = self.api_key
 
-        headers = {'referer': self.referrer}
+        headers = {'referer': self.referer}
         return json_webservice('http://ajax.googleapis.com/ajax/services/search/web', params, headers)
 
     @match(r'^google(?:\.com?)?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
@@ -133,7 +133,7 @@ class Translate(Processor):
     feature = 'translate'
     
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
-    referrer = Option('referrer', 'The referrer string to use (API searches)', default_referrer)
+    referer = Option('referer', 'The referer string to use (API searches)', default_referer)
     dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
 
     @match(r'^translate\s+(.*?)(?:\s+from\s+(.+?))?(?:\s+to\s+(.+?))?$')
@@ -158,7 +158,7 @@ class Translate(Processor):
         if self.api_key:
             params['key'] = self.api_key
 
-        headers = {'referer': self.referrer}
+        headers = {'referer': self.referer}
 
         response = json_webservice(
             'http://ajax.googleapis.com/ajax/services/language/translate',
