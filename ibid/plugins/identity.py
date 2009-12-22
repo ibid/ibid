@@ -387,7 +387,8 @@ class Summon(Processor):
             source = self.default_source
 
         if source.lower() not in ibid.sources:
-            event.addresponse(u"I'm afraid that I'm not connected to %s", source)
+            event.addresponse(u"I'm afraid that I'm not connected to %s",
+                              source)
             return
 
         account = event.session.query(Account) \
@@ -410,17 +411,15 @@ class Summon(Processor):
                 if any(True for channel
                         in ibid.channels[other_identity.source].itervalues()
                         if other_identity.id in channel):
-                    event.addresponse({
-                        'reply': u'Your presence has been requested by '
-                                u'%(who)s in %(channel)s on %(source)s.' % {
+                    event.addresponse(u'Your presence has been requested by '
+                                      u'%(who)s in %(channel)s on %(source)s.',
+                        {
                             'who': event.sender['nick'],
                             'channel': (not event.public)
                                     and u'private' or event.channel,
                             'source': event.source,
-                        },
-                        'target': other_identity.identity,
-                        'source': other_identity.source,
-                    })
+                        }, target=other_identity.identity,
+                        source=other_identity.source, address=False)
                     event.addresponse(True)
                 else:
                     event.addresponse(
