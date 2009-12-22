@@ -128,9 +128,11 @@ and the password is ``mysecret``, so the DB URL will be::
 PostgreSQL
 ^^^^^^^^^^
 
-Install PostgreSQL. On Debian/Ubuntu::
+Install PostgreSQL.
+You'll also need the ``citext`` contributed module.
+On Debian/Ubuntu::
 
-   user@box $ sudo aptitude install postgresql python-psycopg2
+   user@box $ sudo aptitude install postgresql postgresql-contrib python-psycopg2
 
 Create a database for your bot::
 
@@ -139,6 +141,7 @@ Create a database for your bot::
    Enter password for new role:
    Enter it again:
    postgres@box $ createdb -O joebot joebot
+   postgres@box $ psql -f /usr/share/postgresql/8.4/contrib/citext.sql joebot
    postgres@box $ logout
 
 In this example, the database is called ``joebot`` and the user
