@@ -1,5 +1,5 @@
 import logging
-from random import choice
+from random import choice, random
 
 import ibid
 from ibid.plugins import Processor, match
@@ -96,7 +96,10 @@ class Dvorak(Processor):
 
 help['insult'] = u"Slings verbal abuse at someone"
 class Insult(Processor):
-    u"""(flame | insult) <person>"""
+    u"""
+    (flame | insult) <person>
+    (swear | cuss | explete) [at <person>]
+    """
     feature = 'insult'
 
     adjectives = ListOption('adjectives', 'List of adjectives', (
@@ -189,5 +192,45 @@ class Insult(Processor):
             'noun': choice(self.nouns),
             'plnoun': choice(self.plnouns),
         }, address=False)
+
+    loneadjectives = ListOption('loneadjectives',
+        'List of stand-alone adjectives for swearing', (
+            'bloody', 'damn', 'fucking', 'shitting', 'sodding', 'crapping',
+            'wanking', 'buggering',
+    ))
+
+    swearadjectives = ListOption('swearadjectives',
+        'List of adjectives to be combined with swearnouns', (
+            'reaming', 'lapping', 'eating', 'sucking', 'vokken', 'kak',
+            'donder', 'bliksem', 'fucking', 'shitting', 'sodding', 'crapping',
+            'wanking', 'buggering',
+    ))
+
+    swearnouns = ListOption('swearnouns',
+        'List of nounes to be comined with swearadjectives', (
+            'shit', 'cunt', 'hell', 'mother', 'god', 'maggot', 'father', 'crap',
+            'ball', 'whore', 'goat', 'dick', 'cock', 'pile', 'bugger', 'poes',
+            'hoer', 'kakrooker', 'ma', 'pa', 'naiier', 'kak', 'bliksem',
+            'vokker', 'kakrooker',
+    ))
+
+    swearlength = IntOption('swearlength', 'Number of expletives to swear with',
+                            15)
+
+    @match(r'^(?:swear|cuss|explete)(?:\s+at\s+(?:the\s+)?(.*))?$')
+    def swear(self, event, insultee):
+        swearage = []
+        for i in range(self.swearlength):
+            if random() > 0.7:
+                swearage.append(choice(self.loneadjectives))
+            else:
+                swearage.append(choice(self.swearnouns)
+                                + choice(self.swearadjectives))
+        if insultee is not None:
+            swearage.append(insultee)
+        else:
+            swearage.append(choice(self.swearnouns))
+
+        event.addresponse(u' '.join(swearage) + u'!', address=False)
 
 # vi: set et sta sw=4 ts=4:
