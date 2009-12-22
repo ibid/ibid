@@ -155,7 +155,8 @@ class Identities(Processor):
             else:
                 account = event.session.query(Account) \
                         .join('identities') \
-                        .filter_by(identitiy=identity, source=source).first()
+                        .filter(Identity.identity == identity) \
+                        .filter(Identity.source == source).first()
 
                 if account:
                     reverse_attach = True
