@@ -130,7 +130,7 @@ class Translate(Processor):
     u"""translate <phrase> [from <language code>] [to <language code>]"""
 
     feature = 'translate'
-    
+
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
     dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
@@ -189,7 +189,7 @@ class Translate(Processor):
         if response['responseStatus'] == 200:
             translated = decode_htmlentities(
                 response['responseData']['translatedText'])
-            
+
             event.addresponse(translated)
         else:
             errors = {
@@ -228,7 +228,7 @@ class Translate(Processor):
 
     def language_code (self, name):
         """Convert a name to a language code.
-        
+
         Caller must call _make_language_dict first."""
 
         name = name.lower()
