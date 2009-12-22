@@ -137,7 +137,8 @@ class Translate(Processor):
 
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
-        self._make_language_dict()
+        if not hasattr(self, 'lang_names'):
+            self._make_language_dict()
 
         from_re = r'from\s+(?P<from>(?:[-()]|\s|\w)+?)'
         to_re = r'to\s+(?P<to>(?:[-()]|\s|\w)+?)'
