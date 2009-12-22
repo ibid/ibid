@@ -217,6 +217,9 @@ def json_webservice(url, params={}, headers={}):
         url += '?' + urlencode(params)
 
     req = urllib2.Request(url, headers=headers)
+    if not req.has_header('user-agent'):
+        req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
+
     f = urllib2.urlopen(req)
     data = f.read()
     f.close()
