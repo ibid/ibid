@@ -171,9 +171,11 @@ class Translate(Processor):
             event.addresponse("I've never heard of that language.")
 
     def _translate (self, event, phrase, src_lang, dest_lang):
-        params = {'v': '1.0',
-                    'q': phrase,
-                    'langpair': src_lang + '|' + dest_lang}
+        params = {
+            'v': '1.0',
+            'q': phrase,
+            'langpair': src_lang + '|' + dest_lang,
+        }
         if self.api_key:
             params['key'] = self.api_key
 
@@ -189,12 +191,14 @@ class Translate(Processor):
             
             event.addresponse(translated)
         else:
-            errors = {'invalid translation language pair':
-                        "I don't know that language",
-                     'invalid text':
-                        "there's not much to go on",
-                     'could not reliably detect source language':
-                        "I'm not sure what language that was"}
+            errors = {
+                'invalid translation language pair':
+                    "I don't know that language",
+                'invalid text':
+                    "there's not much to go on",
+                 'could not reliably detect source language':
+                    "I'm not sure what language that was",
+            }
 
             msg = errors.get(response['responseDetails'],
                             response['responseDetails'])
