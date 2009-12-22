@@ -1,3 +1,4 @@
+import codecs
 from cgi import parse_qs
 from httplib import BadStatusLine
 import re
@@ -138,6 +139,8 @@ class Translate(Processor):
 
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
+        self._make_language_dict()
+
         from_re = r'from\s+(?P<from>(?:[-()]|\s|\w)+?)'
         to_re = r'to\s+(?P<to>(?:[-()]|\s|\w)+?)'
 
@@ -205,10 +208,35 @@ class Translate(Processor):
 
             event.addresponse(u"I couldn't translate that: %s.", msg)
 
+    def _make_language_dict (self):
+        self.lang_names = d = {}
+
+        filename = cacheable_download('http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt',
+                                        'google/ISO-639-2_utf-8.txt')
+        f = codecs.open(filename, 'rU', 'utf-8')
+        for line in f:
+            code2B, code2T, code1, englishNames, frenchNames = line.split('|')
+
+            # Identify languages by ISO 639-1 code if it exists; otherwise use
+            # ISO 639-2 (B). Google currently only translates languages with -1
+            # codes, but will may use -2 (B) codes in the future.
+            ident = code1 or code2B
+
+            d[code2B] = d[code2T] = d[code1] = ident
+            for name in englishNames.lower().split(';'):
+                d[name] = ident
+
+        del d['']
+
     def language_code (self, name):
+        """Convert a name to a language code.
+        
+        Caller must call _make_language_dict first."""
+
         name = name.lower()
 
-        if re.match('^[a-z]{2}(?:-[a-z]{2})?$', name):
+        m = re.match('^[a-z]{2}(?:-[a-z]{2})?$', name)
+        if m and m.group(1) in self.lang_names:
             return name
         if 'simplified' in name:
             return 'zh-CN'
@@ -218,20 +246,10 @@ class Translate(Processor):
             # what Google calls Norwegian seems to be Bokmal
             return 'no'
 
-        filename = cacheable_download('http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt',
-                                        'google/ISO-639-2_utf-8.txt')
-
-        pat = r'^.*(?:^|[;|])' + name + '(?:$| languages|, langues|[;|]).*$'
-        m = re.search(pat, file(filename).read(), re.IGNORECASE | re.MULTILINE)
-
-        if m is None:
+        try:
+            return self.lang_names[name]
+        except KeyError:
             raise UnknownLanguageException
-        else:
-            code = m.group(0).split('|')[2]
-            if code:
-                return code
-            else:
-                raise UnknownLanguageException
 
 # This Plugin uses code from youtube-dl
 # Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
