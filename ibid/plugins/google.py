@@ -128,7 +128,8 @@ class TranslationException (Exception): pass
 
 help['translate'] = u'''Translates a phrase using Google Translate.'''
 class Translate(Processor):
-    u"""translate <phrase> [from <language>] [to <language>]"""
+    u"""translate <phrase> [from <language>] [to <language>]
+        translation chain <phrase> [from <language>] [to <language>]"""
 
     feature = 'translate'
 
@@ -143,6 +144,24 @@ class Translate(Processor):
         try:
             translated = self._translate(event, *self._parse_request(data))
             event.addresponse(translated)
+        except TranslationException, e:
+            event.addresponse(u"I couldn't translate that: %s.", e.message)
+
+    @match(r'^translation\s+chain\s+(.*)$')
+    def translation_chain (self, event, data):
+        if self.chain_length < 1:
+            event.addresponse(u"I'm not allowed to play translation games.")
+        try:
+            phrase, src_lang, dest_lang = self._parse_request(data)
+            chain = set([phrase])
+            for i in range(self.chain_length):
+                phrase = self._translate(event, phrase, src_lang, dest_lang)
+                src_lang, dest_lang = dest_lang, src_lang
+                event.addresponse(phrase)
+                if phrase in chain:
+                    break
+                chain.add(phrase)
+
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", e.message)
 
