@@ -235,7 +235,7 @@ class Translate(Processor):
 
         name = name.lower()
 
-        m = re.match('^[a-z]{2}(?:-[a-z]{2})?$', name)
+        m = re.match('^([a-z]{2})(?:-[a-z]{2})?$', name)
         if m and m.group(1) in self.lang_names:
             return name
         if 'simplified' in name:
