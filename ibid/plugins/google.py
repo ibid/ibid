@@ -148,7 +148,7 @@ class Translate(Processor):
         # find a valid one.
         for pat in res:
             pat = '(?P<text>.*)' + '\s+'.join(pat) + '$'
-            m = re.match(pat, data, re.IGNORECASE | re.UNICODE)
+            m = re.match(pat, data, re.IGNORECASE | re.UNICODE | re.DOTALL)
             if m:
                 dest_lang = m.groupdict().get('to')
                 src_lang = m.groupdict().get('from')
