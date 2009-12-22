@@ -136,22 +136,41 @@ class Translate(Processor):
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
     dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
 
-    @match(r'^translate\s+(.*?)(?:\s+from\s+(.+?))?(?:\s+to\s+(.+?))?$')
-    def translate (self, event, phrase, src_lang, dest_lang):
-        try:
-            if dest_lang:
-                dest_lang = self.language_code(dest_lang)
-            else:
-                dest_lang = self.dest_lang
+    @match(r'^translate\s+(.*)$')
+    def translate (self, event, data):
+        from_re = r'from\s+(?P<from>(?:[-()]|\s|\w)+?)'
+        to_re = r'to\s+(?P<to>(?:[-()]|\s|\w)+?)'
 
-            if src_lang:
-                src_lang = self.language_code(src_lang)
-            else:
-                src_lang = ''
-        except UnknownLanguageException:
+        res = [(from_re, to_re), (to_re, from_re), (to_re,), (from_re,), ()]
+
+        # Try all possible specifications of source and target language until we
+        # find a valid one.
+        for pat in res:
+            pat = '(?P<text>.*)' + '\s+'.join(pat) + '$'
+            m = re.match(pat, data, re.IGNORECASE | re.UNICODE)
+            if m:
+                dest_lang = m.groupdict().get('to')
+                src_lang = m.groupdict().get('from')
+                try:
+                    if dest_lang:
+                        dest_lang = self.language_code(dest_lang)
+                    else:
+                        dest_lang = self.dest_lang
+
+                    if src_lang:
+                        src_lang = self.language_code(src_lang)
+                    else:
+                        src_lang = ''
+
+                    self._translate(event, m.group('text'), src_lang, dest_lang)
+                except UnknownLanguageException:
+                    continue
+                else:
+                    break
+        else:
             event.addresponse("I've never heard of that language.")
-            return
 
+    def _translate (self, event, phrase, src_lang, dest_lang):
         params = {'v': '1.0',
                     'q': phrase,
                     'langpair': src_lang + '|' + dest_lang}
