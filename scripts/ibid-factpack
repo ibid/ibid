@@ -9,7 +9,8 @@ from sqlalchemy.sql import func
 import ibid
 from ibid.compat import json
 from ibid.config import FileConfig
-from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, escape_name
+from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, \
+                                 escape_name
 
 parser = OptionParser(usage=u'%prog <factpack>')
 parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
@@ -45,7 +46,8 @@ if options.remove:
         session.delete(factoid)
 
     if extras and not options.force:
-        print >> stderr, u'The following factoid entries have been added. Use -f to force removal.'
+        print >> stderr, u'The following factoid entries have been added. ' \
+                         u'Use -f to force removal.'
         for extra in extras:
             print extra
         exit(6)
@@ -80,10 +82,13 @@ existing = []
 for names, values in facts:
     factoid = Factoid(factpack.id)
     for name in names:
-        if session.query(FactoidName).filter(func.lower(FactoidName.name)==escape_name(name).lower()).first():
+        if session.query(FactoidName) \
+                  .filter(func.lower(FactoidName.name)
+                          == escape_name(name).lower()) \
+                  .first():
             existing.append(name)
             continue
-        fname = FactoidName(escape_name(unicode(name)), None, factpack=factpack.id)
+        fname = FactoidName(unicode(name), None, factpack=factpack.id)
         factoid.names.append(fname)
     for value in values:
         fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
@@ -92,7 +97,9 @@ for names, values in facts:
         session.save(factoid)
 
 if existing and not options.skip:
-    print >> stderr, u'The following factoids already exist in the database. Please remove them before importing this factpack, or use -s to skip them'
+    print >> stderr, u'The following factoids already exist in the database. ' \
+                     u'Please remove them before importing this factpack, ' \
+                     u'or use -s to skip them'
     for name in existing:
         print >> stderr, name
     session.rollback()
