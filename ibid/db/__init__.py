@@ -2,7 +2,7 @@ from ibid.db.types import TypeDecorator, Integer, DateTime, Boolean, \
                           IbidUnicode, IbidUnicodeText
 
 from sqlalchemy import Table, Column, ForeignKey, Index, UniqueConstraint, \
-                       PassiveDefault, or_, MetaData as _MetaData
+                       PassiveDefault, or_, and_, MetaData as _MetaData
 from sqlalchemy.orm import eagerload, relation, synonym
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
