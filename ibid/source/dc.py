@@ -111,7 +111,7 @@ class DCBot(dcwords.DCClient):
 
         if response.get('topic', False):
             self.topic(message)
-            self.factory.log.debug(u'Set topic to %s', topic)
+            self.factory.log.debug(u'Set topic to %s', message)
         elif response.get('action', False):
             if self.factory.action_prefix and target is None:
                 self.say(target, u'%s %s' % (self.factory.action_prefix, message))

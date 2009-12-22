@@ -1,10 +1,8 @@
 import codecs
-from cgi import parse_qs
 from httplib import BadStatusLine
 import re
 from urllib import quote
 from urllib2 import build_opener, urlopen, HTTPCookieProcessor, Request
-from urlparse import urlparse
 
 from BeautifulSoup import BeautifulSoup
 
