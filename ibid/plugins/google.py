@@ -153,10 +153,9 @@ class Translate(Processor):
             event.addresponse("I've never heard of that language.")
             return
 
-        dest_lang = dest_lang or self.dest_lang
         params = {'v': '1.0',
                     'q': phrase,
-                    'langpair': (src_lang or '') + '|' + dest_lang}
+                    'langpair': src_lang + '|' + dest_lang}
         if self.api_key:
             params['key'] = self.api_key
 
