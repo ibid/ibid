@@ -9,7 +9,8 @@ from ibid.plugins import Processor, match, handler, authorise, auth_responses, \
                          RPC
 from ibid.config import Option, IntOption, ListOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
-                    Table, Column, ForeignKey, relation, synonym, func, or_, \
+                    Table, Column, ForeignKey, PassiveDefault, \
+                    relation, synonym, func, or_, \
                     Base, VersionedSchema
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
@@ -66,14 +67,14 @@ class FactoidName(Base):
             self.alter_column(Column('name', IbidUnicodeText(32), key='_name',
                                      nullable=False, unique=True, index=True))
         def upgrade_6_to_7(self):
-            self.add_column(Column('wild', Boolean, nullable=False, index=True,
-                                   default=False, server_default='0'))
+            self.add_column(Column('wild', Boolean, PassiveDefault('0'),
+                                   nullable=False, index=True, default=False))
             # http://www.sqlalchemy.org/trac/ticket/1400:
             # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
                     .filter('name LIKE :pattern ESCAPE :escape') \
                     .params(pattern='%\\_\\%%', escape='\\') \
-                   .all():
+                    .all():
                 row.wild = True
                 self.upgrade_session.save_or_update(row)
         def upgrade_7_to_8(self):
