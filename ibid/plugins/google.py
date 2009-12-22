@@ -126,8 +126,7 @@ class GoogleScrapeSearch(Processor):
 
 class UnknownLanguageException (Exception): pass
 
-help['translate'] = u'''Translate a phrase. By default, detects source language 
-and translates to English.'''
+help['translate'] = u'''Translates a phrase using Google Translate.'''
 class Translate(Processor):
     u"""translate <phrase> [from <language code>] [to <language code>]"""
 
