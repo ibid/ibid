@@ -152,6 +152,9 @@ class CampfireClient(object):
         log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
 
+        if d['type'] == 'TimestampMessage':
+            return
+
         self.event(room_name=self._rooms[d['room_id']]['name'],
                    room_id=d['room_id'],
                    user_name=self._users[d['user_id']]['name'],
