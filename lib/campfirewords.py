@@ -59,15 +59,16 @@ class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
                      self.keepalive_reconnect)
 
     def keepalive_reconnect(self):
-        self.factory.log.info(
-                u'No keep-alive received in a while, reconnecting.')
-        self.transport.loseConnection()
+        log.info(u'No keep-alive received in a while, reconnecting.')
+        self._reconnect_deferred = None
+        self.proto.transport.loseConnection()
 
 class CampfireClient(object):
 
     subdomain = 'ibid'
     token = '7c6f164ef01eb3b75a52810ee145f28e8cd49f2a'
     rooms = ('Room 1',)
+    keepalive_timeout = 10
 
     _streams = {}
     _rooms = {}
@@ -84,8 +85,9 @@ class CampfireClient(object):
         self.disconnect()
 
     def disconnect(self):
-        for name, stream in self._streams.iteritems():
-            stream.transport.loseConnection()
+        for id, stream in self._streams.iteritems():
+            stream.proto.transport.loseConnection()
+            self.leave_room(id)
 
     def connect(self):
         self.get_room_list()
@@ -105,16 +107,29 @@ class CampfireClient(object):
 
                 self.join_room(room['id'])
 
+    def leave_room(self, room_id, callback=None):
+        log.debug('Leaving room: %i', room_id)
+        self.get_data('room/%i/leave.json' % room_id, callback)
+
     def join_room(self, room_id):
+        log.debug('Joining room: %i', room_id)
         self._streams[room_id] = stream = JSONStream(
                 'https://streaming.campfirenow.com/room/%i/live.json' % room_id,
+                keepalive_timeout=self.keepalive_timeout,
                 headers={'Authorization': self.auth_header()})
         stream.event = self._event
         stream.stream_connected = lambda : self.joined_room(room_id)
+        stream.clientConnectionLost = lambda connector, unused_reason: \
+                self.stream_connection_lost(room_id)
 
         contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL('streaming.campfirenow.com', 443,
-                           stream, contextFactory)
+        stream.proto = reactor.connectSSL(
+                'streaming.campfirenow.com', 443,
+                stream, contextFactory)
+
+    def stream_connection_lost(self, room_id):
+        log.debug('Connection Lost: %i', room_id)
+        self.leave_room(room_id, (lambda x, y: self.join_room(y), room_id))
 
     def joined_room(self, room_id):
         self.get_data('room/%i/join.json' % room_id)
