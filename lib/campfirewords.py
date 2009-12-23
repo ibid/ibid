@@ -79,11 +79,6 @@ class CampfireClient(object):
     _rooms = {}
     _users = {}
 
-    # Callbacks:
-    def event(self, room_name, room_id, user_name, user_id, event_type, body):
-        log.debug(u'Saw event: [%s] %s: %s in %s', event_type, user_name, body,
-                  room_name)
-
     def say(self, room_name, message):
         data = {'message': { 'body': message }}
         if isinstance(room_name, int):
@@ -97,15 +92,16 @@ class CampfireClient(object):
             room_id = rooms[0]
 
         self.get_data('room/%(room_id)i/speak.json', room_id, 'speak',
-                headers={'Content-Type': 'application/json'},
+                method='POST', headers={'Content-Type': 'application/json'},
                 postdata=json.dumps(data))
 
     # Internal:
     def failure(self, failure, room_id, task):
-        log.error(u'Request failed: %s for room %i: %s', task, room_id,
+        log.error(u'Request failed: %s for room %s: %s', task, repr(room_id),
                   unicode(failure))
-        self.leave_room(room_id) \
-                .addCallback(lambda x: self.join_room(room_id))
+        if room_id is not None:
+            self.leave_room(room_id) \
+                    .addCallback(lambda x: self.join_room(room_id))
 
     def disconnect(self):
         for id in self._streams.iterkeys():
@@ -115,10 +111,12 @@ class CampfireClient(object):
         self.get_room_list()
 
     def get_room_list(self):
+        log.debug(u'Getting room list')
         self.get_data('rooms.json', None, 'room list') \
                 .addCallback(self.do_room_list)
 
     def do_room_list(self, data):
+        log.debug(u'Parsing room list')
         roommeta = json.loads(data)['rooms']
 
         for room in roommeta:
@@ -132,8 +130,10 @@ class CampfireClient(object):
 
     def leave_room(self, room_id):
         log.debug('Leaving room: %i', room_id)
-        self._streams[room_id].proto.transport.loseConnection()
-        return self.get_data('room/%(room_id)i/leave.json', room_id)
+        if room_id in self._streams:
+            self._streams[room_id].proto.transport.loseConnection()
+        return self.get_data('room/%(room_id)i/leave.json', room_id,
+                             method='POST')
 
     def join_room(self, room_id):
         log.debug('Joining room: %i', room_id)
@@ -152,7 +152,8 @@ class CampfireClient(object):
                 stream, contextFactory)
 
     def joined_room(self, room_id):
-        self.get_data('room/%(room_id)i/join.json', room_id, 'join room')
+        self.get_data('room/%(room_id)i/join.json', room_id, 'join room',
+                      method='POST')
         self.get_data('room/%(room_id)i.json', room_id, 'room info') \
                 .addCallback(self.do_room_info)
 
@@ -174,12 +175,16 @@ class CampfireClient(object):
     def base_url(self):
         return str('http://%s.campfirenow.com/' % self.subdomain)
 
-    def get_data(self, path, room_id, errback_description=None, headers={},
-                 postdata=None):
+    def get_data(self, path, room_id, errback_description=None, method='GET',
+                 headers={}, postdata=None):
         "Make a campfire API request"
+
         headers['Authorization'] = self.auth_header()
+        if postdata is None and method in ('POST', 'PUT'):
+            postdata = ''
+
         d = getPage(self.base_url() + path % {'room_id': room_id},
-                    method='POST', headers=headers, postdata=postdata)
+                    method=method, headers=headers, postdata=postdata)
         if errback_description:
             d = d.addErrback(self.failure, room_id, errback_description)
         return d
@@ -189,15 +194,20 @@ class CampfireClient(object):
         log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
 
-        if d['type'] == 'TimestampMessage':
-            return
+        type = d['type']
+        if type.endswith('Message'):
+            type = type[:-7]
+        if hasattr(self, 'handle_' + type):
+            params = {}
+            params['room_id'] = d['room_id']
+            params['room_name'] = self._rooms[d['room_id']]['name']
+            if d.get('user_id') is not None:
+                params['user_id'] = d['user_id']
+                params['user_name'] = self._users[d['user_id']]['name']
+            if d.get('body', None) is not None:
+                params['body'] = d['body']
 
-        self.event(room_name=self._rooms[d['room_id']]['name'],
-                   room_id=d['room_id'],
-                   user_name=self._users[d['user_id']]['name'],
-                   user_id=d['user_id'],
-                   event_type=d['type'],
-                   body=d['body'])
+            getattr(self, 'handle_' + type)(**params)
 
 # Small testing framework:
 def main():
