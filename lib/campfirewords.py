@@ -63,6 +63,11 @@ class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
         self._reconnect_deferred = None
         self.proto.transport.loseConnection()
 
+
+class RoomNameException(Exception):
+    pass
+
+
 class CampfireClient(object):
 
     subdomain = 'ibid'
@@ -78,6 +83,22 @@ class CampfireClient(object):
     def event(self, room_name, room_id, user_name, user_id, event_type, body):
         log.debug(u'Saw event: [%s] %s: %s in %s', event_type, user_name, body,
                   room_name)
+
+    def say(self, room_name, message):
+        data = {'message': { 'body': message }}
+        if isinstance(room_name, int):
+            room_id = room_name
+        else:
+            rooms = [k for k, r in self._rooms.iteritems()
+                                if r['name'] == room_name]
+            if len(rooms) != 1:
+                raise RoomNameException(room_name)
+
+            room_id = rooms[0]
+
+        self.get_data('room/%(room_id)i/speak.json', room_id, 'speak',
+                headers={'Content-Type': 'application/json'},
+                postdata=json.dumps(data))
 
     # Internal:
     def failure(self, failure, room_id, task):
@@ -153,15 +174,18 @@ class CampfireClient(object):
     def base_url(self):
         return str('http://%s.campfirenow.com/' % self.subdomain)
 
-    def get_data(self, path, room_id, errback_description=None):
+    def get_data(self, path, room_id, errback_description=None, headers={},
+                 postdata=None):
+        "Make a campfire API request"
+        headers['Authorization'] = self.auth_header()
         d = getPage(self.base_url() + path % {'room_id': room_id},
-                    method='POST',
-                    headers={'Authorization': self.auth_header()})
+                    method='POST', headers=headers, postdata=postdata)
         if errback_description:
             d = d.addErrback(self.failure, room_id, errback_description)
         return d
 
     def _event(self, data):
+        "Handle a JSON stream event, data is the JSON"
         log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
 
