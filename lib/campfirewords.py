@@ -18,14 +18,19 @@ class HTTPStreamGetter(HTTPPageGetter):
 
     def connectionMade(self):
         log.debug(u'Stream Connected')
+        self.__buffer = ''
         self.factory.stream_connected()
         HTTPPageGetter.connectionMade(self)
 
     def handleResponsePart(self, data):
         self.factory.keepalive_received()
-        if data == ' ':
+        if self.__buffer == '' and data == ' ':
             return
-        self.factory.event(data)
+        if '\r' in data:
+            self.factory.event(self.__buffer + data)
+            self.__buffer = ''
+        else:
+            self.__buffer += data
 
 class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
 
@@ -140,6 +145,7 @@ class CampfireClient(object):
         return d
 
     def _event(self, data):
+        log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
 
         self.event(room_name=self._rooms[d['room_id']]['name'],
