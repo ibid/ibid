@@ -80,20 +80,22 @@ class CampfireClient(object):
                   room_name)
 
     # Internal:
-    def failure(self, failure, task):
-        log.error(u'%s Request failed: %s', task, unicode(failure))
-        self.disconnect()
+    def failure(self, failure, room_id, task):
+        log.error(u'Request failed: %s for room %i: %s', task, room_id,
+                  unicode(failure))
+        self.leave_room(room_id) \
+                .addCallback(lambda x: self.join_room(room_id))
 
     def disconnect(self):
-        for id, stream in self._streams.iteritems():
-            stream.proto.transport.loseConnection()
+        for id in self._streams.iterkeys():
             self.leave_room(id)
 
     def connect(self):
         self.get_room_list()
 
     def get_room_list(self):
-        self.get_data('rooms.json', (self.do_room_list,), 'room list')
+        self.get_data('rooms.json', None, 'room list') \
+                .addCallback(self.do_room_list)
 
     def do_room_list(self, data):
         roommeta = json.loads(data)['rooms']
@@ -107,9 +109,10 @@ class CampfireClient(object):
 
                 self.join_room(room['id'])
 
-    def leave_room(self, room_id, callback=None):
+    def leave_room(self, room_id):
         log.debug('Leaving room: %i', room_id)
-        self.get_data('room/%i/leave.json' % room_id, callback)
+        self._streams[room_id].proto.transport.loseConnection()
+        return self.get_data('room/%(room_id)i/leave.json', room_id)
 
     def join_room(self, room_id):
         log.debug('Joining room: %i', room_id)
@@ -120,21 +123,17 @@ class CampfireClient(object):
         stream.event = self._event
         stream.stream_connected = lambda : self.joined_room(room_id)
         stream.clientConnectionLost = lambda connector, unused_reason: \
-                self.stream_connection_lost(room_id)
+                self.failure(unused_reason, room_id, 'stream')
 
         contextFactory = ssl.ClientContextFactory()
         stream.proto = reactor.connectSSL(
                 'streaming.campfirenow.com', 443,
                 stream, contextFactory)
 
-    def stream_connection_lost(self, room_id):
-        log.debug('Connection Lost: %i', room_id)
-        self.leave_room(room_id, (lambda x, y: self.join_room(y), room_id))
-
     def joined_room(self, room_id):
-        self.get_data('room/%i/join.json' % room_id)
-        self.get_data('room/%i.json' % room_id,
-                      (self.do_room_info,), 'room info')
+        self.get_data('room/%(room_id)i/join.json', room_id, 'join room')
+        self.get_data('room/%(room_id)i.json', room_id, 'room info') \
+                .addCallback(self.do_room_info)
 
     def do_room_info(self, data):
         d = json.loads(data)['room']
@@ -154,13 +153,12 @@ class CampfireClient(object):
     def base_url(self):
         return str('http://%s.campfirenow.com/' % self.subdomain)
 
-    def get_data(self, path, callback=None, errback_description=None):
-        d = getPage(self.base_url() + path, method='POST',
+    def get_data(self, path, room_id, errback_description=None):
+        d = getPage(self.base_url() + path % {'room_id': room_id},
+                    method='POST',
                     headers={'Authorization': self.auth_header()})
-        if callback:
-            d = d.addCallback(*callback)
         if errback_description:
-            d = d.addErrback(self.failure, errback_description)
+            d = d.addErrback(self.failure, room_id, errback_description)
         return d
 
     def _event(self, data):
