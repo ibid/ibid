@@ -27,8 +27,12 @@ class HTTPStreamGetter(HTTPPageGetter):
         if self.__buffer == '' and data == ' ':
             return
         if '\r' in data:
-            self.factory.event(self.__buffer + data)
+            data = self.__buffer + data
             self.__buffer = ''
+            for part in data.split('\r'):
+                part = part.strip()
+                if part != '':
+                    self.factory.event(part)
         else:
             self.__buffer += data
 
