@@ -110,7 +110,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
     def send(self, response):
         message = domish.Element((None, 'message'))
         message['to'] = response['target']
-        message['from'] = self.parent.jid_str
+        message['from'] = self.parent.authenticator.jid.full()
         if message['to'] in self.rooms:
             message['type'] = 'groupchat'
         else:
