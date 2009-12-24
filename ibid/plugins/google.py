@@ -7,7 +7,7 @@ from urllib2 import build_opener, urlopen, HTTPCookieProcessor, Request
 from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cacheable_download
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
@@ -137,7 +137,7 @@ class Translate(Processor):
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
     dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
 
-    chain_length = Option('chain_length', 'Maximum length of translation chains', 10)
+    chain_length = IntOption('chain_length', 'Maximum length of translation chains', 10)
 
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
