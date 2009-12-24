@@ -142,7 +142,7 @@ class Translate(Processor):
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
         try:
-            translated = self._translate(event, *self._parse_request(data))
+            translated = self._translate(event, *self._parse_request(data))[0]
             event.addresponse(translated)
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", e.message)
@@ -155,7 +155,8 @@ class Translate(Processor):
             phrase, src_lang, dest_lang = self._parse_request(data)
             chain = set([phrase])
             for i in range(self.chain_length):
-                phrase = self._translate(event, phrase, src_lang, dest_lang)
+                phrase, src_lang = self._translate(event, phrase,
+                                                    src_lang, dest_lang)
                 src_lang, dest_lang = dest_lang, src_lang
                 event.addresponse(phrase)
                 if phrase in chain:
@@ -215,7 +216,8 @@ class Translate(Processor):
         if response['responseStatus'] == 200:
             translated = decode_htmlentities(
                 response['responseData']['translatedText'])
-            return translated
+            return (translated, src_lang or
+                    response['responseData']['detectedSourceLanguage'])
         else:
             errors = {
                 'invalid translation language pair':
