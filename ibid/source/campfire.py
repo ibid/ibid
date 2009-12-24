@@ -1,108 +1,87 @@
 import logging
-from socket import timeout
-from urlparse import urlparse
 
-from pinder import Campfire
-from twisted.application import internet
+from campfirewords import CampfireClient
 
 import ibid
-from ibid import AuthException, SourceException
+from ibid.config import IntOption, Option, ListOption
 from ibid.event import Event
-from ibid.config import Option, ListOption
 from ibid.source import IbidSourceFactory
 
-class CampfireBot(Campfire):
+log = logging.getLogger('source.campfire')
 
-    def __init__(self, factory):
-        self.factory = factory
-        super(CampfireBot, self).__init__(self.factory.subdomain)
-        self.uri = urlparse('http://%s.campfirenow.com' % self.factory.subdomain)
-        self.rooms = {}
-        self.factory.join = self.join
-        self.factory.part = self.part
-        self.factory.send = self.send
+class CampfireBot(CampfireClient):
 
-    def run_one(self):
-        if not self.logged_in:
-            if not self.login(self.factory.username, self.factory.password):
-                raise AuthException(u"Login failed")
-            for room in self.factory.rooms:
-                self.join(room)
-
-        for room in self.rooms.values():
-            try:
-                messages = room.messages()
-            except timeout, e:
-                self.factory.log.debug(u"Campfire timed out on us")
-                break
-            for message in messages:
-                self.factory.log.debug('Received message: %s', str(message))
-                self._create_message(message, room.name)
-
-    def _create_message(self, message, room):
-        event = Event(self.factory.name, u'message')
-        event.sender['connection'] = event.sender['id'] = unicode(message['user_id'], 'utf-8', 'replace')
-        event.sender['nick'] = unicode(message['username'], 'utf-8', 'replace')
-        event.message = unicode(message['message'], 'utf-8', 'replace')
-        event.channel = room
+    def _create_event(self, type, user_id, user_name, room_id, room_name):
+        event = Event(self.factory.name, type)
+        event.sender['connection'] = unicode(user_id)
+        event.sender['id'] = unicode(user_id)
+        event.sender['nick'] = unicode(user_name)
+        event.channel = unicode(room_name)
         event.public = True
+        event.source = self.factory.name
+        return event
+
+    def _message_event(self, body, type='message', **kwargs):
+        event = self._create_event(type, **kwargs)
+        event.message = unicode(body)
+        log.debug(u'Received %s from %s in %s: %s', type, kwargs['user_name'],
+                  kwargs['room_name'], body)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
+
+    def _state_event(self, state, **kwargs):
+        event = self._create_event('state', **kwargs)
+        event.state = state
+        log.debug(u'%s in %s is now %s', kwargs['user_name'],
+                  kwargs['room_name'], state)
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
+
+    def handle_Text(self, **kwargs):
+        self._message_event(**kwargs)
+
+    def handle_TopicChange(self, **kwargs):
+        self._message_event(type='topic', **kwargs)
+
+    def handle_Leave(self, **kwargs):
+        self._state_event(state='offline', **kwargs)
+
+    def handle_Enter(self, **kwargs):
+        self._state_event(state='online', **kwargs)
+
+    def send(self, response):
+        self.say(response['target'], response['reply'])
 
     def respond(self, event):
         for response in event.responses:
             self.send(response)
 
-    def send(self, response):
-        if response['target'] not in self.rooms:
-            raise SourceException(u"Invalid room")
-
-        self.rooms[response['target']].speak(response['reply'].encode('utf-8'))
-        self.factory.log.debug(u"Sent message to %s: %s", response['target'], response['reply'])
-
-    def join(self, room):
-        self.factory.log.info(u"Joining %s", room)
-        room = self.find_or_create_room_by_name(room)
-        if not room:
-            return False
-
-        room.join()
-        self.rooms[room.name] = room
-
-    def part(self, room):
-        if room not in self.rooms:
-            return False
-
-        self.factory.log.info(u"Leaving %s", room)
-        self.rooms[room].leave()
-        del self.rooms[room]
-
 class SourceFactory(IbidSourceFactory):
 
     subdomain = Option('subdomain', 'Campfire subdomain')
-    username = Option('username', 'Email address')
-    password = Option('password', 'Campfire password')
+    token = Option('token', 'Campfire token')
     rooms = ListOption('rooms', 'Rooms to join', [])
+    keepalive_timeout = IntOption('keepalive_timeout',
+            'Stream keepalive timeout. '
+            'Campfire sends a keepalive every <5 seconds', 30)
 
     def __init__(self, name):
         super(SourceFactory, self).__init__(name)
-        self.bot = CampfireBot(self)
-        self.log = logging.getLogger('source.%s' % self.name)
-
-    def run_one(self):
-        try:
-            self.bot.run_one()
-        except Exception, e:
-            self.log.exception(u"Error while polling")
+        self.client = CampfireBot()
+        self.client.factory = self
+        self.client.subdomain = self.subdomain
+        self.client.token = self.token
+        self.client.rooms = self.rooms
+        self.client.keepalive_timeout = self.keepalive_timeout
 
     def setServiceParent(self, service):
-        self.timer = internet.TimerService(5, self.run_one)
-        if service is None:
-            self.timer.startService()
-        else:
-            self.timer.setServiceParent(service)
+        self.client.connect()
 
     def disconnect(self):
-        self.bot.logout()
-        self.timer.stopService()
+        self.client.disconnect()
+
+    def url(self):
+        return 'http://%s.campfirenow.com/' % self.subdomain
+
+    def send(self, response):
+        self.client.send(response)
 
 # vi: set et sta sw=4 ts=4:
