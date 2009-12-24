@@ -13,10 +13,10 @@ class SayDo(Processor):
 
     permission = u'saydo'
 
-    @match(r'^(say|do)\s+(?:in\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$', 'deaddressed')
+    @match(r'^(say|do)\s+(?:in|to)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$', 'deaddressed')
     @authorise()
     def saydo(self, event, action, channel, source, what):
-        event.addresponse(what, address=False, target=channel, source=source,
+        event.addresponse(what, address=False, target=channel, source=source or event.source,
                 action=(action.lower() == u"do"))
 
 help['redirect'] = u'Redirects the response to a command to a different channel.'
