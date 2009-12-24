@@ -32,6 +32,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         xmppim.PresenceClientProtocol.connectionInitialized(self)
         xmppim.RosterClientProtocol.connectionInitialized(self)
         self.xmlstream.send(xmppim.AvailablePresence())
+        self.roster = self.getRoster() #See section 7.3 of http://www.ietf.org/rfc/rfc3921.txt 
         self.name = self.parent.name
         self.parent.send = self.send
         self.parent.proto = self
