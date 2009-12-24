@@ -70,10 +70,15 @@ class RoomNameException(Exception):
 
 class CampfireClient(object):
 
+    # Configuration
     subdomain = 'ibid'
     token = '7c6f164ef01eb3b75a52810ee145f28e8cd49f2a'
     rooms = ('Room 1',)
     keepalive_timeout = 10
+
+    # Looked up
+    my_id = 0
+    my_name = ''
 
     _streams = {}
     _rooms = {}
@@ -108,6 +113,18 @@ class CampfireClient(object):
             self.leave_room(id)
 
     def connect(self):
+        self.get_id()
+
+    def get_id(self):
+        log.debug(u'Finding my ID')
+        self.get_data('users/me.json', None, 'my info') \
+                .addCallback(self.do_get_id)
+
+    def do_get_id(self, data):
+        log.debug(u'Parsing my info')
+        meta = json.loads(data)['user']
+        self.my_id = meta['id']
+        self.my_name = meta['name']
         self.get_room_list()
 
     def get_room_list(self):
@@ -193,6 +210,9 @@ class CampfireClient(object):
         "Handle a JSON stream event, data is the JSON"
         log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
+
+        if d['user_id'] == self.my_id:
+            return
 
         type = d['type']
         if type.endswith('Message'):
