@@ -214,18 +214,18 @@ class Translate(Processor):
             params, headers)
 
         if response['responseStatus'] == 200:
-            translated = decode_htmlentities(
-                response['responseData']['translatedText'])
+            translated = unicode(decode_htmlentities(
+                response['responseData']['translatedText']))
             return (translated, src_lang or
                     response['responseData']['detectedSourceLanguage'])
         else:
             errors = {
                 'invalid translation language pair':
-                    "I don't know that language",
+                    u"I don't know that language",
                 'invalid text':
-                    "there's not much to go on",
+                    u"there's not much to go on",
                  'could not reliably detect source language':
-                    "I'm not sure what language that was",
+                    u"I'm not sure what language that was",
             }
 
             msg = errors.get(response['responseDetails'],
