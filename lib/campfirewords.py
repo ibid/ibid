@@ -51,7 +51,6 @@ class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
         self.keepalive_received()
 
     def keepalive_received(self):
-        log.debug(u'We appear to be alive')
         if self._reconnect_deferred:
             self._reconnect_deferred.cancel()
         if self.keepalive_timeout:
@@ -91,7 +90,6 @@ class CampfireClient(object):
     # Actions:
     def say(self, room_name, message):
         data = {'message': { 'body': message }}
-        log.debug(u'Saying: %s', repr(data))
 
         self._get_data('room/%(room_id)i/speak.json',
                       self._locate_room(room_name), 'speak', method='POST',
@@ -226,7 +224,6 @@ class CampfireClient(object):
 
     def _event(self, data):
         "Handle a JSON stream event, data is the JSON"
-        log.debug(u'Received: %s', repr(data))
         d = json.loads(data)
 
         if d['user_id'] == self.my_id:
