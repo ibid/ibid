@@ -147,7 +147,7 @@ class Translate(Processor):
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", e.message)
 
-    @match(r'^translation\s+chain\s+(.*)$')
+    @match(r'^translation\s+(?:chain|party)\s+(.*)$')
     def translation_chain (self, event, data):
         if self.chain_length < 1:
             event.addresponse(u"I'm not allowed to play translation games.")
