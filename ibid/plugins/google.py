@@ -145,7 +145,7 @@ class Translate(Processor):
             translated = self._translate(event, *self._parse_request(data))[0]
             event.addresponse(translated)
         except TranslationException, e:
-            event.addresponse(u"I couldn't translate that: %s.", e.message)
+            event.addresponse(u"I couldn't translate that: %s.", unicode(e))
 
     @match(r'^translation\s+(?:chain|party)\s+(.*)$')
     def translation_chain (self, event, data):
@@ -164,7 +164,7 @@ class Translate(Processor):
                 chain.add(phrase)
 
         except TranslationException, e:
-            event.addresponse(u"I couldn't translate that: %s.", e.message)
+            event.addresponse(u"I couldn't translate that: %s.", unicode(e))
 
     def _parse_request (self, data):
         if not hasattr(self, 'lang_names'):
