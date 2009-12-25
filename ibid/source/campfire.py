@@ -13,9 +13,12 @@ class CampfireBot(CampfireClient):
 
     def _create_event(self, type, user_id, user_name, room_id, room_name):
         event = Event(self.factory.name, type)
-        event.sender['connection'] = unicode(user_id)
-        event.sender['id'] = unicode(user_id)
-        event.sender['nick'] = unicode(user_name)
+        if user_id is not None:
+            user_id = unicode(user_id)
+            user_name = unicode(user_name)
+            event.sender['connection'] = user_id
+            event.sender['id'] = user_id
+            event.sender['nick'] = user_name
         event.channel = unicode(room_name)
         event.public = True
         event.source = self.factory.name
@@ -47,14 +50,29 @@ class CampfireBot(CampfireClient):
     def handle_Enter(self, **kwargs):
         self._state_event(state='online', **kwargs)
 
+    def joined_room(self, room_info):
+        self._message_event(type='topic', body=room_info['topic'], user_id=None,
+                            user_name=None, room_id=room_info['id'],
+                            room_name=room_info['name'])
+
     def send(self, response):
-        self.say(response['target'], response['reply'])
+        message = response['reply']
+        if response.get('action', False):
+            message = u'*%s*' % message
+        elif response.get('topic', False):
+            self.topic(response['target'], message)
+            return
+
+        self.say(response['target'], message)
 
     def respond(self, event):
         for response in event.responses:
             self.send(response)
 
 class SourceFactory(IbidSourceFactory):
+
+    auth = ('implicit',)
+    supports = ('action', 'topic')
 
     subdomain = Option('subdomain', 'Campfire subdomain')
     token = Option('token', 'Campfire token')

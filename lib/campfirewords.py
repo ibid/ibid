@@ -84,23 +84,40 @@ class CampfireClient(object):
     _rooms = {}
     _users = {}
 
+    # Callbacks:
+    def joined_room(self, room_info):
+        pass
+
+    # Actions:
     def say(self, room_name, message):
         data = {'message': { 'body': message }}
+        log.debug(u'Saying: %s', repr(data))
+
+        self._get_data('room/%(room_id)i/speak.json',
+                      self._locate_room(room_name), 'speak', method='POST',
+                      headers={'Content-Type': 'application/json'},
+                      postdata=json.dumps(data))
+
+    def topic(self, room_name, topic):
+        data = {'request': {'room': {'topic': topic}}}
+
+        self._get_data('room/%(room_id)i.json',
+                      self._locate_room(room_name), 'set topic', method='PUT',
+                      headers={'Content-Type': 'application/json'},
+                      postdata=json.dumps(data))
+
+    # Internal:
+    def _locate_room(self, room_name):
         if isinstance(room_name, int):
-            room_id = room_name
+            return room_name
         else:
             rooms = [k for k, r in self._rooms.iteritems()
                                 if r['name'] == room_name]
             if len(rooms) != 1:
                 raise RoomNameException(room_name)
 
-            room_id = rooms[0]
+            return rooms[0]
 
-        self.get_data('room/%(room_id)i/speak.json', room_id, 'speak',
-                method='POST', headers={'Content-Type': 'application/json'},
-                postdata=json.dumps(data))
-
-    # Internal:
     def failure(self, failure, room_id, task):
         log.error(u'Request failed: %s for room %s: %s', task, repr(room_id),
                   unicode(failure))
@@ -113,14 +130,14 @@ class CampfireClient(object):
             self.leave_room(id)
 
     def connect(self):
-        self.get_id()
+        self._get_id()
 
-    def get_id(self):
+    def _get_id(self):
         log.debug(u'Finding my ID')
-        self.get_data('users/me.json', None, 'my info') \
-                .addCallback(self.do_get_id)
+        self._get_data('users/me.json', None, 'my info') \
+                .addCallback(self._do_get_id)
 
-    def do_get_id(self, data):
+    def _do_get_id(self, data):
         log.debug(u'Parsing my info')
         meta = json.loads(data)['user']
         self.my_id = meta['id']
@@ -129,10 +146,10 @@ class CampfireClient(object):
 
     def get_room_list(self):
         log.debug(u'Getting room list')
-        self.get_data('rooms.json', None, 'room list') \
-                .addCallback(self.do_room_list)
+        self._get_data('rooms.json', None, 'room list') \
+                .addCallback(self._do_room_list)
 
-    def do_room_list(self, data):
+    def _do_room_list(self, data):
         log.debug(u'Parsing room list')
         roommeta = json.loads(data)['rooms']
 
@@ -149,7 +166,7 @@ class CampfireClient(object):
         log.debug('Leaving room: %i', room_id)
         if room_id in self._streams:
             self._streams[room_id].proto.transport.loseConnection()
-        return self.get_data('room/%(room_id)i/leave.json', room_id,
+        return self._get_data('room/%(room_id)i/leave.json', room_id,
                              method='POST')
 
     def join_room(self, room_id):
@@ -157,9 +174,9 @@ class CampfireClient(object):
         self._streams[room_id] = stream = JSONStream(
                 'https://streaming.campfirenow.com/room/%i/live.json' % room_id,
                 keepalive_timeout=self.keepalive_timeout,
-                headers={'Authorization': self.auth_header()})
+                headers={'Authorization': self._auth_header()})
         stream.event = self._event
-        stream.stream_connected = lambda : self.joined_room(room_id)
+        stream.stream_connected = lambda : self._joined_room(room_id)
         stream.clientConnectionLost = lambda connector, unused_reason: \
                 self.failure(unused_reason, room_id, 'stream')
 
@@ -168,13 +185,13 @@ class CampfireClient(object):
                 'streaming.campfirenow.com', 443,
                 stream, contextFactory)
 
-    def joined_room(self, room_id):
-        self.get_data('room/%(room_id)i/join.json', room_id, 'join room',
+    def _joined_room(self, room_id):
+        self._get_data('room/%(room_id)i/join.json', room_id, 'join room',
                       method='POST')
-        self.get_data('room/%(room_id)i.json', room_id, 'room info') \
-                .addCallback(self.do_room_info)
+        self._get_data('room/%(room_id)i.json', room_id, 'room info') \
+                .addCallback(self._do_room_info)
 
-    def do_room_info(self, data):
+    def _do_room_info(self, data):
         d = json.loads(data)['room']
         r = self._rooms[d['id']]
         for k, v in d.iteritems():
@@ -185,22 +202,23 @@ class CampfireClient(object):
         for user in d['users']:
             self._users[user['id']] = u = user
             r['users'].add(user['id'])
+        self.joined_room(r)
 
-    def auth_header(self):
+    def _auth_header(self):
         return 'Basic ' + b64encode(self.token + ':')
 
-    def base_url(self):
+    def _base_url(self):
         return str('http://%s.campfirenow.com/' % self.subdomain)
 
-    def get_data(self, path, room_id, errback_description=None, method='GET',
+    def _get_data(self, path, room_id, errback_description=None, method='GET',
                  headers={}, postdata=None):
         "Make a campfire API request"
 
-        headers['Authorization'] = self.auth_header()
+        headers['Authorization'] = self._auth_header()
         if postdata is None and method in ('POST', 'PUT'):
             postdata = ''
 
-        d = getPage(self.base_url() + path % {'room_id': room_id},
+        d = getPage(self._base_url() + path % {'room_id': room_id},
                     method=method, headers=headers, postdata=postdata)
         if errback_description:
             d = d.addErrback(self.failure, room_id, errback_description)
