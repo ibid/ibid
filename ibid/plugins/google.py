@@ -171,7 +171,7 @@ class Translate(Processor):
             self._make_language_dict()
 
         from_re = r'\s+from\s+(?P<from>(?:[-()]|\s|\w)+?)'
-        to_re = r'\s+to\s+(?P<to>(?:[-()]|\s|\w)+?)'
+        to_re = r'\s+(?:in)?to\s+(?P<to>(?:[-()]|\s|\w)+?)'
 
         res = [(from_re, to_re), (to_re, from_re), (to_re,), (from_re,), ()]
 
