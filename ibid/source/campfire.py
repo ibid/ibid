@@ -7,8 +7,6 @@ from ibid.config import IntOption, Option, ListOption
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
 
-log = logging.getLogger('source.campfire')
-
 class CampfireBot(CampfireClient):
 
     def _create_event(self, type, user_id, user_name, room_id, room_name):
@@ -27,15 +25,15 @@ class CampfireBot(CampfireClient):
     def _message_event(self, body, type=u'message', **kwargs):
         event = self._create_event(type, **kwargs)
         event.message = unicode(body)
-        log.debug(u'Received %s from %s in %s: %s', type, kwargs['user_name'],
-                  kwargs['room_name'], body)
+        self.factory.log.debug(u'Received %s from %s in %s: %s', type,
+                               kwargs['user_name'], kwargs['room_name'], body)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def _state_event(self, state, **kwargs):
         event = self._create_event(u'state', **kwargs)
         event.state = state
-        log.debug(u'%s in %s is now %s', kwargs['user_name'],
-                  kwargs['room_name'], state)
+        self.factory.log.debug(u'%s in %s is now %s', kwargs['user_name'],
+                               kwargs['room_name'], state)
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def handle_Text(self, **kwargs):
@@ -84,6 +82,7 @@ class SourceFactory(IbidSourceFactory):
 
     def __init__(self, name):
         super(SourceFactory, self).__init__(name)
+        self.log = logging.getLogger('source.%s' % self.name)
         self.client = CampfireBot()
         self.client.factory = self
         self.client.subdomain = self.subdomain
