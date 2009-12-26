@@ -49,6 +49,7 @@ class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
     def connectionMade(self):
         HTTPClientFactory.connectionMade(self)
         self.keepalive_received()
+        self.resetDelay()
 
     def keepalive_received(self):
         if self._reconnect_deferred:
@@ -60,6 +61,13 @@ class JSONStream(HTTPClientFactory, protocol.ReconnectingClientFactory):
     def keepalive_reconnect(self):
         log.info(u'No keep-alive received in a while, reconnecting.')
         self._reconnect_deferred = None
+        self.proto.transport.loseConnection()
+
+    def disconnect(self):
+        if self._reconnect_deferred:
+            self._reconnect_deferred.cancel()
+            self._reconnect_deferred = None
+        self.stopTrying()
         self.proto.transport.loseConnection()
 
 
@@ -163,7 +171,8 @@ class CampfireClient(object):
     def leave_room(self, room_id):
         log.debug('Leaving room: %i', room_id)
         if room_id in self._streams:
-            self._streams[room_id].proto.transport.loseConnection()
+            del self._streams[room_id].clientConnectionLost
+            self._streams[room_id].disconnect()
         return self._get_data('room/%(room_id)i/leave.json', room_id,
                              method='POST')
 
@@ -237,6 +246,9 @@ class CampfireClient(object):
             params['room_id'] = d['room_id']
             params['room_name'] = self._rooms[d['room_id']]['name']
             if d.get('user_id') is not None:
+                if d['user_id'] not in self._users:
+                    # User list not loaded yet, ignore this:
+                    return
                 params['user_id'] = d['user_id']
                 params['user_name'] = self._users[d['user_id']]['name']
             if d.get('body', None) is not None:

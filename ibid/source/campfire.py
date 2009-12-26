@@ -96,6 +96,7 @@ class SourceFactory(IbidSourceFactory):
 
     def disconnect(self):
         self.client.disconnect()
+        return True
 
     def url(self):
         return 'http://%s.campfirenow.com/' % self.subdomain
