@@ -147,7 +147,7 @@ class Translate(Processor):
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))
 
-    @match(r'^translation\s+(?:chain|party)\s+(.*)$')
+    @match(r'^translation[-\s]*(?:chain|party)\s+(.*)$')
     def translation_chain (self, event, data):
         if self.chain_length < 1:
             event.addresponse(u"I'm not allowed to play translation games.")
@@ -170,8 +170,8 @@ class Translate(Processor):
         if not hasattr(self, 'lang_names'):
             self._make_language_dict()
 
-        from_re = r'\s+from\s+(?P<from>(?:[-()]|\s|\w)+?)'
-        to_re = r'\s+(?:in)?to\s+(?P<to>(?:[-()]|\s|\w)+?)'
+        from_re = r'\s+from\s+(?P<from>[-()\s\w]+?)'
+        to_re = r'\s+(?:in)?to\s+(?P<to>[-()\s\w]+?)'
 
         res = [(from_re, to_re), (to_re, from_re), (to_re,), (from_re,), ()]
 
