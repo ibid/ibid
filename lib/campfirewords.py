@@ -246,7 +246,6 @@ class CampfireClient(object):
     def _event(self, data):
         "Handle a JSON stream event, data is the JSON"
         d = json.loads(data)
-        log.debug('Event: %s', repr(d))
 
         if d['user_id'] == self.my_id:
             return
