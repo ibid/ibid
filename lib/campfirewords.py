@@ -78,9 +78,9 @@ class RoomNameException(Exception):
 class CampfireClient(object):
 
     # Configuration
-    subdomain = 'ibid'
-    token = '7c6f164ef01eb3b75a52810ee145f28e8cd49f2a'
-    rooms = ('Room 1',)
+    subdomain = ''
+    token = ''
+    rooms = ()
     keepalive_timeout = 10
 
     # Looked up
