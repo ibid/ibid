@@ -7,7 +7,7 @@ from urllib2 import build_opener, urlopen, HTTPCookieProcessor, Request
 from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cacheable_download
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
@@ -124,10 +124,12 @@ class GoogleScrapeSearch(Processor):
             event.addresponse(u'Are you making up words again?')
 
 class UnknownLanguageException (Exception): pass
+class TranslationException (Exception): pass
 
 help['translate'] = u'''Translates a phrase using Google Translate.'''
 class Translate(Processor):
-    u"""translate <phrase> [from <language code>] [to <language code>]"""
+    u"""translate <phrase> [from <language>] [to <language>]
+        translation chain <phrase> [from <language>] [to <language>]"""
 
     feature = 'translate'
 
@@ -135,20 +137,48 @@ class Translate(Processor):
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
     dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
 
+    chain_length = IntOption('chain_length', 'Maximum length of translation chains', 10)
+
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
+        try:
+            translated = self._translate(event, *self._parse_request(data))[0]
+            event.addresponse(translated)
+        except TranslationException, e:
+            event.addresponse(u"I couldn't translate that: %s.", unicode(e))
+
+    @match(r'^translation[-\s]*(?:chain|party)\s+(.*)$')
+    def translation_chain (self, event, data):
+        if self.chain_length < 1:
+            event.addresponse(u"I'm not allowed to play translation games.")
+        try:
+            phrase, src_lang, dest_lang = self._parse_request(data)
+            chain = set([phrase])
+            for i in range(self.chain_length):
+                phrase, src_lang = self._translate(event, phrase,
+                                                    src_lang, dest_lang)
+                src_lang, dest_lang = dest_lang, src_lang
+                event.addresponse(phrase)
+                if phrase in chain:
+                    break
+                chain.add(phrase)
+
+        except TranslationException, e:
+            event.addresponse(u"I couldn't translate that: %s.", unicode(e))
+
+    def _parse_request (self, data):
         if not hasattr(self, 'lang_names'):
             self._make_language_dict()
 
-        from_re = r'from\s+(?P<from>(?:[-()]|\s|\w)+?)'
-        to_re = r'to\s+(?P<to>(?:[-()]|\s|\w)+?)'
+        from_re = r'\s+from\s+(?P<from>[-()\s\w]+?)'
+        to_re = r'\s+(?:in)?to\s+(?P<to>[-()\s\w]+?)'
 
         res = [(from_re, to_re), (to_re, from_re), (to_re,), (from_re,), ()]
 
         # Try all possible specifications of source and target language until we
         # find a valid one.
         for pat in res:
-            pat = '(?P<text>.*)' + '\s+'.join(pat) + '$'
+            pat = '(?P<text>.*)' + ''.join(pat) + '\s*$'
             m = re.match(pat, data, re.IGNORECASE | re.UNICODE | re.DOTALL)
             if m:
                 dest_lang = m.groupdict().get('to')
@@ -164,13 +194,9 @@ class Translate(Processor):
                     else:
                         src_lang = ''
 
-                    self._translate(event, m.group('text'), src_lang, dest_lang)
+                    return (m.group('text'), src_lang, dest_lang)
                 except UnknownLanguageException:
                     continue
-                else:
-                    break
-        else:
-            event.addresponse("I've never heard of that language.")
 
     def _translate (self, event, phrase, src_lang, dest_lang):
         params = {
@@ -188,24 +214,24 @@ class Translate(Processor):
             params, headers)
 
         if response['responseStatus'] == 200:
-            translated = decode_htmlentities(
-                response['responseData']['translatedText'])
-
-            event.addresponse(translated)
+            translated = unicode(decode_htmlentities(
+                response['responseData']['translatedText']))
+            return (translated, src_lang or
+                    response['responseData']['detectedSourceLanguage'])
         else:
             errors = {
                 'invalid translation language pair':
-                    "I don't know that language",
+                    u"I don't know that language",
                 'invalid text':
-                    "there's not much to go on",
+                    u"there's not much to go on",
                  'could not reliably detect source language':
-                    "I'm not sure what language that was",
+                    u"I'm not sure what language that was",
             }
 
             msg = errors.get(response['responseDetails'],
                             response['responseDetails'])
 
-            event.addresponse(u"I couldn't translate that: %s.", msg)
+            raise TranslationException(msg)
 
     def _make_language_dict (self):
         self.lang_names = d = {}
