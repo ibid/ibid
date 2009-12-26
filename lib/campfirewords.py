@@ -79,6 +79,7 @@ class CampfireClient(object):
 
     # Configuration
     subdomain = ''
+    secure = False
     token = ''
     rooms = ()
     keepalive_timeout = 10
@@ -227,7 +228,8 @@ class CampfireClient(object):
         return 'Basic ' + b64encode(self.token + ':')
 
     def _base_url(self):
-        return str('http://%s.campfirenow.com/' % self.subdomain)
+        protocol = self.secure and 'https' or 'http'
+        return str('%s://%s.campfirenow.com/' % (protocol, self.subdomain))
 
     def _get_data(self, path, room_id, errback_description=None, method='GET',
                  headers={}, postdata=None):

@@ -3,7 +3,7 @@ import logging
 from campfirewords import CampfireClient
 
 import ibid
-from ibid.config import IntOption, Option, ListOption
+from ibid.config import BoolOption, IntOption, Option, ListOption
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
 
@@ -74,6 +74,7 @@ class SourceFactory(IbidSourceFactory):
     supports = ('action', 'topic')
 
     subdomain = Option('subdomain', 'Campfire subdomain')
+    secure = BoolOption('secure', 'Use https (paid accounts only)', False)
     token = Option('token', 'Campfire token')
     rooms = ListOption('rooms', 'Rooms to join', [])
     keepalive_timeout = IntOption('keepalive_timeout',
@@ -86,6 +87,7 @@ class SourceFactory(IbidSourceFactory):
         self.client = CampfireBot()
         self.client.factory = self
         self.client.subdomain = self.subdomain
+        self.client.secure = self.secure
         self.client.token = self.token
         self.client.rooms = self.rooms
         self.client.keepalive_timeout = self.keepalive_timeout
