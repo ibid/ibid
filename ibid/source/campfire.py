@@ -24,7 +24,7 @@ class CampfireBot(CampfireClient):
         event.source = self.factory.name
         return event
 
-    def _message_event(self, body, type='message', **kwargs):
+    def _message_event(self, body, type=u'message', **kwargs):
         event = self._create_event(type, **kwargs)
         event.message = unicode(body)
         log.debug(u'Received %s from %s in %s: %s', type, kwargs['user_name'],
@@ -32,7 +32,7 @@ class CampfireBot(CampfireClient):
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
     def _state_event(self, state, **kwargs):
-        event = self._create_event('state', **kwargs)
+        event = self._create_event(u'state', **kwargs)
         event.state = state
         log.debug(u'%s in %s is now %s', kwargs['user_name'],
                   kwargs['room_name'], state)
@@ -42,17 +42,18 @@ class CampfireBot(CampfireClient):
         self._message_event(**kwargs)
 
     def handle_TopicChange(self, **kwargs):
-        self._message_event(type='topic', **kwargs)
+        self._message_event(type=u'topic', **kwargs)
 
     def handle_Leave(self, **kwargs):
-        self._state_event(state='offline', **kwargs)
+        self._state_event(state=u'offline', **kwargs)
 
     def handle_Enter(self, **kwargs):
-        self._state_event(state='online', **kwargs)
+        self._state_event(state=u'online', **kwargs)
 
     def joined_room(self, room_info):
-        self._message_event(type='topic', body=room_info['topic'], user_id=None,
-                            user_name=None, room_id=room_info['id'],
+        self._message_event(type=u'topic', body=room_info['topic'],
+                            user_id=None, user_name=None,
+                            room_id=room_info['id'],
                             room_name=room_info['name'])
 
     def send(self, response):
