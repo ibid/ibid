@@ -100,7 +100,8 @@ class SourceFactory(IbidSourceFactory):
         return True
 
     def url(self):
-        return 'http://%s.campfirenow.com/' % self.subdomain
+        protocol = self.secure and 'https' or 'http'
+        return '%s://%s.campfirenow.com/' % (protocol, self.subdomain)
 
     def send(self, response):
         self.client.send(response)
