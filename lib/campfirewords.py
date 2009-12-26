@@ -90,6 +90,7 @@ class CampfireClient(object):
     _streams = {}
     _rooms = {}
     _users = {}
+    _room_info_queue = []
 
     # Callbacks:
     def joined_room(self, room_info):
@@ -195,10 +196,13 @@ class CampfireClient(object):
     def _joined_room(self, room_id):
         self._get_data('room/%(room_id)i/join.json', room_id, 'join room',
                       method='POST')
-        self._get_data('room/%(room_id)i.json', room_id, 'room info') \
-                .addCallback(self._do_room_info)
+        self.get_room_info(room_id, join=True)
 
-    def _do_room_info(self, data):
+    def get_room_info(self, room_id, join=False):
+        self._get_data('room/%(room_id)i.json', room_id, 'room info') \
+                .addCallback(self._do_room_info, join)
+
+    def _do_room_info(self, data, join):
         d = json.loads(data)['room']
         r = self._rooms[d['id']]
         for k, v in d.iteritems():
@@ -209,7 +213,15 @@ class CampfireClient(object):
         for user in d['users']:
             self._users[user['id']] = u = user
             r['users'].add(user['id'])
-        self.joined_room(r)
+        if join:
+            self.joined_room(r)
+
+        queue, self._room_info_queue = self._room_info_queue, []
+        for room_id, item in queue:
+            if room_id == d['id']:
+                self._event(item)
+            else:
+                self._room_info_queue.append((room_id, item))
 
     def _auth_header(self):
         return 'Basic ' + b64encode(self.token + ':')
@@ -234,6 +246,7 @@ class CampfireClient(object):
     def _event(self, data):
         "Handle a JSON stream event, data is the JSON"
         d = json.loads(data)
+        log.debug('Event: %s', repr(d))
 
         if d['user_id'] == self.my_id:
             return
@@ -241,13 +254,16 @@ class CampfireClient(object):
         type = d['type']
         if type.endswith('Message'):
             type = type[:-7]
+        if type == 'Enter':
+            self.get_room_info(d['room_id'])
         if hasattr(self, 'handle_' + type):
             params = {}
             params['room_id'] = d['room_id']
             params['room_name'] = self._rooms[d['room_id']]['name']
             if d.get('user_id') is not None:
                 if d['user_id'] not in self._users:
-                    # User list not loaded yet, ignore this:
+                    # User list not loaded yet, stick it on a queue:
+                    self._room_info_queue.append((d['room_id'], data))
                     return
                 params['user_id'] = d['user_id']
                 params['user_name'] = self._users[d['user_id']]['name']
