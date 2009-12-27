@@ -68,6 +68,12 @@ class CampfireBot(CampfireClient):
         for response in event.responses:
             self.send(response)
 
+    def join(self, room_name):
+        return self.join_room(self._locate_room(room_name))
+
+    def part(self, room_name):
+        return self.leave_room(self._locate_room(room_name))
+
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
@@ -104,6 +110,12 @@ class SourceFactory(IbidSourceFactory):
         return '%s://%s.campfirenow.com/' % (protocol, self.subdomain)
 
     def send(self, response):
-        self.client.send(response)
+        return self.client.send(response)
+
+    def join(self, room_name):
+        return self.client.join(room_name)
+
+    def part(self, room_name):
+        return self.client.part(room_name)
 
 # vi: set et sta sw=4 ts=4:
