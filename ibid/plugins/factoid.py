@@ -4,11 +4,13 @@ from random import choice
 import re
 
 from dateutil.tz import tzlocal, tzutc
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, Table, or_
-from sqlalchemy.orm import relation
+from sqlalchemy import Column, Table, ForeignKey, or_, Boolean, Integer, \
+                       Unicode, UnicodeText, DateTime, PassiveDefault
+from sqlalchemy.orm import relation, synonym
 from sqlalchemy.sql import func
 
-from ibid.plugins import Processor, match, handler, authorise, auth_responses, RPC
+from ibid.plugins import Processor, match, handler, authorise, auth_responses, \
+                         RPC
 from ibid.config import Option, IntOption, ListOption
 from ibid.plugins.identity import get_identities
 from ibid.models import Base, VersionedSchema
@@ -24,17 +26,27 @@ default_verbs = ('is', 'are', 'has', 'have', 'was', 'were', 'do', 'does', 'can',
 default_interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who's")
 
 def strip_name(unstripped):
+    "Apply to factoid names, as we use unstripped matches"
     return re.match(r'^\s*(.*?)[?!.]*\s*$', unstripped, re.DOTALL).group(1)
+
+def escape_name(name):
+    "Turn a $arg factoid name to _%"
+    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
+
+def unescape_name(name):
+    "Turn a _% factoid name to $arg"
+    return name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_')
 
 class FactoidName(Base):
     __table__ = Table('factoid_names', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', UnicodeText, nullable=False, unique=True, index=True,
-            info={'ibid_mysql_index_length': 32}),
+    Column('name', UnicodeText, key='_name', nullable=False, unique=True, index=True,
+           info={'ibid_mysql_index_length': 32}),
     Column('factoid_id', Integer, ForeignKey('factoids.id'), nullable=False, index=True),
     Column('identity_id', Integer, ForeignKey('identities.id'), index=True),
     Column('time', DateTime, nullable=False),
     Column('factpack', Integer, ForeignKey('factpacks.id'), index=True),
+    Column('wild', Boolean, nullable=False, default=False, index=True),
     useexisting=True)
 
     class FactoidNameSchema(VersionedSchema):
@@ -48,12 +60,25 @@ class FactoidName(Base):
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.factpack)
         def upgrade_4_to_5(self):
-            self.alter_column(Column('name', Unicode(64), nullable=False, unique=True, index=True))
+            self.alter_column(Column('name', Unicode(64), key='_name', nullable=False,
+                                     unique=True, index=True))
         def upgrade_5_to_6(self):
-            self.alter_column(Column('name', UnicodeText, nullable=False,
-                unique=True, index=True, info={'ibid_mysql_index_length': 32}))
+            self.alter_column(Column('name', UnicodeText, key='_name', nullable=False,
+                                     unique=True, index=True,
+                                     info={'ibid_mysql_index_length': 32}))
+        def upgrade_6_to_7(self):
+            self.add_column(Column('wild', Boolean, PassiveDefault('0'),
+                                   nullable=False, index=True, default=False))
+            # http://www.sqlalchemy.org/trac/ticket/1400:
+            # We can't use .like() in MySQL
+            for row in self.upgrade_session.query(FactoidName) \
+                    .filter('name LIKE :pattern ESCAPE :escape') \
+                    .params(pattern='%\\_\\%%', escape='\\') \
+                    .all():
+                row.wild = True
+                self.upgrade_session.save_or_update(row)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 6)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 7)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -64,6 +89,15 @@ class FactoidName(Base):
 
     def __repr__(self):
         return u'<FactoidName %s %s>' % (self.name, self.factoid_id)
+
+    def _get_name(self):
+        return unescape_name(self._name)
+
+    def _set_name(self, name):
+        self.wild = u'$arg' in name
+        self._name = escape_name(name)
+
+    name = synonym('_name', descriptor=property(_get_name, _set_name))
 
 class FactoidValue(Base):
     __table__ = Table('factoid_values', Base.metadata,
@@ -142,13 +176,8 @@ action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
 escape_like_re = re.compile(r'([%_\\])')
 
-def escape_name(name):
-    return name.replace('%', '\\%').replace('_', '\\_').replace('$arg', '_%')
-
-def unescape_name(name):
-    return name.replace('_%', '$arg').replace('\\%', '%').replace('\\_', '_')
-
-def get_factoid(session, name, number, pattern, is_regex, all=False, literal=False):
+def get_factoid(session, name, number, pattern, is_regex, all=False,
+                literal=False):
     """session: SQLAlchemy session
     name: Factoid name (can contain arguments unless literal query)
     number: Return factoid[number] (or factoid[number:] for literal queries)
@@ -157,34 +186,55 @@ def get_factoid(session, name, number, pattern, is_regex, all=False, literal=Fal
     all: Return a random factoid from the set if False
     literal: Match factoid name literally (implies all)
     """
-    factoid = None
-    # Reversed LIKE because factoid name contains SQL wildcards if factoid supports arguments
-    query = session.query(Factoid)\
-            .add_entity(FactoidName).join(Factoid.names)\
-            .add_entity(FactoidValue).join(Factoid.values)
+    # First pass for exact matches, if necessary again for wildcard matches
     if literal:
-        query = query.filter(func.lower(FactoidName.name)==escape_name(name).lower())
+        passes = (False,)
     else:
-        query = query.filter(":fact LIKE name ESCAPE :escape").params(fact=name, escape='\\')
-    if pattern:
-        if is_regex:
-            query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+        passes = (False, True)
+    for wild in passes:
+        factoid = None
+        query = session.query(Factoid)\
+                .add_entity(FactoidName).join(Factoid.names)\
+                .add_entity(FactoidValue).join(Factoid.values)
+        if wild:
+            # Reversed LIKE because factoid name contains SQL wildcards if
+            # factoid supports arguments
+            query = query.filter(':fact LIKE name ESCAPE :escape') \
+                         .params(fact=name, escape='\\')
         else:
-            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            # http://www.sqlalchemy.org/trac/ticket/1400: We can't use .like() in MySQL
-            query = query.filter('value LIKE :pattern ESCAPE :escape').params(pattern=pattern, escape='\\')
-    if number:
-        try:
-            if literal:
-                return query.order_by(FactoidValue.id)[int(number) - 1:]
+            query = query.filter(func.lower(FactoidName.name) \
+                                 == escape_name(name).lower())
+        # For normal matches, restrict to the subset applicable
+        if not literal:
+            query = query.filter(FactoidName.wild == wild)
+
+        if pattern:
+            if is_regex:
+                query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
             else:
-                factoid = query.order_by(FactoidValue.id)[int(number) - 1]
-        except IndexError:
-            return
-    if all or literal:
-        return factoid and [factoid] or query.all()
-    else:
-        return factoid or query.order_by(func.random()).first()
+                pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
+                # http://www.sqlalchemy.org/trac/ticket/1400:
+                # We can't use .like() in MySQL
+                query = query.filter('value LIKE :pattern ESCAPE :escape') \
+                             .params(pattern=pattern, escape='\\')
+
+        if number:
+            try:
+                if literal:
+                    return query.order_by(FactoidValue.id)[int(number) - 1:]
+                else:
+                    factoid = query.order_by(FactoidValue.id)[int(number) - 1]
+            except IndexError:
+                continue
+        if all or literal:
+            if factoid is not None:
+                return [factoid]
+            else:
+                factoid = query.all()
+        else:
+            factoid = factoid or query.order_by(func.random()).first()
+        if factoid:
+            return factoid
 
 class Utils(Processor):
     u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
@@ -286,7 +336,7 @@ class Forget(Processor):
                 event.addresponse(u"I already know stuff about %s", target)
                 return
 
-            name = FactoidName(escape_name(unicode(target)), event.identity)
+            name = FactoidName(unicode(target), event.identity)
             factoid.names.append(name)
             event.session.save_or_update(factoid)
             event.session.commit()
@@ -347,7 +397,9 @@ class Search(Processor):
         matches = [match for match in query[start:start+limit]]
 
         if matches:
-            event.addresponse(u'; '.join(u'%s [%s]' % (unescape_name(fname.name), len(factoid.values)) for factoid, fname in matches))
+            event.addresponse(u'; '.join(
+                u'%s [%s]' % (fname.name, len(factoid.values))
+                for factoid, fname in matches))
         else:
             event.addresponse(u"I couldn't find anything that matched '%s'" % origpattern)
 
@@ -401,14 +453,12 @@ class Get(Processor, RPC):
         if factoid:
             (factoid, fname, fvalue) = factoid
             reply = fvalue.value
-            pattern = re.escape(fname.name).replace(r'\_\%', '(.*)').replace('\\\\\\%', '%').replace('\\\\\\_', '_')
+            oname = fname.name
+            pattern = re.escape(fname.name).replace(r'\$arg', '(.*)')
 
-            position = 1
-            for capture in re.match(pattern, name, re.I).groups():
-                if capture.startswith('$arg'):
-                    return
-                reply = reply.replace('$%s' % position, capture)
-                position = position + 1
+            for i, capture in enumerate(re.match(pattern, name, re.I).groups()):
+                reply = reply.replace('$%s' % (i + 1), capture)
+                oname = oname.replace('$arg', capture, 1)
 
             reply = _interpolate(reply, event)
 
@@ -420,7 +470,7 @@ class Get(Processor, RPC):
             if count:
                 return {'address': False, 'reply': reply}
 
-            reply = u'%s %s' % (unescape_name(fname.name), reply)
+            reply = u'%s %s' % (oname, reply)
             return reply
 
 class Set(Processor):
@@ -473,7 +523,7 @@ class Set(Processor):
                 return
         else:
             factoid = Factoid()
-            fname = FactoidName(escape_name(unicode(name)), event.identity)
+            fname = FactoidName(unicode(name), event.identity)
             factoid.names.append(fname)
             event.session.save_or_update(factoid)
             event.session.flush()

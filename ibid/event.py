@@ -12,7 +12,10 @@ class Event(dict):
     def __getattr__(self, name):
         if name == 'session' and 'session' not in self:
             self['session'] = ibid.databases.ibid()
-        return self[name]
+        try:
+            return self[name]
+        except KeyError, e:
+            raise AttributeError(e)
 
     def __setattr__(self, name, value):
         self[name] = value
