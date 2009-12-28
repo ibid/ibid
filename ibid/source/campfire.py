@@ -9,6 +9,14 @@ from ibid.source import IbidSourceFactory
 
 class CampfireBot(CampfireClient):
 
+    def __init__(self, factory):
+        self.factory = factory
+        CampfireClient.__init__(self, self.factory.subdomain,
+                                self.factory.token,
+                                self.factory.rooms,
+                                self.factory.secure,
+                                self.factory.keepalive_timeout)
+
     def _create_event(self, type, user_id, user_name, room_id, room_name):
         event = Event(self.factory.name, type)
         if user_id is not None:
@@ -112,13 +120,7 @@ class SourceFactory(IbidSourceFactory):
     def __init__(self, name):
         super(SourceFactory, self).__init__(name)
         self.log = logging.getLogger('source.%s' % self.name)
-        self.client = CampfireBot()
-        self.client.factory = self
-        self.client.subdomain = self.subdomain
-        self.client.secure = self.secure
-        self.client.token = self.token
-        self.client.rooms = self.rooms
-        self.client.keepalive_timeout = self.keepalive_timeout
+        self.client = CampfireBot(self)
 
     def setServiceParent(self, service):
         self.client.connect()

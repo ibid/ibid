@@ -93,6 +93,14 @@ class CampfireClient(object):
     _users = {}
     _room_info_queue = []
 
+    def __init__(self, subdomain, token, rooms, secure=False,
+                 keepalive_timeout=10):
+        self.subdomain = subdomain
+        self.token = token
+        self.rooms = rooms
+        self.secure = secure
+        self.keepalive_timeout = keepalive_timeout
+
     # Callbacks:
     def joined_room(self, room_info):
         pass
