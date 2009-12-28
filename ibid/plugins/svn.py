@@ -22,7 +22,7 @@ import os.path
 from os import kill
 from signal import SIGTERM
 import textwrap
-import xml.etree.ElementTree as ET
+from ibid.compat import ElementTree as ET
 from subprocess import Popen, PIPE
 from time import time, sleep, mktime
 
