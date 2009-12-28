@@ -1,6 +1,5 @@
 import logging
 import logging.config
-from collections import defaultdict
 from os import makedirs
 from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
@@ -11,6 +10,7 @@ sys.path.insert(0, '%s/../lib' % dirname(__file__))
 import twisted.python.log
 
 import ibid.core
+from ibid.compat import defaultdict
 from ibid.config import FileConfig
 
 class InsensitiveDict(dict):
