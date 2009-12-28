@@ -126,13 +126,6 @@ class CampfireClient(object):
 
             return rooms[0]
 
-    def failure(self, failure, room_id, task):
-        log.error(u'Request failed: %s for room %s: %s', task, repr(room_id),
-                  unicode(failure))
-        if room_id is not None:
-            self.leave_room(room_id) \
-                    .addCallback(lambda x: self.join_room(room_id))
-
     def disconnect(self):
         for id in self._streams.iterkeys():
             self.leave_room(id)
@@ -175,8 +168,12 @@ class CampfireClient(object):
         if room_id in self._streams:
             del self._streams[room_id].clientConnectionLost
             self._streams[room_id].disconnect()
-        return self._get_data('room/%(room_id)i/leave.json', room_id,
-                             method='POST')
+        return self._get_data('room/%(room_id)i/leave.json', room_id, None,
+                              method='POST')
+
+    def stream_failure(self, connector, unused_reason, room_id):
+        log.error('Lost stream for room %i', room_id)
+        self.join_room(room_id)
 
     def join_room(self, room_id):
         log.debug('Joining room: %i', room_id)
@@ -187,7 +184,7 @@ class CampfireClient(object):
         stream.event = self._event
         stream.stream_connected = lambda : self._joined_room(room_id)
         stream.clientConnectionLost = lambda connector, unused_reason: \
-                self.failure(unused_reason, room_id, 'stream')
+                self.stream_failure(connector, unused_reason, room_id)
 
         contextFactory = ssl.ClientContextFactory()
         stream.proto = reactor.connectSSL(
@@ -196,7 +193,7 @@ class CampfireClient(object):
 
     def _joined_room(self, room_id):
         self._get_data('room/%(room_id)i/join.json', room_id, 'join room',
-                      method='POST')
+                       method='POST')
         self.get_room_info(room_id, join=True)
 
     def get_room_info(self, room_id, join=False):
@@ -231,8 +228,17 @@ class CampfireClient(object):
         protocol = self.secure and 'https' or 'http'
         return str('%s://%s.campfirenow.com/' % (protocol, self.subdomain))
 
-    def _get_data(self, path, room_id, errback_description=None, method='GET',
-                 headers={}, postdata=None):
+    def _failed_get_data(self, failure, args):
+        log.error(u'Campfire %s failed: %s', args['error_description'],
+                  repr(failure))
+        args['retry'] += 1
+        if args['retry'] < 8:
+            reactor.callLater(pow(2, args['retry']), self._get_data, **args)
+        else:
+            log.error(u'Gave up retrying to %s', args['error_description'])
+
+    def _get_data(self, path, room_id, error_description=None, method='GET',
+                 headers={}, postdata=None, retry=0):
         "Make a campfire API request"
 
         headers['Authorization'] = self._auth_header()
@@ -241,8 +247,16 @@ class CampfireClient(object):
 
         d = getPage(self._base_url() + path % {'room_id': room_id},
                     method=method, headers=headers, postdata=postdata)
-        if errback_description:
-            d = d.addErrback(self.failure, room_id, errback_description)
+        if error_description is not None:
+            d = d.addErrback(self._failed_get_data, {
+                'path': path,
+                'room_id': room_id,
+                'error_description': error_description,
+                'method': method,
+                'headers': headers,
+                'postdata': postdata,
+                'retry': retry,
+            })
         return d
 
     def _event(self, data):
