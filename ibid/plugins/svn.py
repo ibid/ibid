@@ -19,17 +19,27 @@ Configuration:
 from datetime import datetime, timedelta
 import logging
 import os.path
-import pysvn
+from os import kill
+from signal import SIGTERM
 import textwrap
+import xml.etree.ElementTree as ET
+from subprocess import Popen, PIPE
+from time import time, sleep, mktime
+
+# Can use either pysvn or command-line svn
+try:
+    import pysvn
+except:
+    pysvn = None
 
 import ibid
 from ibid.plugins import Processor, match, RPC, handler, run_every
-from ibid.config import DictOption
+from ibid.config import DictOption, FloatOption, Option
 from ibid.utils import ago, format_date, human_join
 
 help = {'svn': u'Retrieves commit logs from a Subversion repository.'}
 
-HEAD_REVISION = pysvn.Revision(pysvn.opt_revision_kind.head)
+HEAD_REVISION = object()
 
 class Branch(object):
     def __init__(self, repository_name = None, url = None, username = None, password = None):
@@ -37,25 +47,6 @@ class Branch(object):
         self.url = url
         self.username = username
         self.password = password
-
-    def _call_command(self, command, *args, **kw):
-        return command(self, username=self.username, password=self.password)(*args, **kw)
-
-    def log(self, *args, **kw):
-        """
-        Low-level SVN logging call - returns lists of pysvn.PysvnLog objects.
-        """
-        return self._call_command(SVNLog, *args, **kw)
-
-    def _convert_to_revision(self, revision):
-        """
-        Convert numbers to pysvn.Revision instances
-        """
-        try:
-            revision.kind
-            return revision
-        except:
-            return pysvn.Revision(pysvn.opt_revision_kind.number, revision)
 
     def get_commits(self, start_revision = None, end_revision = None, limit = None, full = False):
         """
@@ -78,7 +69,7 @@ class Branch(object):
 
         end_revision = self._convert_to_revision(end_revision)
 
-        log_messages = self.log(start_revision, end_revision, paths=full)
+        log_messages = self.log(start_revision, end_revision, limit=limit, paths=full)
         commits = [self.format_log_message(log_message, full) for log_message in log_messages]
 
         return commits
@@ -161,6 +152,7 @@ class Branch(object):
                 changes.append('Renamed:\n\t%s' % '\n\t, '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
             timestamp_dt = datetime.utcfromtimestamp(timestamp)
+
             commit = 'Commit %s by %s to %s%s on %s at %s:\n\n\t%s \n\n%s\n' % (
                 revision_number,
                 author,
@@ -179,6 +171,148 @@ class Branch(object):
                 commit_message.replace('\n', ' '))
 
         return commit
+
+class PySVNBranch(Branch):
+    def _call_command(self, command, *args, **kw):
+        return command(self, username=self.username, password=self.password)(*args, **kw)
+
+    def log(self, *args, **kw):
+        """
+        Low-level SVN logging call - returns lists of pysvn.PysvnLog objects.
+        """
+        return self._call_command(SVNLog, *args, **kw)
+
+    def _convert_to_revision(self, revision):
+        """
+        Convert numbers to pysvn.Revision instances
+        """
+        if revision is HEAD_REVISION:
+            return pysvn.Revision(pysvn.opt_revision_kind.head)
+
+        try:
+            revision.kind
+            return revision
+        except:
+            return pysvn.Revision(pysvn.opt_revision_kind.number, revision)
+
+class CommandLineChangedPath(object):
+    pass
+
+class TimeoutException(Exception):
+    pass
+
+class CommandLineRevision(object):
+    def __init__(self, number):
+        self.number = number
+
+class CommandLineBranch(Branch):
+    def __init__(self, repository_name = None, url = None, username = None, password = None, svn_command = 'svn', svn_timeout = 15.0):
+        super(CommandLineBranch, self).__init__(repository_name, url, username, password)
+        self.svn_command = svn_command
+        self.svn_timeout = svn_timeout
+
+    def _convert_to_revision(self, revision):
+        return revision
+
+    def log(self, start_revision, end_revision, paths=False, limit=1):
+        cmd = ["svn", "log", "--no-auth-cache", "--non-interactive", "--xml"]
+
+        if paths:
+            cmd.append("-v")
+
+        if self.username:
+            cmd.append("--username")
+            cmd.append(self.username)
+
+        if self.password:
+            cmd.append("--password")
+            cmd.append(self.password)
+
+        if limit:
+            cmd.append("--limit")
+            cmd.append(str(limit))
+
+        if start_revision is None or start_revision is HEAD_REVISION:
+            pass
+        else:
+            if not end_revision or start_revision == end_revision:
+                if not limit:
+                    # if start revision, no end revision (or equal to start_revision), and no limit given, just the revision
+                    cmd.append("-r")
+                    cmd.append(str(start_revision))
+                    cmd.append("--limit")
+                    cmd.append("1")
+                else:
+                    cmd.append("-r")
+                    cmd.append("%i" % (start_revision,))
+            else:
+                cmd.append("-r")
+                cmd.append("%i:%i" % (end_revision, start_revision))
+
+        cmd.append(self.url)
+
+        logging.getLogger('plugins.svn').info(str(cmd))
+
+        svnlog = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        svnlog.stdin.close()
+
+        start_time = time()
+
+        while svnlog.poll() is None and time() - start_time < self.svn_timeout:
+            sleep(0.1)
+
+        if svnlog.poll() is None:
+            kill(svnlog.pid, SIGTERM)
+            raise TimeoutException()
+
+        output = svnlog.stdout.read()
+        error = svnlog.stderr.read()
+
+        code = svnlog.wait()
+
+        return self._xml_to_log_message(output)
+
+    def _xmldate_to_timestamp(self, xmldate):
+        xmldate = xmldate.split('.')[0]
+        dt = datetime.strptime(xmldate, "%Y-%m-%dT%H:%M:%S")
+        return mktime(dt.timetuple())
+
+    def _xml_to_log_message(self, output):
+        """
+        author - string - the name of the author who committed the revision
+        date - float time - the date of the commit
+        message - string - the text of the log message for the commit
+        revision - pysvn.Revision - the revision of the commit
+
+        changed_paths - list of dictionaries. Each dictionary contains:
+            path - string - the path in the repository
+            action - string
+            copyfrom_path - string - if copied, the original path, else None
+            copyfrom_revision - pysvn.Revision - if copied, the revision of the original, else None
+        """
+        doc = ET.fromstring(output)
+        entries = []
+
+        for logentry in doc:
+            entry = dict(
+                revision = CommandLineRevision(logentry.get('revision')),
+                author = logentry.findtext("author"),
+                date = self._xmldate_to_timestamp(logentry.findtext("date")),
+                message = logentry.findtext("msg"),
+            )
+
+            entry['changed_paths'] = []
+            paths = logentry.find("paths")
+            if paths:
+                for path in paths:
+                    cp = CommandLineChangedPath()
+                    cp.kind = path.get('kind')
+                    cp.action = path.get('action')
+                    cp.path = path.text
+                    entry['changed_paths'].append(cp)
+            entries.append(entry)
+        return entries
+
 
 class SVNCommand(object):
     def __init__(self, branch, username=None, password=None):
@@ -241,6 +375,9 @@ class Subversion(Processor, RPC):
 
     repositories = DictOption('repositories', 'Dict of repositories names and URLs')
 
+    svn_command = Option('svn_command', 'Path to svn executable', 'svn')
+    svn_timeout = FloatOption('svn_timeout', 'Maximum svn execution time (sec)', 15.0)
+
     def __init__(self, name):
         self.log = logging.getLogger('plugins.svn')
         Processor.__init__(self, name)
@@ -250,7 +387,10 @@ class Subversion(Processor, RPC):
         self.branches = {}
         for name, repository in self.repositories.items():
             reponame = name.lower()
-            self.branches[reponame] = Branch(reponame, repository['url'], username = repository['username'], password = repository['password'])
+            if pysvn:
+                self.branches[reponame] = PySVNBranch(reponame, repository['url'], username = repository['username'], password = repository['password'])
+            else:
+                self.branches[reponame] = CommandLineBranch(reponame, repository['url'], username = repository['username'], password = repository['password'], svn_command=self.svn_command, svn_timeout=self.svn_timeout)
 
     @match(r'^svn ?(?:repos|repositories)$')
     def handle_repositories(self, event):
