@@ -380,7 +380,7 @@ class Summon(Processor):
     default_source = Option('default_source',
             u'Default source to summon people via', u'jabber')
 
-    @authorise
+    @authorise(fallthrough=False)
     @match(r'^summon\s+(\S+)(?:\s+(?:via|on|using)\s+(\S+))?$')
     def summon(self, event, who, source):
         if not source:
