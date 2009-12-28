@@ -12,6 +12,8 @@ class CampfireBot(CampfireClient):
     def _create_event(self, type, user_id, user_name, room_id, room_name):
         event = Event(self.factory.name, type)
         if user_id is not None:
+            # user_id is an int. simplejson may have returned a str() if
+            # user_name and room_name don't contain non-ASCII chars.
             user_id = unicode(user_id)
             user_name = unicode(user_name)
             event.sender['connection'] = user_id
