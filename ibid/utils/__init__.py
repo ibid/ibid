@@ -13,7 +13,7 @@ import zlib
 from dateutil.tz import tzlocal, tzutc
 
 import ibid
-from ibid.compat import defaultdict, ElementTree, json
+from ibid.compat import defaultdict, json
 
 def ago(delta, units=None):
     parts = []
@@ -154,9 +154,6 @@ def format_date(timestamp, length='datetime'):
     timestamp = timestamp.astimezone(tzlocal())
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
-
-class ContentTypeException(Exception):
-    pass
 
 class JSONException(Exception):
     pass

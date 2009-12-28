@@ -1,5 +1,16 @@
+import cgi
+import zlib
+import urllib2
+from gzip import GzipFile
+from StringIO import StringIO
+
 from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
+
+from ibid.compat import ElementTree
+
+class ContentTypeException(Exception):
+    pass
 
 def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     "Request a URL, parse with html5lib, and return a parse tree from it"
