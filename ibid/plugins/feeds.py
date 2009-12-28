@@ -12,7 +12,8 @@ from html2text import html2text_file
 from ibid.config import IntOption
 from ibid.plugins import Processor, match, authorise, run_every
 from ibid.models import Base, VersionedSchema
-from ibid.utils import cacheable_download, get_html_parse_tree, human_join
+from ibid.utils import cacheable_download, human_join
+from ibid.utils.html import get_html_parse_tree
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 

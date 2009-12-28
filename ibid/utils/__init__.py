@@ -1,4 +1,3 @@
-import cgi
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import os
@@ -12,8 +11,6 @@ import urllib2
 import zlib
 
 from dateutil.tz import tzlocal, tzutc
-from html5lib import HTMLParser, treebuilders
-from BeautifulSoup import BeautifulSoup
 
 import ibid
 from ibid.compat import defaultdict, ElementTree, json
@@ -160,48 +157,6 @@ def format_date(timestamp, length='datetime'):
 
 class ContentTypeException(Exception):
     pass
-
-def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
-    "Request a URL, parse with html5lib, and return a parse tree from it"
-
-    req = urllib2.Request(url, data, headers)
-    f = urllib2.urlopen(req)
-
-    if f.info().gettype() not in ('text/html', 'application/xhtml+xml'):
-        f.close()
-        raise ContentTypeException("Content type isn't HTML, but " + f.info().gettype())
-
-    data = f.read()
-    f.close()
-
-    encoding = None
-    contentType = f.headers.get('content-type')
-    if contentType:
-        (mediaType, params) = cgi.parse_header(contentType)
-        encoding = params.get('charset')
-
-    compression = f.headers.get('content-encoding')
-    if compression:
-        if compression.lower() == "deflate":
-            try:
-                data = zlib.decompress(data)
-            except zlib.error:
-                data = zlib.decompress(data, -zlib.MAX_WBITS)
-        elif compression.lower() == "gzip":
-            compressedstream = StringIO(data)
-            gzipper = GzipFile(fileobj=compressedstream)
-            data = gzipper.read()
-
-    if treetype == "beautifulsoup":
-        return BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    elif treetype == "etree":
-        treebuilder = treebuilders.getTreeBuilder("etree", ElementTree)
-    else:
-        treebuilder = treebuilders.getTreeBuilder(treetype)
-
-    parser = HTMLParser(tree=treebuilder)
-
-    return parser.parse(data, encoding = encoding)
 
 class JSONException(Exception):
     pass
