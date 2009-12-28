@@ -470,7 +470,7 @@ class WerewolfGame(Processor):
     seer_delay = IntOption('seer_delay',
             'Number of players between extra wolf and extra seer', 4)
 
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     @match(r'^(?:start|play|begin)s?\b.*werewolf$')
     def prestart(self, event):
@@ -841,7 +841,7 @@ class WerewolfGame(Processor):
 
 class WerewolfState(Processor):
     feature = 'werewolf'
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def state_change(self, event):
