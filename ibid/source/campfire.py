@@ -62,11 +62,31 @@ class CampfireBot(CampfireClient):
             self.topic(response['target'], message)
             return
 
-        self.say(response['target'], message)
+        if '\n' in message:
+            self.say(response['target'], message, type='PasteMessage')
+        else:
+            self.say(response['target'], message)
 
     def respond(self, event):
-        for response in event.responses:
-            self.send(response)
+        if len(event.responses) == 1:
+            self.send(event.responses[0])
+        elif len(event.responses) > 1:
+            # Attempt to merge contiguous responses into a PasteMessage
+            buffer = event.responses[0]
+            buffer['reply'] = buffer['reply'].replace(u'\n', u' ')
+            for r in event.responses[1:]:
+                keys = set(r.keys()).union(set(buffer.keys())) \
+                                    .difference(set(('reply',)))
+                for k in keys:
+                    if k not in buffer or k not in r or buffer[k] != r[k]:
+                        break
+                else:
+                    buffer['reply'] += u'\n' + r['reply'].replace(u'\n', u' ')
+                    continue
+                self.send(buffer)
+                buffer = r
+
+            self.send(buffer)
 
     def join(self, room_name):
         return self.join_room(self._locate_room(room_name))

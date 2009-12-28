@@ -98,8 +98,13 @@ class CampfireClient(object):
         pass
 
     # Actions:
-    def say(self, room_name, message):
-        data = {'message': { 'body': message }}
+    def say(self, room_name, message, type='TextMessage'):
+        data = {
+            'message': {
+                'body': message,
+                'type': type,
+            }
+        }
 
         self._get_data('room/%(room_id)i/speak.json',
                       self._locate_room(room_name), 'speak', method='POST',
