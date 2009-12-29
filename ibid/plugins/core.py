@@ -45,7 +45,7 @@ class Strip(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
-    pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$', re.DOTALL)
+    pattern = re.compile(r'^\s*(.*?)[?!.\s]*$', re.DOTALL)
 
     @handler
     def handle_strip(self, event):
