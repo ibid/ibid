@@ -118,8 +118,7 @@ while True:
     event.channel = u"testchan"
 
     try:
-        message = unicode(raw_input('Query: '), encoding)
-        event.message = {'raw': message, 'clean': message, 'stripped': message, 'deaddressed': message}
+        event.message = unicode(raw_input('Query: '), encoding)
     except (KeyboardInterrupt, EOFError):
         break
 
