@@ -4,6 +4,8 @@ Supported releases:
 * Ubuntu hardy (with hardy-backports)
 * Ubuntu intrepid
 * Ubuntu jaunty
+* Ubuntu karmic
+* Ubuntu lucid
 * Debian lenny
 * Debian squeeze
 
@@ -16,9 +18,9 @@ Install required modules:
 # aptitude install python-beautifulsoup python-celementtree \
 	python-configobj python-dateutil python-dnspython \
 	python-feedparser python-html5lib python-imdbpy \
-	python-jinja python-pinder python-pysilc \
-	python-pysqlite2 python-simplejson python-soappy \
-	python-sqlalchemy python-twisted python-wokkel
+	python-jinja python-pysilc python-pysqlite2 \
+	python-simplejson python-soappy python-sqlalchemy \
+	python-twisted python-wokkel
 
 Switch to the user ibid will be running as.
 $ export PYTHONPATH=.

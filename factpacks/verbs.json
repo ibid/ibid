@@ -1,0 +1,438 @@
+[
+ [
+  [
+   "fuck $arg", 
+   "rape $arg", 
+   "shag $arg", 
+   "screw $arg", 
+   "bonk $arg", 
+   "bone $arg", 
+   "hump $arg"
+  ], 
+  [
+   "<action> copulates with $1", 
+   "<action> *fucks* $1", 
+   "<action> humps $1's leg", 
+   "<action> has wild, passionate sex with $1", 
+   "<action> doesn't like $1 in *that* way...", 
+   "<action> has a headache, though", 
+   "<action> lubes up", 
+   "<action> is not a robosexual", 
+   "<action> lights up a cigarette", 
+   "<reply> can't we just be friends?", 
+   "<reply> not tonight, honey, I've got a headache", 
+   "<reply> not a chance!", 
+   "<reply> I'm a good bot, I am!", 
+   "<reply> Oh, $1, oh baby, baby!", 
+   "<reply> I think I'm getting moist", 
+   "<reply> C'm'ere, honey...", 
+   "<reply> Schnell!  Schnell!  Wunderbar!", 
+   "<reply> I think I'm in love"
+  ]
+ ], 
+ [
+  [
+   "blow $arg", 
+   "perform fellatio on $arg", 
+   "suck $arg", 
+   "go down on $arg", 
+   "perform cunnilingus on $arg", 
+   "give head to $arg"
+  ], 
+  [
+   "<action> goes down on $1", 
+   "<reply> is you askin' me to drink from de furry cup?", 
+   "<reply> I don't know whether to spit or swallow"
+  ]
+ ], 
+ [
+  [
+   "kill $arg", 
+   "attack $arg", 
+   "hit $arg", 
+   "kick $arg", 
+   "smack $arg", 
+   "slap $arg", 
+   "beat $arg", 
+   "maul $arg", 
+   "smite $arg", 
+   "clobber $arg", 
+   "deck $arg", 
+   "punch $arg"
+  ], 
+  [
+   "<action> viciously attacks $1", 
+   "<action> slaps $1 about with a large trout", 
+   "<reply> I'm not a violent bot", 
+   "<reply> *anger* *rage*"
+  ]
+ ], 
+ [
+  [
+   "eat $arg", 
+   "chow $arg"
+  ], 
+  [
+   "<action> munches on $1", 
+   "<reply> I only eat kosher", 
+   "<reply> I only eat halaal", 
+   "<reply> I only eat vegan", 
+   "<reply> I only eat kittens", 
+   "<action> *bites* $1"
+  ]
+ ], 
+ [
+  [
+   "comfort $arg"
+  ], 
+  [
+   "<reply> Sterkte, $1!", 
+   "<action> hugs $1", 
+   "<action> hands $1 a tissue", 
+   "<action> *pattes* $1 soothingly", 
+   "<action> gives $1 hot chocolate, marshmallows, and a duvet", 
+   "<action> pours $1 a large whisky", 
+   "<action> opens a bottle of whisky for $1", 
+   "<reply> there, there, $1", 
+   "<reply> not to worry, $1"
+  ]
+ ], 
+ [
+  [
+   "fart on $arg"
+  ], 
+  [
+   "<action> farts on $1", 
+   "<action> flatulates violently at $1", 
+   "<action> farts in $1's general direction", 
+   "<action> passes gas", 
+   "<action> looks embarrassed", 
+   "<reply> it wasn't me!", 
+   "<reply> peee-yoooh!"
+  ]
+ ], 
+ [
+  [
+   "apologise to $arg", 
+   "say sorry to $arg"
+  ], 
+  [
+   "<action> apologises to $1", 
+   "<action> says sorry to $1", 
+   "<action> shuffles his feet.  Sorry, $1", 
+   "<reply> sorry, $1", 
+   "<reply> I really am most awfully sorry, $1, old chap?"
+  ]
+ ], 
+ [
+  [
+   "urinate on $arg", 
+   "piss on $arg", 
+   "widdle on $arg"
+  ], 
+  [
+   "<reply> sorry my bladder is not as big as oxo's and is empty", 
+   "<action> urinates on $1", 
+   "<action> pours a bucket of cold urine on $1", 
+   "<action> pisses all over $1"
+  ]
+ ], 
+ [
+  [
+   "lick $arg"
+  ], 
+  [
+   "<reply> *slurp*", 
+   "<reply> *yum*", 
+   "<action> licks $1", 
+   "<action> runs his tongue over $1"
+  ]
+ ], 
+ [
+  [
+   "shit on $arg", 
+   "crap on $arg", 
+   "take a dump on $arg", 
+   "defecate on $arg", 
+   "poo on $arg"
+  ], 
+  [
+   "<reply> when you gotta go, you gotta go", 
+   "<action> takes a dump on $1", 
+   "<action> poos on $1", 
+   "<action> defecates all over $1", 
+   "<action> wipes his bum on $1's sleeve", 
+   "<action> takes a crap on $1", 
+   "<action> shits all over $1"
+  ]
+ ], 
+ [
+  [
+   "moo at $arg", 
+   "bleat at $arg", 
+   "low at $arg"
+  ], 
+  [
+   "<reply> moo @ $1", 
+   "<reply> baa @ $1", 
+   "<reply> moo", 
+   "<reply> baa", 
+   "<reply> oink?", 
+   "<reply> moo, old chap", 
+   "<action> moos at $1", 
+   "<action> bleats at $1", 
+   "<action> performs a random farmyard-noise", 
+   "<action> thinks that way too much mooing and suchlike happens around here"
+  ]
+ ], 
+ [
+  [
+   "grope $arg", 
+   "molest $arg", 
+   "fondle $arg", 
+   "touch $arg", 
+   "finger $arg", 
+   "goose $arg"
+  ], 
+  [
+   "<reply> I don't know where it's been", 
+   "<reply> smell my fingers!", 
+   "<action> molests $1", 
+   "<action> gropes $1", 
+   "<action> molests $1", 
+   "<action> fondles $1", 
+   "<action> touches $1", 
+   "<action> fingers $1", 
+   "<action> gooses $1"
+  ]
+ ], 
+ [
+  [
+   "congratulate $arg", 
+   "praise $arg", 
+   "laud $arg"
+  ], 
+  [
+   "<reply> Well done, $1!", 
+   "<action> congratulates $1", 
+   "<action> pats $1 on the back"
+  ]
+ ], 
+ [
+  [
+   "spank $arg"
+  ], 
+  [
+   "<reply> ooh!  It looks like someone has been naughty... *growl*...", 
+   "<action> spanks $1's naughty little bottom"
+  ]
+ ], 
+ [
+  [
+   "thank $arg"
+  ], 
+  [
+   "<reply> Thank you, $1", 
+   "<reply> Much appreciated, $1", 
+   "<reply> I am most grateful, $1", 
+   "<action> thanks $1", 
+   "<action> appreciates it, $1", 
+   "<action> is most grateful, $1"
+  ]
+ ], 
+ [
+  [
+   "bite $arg"
+  ], 
+  [
+   "<reply> Screw you!", 
+   "<action> bites $1", 
+   "<action> gnaws on $1"
+  ]
+ ], 
+ [
+  [
+   "snog $arg", 
+   "kiss $arg", 
+   "score $arg"
+  ], 
+  [
+   "<reply> *mwa*", 
+   "<reply> *ptooie*", 
+   "<reply> SCORE!  woo!", 
+   "<action> snogs $1", 
+   "<action> kisses $1", 
+   "<action> scores $1", 
+   "<action> passionately embraces $1", 
+   "<action> exchanges saliva with $1"
+  ]
+ ], 
+ [
+  [
+   "lart $arg"
+  ], 
+  [
+   "<reply> *LART*", 
+   "<action> LARTs $1", 
+   "<action> clubs $1 with a baseball bat", 
+   "<action> readjusts $1's attitude"
+  ]
+ ], 
+ [
+  [
+   "damn $arg"
+  ], 
+  [
+   "<reply> DAMN $1! And damn $1 to HELL!", 
+   "<reply> Damn you, $1!", 
+   "<reply> Damn damn damn DAMNATION, $1!", 
+   "<reply> Damn $1.  Damn $1.", 
+   "<reply> Damn your eyes, $1!", 
+   "<action> hisses sibilantly.  Damn you, $1...", 
+   "<action> condemns $1 to the seventh level of Hell", 
+   "<action> damns $1"
+  ]
+ ], 
+ [
+  [
+   "rara $arg", 
+   "ra ra $arg", 
+   "cheer for $arg", 
+   "cheerlead for $arg"
+  ], 
+  [
+   "<reply> Ra ra $1! Ra ra!", 
+   "<reply> Go $1!  Go $1!  It's your birthday!  It's your birthday!", 
+   "<reply> Wooooooeeee $1!", 
+   "<reply> Ra!  Ra!  Rara!  Ra!  Gooooooooooooooo $1!", 
+   "<action> brings out the pompoms for $1", 
+   "<action> does a little dance for $1", 
+   "<action> raras loudly for $1"
+  ]
+ ], 
+ [
+  [
+   "hug $arg", 
+   "embrace $arg", 
+   "caress $arg"
+  ], 
+  [
+   "<reply> $1: *hug*", 
+   "<action> embraces $1", 
+   "<action> hugs $1"
+  ]
+ ], 
+ [
+  [
+   "shoot $arg"
+  ], 
+  [
+   "<reply> *BANG*. $1 is dead.", 
+   "<reply> Guns aren't lawful.  Can I just spank $1 instead?", 
+   "<action> draws and pumps $1 full of lead", 
+   "<action> mows $1 down", 
+   "<action> watches $1 die in a hail of bullets", 
+   "<action> shoots $1", 
+   "<action> puts a bullet straight between $1's eyes"
+  ]
+ ], 
+ [
+  [
+   "blame $arg"
+  ], 
+  [
+   "<reply> This is all $1's fault!", 
+   "<reply> That bastard $1.  Damn him.", 
+   "<reply> I blame $1 completely.", 
+   "<action> blames $1", 
+   "<action> points the flaming finger of blame at $1", 
+   "<action> knows it's all $1's fault."
+  ]
+ ], 
+ [
+  [
+   "gimme a $arg", 
+   "gimme an $arg", 
+   "give me a $arg", 
+   "give me an $arg", 
+   "give us a $arg", 
+   "give us an $arg", 
+   "give her a $arg", 
+   "give him a $arg", 
+   "give her an $arg", 
+   "give him an $arg"
+  ], 
+  [
+   "<reply> $1!"
+  ]
+ ], 
+ [
+  [
+   "laugh at $arg", 
+   "jeer at $arg"
+  ], 
+  [
+   "<reply> bwahahahaha @ $1", 
+   "<reply> AHheaAeaAEAahEHhAaahaEEahAheAHHEaH!", 
+   "<reply> HAHAHA! AH-HAHA! $1 just cracks me up!", 
+   "<action> cans himself at $1", 
+   "<action> points and laughs", 
+   "<action> cackles at $1"
+  ]
+ ], 
+ [
+  [
+   "wake up $arg", 
+   "rouse $arg", 
+   "wake $arg"
+  ], 
+  [
+   "<reply> OY! $1! WAKE THE FUCK UP!", 
+   "<reply> WAKE UP, $1, YOU LAZY FUCK!", 
+   "<action> kicks $1 and pulls off the blankets", 
+   "<action> applies a bucket of cold water", 
+   "<action> jumps on the bed", 
+   "<action> screams loudly in $1's ear"
+  ]
+ ], 
+ [
+  [
+   "summon $arg", 
+   "call $arg", 
+   "perform ashk-ente for $arg", 
+   "perform ashk-ente on $arg"
+  ], 
+  [
+   "<reply> $1!  $1!  Come in, $1!", 
+   "<reply> Oy, $1, come 'ere!", 
+   "<action> performs the summoning Rite of Ashk-Ente", 
+   "<action> summons $1", 
+   "<action> looks for $1"
+  ]
+ ], 
+ [
+  [
+   "get me $arg", 
+   "bring me $arg", 
+   "fetch me $arg"
+  ], 
+  [
+   "<reply> Coming right up!", 
+   "<action> fetches $1", 
+   "<action> isn't a frikken delivery boy"
+  ]
+ ], 
+ [
+  [
+   "welcome $arg"
+  ], 
+  [
+   "<reply> Welcome, $1!", 
+   "<reply> Glad to have you here, $1!", 
+   "<reply> Welkom, $1!", 
+   "<reply> Beinvenu, $1!", 
+   "<action> welcomes $1", 
+   "<action> lays out a red carpet for $1"
+  ]
+ ]
+]

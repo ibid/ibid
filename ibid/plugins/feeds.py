@@ -10,7 +10,8 @@ from ibid.config import IntOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.plugins import Processor, match, authorise, run_every
-from ibid.utils import cacheable_download, get_html_parse_tree, human_join
+from ibid.utils import cacheable_download, human_join
+from ibid.utils.html import get_html_parse_tree
 
 help = {'feeds': u'Displays articles from RSS and Atom feeds'}
 

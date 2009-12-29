@@ -33,6 +33,7 @@ class Dispatcher(object):
                         processor.name,
                         event)
                 event.complain = u'exception'
+                event.processed = True
                 if 'session' in event:
                     event.session.rollback()
                     event.session.close()
