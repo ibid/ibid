@@ -8,7 +8,7 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cacheable_download
+from ibid.utils import decode_htmlentities, json_webservice, cacheable_download
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 

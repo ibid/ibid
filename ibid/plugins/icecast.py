@@ -3,7 +3,8 @@ from urllib2 import HTTPError
 
 from ibid.config import DictOption, IntOption
 from ibid.plugins import Processor, match, run_every
-from ibid.utils import get_html_parse_tree, human_join
+from ibid.utils import human_join
+from ibid.utils.html import get_html_parse_tree
 
 log = logging.getLogger('plugins.icecast')
 

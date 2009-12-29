@@ -15,8 +15,9 @@ import feedparser
 from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
 from ibid.plugins import Processor, match, handler
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice, human_join, plural
+from ibid.utils import ago, decode_htmlentities, cacheable_download, \
+        json_webservice, human_join, plural
+from ibid.utils.html import get_html_parse_tree
 
 log = logging.getLogger('plugins.lookup')
 
