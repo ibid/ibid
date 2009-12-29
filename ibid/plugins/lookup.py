@@ -144,7 +144,8 @@ class FMyLife(Processor):
     feature = "fml"
 
     api_url = Option('fml_api_url', 'FML API URL base', 'http://api.betacie.com/')
-    api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
+    # The Ibid API Key, registered by Stefano Rivera:
+    api_key = Option('fml_api_key', 'FML API Key (optional)', '4b39a7fcaf01c')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
