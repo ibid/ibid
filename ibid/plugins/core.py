@@ -45,7 +45,7 @@ class Strip(Processor):
     addressed = False
     event_types = ('message', 'action', 'notice')
 
-    pattern = re.compile(r'^\s*(.*?)[?!.]*\s*$', re.DOTALL)
+    pattern = re.compile(r'^\s*(.*?)\s*[?!.]*\s*$', re.DOTALL)
 
     @handler
     def handle_strip(self, event):
@@ -168,6 +168,31 @@ class RateLimit(Processor):
                     event.addresponse(u'Geez, give me some time to think!', address=False)
                 else:
                     event.processed = True
+
+class Format(Processor):
+    priority = 2000
+
+    def process(self, event):
+        filtered = []
+        for response in event.responses:
+            source = response['source'].lower()
+            supports = ibid.sources[source].supports
+
+            if response.get('action', False) and 'action' not in supports:
+                response['reply'] = u'*%s*' % response['reply']
+
+            if (not response.get('conflate', True)
+                    and 'multiline' not in supports):
+                for line in response['reply'].split('\n'):
+                    r = {'reply': line}
+                    for k in response.iterkeys():
+                        if k not in ('reply', 'conflate'):
+                            r[k] = response[k]
+                    filtered.append(r)
+            else:
+                filtered.append(response)
+
+        event.responses = filtered
 
 class UnicodeWarning(Processor):
     priority = 1950

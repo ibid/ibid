@@ -32,6 +32,7 @@ class Dispatcher(object):
                         processor.name,
                         event)
                 event.complain = u'exception'
+                event.processed = True
                 if 'session' in event:
                     event.session.rollback()
                     event.session.close()
@@ -59,14 +60,7 @@ class Dispatcher(object):
 
         filtered = []
         for response in event['responses']:
-            source = response['source'].lower()
-            if source == event.source.lower():
-                if (response.get('action', False)
-                        and 'action' not in ibid.sources[source].supports):
-                    response['reply'] = '* %s %s' % (
-                            ibid.config['botname'],
-                            response['reply'],
-                    )
+            if response['source'].lower() == event.source.lower():
                 filtered.append(response)
             else:
                 self.send(response)
@@ -79,14 +73,7 @@ class Dispatcher(object):
     def send(self, response):
         source = response['source']
         if source in ibid.sources:
-            source = ibid.sources[source]
-            if (response.get('action', False)
-                    and 'action' not in source.supports):
-                response['reply'] = '* %s %s' % (
-                        ibid.config['botname'],
-                        response['reply'],
-                )
-            reactor.callFromThread(source.send, response)
+            reactor.callFromThread(ibid.sources[source].send, response)
             self.log.debug(u"Sent response to non-origin source %s: %s", response['source'], response['reply'])
         else:
             self.log.warning(u'Received response for invalid source %s: %s', response['source'], response['reply'])

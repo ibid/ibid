@@ -8,7 +8,7 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import decode_htmlentities, ibid_version, json_webservice, cacheable_download
+from ibid.utils import decode_htmlentities, json_webservice, cacheable_download
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
@@ -153,15 +153,16 @@ class Translate(Processor):
             event.addresponse(u"I'm not allowed to play translation games.")
         try:
             phrase, src_lang, dest_lang = self._parse_request(data)
-            chain = set([phrase])
+            chain = [phrase]
             for i in range(self.chain_length):
                 phrase, src_lang = self._translate(event, phrase,
                                                     src_lang, dest_lang)
                 src_lang, dest_lang = dest_lang, src_lang
-                event.addresponse(phrase)
-                if phrase in chain:
+                chain.append(phrase)
+                if phrase in chain[:-1]:
                     break
-                chain.add(phrase)
+
+            event.addresponse(u'\n'.join(chain[1:]), conflate=False)
 
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))

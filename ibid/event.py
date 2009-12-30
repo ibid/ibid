@@ -30,6 +30,8 @@ class Event(dict):
         action: True for actions
         notice: True for IRC Notices
         address: False to suppress user addressing, in public
+        conflate: False to suppress conflation and truncation of lines in
+                  sources like IRC and SILC that don't support newlines
         """
         if response is None:
             # We want to detect this now, so we know which plugin is to blame
@@ -42,8 +44,9 @@ class Event(dict):
             response = {'reply': response}
 
         for k, val in (('target', self.get('channel', None)),
-                ('source', self.source),
-                ('address', True)):
+                       ('source', self.source),
+                       ('address', True),
+                       ('conflate', True)):
             if k not in response:
                 response[k] = val
 

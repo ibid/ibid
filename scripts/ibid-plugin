@@ -58,7 +58,7 @@ ibid.reloader.reload_dispatcher()
 class TestSource(dict):
     type = 'test'
     permissions = []
-    supports = ('action', 'notice')
+    supports = ('action', 'multiline', 'notice')
     logging_name = lambda self, name: name
 
 ibid.sources[u'test_source'] = TestSource()
@@ -118,8 +118,7 @@ while True:
     event.channel = u"testchan"
 
     try:
-        message = unicode(raw_input('Query: '), encoding)
-        event.message = {'raw': message, 'clean': message, 'stripped': message, 'deaddressed': message}
+        event.message = unicode(raw_input('Query: '), encoding)
     except (KeyboardInterrupt, EOFError):
         break
 
@@ -130,6 +129,7 @@ while True:
             log.exception(u"Exception occured in %s processor of %s plugin",
                     processor.__class__.__name__, processor.name)
             event.complain = 'exception'
+            event.processed = True
             if 'session' in event:
                 event.session.rollback()
                 event.session.close()

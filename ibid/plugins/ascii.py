@@ -74,8 +74,7 @@ class DrawImage(Processor):
         screen = AsciiScreen(width=int(width), height=int(height))
         image = image.resize(screen.virtual_size)
         screen.put_image((0, 0), image)
-        for line in screen.render().split('\n'):
-            event.addresponse(unicode(line))
+        event.addresponse(unicode(screen.render()), address=False, conflate=False)
 
     def draw_caca(self, event, image, width, height):
         width = '-W %d' % int(width) if width is not None else ''
@@ -85,9 +84,7 @@ class DrawImage(Processor):
         response, error = process.communicate()
         code = process.wait()
         if code == 0:
-            for line in response.split('\n'):
-                if line.strip() != '':
-                    event.addresponse(unicode(line[:-1]))
+            event.addresponse(response.replace('\r', ''), address=False, conflate=False)
         else:
             event.addresponse('Sorry, cannot understand image format')
 
@@ -129,5 +126,4 @@ class WriteFiglet(Processor):
             del rendered[0]
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
-        for line in rendered:
-            event.addresponse(line)
+        event.addresponse('\n'.join(rendered), address=False, conflate=False)
