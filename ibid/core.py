@@ -12,6 +12,7 @@ from sqlalchemy.exceptions import IntegrityError
 
 import ibid
 from ibid.event import Event
+from ibid.db import SchemaVersionException, schema_version_check
 
 import auth
 
@@ -60,7 +61,7 @@ class Dispatcher(object):
 
         filtered = []
         for response in event['responses']:
-            if response['source'].lower() == event.source.lower():
+            if response['source'] == event.source:
                 filtered.append(response)
             else:
                 self.send(response)
@@ -224,8 +225,8 @@ class Reloader(object):
                         self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
 
             try:
-                ibid.models.check_schema_versions(ibid.databases['ibid'])
-            except ibid.models.SchemaVersionException, e:
+                schema_version_check(ibid.databases['ibid'])
+            except SchemaVersionException, e:
                 self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"', e.message)
         except Exception, e:
             self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
@@ -292,8 +293,8 @@ class DatabaseManager(dict):
 
         if check_schema_versions:
             try:
-                ibid.models.check_schema_versions(self['ibid'])
-            except ibid.models.SchemaVersionException, e:
+                schema_version_check(self['ibid'])
+            except SchemaVersionException, e:
                 self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"', e.message)
                 raise
 

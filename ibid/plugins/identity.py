@@ -2,13 +2,10 @@ import string
 from random import choice
 import logging
 
-from sqlalchemy.orm import eagerload
-from sqlalchemy.sql import func
-from sqlalchemy.exceptions import IntegrityError
-
 import ibid
+from ibid.db import eagerload, IntegrityError
+from ibid.db.models import Account, Identity, Attribute
 from ibid.plugins import Processor, match, auth_responses
-from ibid.models import Account, Identity, Attribute
 from ibid.utils import human_join
 
 help = {}
@@ -54,7 +51,7 @@ class Accounts(Processor):
 
         if admin:
             identity = event.session.query(Identity) \
-                    .filter_by(identity=username, source=event.source.lower()).first()
+                    .filter_by(identity=username, source=event.source).first()
             if identity:
                 identity.account_id = account.id
                 event.session.save_or_update(identity)
@@ -158,15 +155,16 @@ class Identities(Processor):
             else:
                 account = event.session.query(Account) \
                         .join('identities') \
-                        .filter(func.lower(Identity.identity) == identity.lower()) \
-                        .filter(func.lower(Identity.source) == source.lower()).first()
+                        .filter(Identity.identity == identity) \
+                        .filter(Identity.source == source).first()
 
                 if account:
                     reverse_attach = True
                 else:
                     username = event.sender['id']
 
-                    account = event.session.query(Account).filter_by(username=username).first()
+                    account = event.session.query(Account) \
+                            .filter_by(username=username).first()
 
                     if account:
                         event.addresponse(u'I tried to create the account %s for you, but it already exists. '
@@ -176,7 +174,8 @@ class Identities(Processor):
                     account = Account(username)
                     event.session.save_or_update(account)
 
-                    currentidentity = event.session.query(Identity).get(event.identity)
+                    currentidentity = event.session.query(Identity) \
+                            .get(event.identity)
                     currentidentity.account_id = account.id
                     event.session.save_or_update(currentidentity)
 
@@ -194,7 +193,8 @@ class Identities(Processor):
             if not auth_responses(event, 'accounts'):
                 return
             admin = True
-            account = event.session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account) \
+                    .filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
@@ -203,8 +203,7 @@ class Identities(Processor):
             ident = event.session.query(Identity).get(event.identity)
         else:
             ident = event.session.query(Identity) \
-                    .filter(func.lower(Identity.identity) == identity.lower()) \
-                    .filter(func.lower(Identity.source) == source.lower()).first()
+                    .filter_by(identity=identity, source=source).first()
         if ident and ident.account:
             event.addresponse(u'This identity is already attached to account %s',
                     ident.account.username)
@@ -262,8 +261,7 @@ class Identities(Processor):
                 return
 
             identity = event.session.query(Identity) \
-                    .filter(func.lower(Identity.identity) == user.lower()) \
-                    .filter(func.lower(Identity.source) == source.lower()).first()
+                    .filter_by(identity=user, source=source).first()
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
@@ -286,15 +284,15 @@ class Identities(Processor):
         else:
             if not auth_responses(event, 'accounts'):
                 return
-            account = event.session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account) \
+                    .filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
 
         identity = event.session.query(Identity) \
-                .filter_by(account_id=account.id) \
-                .filter(func.lower(Identity.identity) == user.lower()) \
-                .filter(func.lower(Identity.source) == source.lower()).first()
+                .filter_by(account_id=account.id, identity=user,
+                           source=source).first()
         if not identity:
             event.addresponse(u"I don't know about that identity")
         else:
@@ -328,7 +326,8 @@ class Attributes(Processor):
         else:
             if not auth_responses(event, 'accounts'):
                 return
-            account = event.session.query(Account).filter_by(username=username).first()
+            account = event.session.query(Account) \
+                    .filter_by(username=username).first()
             if not account:
                 event.addresponse(u"I don't know who %s is", username)
                 return
@@ -381,8 +380,8 @@ class Identify(Processor):
 
             identity = event.session.query(Identity) \
                     .options(eagerload('account')) \
-                    .filter(func.lower(Identity.source) == event.source.lower()) \
-                    .filter(func.lower(Identity.identity) == event.sender['id'].lower()) \
+                    .filter_by(source=event.source,
+                               identity=event.sender['id']) \
                     .first()
             if not identity:
                 identity = Identity(event.source, event.sender['id'])
@@ -397,8 +396,8 @@ class Identify(Processor):
                     log.debug(u'Race encountered creating identity for %s on %s', event.sender['id'], event.source)
                     identity = event.session.query(Identity) \
                             .options(eagerload('account')) \
-                            .filter(func.lower(Identity.source) == event.source.lower()) \
-                            .filter(func.lower(Identity.identity) == event.sender['id'].lower()) \
+                            .filter_by(source=event.source,
+                                       identity=event.sender['id']) \
                             .one()
 
             event.identity = identity.id

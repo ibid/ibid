@@ -10,7 +10,7 @@ from sqlalchemy import or_
 
 import ibid
 from ibid.config import Option, IntOption, BoolOption, FloatOption, ListOption
-from ibid.models import Credential
+from ibid.db.models import Credential
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 from ibid.utils import ibid_version
@@ -261,8 +261,10 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
     def auth_hostmask(self, event, credential = None):
         for credential in event.session.query(Credential) \
-                .filter_by(method=u'hostmask').filter_by(account_id=event.account) \
-                .filter(or_(Credential.source == event.source, Credential.source == None)).all():
+                .filter_by(method=u'hostmask', account_id=event.account) \
+                .filter(or_(Credential.source == event.source,
+                            Credential.source == None)) \
+                .all():
             if fnmatch(event.sender['connection'], credential.credential):
                 return True
 
