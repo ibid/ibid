@@ -99,8 +99,7 @@ class Tracepath(Processor):
 
         if code == 0:
             output = unicode_output(output)
-            for line in output.splitlines():
-                event.addresponse(line)
+            event.addresponse(output, conflate=False)
         else:
             error = unicode_output(error.strip())
             event.addresponse(u'Error: %s', error.replace(u'\n', u' '))

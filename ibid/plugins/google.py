@@ -154,14 +154,17 @@ class Translate(Processor):
         try:
             phrase, src_lang, dest_lang = self._parse_request(data)
             chain = set([phrase])
+            output = []
             for i in range(self.chain_length):
                 phrase, src_lang = self._translate(event, phrase,
                                                     src_lang, dest_lang)
                 src_lang, dest_lang = dest_lang, src_lang
-                event.addresponse(phrase)
+                output.append(phrase)
                 if phrase in chain:
                     break
                 chain.add(phrase)
+
+            event.addresponse(u'\n'.join(output), conflate=False)
 
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))
