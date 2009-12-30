@@ -137,7 +137,7 @@ class Translate(Processor):
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
-    dest_lang = Option('dest_lang', 'Destination language when none is specified', 'en')
+    dest_lang = Option('dest_lang', 'Destination language when none is specified', 'english')
 
     chain_length = IntOption('chain_length', 'Maximum length of translation chains', 10)
 
@@ -168,24 +168,35 @@ class Translate(Processor):
                         'no',
                    'farsi':'fa'}
 
+    LANG_REGEX = '|'.join(lang_names.keys() + lang_names.values() +
+                            alt_lang_names.keys())
+
     @match(r'^(?:translation\s*)?languages$')
     def languages (self, event):
         event.addresponse(human_join(sorted(self.lang_names.keys())))
 
-    @match(r'^translate\s+(.*)$')
-    def translate (self, event, data):
+    @match(r'^translate\s+(.*?)(?:\s+from\s+(' + LANG_REGEX + r'))?'
+            r'(?:\s+(?:in)?to\s+(' + LANG_REGEX + r'))?$')
+    def translate (self, event, text, src_lang, dest_lang):
+        dest_lang = self.language_code(dest_lang or self.dest_lang)
+        src_lang = self.language_code(src_lang or '')
+
         try:
-            translated = self._translate(event, *self._parse_request(data))[0]
+            translated = self._translate(event, text, src_lang, dest_lang)[0]
             event.addresponse(translated)
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))
 
-    @match(r'^translation[-\s]*(?:chain|party)\s+(.*)$')
-    def translation_chain (self, event, data):
+    @match(r'^translation[-\s]*(?:chain|party)\s+(.*?)'
+            r'(?:\s+from\s+(' + LANG_REGEX + r'))?'
+            r'(?:\s+(?:in)?to\s+(' + LANG_REGEX + r'))?$')
+    def translation_chain (self, event, phrase, src_lang, dest_lang):
         if self.chain_length < 1:
             event.addresponse(u"I'm not allowed to play translation games.")
         try:
-            phrase, src_lang, dest_lang = self._parse_request(data)
+            dest_lang = self.language_code(dest_lang or self.dest_lang)
+            src_lang = self.language_code(src_lang or '')
+
             chain = set([phrase])
             for i in range(self.chain_length):
                 phrase, src_lang = self._translate(event, phrase,
@@ -198,35 +209,6 @@ class Translate(Processor):
 
         except TranslationException, e:
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))
-
-    def _parse_request (self, data):
-        from_re = r'\s+from\s+(?P<from>[-()\s\w]+?)'
-        to_re = r'\s+(?:in)?to\s+(?P<to>[-()\s\w]+?)'
-
-        res = [(from_re, to_re), (to_re, from_re), (to_re,), (from_re,), ()]
-
-        # Try all possible specifications of source and target language until we
-        # find a valid one.
-        for pat in res:
-            pat = '(?P<text>.*)' + ''.join(pat) + '\s*$'
-            m = re.match(pat, data, re.IGNORECASE | re.UNICODE | re.DOTALL)
-            if m:
-                dest_lang = m.groupdict().get('to')
-                src_lang = m.groupdict().get('from')
-                try:
-                    if dest_lang:
-                        dest_lang = self.language_code(dest_lang)
-                    else:
-                        dest_lang = self.dest_lang
-
-                    if src_lang:
-                        src_lang = self.language_code(src_lang)
-                    else:
-                        src_lang = ''
-
-                    return (m.group('text'), src_lang, dest_lang)
-                except UnknownLanguageException:
-                    continue
 
     def _translate (self, event, phrase, src_lang, dest_lang):
         params = {
@@ -264,11 +246,12 @@ class Translate(Processor):
             raise TranslationException(msg)
 
     def language_code (self, name):
-        """Convert a name to a language code.
-
-        Caller must call _make_language_dict first."""
+        """Convert a name to a language code."""
 
         name = name.lower()
+
+        if name == '':
+            return name
 
         try:
             return self.lang_names.get(name) or self.alt_lang_names[name]
