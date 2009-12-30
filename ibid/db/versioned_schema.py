@@ -1,23 +1,20 @@
-from datetime import datetime
 import logging
 import re
 
-from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime, \
-        ForeignKey, UniqueConstraint, MetaData, Table, Index, \
-        __version__ as sqlalchemy_version
-from sqlalchemy.orm import relation
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Index, UniqueConstraint, MetaData, \
+                       __version__ as _sqlalchemy_version
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
-        ProgrammingError
-
-if sqlalchemy_version < '0.5':
+                                  ProgrammingError, InternalError
+if _sqlalchemy_version < '0.5':
     NoResultFound = InvalidRequestError
 else:
     from sqlalchemy.orm.exc import NoResultFound
 
-metadata = MetaData()
-Base = declarative_base(metadata=metadata)
-log = logging.getLogger('ibid.models')
+from ibid.db.types import Integer, IbidUnicodeText, IbidUnicode
+
+from ibid.db import metadata
+
+log = logging.getLogger('ibid.db.versioned_schema')
 
 class VersionedSchema(object):
     """For an initial table schema, set
@@ -45,6 +42,8 @@ class VersionedSchema(object):
     def is_up_to_date(self, session):
         "Is the table in the database up to date with the schema?"
 
+        from ibid.db.models import Schema
+
         if not session.bind.has_table(self.table.name):
             return False
 
@@ -57,6 +56,8 @@ class VersionedSchema(object):
 
     def upgrade_schema(self, sessionmaker):
         "Upgrade the table's schema to the latest version."
+
+        from ibid.db.models import Schema
 
         for fk in self.table.foreign_keys:
             dependency = fk.target_fullname.split('.')[0]
@@ -137,14 +138,15 @@ class VersionedSchema(object):
         Generate the description of a constraint for insertion into a CREATE
         string
         """
-        return ', '.join(
-            (isinstance(column.type, UnicodeText)
-                    and '"%(name)s"(%(length)i)'
-                    or '"%(name)s"') % {
-                'name': column.name,
-                'length': column.info.get('ibid_mysql_index_length', 8),
-            } for column in constraint.columns
-        )
+        names = []
+        for column in constraint.columns:
+            if isinstance(column.type, IbidUnicodeText):
+                names.append('"%s"(%i)'
+                             % (column.name, column.type.index_length))
+            else:
+                names.append(column.name)
+
+        return ', '.join(names)
 
     def _create_table(self):
         """
@@ -172,7 +174,7 @@ class VersionedSchema(object):
                     ('indexes', old_indexes)):
                 for constraint in old_list:
                     if any(True for column in constraint.columns
-                            if isinstance(column.type, UnicodeText)):
+                            if isinstance(column.type, IbidUnicodeText)):
                         indices.append((
                             isinstance(constraint, UniqueConstraint),
                             self._mysql_constraint_createstring(constraint)
@@ -232,20 +234,34 @@ class VersionedSchema(object):
         session.execute('ALTER TABLE "%s" ADD COLUMN %s %s;'
                 % (table.name, description, " ".join(constraints)))
 
-    def add_index(self, col, unique=False):
+    def add_index(self, col):
         "Add an index to the table"
 
         engine = self.upgrade_session.bind.engine.name
+        query = None
+
+        if engine == 'mysql' and isinstance(col.type, IbidUnicodeText):
+            query = 'ALTER TABLE "%s" ADD %s INDEX "%s" ("%s"(%i));' % (
+                    self.table.name, col.unique and 'UNIQUE' or '',
+                    self._index_name(col), col.name, col.type.index_length)
+        elif engine == 'postgres':
+            # SQLAlchemy hangs if it tries to do this, because it forgets the ;
+            query = 'CREATE %s INDEX "%s" ON "%s" ("%s")' % (
+                    col.unique and 'UNIQUE' or '',self._index_name(col),
+                    self.table.name, col.name)
 
         try:
-            Index(self._index_name(col), col, unique=unique) \
-                    .create(bind=self.upgrade_session.bind)
+            if query is not None:
+                self.upgrade_session.execute(query)
+            else:
+                Index(self._index_name(col), col, unique=col.unique) \
+                        .create(bind=self.upgrade_session.bind)
 
         # We understand that occasionaly we'll duplicate an Index.
         # This is due to differences in index-creation requirements
         # between DBMS
         except OperationalError, e:
-            if engine == 'sqlalchemy' and u'already exists' in unicode(e):
+            if engine == 'sqlite' and u'already exists' in unicode(e):
                 return
             if engine == 'mysql' and u'Duplicate' in unicode(e):
                 return
@@ -254,6 +270,46 @@ class VersionedSchema(object):
             if engine == 'postgres' and u'already exists' in unicode(e):
                 return
             raise
+
+    def drop_index(self, col):
+        "Drop an index from the table"
+
+        engine = self.upgrade_session.bind.engine.name
+
+        try:
+            if isinstance(col, Column):
+                Index(self._index_name(col), col, unique=col.unique) \
+                        .drop(bind=self.upgrade_session.bind)
+            else:
+                col.drop()
+
+        except OperationalError, e:
+            if engine == 'sqlite' and u'no such index' in unicode(e):
+                return
+            if engine == 'mysql' \
+                    and u'check that column/key exists' in unicode(e):
+                return
+            raise
+
+        except ProgrammingError, e:
+            if engine == 'postgres' and u'does not exist' in unicode(e):
+                return
+            # In SQLAlchemy 0.4, the InternalError below is a ProgrammingError
+            # and can't be executed in the upgrade transaction:
+            if engine == 'postgres' and u'requires' in unicode(e):
+                self.upgrade_session.bind.execute(
+                        'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
+                        self.table.name, self._index_name(col)))
+                return
+            raise
+
+        # Postgres constraints can be attached to tables and can't be dropped
+        # at DB level.
+        except InternalError, e:
+            if engine == 'postgres':
+                self.upgrade_session.execute(
+                        'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
+                        self.table.name, self._index_name(col)))
 
     def drop_column(self, col_name):
         "Drop column col_name from table"
@@ -286,7 +342,7 @@ class VersionedSchema(object):
             session.execute('ALTER TABLE "%s" RENAME COLUMN "%s" TO "%s";'
                     % (table.name, old_name, col.name))
 
-    def alter_column(self, col, old_name=None):
+    def alter_column(self, col, old_name=None, force_rebuild=False):
         """Change a column (possibly renaming from old_name) to Column col."""
 
         session = self.upgrade_session
@@ -299,13 +355,14 @@ class VersionedSchema(object):
         description = sg.get_column_specification(col)
         old_col = table.c[old_name or col.name]
 
+        # SQLite doesn't enforce value length restrictions
+        # only type changes have a real effect
         if session.bind.engine.name == 'sqlite':
-            if (isinstance(col.type, (UnicodeText, Unicode))
-                        and isinstance(old_col.type, (UnicodeText, Unicode))
-                    ) or (isinstance(col.type, Integer)
-                        and isinstance(old_col.type, (Integer))):
-                # SQLite doesn't enforce value length restrictions
-                # only type changes have a real effect
+            if not force_rebuild and (
+                (isinstance(col.type, (IbidUnicodeText, IbidUnicode))
+                    and isinstance(old_col.type, (IbidUnicodeText, IbidUnicode)
+                ) or (isinstance(col.type, Integer)
+                    and isinstance(old_col.type, Integer)))):
                 return
 
             self._rebuild_sqlite(
@@ -315,13 +372,14 @@ class VersionedSchema(object):
             # Special handling for columns of TEXT type, because SQLAlchemy
             # can't create indexes for them
             recreate = []
-            if isinstance(col.type, UnicodeText) \
-                    or isinstance(old_col.type, UnicodeText):
+            if isinstance(col.type, IbidUnicodeText) \
+                    or isinstance(old_col.type, IbidUnicodeText):
                 for type in (table.constraints, table.indexes):
                     for constraint in list(type):
                         if any(True for column in constraint.columns
                                 if old_col.name == column.name):
-                            constraint.drop()
+
+                            self.drop_index(constraint)
 
                             constraint.columns = [
                                 (old_col.name == column.name) and col or column
@@ -387,7 +445,10 @@ class VersionedSchema(object):
         # SQLAlchemy indexes aren't attached to tables, they must be dropped
         # around now or we'll get a clash
         for constraint in table.indexes:
-            constraint.drop()
+            try:
+                constraint.drop()
+            except OperationalError:
+                pass
 
         table.create()
 
@@ -411,159 +472,6 @@ class VersionedSchema(object):
             except OperationalError:
                 pass
 
-class Schema(Base):
-    __table__ = Table('schema', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('table', Unicode(32), unique=True, nullable=False, index=True),
-        Column('version', Integer, nullable=False),
-        useexisting=True)
-
-    class SchemaSchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.table, unique=True)
-
-    __table__.versioned_schema = SchemaSchema(__table__, 2)
-
-    def __init__(self, table, version=0):
-        self.table = table
-        self.version = version
-
-    def __repr__(self):
-        return '<Schema %s>' % self.table
-
-class Identity(Base):
-    __table__ = Table('identities', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'), index=True),
-        Column('source', Unicode(32), nullable=False, index=True),
-        Column('identity', UnicodeText, nullable=False, index=True,
-            info={'ibid_mysql_index_length': 32}),
-        Column('created', DateTime),
-        UniqueConstraint('source', 'identity'),
-        useexisting=True)
-
-    class IdentitySchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.account_id)
-            self.add_index(self.table.c.source)
-            self.add_index(self.table.c.identity)
-
-        def upgrade_2_to_3(self):
-            self.alter_column(Column('source',
-                    Unicode(32), nullable=False, index=True))
-            self.alter_column(Column('identity',
-                    UnicodeText, nullable=False, index=True))
-
-    __table__.versioned_schema = IdentitySchema(__table__, 3)
-
-    def __init__(self, source, identity, account_id=None):
-        self.source = source
-        self.identity = identity
-        self.account_id = account_id
-        self.created = datetime.utcnow()
-
-    def __repr__(self):
-        return '<Identity %s on %s>' % (self.identity, self.source)
-
-class Attribute(Base):
-    __table__ = Table('account_attributes', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'),
-            nullable=False, index=True),
-        Column('name', Unicode(32), nullable=False, index=True),
-        Column('value', UnicodeText, nullable=False),
-        UniqueConstraint('account_id', 'name'),
-        useexisting=True)
-
-    class AttributeSchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.account_id)
-            self.add_index(self.table.c.name)
-        def upgrade_2_to_3(self):
-            self.alter_column(Column('value', UnicodeText, nullable=False))
-
-    __table__.versioned_schema = AttributeSchema(__table__, 3)
-
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-    def __repr__(self):
-        return '<Attribute %s = %s>' % (self.name, self.value)
-
-class Credential(Base):
-    __table__ = Table('credentials', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'),
-                nullable=False, index=True),
-        Column('source', Unicode(32), index=True),
-        Column('method', Unicode(16), nullable=False, index=True),
-        Column('credential', UnicodeText, nullable=False),
-        useexisting=True)
-
-    class CredentialSchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.account_id)
-            self.add_index(self.table.c.source)
-            self.add_index(self.table.c.method)
-        def upgrade_2_to_3(self):
-            self.alter_column(Column('source', Unicode(32), index=True))
-            self.alter_column(Column('credential',
-                    UnicodeText, nullable=False))
-
-    __table__.versioned_schema = CredentialSchema(__table__, 3)
-
-    def __init__(self, method, credential, source=None, account_id=None):
-        self.account_id = account_id
-        self.source = source
-        self.method = method
-        self.credential = credential
-
-class Permission(Base):
-    __table__ = Table('permissions', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('account_id', Integer, ForeignKey('accounts.id'),
-                nullable=False, index=True),
-        Column('name', Unicode(16), nullable=False, index=True),
-        Column('value', Unicode(4), nullable=False),
-        UniqueConstraint('account_id', 'name'),
-        useexisting=True)
-
-    class PermissionSchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.account_id)
-            self.add_index(self.table.c.name)
-
-    __table__.versioned_schema = PermissionSchema(__table__, 2)
-
-    def __init__(self, name=None, value=None):
-        self.name = name
-        self.value = value
-
-class Account(Base):
-    __table__ = Table('accounts', Base.metadata,
-        Column('id', Integer, primary_key=True),
-        Column('username', Unicode(32), unique=True, nullable=False,
-                index=True),
-        useexisting=True)
-
-    class AccountSchema(VersionedSchema):
-        def upgrade_1_to_2(self):
-            self.add_index(self.table.c.username, unique=True)
-
-    __table__.versioned_schema = AccountSchema(__table__, 2)
-
-    identities = relation(Identity, backref='account')
-    attributes = relation(Attribute, cascade='all, delete-orphan')
-    permissions = relation(Permission, cascade='all, delete-orphan')
-    credentials = relation(Credential, cascade='all, delete-orphan')
-
-    def __init__(self, username):
-        self.username = username
-
-    def __repr__(self):
-        return '<Account %s>' % self.username
-
 
 class SchemaVersionException(Exception):
     """There is an out-of-date table.
@@ -572,7 +480,7 @@ class SchemaVersionException(Exception):
     pass
 
 
-def check_schema_versions(sessionmaker):
+def schema_version_check(sessionmaker):
     """Pass through all tables, log out of date ones,
     and except if not all up to date"""
 

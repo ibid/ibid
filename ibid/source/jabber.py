@@ -158,6 +158,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     auth = ('implicit',)
+    supports = ('multiline',)
+
     port = IntOption('port', 'Server port number')
     ssl = BoolOption('ssl', 'Usel SSL', False)
     server = Option('server', 'Server hostname')

@@ -76,6 +76,8 @@ class Message:
 
 class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
+    supports = ('multiline',)
+
     port = IntOption('port', 'Port number to listen on', 10025)
     address = Option('address', 'Email address to accept messages for and send from', 'ibid@localhost')
     accept = ListOption('accept', 'Email addresses to accept messages for', [])

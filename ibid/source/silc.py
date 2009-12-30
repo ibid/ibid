@@ -69,7 +69,8 @@ class SilcBot(SilcClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ').encode('utf-8')
+        message = response['reply'].expandtabs(1).replace('\n', ' ') \
+                  .encode('utf-8')
         flags=0
         if response.get('action', False):
             flags=4

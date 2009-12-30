@@ -7,14 +7,15 @@ from optparse import OptionParser, OptionGroup
 from os.path import exists
 from sys import stdin, stdout, stderr, exit
 
-from sqlalchemy import select, DateTime, Unicode, UnicodeText
+from sqlalchemy import select, DateTime
 from twisted.python.modules import getModule
 
 import ibid
 from ibid.compat import json
 from ibid.config import FileConfig
 from ibid.core import DatabaseManager
-from ibid.models import metadata, upgrade_schemas
+from ibid.db import metadata, upgrade_schemas
+from ibid.db.types import IbidUnicode, IbidUnicodeText
 from ibid.utils import ibid_version
 
 parser = OptionParser(usage='%prog [options...]', description=
@@ -163,7 +164,8 @@ elif options.import_ is not None:
                 if isinstance(dbtable.c[field].type, DateTime):
                     row[field] = datetime.strptime(row[field],
                             '%Y-%m-%dT%H:%M:%SZ')
-                elif isinstance(dbtable.c[field].type, (Unicode, UnicodeText)):
+                elif isinstance(dbtable.c[field].type,
+                                (IbidUnicode, IbidUnicodeText)):
                     row[field] = unicode(row[field])
             sql = dbtable.insert().values(**row)
             db.execute(sql)
