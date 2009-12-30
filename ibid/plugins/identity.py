@@ -3,9 +3,10 @@ from random import choice
 import logging
 
 import ibid
-from ibid.db import eagerload, IntegrityError
+from ibid.config import Option
+from ibid.db import eagerload, IntegrityError, and_, or_
 from ibid.db.models import Account, Identity, Attribute
-from ibid.plugins import Processor, match, auth_responses
+from ibid.plugins import Processor, match, handler, auth_responses, authorise
 from ibid.utils import human_join
 
 help = {}
@@ -368,11 +369,79 @@ class Describe(Processor):
             'identities': human_join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
 
+help['summon'] = u"Get the attention of a person via different source"
+class Summon(Processor):
+    u"summon <person> [via <source>]"
+    feature = 'summon'
+    permission = u'summon'
+
+    default_source = Option('default_source',
+            u'Default source to summon people via', u'jabber')
+
+    @authorise(fallthrough=False)
+    @match(r'^summon\s+(\S+)(?:\s+(?:via|on|using)\s+(\S+))?$')
+    def summon(self, event, who, source):
+        if not source:
+            source = self.default_source
+
+        if source.lower() not in ibid.sources:
+            event.addresponse(u"I'm afraid that I'm not connected to %s",
+                              source)
+            return
+
+        account = event.session.query(Account) \
+            .options(eagerload('identities')) \
+            .join(Identity) \
+            .filter(
+                or_(
+                    and_(
+                        Identity.identity == who,
+                        Identity.source == event.source,
+                    ),
+                    Account.username == who,
+                )) \
+            .first()
+
+        if account:
+            for other_identity in [id for id
+                    in account.identities
+                    if id.source.lower() == source.lower()]:
+                if any(True for channel
+                        in ibid.channels[other_identity.source].itervalues()
+                        if other_identity.id in channel):
+                    event.addresponse(u'Your presence has been requested by '
+                                      u'%(who)s in %(channel)s on %(source)s.',
+                        {
+                            'who': event.sender['nick'],
+                            'channel': (not event.public)
+                                    and u'private' or event.channel,
+                            'source': event.source,
+                        }, target=other_identity.identity,
+                        source=other_identity.source, address=False)
+                    event.addresponse(True)
+                else:
+                    event.addresponse(
+                        u"Sorry %s doesn't appear to be available right now.",
+                        who)
+                return
+
+        event.addresponse(
+                u"Sorry, I don't know how to find %(who)s on %(source)s. "
+                u'%(who)s must first link an identity on %(source)s.', {
+                    'who': who,
+                    'source': source,
+        })
+        return
+
 class Identify(Processor):
 
     priority = -1600
+    addressed = False
+    processed = True
+    event_types = (u'message', u'state', u'action', u'notice')
 
-    def process(self, event):
+    @handler
+    def handle(self, event):
         if event.sender:
             if (event.source, event.sender['connection']) in identify_cache:
                 (event.identity, event.account) = identify_cache[(event.source, event.sender['connection'])]
@@ -413,5 +482,10 @@ def get_identities(event):
         return [identity.id for identity in account.identities]
     else:
         return (event.identity,)
+
+def identify(session, source, id):
+    identity = session.query(Identity) \
+                      .filter_by(source=source, identity=id).first()
+    return identity and identity.id
 
 # vi: set et sta sw=4 ts=4:

@@ -84,7 +84,7 @@ class CampfireBot(CampfireClient):
     def join(self, room_name):
         return self.join_room(self._locate_room(room_name))
 
-    def part(self, room_name):
+    def leave(self, room_name):
         return self.leave_room(self._locate_room(room_name))
 
 class SourceFactory(IbidSourceFactory):
@@ -122,7 +122,7 @@ class SourceFactory(IbidSourceFactory):
     def join(self, room_name):
         return self.client.join(room_name)
 
-    def part(self, room_name):
-        return self.client.part(room_name)
+    def leave(self, room_name):
+        return self.client.leave(room_name)
 
 # vi: set et sta sw=4 ts=4:

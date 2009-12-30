@@ -43,8 +43,8 @@ class Actions(Processor):
             source.join(channel)
             event.addresponse(u'Joining %s', channel)
         else:
-            source.part(channel)
-            event.addresponse(u'Parting %s', channel)
+            source.leave(channel)
+            event.addresponse(u'Leaving %s', channel)
 
     @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
     @authorise()
@@ -66,7 +66,7 @@ class Actions(Processor):
             event.addresponse(u'Changing nick to %s', nick)
 
 class NickServ(Processor):
-    event_types = ('notice',)
+    event_types = (u'notice',)
 
     def is_nickserv(self, event):
         source_cfg = ibid.config['sources'][event.source]

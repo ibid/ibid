@@ -7,6 +7,7 @@ import ibid
 from ibid.compat import any
 from ibid.config import IntOption, ListOption, DictOption
 from ibid.plugins import Processor, handler
+from ibid.plugins.identity import identify
 
 class Addressed(Processor):
 
@@ -43,7 +44,7 @@ class Strip(Processor):
 
     priority = -1600
     addressed = False
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     pattern = re.compile(r'^\s*(.*?)\s*[?!.]*\s*$', re.DOTALL)
 
@@ -58,7 +59,7 @@ class Ignore(Processor):
 
     priority = -1500
     addressed = False
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     nicks = ListOption('ignore', 'List of nicks to ignore', [])
 
@@ -85,7 +86,6 @@ class Address(Processor):
     priority = 1600
     processed = True
     addressed = False
-
     event_types = ('message', 'action', 'notice', 'state')
 
     acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
@@ -148,7 +148,7 @@ class Complain(Processor):
 class RateLimit(Processor):
 
     priority = -1000
-    event_types = ('message', 'action', 'notice')
+    event_types = (u'message', u'action', u'notice')
 
     limit_time = IntOption('limit_time', 'Time period over which to measure messages', 10)
     limit_messages = IntOption('limit_messages', 'Number of messages to allow during the time period', 5)
@@ -209,5 +209,33 @@ class UnicodeWarning(Processor):
                 self.process(value)
         elif isinstance(object, str):
             self.log.warning(u'Found a non-unicode string: %s' % object)
+
+class ChannelTracker(Processor):
+    priority = -1550
+    addressed = False
+    event_types = (u'state', u'source')
+
+    @handler
+    def track(self, event):
+        if event.type == u'source':
+            if event.status == u'disconnected':
+                ibid.channels.pop(event.source, None)
+            elif event.status == u'left':
+                ibid.channels[event.source].pop(event.channel, None)
+        elif event.public:
+            if event.state == u'online' and hasattr(event, 'othername'):
+                oldid = identify(event.session, event.source, event.othername)
+                for channel in ibid.channels[event.source].values():
+                    if oldid in channel:
+                        channel.remove(oldid)
+                        channel.add(event.identity)
+            elif event.state == u'online':
+                ibid.channels[event.source][event.channel].add(event.identity)
+            elif event.state == u'offline' and not hasattr(event, 'othername'):
+                if event.channel:
+                    ibid.channels[event.source][event.channel].remove(event.identity)
+                else:
+                    for channel in ibid.channels[event.source].values():
+                        channel.discard(event.identity)
 
 # vi: set et sta sw=4 ts=4:

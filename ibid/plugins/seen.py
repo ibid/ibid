@@ -5,7 +5,7 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, UniqueConstraint, \
                     relation, IntegrityError, Base, VersionedSchema
 from ibid.db.models import Identity, Account
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')
@@ -60,11 +60,12 @@ class See(Processor):
     feature = 'seen'
 
     priority = 1500
+    event_types = (u'message', u'state')
+    addressed = False
+    processed = True
 
-    def process(self, event):
-        if event.type != 'message' and event.type != 'state':
-            return
-
+    @handler
+    def see(self, event):
         sighting = event.session.query(Sighting) \
                 .filter_by(identity_id=event.identity, type=event.type).first()
         if not sighting:
