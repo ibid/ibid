@@ -15,8 +15,9 @@ import feedparser
 from ibid.compat import defaultdict, dt_strptime, ElementTree
 from ibid.config import Option, BoolOption, DictOption
 from ibid.plugins import Processor, match, handler
-from ibid.utils import ago, decode_htmlentities, get_html_parse_tree, \
-        cacheable_download, json_webservice, human_join, plural
+from ibid.utils import ago, decode_htmlentities, cacheable_download, \
+        json_webservice, human_join, plural
+from ibid.utils.html import get_html_parse_tree
 
 log = logging.getLogger('plugins.lookup')
 
@@ -143,7 +144,8 @@ class FMyLife(Processor):
     feature = "fml"
 
     api_url = Option('fml_api_url', 'FML API URL base', 'http://api.betacie.com/')
-    api_key = Option('fml_api_key', 'FML API Key (optional)', 'readonly')
+    # The Ibid API Key, registered by Stefano Rivera:
+    api_key = Option('fml_api_key', 'FML API Key', '4b39a7fcaf01c')
     fml_lang = Option('fml_lang', 'FML Lanugage', 'en')
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
