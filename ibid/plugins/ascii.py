@@ -14,7 +14,7 @@ from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 
 """
-Dependancies:
+Dependencies:
   * libaa (Ubuntu's libaa1-dev package)
   * libcaca, along with it's img2txt binary (http://caca.zoy.org/wiki/libcaca)
   * Imlib2 (Ubuntu's libimlib2-dev package)
@@ -27,7 +27,7 @@ class DrawImage(Processor):
     u"""draw <url> [in colour] [<width>x<height>]"""
     feature = 'draw'
 
-    max_size = IntOption('max_size', 'Only request this many bytes', 200 * (1024**2))
+    max_size = IntOption('max_size', 'Only request this many KiB', 200)
     img2txt_bin = Option('img2txt_bin', 'libcaca img2txt binary to use', 'img2txt')
 
     @match(r'^draw\s+(\S+\.\S+)(?:\s+(in colour))?(?:\s+(\d+)x(\d+))?$')
@@ -41,8 +41,8 @@ class DrawImage(Processor):
             return
 
         filesize = int(f.info().getheaders('Content-Length')[0])
-        if filesize > self.max_size:
-            event.addresponse(u'File too large (limit is %d bytes)' % self.max_size)
+        if filesize > self.max_size * 1024:
+            event.addresponse(u'File too large (limit is %d KiB)' % self.max_size)
             return
 
         try:
@@ -86,7 +86,7 @@ class DrawImage(Processor):
 
 class WriteFiglet(Processor):
     u"""figlet <text> [in <font>]
-    figlet list fonts [from <index>]"""
+    list figlet fonts [from <index>]"""
     feature = 'figlet'
 
     fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', '/tmp/pyfiglet-0.4/fonts.zip')
@@ -96,8 +96,7 @@ class WriteFiglet(Processor):
         zip = ZipFile(self.fonts_zip)
         self.fonts = sorted(map(lambda n: os.path.splitext(os.path.split(n)[1])[0], zip.namelist()))
 
-    # FIXME: when list_fonts matches, so does write
-    @match(r'^figlet(?:\s+list)?\s+fonts(?:\s+from\s+(\d+))?$')
+    @match(r'^list\s+figlet\s+fonts(?:\s+from\s+(\d+))?$')
     def list_fonts(self, event, index):
         if index is None:
             index = 0
