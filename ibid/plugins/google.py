@@ -9,6 +9,8 @@ from BeautifulSoup import BeautifulSoup
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, json_webservice, cacheable_download
+from ibid.utils import human_join
+from ibid.utils.html import get_html_parse_tree
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 
@@ -139,6 +141,37 @@ class Translate(Processor):
 
     chain_length = IntOption('chain_length', 'Maximum length of translation chains', 10)
 
+    lang_names = {'afrikaans':'af', 'albanian':'sq', 'arabic':'ar',
+                  'belarusian':'be', 'bulgarian':'bg', 'catalan':'ca',
+                  'chinese':'zh', 'chinese simplified':'zh-cn',
+                  'chinese traditional':'zh-tw', 'croatian':'hr', 'czech':'cs',
+                  'danish':'da', 'dutch':'nl', 'english':'en', 'estonian':'et',
+                  'filipino':'tl', 'finnish':'fi', 'french':'fr',
+                  'galacian':'gl', 'german':'de', 'greek':'el', 'hebrew':'iw',
+                  'hindi':'hi', 'hungarian':'hu', 'icelandic':'is',
+                  'indonesian':'id', 'irish':'ga', 'italian':'it',
+                  'japanese':'ja', 'korean': 'ko', 'latvian':'lv',
+                  'lithuanian':'lt', 'macedonian':'mk', 'malay':'ms',
+                  'maltese':'mt', 'norwegian':'no', 'persian':'fa',
+                  'polish':'pl', 'portuguese':'pt', 'romanian':'ro',
+                  'russian': 'ru', 'serbian':'sr', 'slovak':'sk',
+                  'slovenian':'sl', 'spanish':'es', 'swahili':'sw',
+                  'swedish':'sv', 'thai':'th', 'turkish':'tr', 'ukrainian':'uk',
+                  'uzbek': 'uz', 'vietnamese':'vi', 'welsh':'cy',
+                  'yiddish':'yi'}
+
+    alt_lang_names = {'simplified':'zh-CN', 'simplified chinese':'zh-CN',
+                   'traditional':'zh-TW', 'traditional chinese':'zh-TW',
+                   'bokmal':'no', 'norwegian bokmal':'no',
+                   u'bokm\N{LATIN SMALL LETTER A WITH RING ABOVE}l':'no',
+                   u'norwegian bokm\N{LATIN SMALL LETTER A WITH RING ABOVE}l':
+                        'no',
+                   'farsi':'fa'}
+
+    @match(r'^(?:translation\s*)?languages$')
+    def languages (self, event):
+        event.addresponse(human_join(sorted(self.lang_names.keys())))
+
     @match(r'^translate\s+(.*)$')
     def translate (self, event, data):
         try:
@@ -167,9 +200,6 @@ class Translate(Processor):
             event.addresponse(u"I couldn't translate that: %s.", unicode(e))
 
     def _parse_request (self, data):
-        if not hasattr(self, 'lang_names'):
-            self._make_language_dict()
-
         from_re = r'\s+from\s+(?P<from>[-()\s\w]+?)'
         to_re = r'\s+(?:in)?to\s+(?P<to>[-()\s\w]+?)'
 
@@ -233,26 +263,6 @@ class Translate(Processor):
 
             raise TranslationException(msg)
 
-    def _make_language_dict (self):
-        self.lang_names = d = {}
-
-        filename = cacheable_download('http://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt',
-                                        'google/ISO-639-2_utf-8.txt')
-        f = codecs.open(filename, 'rU', 'utf-8')
-        for line in f:
-            code2B, code2T, code1, englishNames, frenchNames = line.split('|')
-
-            # Identify languages by ISO 639-1 code if it exists; otherwise use
-            # ISO 639-2 (B). Google currently only translates languages with -1
-            # codes, but will may use -2 (B) codes in the future.
-            ident = code1 or code2B
-
-            d[code2B] = d[code2T] = d[code1] = ident
-            for name in englishNames.lower().split(';'):
-                d[name] = ident
-
-        del d['']
-
     def language_code (self, name):
         """Convert a name to a language code.
 
@@ -260,21 +270,14 @@ class Translate(Processor):
 
         name = name.lower()
 
-        m = re.match('^([a-z]{2})(?:-[a-z]{2})?$', name)
-        if m and m.group(1) in self.lang_names:
-            return name
-        if 'simplified' in name:
-            return 'zh-CN'
-        if 'traditional' in name:
-            return 'zh-TW'
-        if re.search(u'bokm[a\N{LATIN SMALL LETTER A WITH RING ABOVE}]l', name):
-            # what Google calls Norwegian seems to be Bokmal
-            return 'no'
-
         try:
-            return self.lang_names[name]
+            return self.lang_names.get(name) or self.alt_lang_names[name]
         except KeyError:
-            raise UnknownLanguageException
+            m = re.match('^([a-z]{2,3})(?:-[a-z]{2})?$', name)
+            if m and m.group(1) in self.lang_names.values():
+                return name
+            else:
+                raise UnknownLanguageException
 
 # This Plugin uses code from youtube-dl
 # Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
