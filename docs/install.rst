@@ -66,7 +66,6 @@ Web source and web services:
 
 Other sources:
 
-* Campfire: `Pinder <http://dev.oluyede.org/pinder/>`_
 * SILC: `pysilc <http://www.liquidx.net/pysilc/>`_
 
 There are many non-essential plugins that require other libraries or programs,
