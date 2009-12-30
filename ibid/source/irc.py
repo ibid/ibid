@@ -141,7 +141,7 @@ class Ircbot(irc.IRCClient):
             for line in response['reply'].split('\n'):
                 r = {'reply': line}
                 for k in response.iterkeys():
-                    if k != 'reply':
+                    if k not in ('reply', 'conflate'):
                         r[k] = response[k]
                 self.send(r)
             return
