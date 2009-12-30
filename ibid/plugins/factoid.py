@@ -27,7 +27,7 @@ default_interrogatives = ('what', 'wtf', 'where', 'when', 'who', "what's", "who'
 
 def strip_name(unstripped):
     "Apply to factoid names, as we use unstripped matches"
-    return re.match(r'^\s*(.*?)[?!.]*\s*$', unstripped, re.DOTALL).group(1)
+    return re.match(r'^\s*(.*?)\s*[?!.]*\s*$', unstripped, re.DOTALL).group(1)
 
 def escape_name(name):
     "Turn a $arg factoid name to _%"
