@@ -137,7 +137,7 @@ class Ircbot(irc.IRCClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ')[:490]
+        message = response['reply'].expandtabs(1).replace('\n', ' ')[:490]
         raw_message = message.encode('utf-8')
 
         # Target may be a connection or a plain nick

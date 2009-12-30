@@ -58,7 +58,7 @@ ibid.reloader.reload_dispatcher()
 class TestSource(dict):
     type = 'test'
     permissions = []
-    supports = ('action', 'notice')
+    supports = ('action', 'multiline', 'notice')
     logging_name = lambda self, name: name
 
 ibid.sources[u'test_source'] = TestSource()
