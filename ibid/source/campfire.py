@@ -90,7 +90,7 @@ class CampfireBot(CampfireClient):
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
-    supports = ('action', 'topic')
+    supports = ('action', 'multiline', 'topic')
 
     subdomain = Option('subdomain', 'Campfire subdomain')
     secure = BoolOption('secure', 'Use https (paid accounts only)', False)
