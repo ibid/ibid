@@ -53,8 +53,14 @@ class Help(Processor):
                     for line in klass.__doc__.strip().splitlines():
                         output.append(line.strip())
 
-        if output:
-            event.addresponse(u'\n'.join(output), conflate=False)
+        if len(output) == 1:
+            event.addresponse(u'Usage: %s', output[0])
+        elif len(output) > 1:
+            event.addresponse(
+                u"You can use %(feature)s in the following ways:\n%(usage)s", {
+                    'feature': feature,
+                    'usage': u'\n'.join(output)
+                }, conflate=False)
         else:
             event.addresponse(u"I don't know how to use %s either", feature)
 
