@@ -70,6 +70,15 @@ class SilcBot(SilcClient):
             self.send(response)
 
     def send(self, response):
+        if not response.get('conflate', True):
+            for line in response['reply'].split('\n'):
+                r = {'reply': line}
+                for k in response.iterkeys():
+                    if k != 'reply':
+                        r[k] = response[k]
+                self.send(r)
+            return
+
         message = response['reply'].replace('\n', ' ').encode('utf-8')
         flags=0
         if response.get('action', False):

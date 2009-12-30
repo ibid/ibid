@@ -97,7 +97,7 @@ class DCBot(dcwords.DCClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ')[:490]
+        message = response['reply']
 
         if message:
             for prefix in self.factory.banned_prefixes:
