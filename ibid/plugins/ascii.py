@@ -113,7 +113,7 @@ class WriteFiglet(Processor):
             return
         event.addresponse(unicode(', '.join(self.fonts[int(index):])))
 
-    @match(r'^figlet\s+(.+?)(\s+in\s+(\S+))?$')
+    @match(r'^figlet\s+(.+?)(\s+in\s+(\S+))?$', 'deaddressed')
     def write(self, event, text, font_phrase, font):
         if font is not None and font not in self.fonts:
             text = '%s%s' % (text, font_phrase)
