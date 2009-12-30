@@ -179,10 +179,7 @@ class Format(Processor):
             supports = ibid.sources[source].supports
 
             if response.get('action', False) and 'action' not in supports:
-                response['reply'] = u'* %s %s' % (
-                        ibid.config['botname'],
-                        response['reply'],
-                )
+                response['reply'] = u'*%s*' % response['reply']
 
             if (not response.get('conflate', True)
                     and 'multiline' not in supports):
