@@ -111,8 +111,11 @@ class Units(Processor):
             else:
                 event.addresponse(u"I can't do that: %s", result)
 
+help['timezone'] = "Converts times between timezones."
 class TimeZone(Processor):
-    u"""convert <time> <timezone> to <timezone>"""
+    u"""when is <time> <place|timezone> in <place|timezone>
+    time in <place|timezone>"""
+    feature = 'timezone'
 
     @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(\S+)$')
     def convert(self, event, time, from_, to):
