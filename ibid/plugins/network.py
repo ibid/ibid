@@ -180,7 +180,11 @@ class HTTP(Processor):
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
     def get(self, event, action, url):
-        url = urljoin('http://', url)
+        if not urlparse(url).netloc:
+            url = 'http://' + url
+        if not urlparse(url).path:
+            url += '/'
+
         status, reason, data = self._request(url, action.upper())
         reply = u'%s %s' % (status, reason)
 
@@ -195,13 +199,20 @@ class HTTP(Processor):
     def isit(self, event, site, type):
         if '.' not in site:
             site = site + '.com'
-        url = urljoin('http://', site)
+        url = 'http://%s/' % (site,)
+
         status, reason, data = self._request(url, 'HEAD')
 
-        if status < 400 and type.lower() == 'up':
-            event.addresponse(u'%s is up', (site,))
+        if status < 400:
+            if type.lower() == 'up':
+                event.addresponse(u'Yes, %s is up', (site,))
+            else:
+                event.addresponse(u"No, it's just you")
         else:
-            event.addresponse(u'%s is down', (site,))
+            if type.lower() == 'up':
+                event.addresponse(u'No, %s is down', (site,))
+            else:
+                event.addresponse(u'Yes, %s is down', (site,))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
@@ -223,7 +234,7 @@ class HTTP(Processor):
 
         response = conn.getresponse()
 
-        data = response.read()
+        data = response.read(self.max_size)
         conn.close()
 
         return response.status, response.reason, data
