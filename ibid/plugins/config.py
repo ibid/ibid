@@ -44,7 +44,7 @@ class Config(Processor):
             config = config[part]
 
         part = key.split('.')[-1]
-        if not isinstance(config, dict) or part not in config:
+        if not isinstance(config, dict):
             event.addresponse(u'No such option')
             return
         if ',' in value:
