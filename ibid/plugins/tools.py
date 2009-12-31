@@ -145,11 +145,6 @@ class TimeZone(Processor):
 
     @match(r'^time\s+in\s+(\S+)$')
     def time(self, event, place):
-        zone = gettz(place)
-        if not zone:
-            event.addresponse(u"I don't know about the %s timezone", place)
-            return
-
-        t = datetime.utcnow().replace(tzinfo=tzutc()).astimezone(zone)
+        self.convert(event, datetime.now().isoformat(), None, place)
 
 # vi: set et sta sw=4 ts=4:
