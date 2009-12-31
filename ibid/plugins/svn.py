@@ -22,7 +22,7 @@ import os.path
 from os import kill
 from signal import SIGTERM
 import textwrap
-from ibid.compat import ElementTree as ET
+from ibid.compat import ElementTree as ET, dt_strptime
 from subprocess import Popen, PIPE
 from time import time, sleep, mktime
 
@@ -32,8 +32,7 @@ try:
 except:
     pysvn = None
 
-import ibid
-from ibid.plugins import Processor, match, RPC, handler, run_every, authorise
+from ibid.plugins import Processor, match, RPC, authorise
 from ibid.config import DictOption, FloatOption, Option, BoolOption
 from ibid.utils import ago, format_date, human_join
 
@@ -295,7 +294,7 @@ class CommandLineBranch(Branch):
 
     def _xmldate_to_timestamp(self, xmldate):
         xmldate = xmldate.split('.')[0]
-        dt = datetime.strptime(xmldate, "%Y-%m-%dT%H:%M:%S")
+        dt = dt_strptime(xmldate, "%Y-%m-%dT%H:%M:%S")
         return mktime(dt.timetuple())
 
     def _xml_to_log_message(self, output):
