@@ -33,8 +33,8 @@ except:
     pysvn = None
 
 import ibid
-from ibid.plugins import Processor, match, RPC, handler, run_every
-from ibid.config import DictOption, FloatOption, Option
+from ibid.plugins import Processor, match, RPC, handler, run_every, authorise
+from ibid.config import DictOption, FloatOption, Option, BoolOption
 from ibid.utils import ago, format_date, human_join
 
 help = {'svn': u'Retrieves commit logs from a Subversion repository.'}
@@ -42,11 +42,12 @@ help = {'svn': u'Retrieves commit logs from a Subversion repository.'}
 HEAD_REVISION = object()
 
 class Branch(object):
-    def __init__(self, repository_name = None, url = None, username = None, password = None):
+    def __init__(self, repository_name = None, url = None, username = None, password = None, multiline = False):
         self.repository = repository_name
         self.url = url
         self.username = username
         self.password = password
+        self.multiline = multiline
 
     def get_commits(self, start_revision = None, end_revision = None, limit = None, full = False):
         """
@@ -108,11 +109,11 @@ class Branch(object):
             pathinfo = " [trunk]"
 
         if commonprefix.startswith("/branches/"):
-            commonprefix = "/branches/%s/" % (commonprefix.split('/')[2],)
+            commonprefix = "/branches/%s" % (commonprefix.split('/')[2],)
             pathinfo = " [" + commonprefix.split('/')[2] + "]"
 
         if commonprefix.startswith("/tags/"):
-            commonprefix = "/tags/%s/" % (commonprefix.split('/')[2],)
+            commonprefix = "/tags/%s" % (commonprefix.split('/')[2],)
             pathinfo = " [" + commonprefix.split('/')[2] + "]"
 
         for changed_path in changed_paths:
@@ -143,25 +144,45 @@ class Branch(object):
             changes = []
 
             if delta.added:
-                changes.append('Added:\n\t%s' % '\n\t'.join([file[0] for file in delta.added]))
+                if self.multiline:
+                    changes.append('Added:\n\t%s' % '\n\t'.join([file[0] for file in delta.added]))
+                else:
+                    changes.append('Added: %s' % ', '.join([file[0] for file in delta.added]))
             if delta.modified:
-                changes.append('Modified:\n\t%s' % '\n\t'.join([file[0] for file in delta.modified]))
+                if self.multiline:
+                    changes.append('Modified:\n\t%s' % '\n\t'.join([file[0] for file in delta.modified]))
+                else:
+                    changes.append('Modified: %s' % '\, '.join([file[0] for file in delta.modified]))
             if delta.removed:
-                changes.append('Removed:\n\t%s' % '\n\t'.join([file[0] for file in delta.removed]))
+                if self.multiline:
+                    changes.append('Removed:\n\t%s' % '\n\t'.join([file[0] for file in delta.removed]))
+                else:
+                    changes.append('Removed: %s' % ', '.join([file[0] for file in delta.removed]))
             if delta.renamed:
-                changes.append('Renamed:\n\t%s' % '\n\t, '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
+                changes.append('Renamed: %s' % ', '.join(['%s => %s' % (file[0], file[1]) for file in delta.renamed]))
 
             timestamp_dt = datetime.utcfromtimestamp(timestamp)
 
-            commit = 'Commit %s by %s to %s%s on %s at %s:\n\n\t%s \n\n%s\n' % (
-                revision_number,
-                author,
-                self.repository,
-                pathinfo,
-                format_date(timestamp_dt, 'date'),
-                format_date(timestamp_dt, 'time'),
-                u'\n'.join(textwrap.wrap(commit_message, initial_indent="    ", subsequent_indent="    ")),
-                '\n\n'.join(changes))
+            if self.multiline:
+                commit = 'Commit %s by %s to %s%s on %s at %s:\n\n\t%s \n\n%s\n' % (
+                    revision_number,
+                    author,
+                    self.repository,
+                    pathinfo,
+                    format_date(timestamp_dt, 'date'),
+                    format_date(timestamp_dt, 'time'),
+                    u'\n'.join(textwrap.wrap(commit_message, initial_indent="    ", subsequent_indent="    ")),
+                    '\n\n'.join(changes))
+            else:
+                commit = 'Commit %s by %s to %s%s on %s at %s: %s (%s)\n' % (
+                        revision_number,
+                        author,
+                        self.repository,
+                        pathinfo,
+                        format_date(timestamp_dt, 'date'),
+                        format_date(timestamp_dt, 'time'),
+                        commit_message.replace('\n', ' '),
+                        '; '.join(changes))
         else:
             commit = 'Commit %s by %s to %s %s ago: %s\n' % (
                 revision_number,
@@ -206,8 +227,8 @@ class CommandLineRevision(object):
         self.number = number
 
 class CommandLineBranch(Branch):
-    def __init__(self, repository_name = None, url = None, username = None, password = None, svn_command = 'svn', svn_timeout = 15.0):
-        super(CommandLineBranch, self).__init__(repository_name, url, username, password)
+    def __init__(self, repository_name = None, url = None, username = None, password = None, svn_command = 'svn', svn_timeout = 15.0, multiline = False):
+        super(CommandLineBranch, self).__init__(repository_name, url, username, password, multiline=multiline)
         self.svn_command = svn_command
         self.svn_timeout = svn_timeout
 
@@ -373,10 +394,13 @@ class Subversion(Processor, RPC):
     feature = 'svn'
     autoload = False
 
+    permission = u'svn'
+
     repositories = DictOption('repositories', 'Dict of repositories names and URLs')
 
     svn_command = Option('svn_command', 'Path to svn executable', 'svn')
     svn_timeout = FloatOption('svn_timeout', 'Maximum svn execution time (sec)', 15.0)
+    multiline = BoolOption('multiline', 'Output multi-line (Jabber, Campfire)', False)
 
     def __init__(self, name):
         self.log = logging.getLogger('plugins.svn')
@@ -388,11 +412,12 @@ class Subversion(Processor, RPC):
         for name, repository in self.repositories.items():
             reponame = name.lower()
             if pysvn:
-                self.branches[reponame] = PySVNBranch(reponame, repository['url'], username = repository['username'], password = repository['password'])
+                self.branches[reponame] = PySVNBranch(reponame, repository['url'], username = repository['username'], password = repository['password'], multiline=self.multiline)
             else:
-                self.branches[reponame] = CommandLineBranch(reponame, repository['url'], username = repository['username'], password = repository['password'], svn_command=self.svn_command, svn_timeout=self.svn_timeout)
+                self.branches[reponame] = CommandLineBranch(reponame, repository['url'], username = repository['username'], password = repository['password'], svn_command=self.svn_command, svn_timeout=self.svn_timeout, multiline=self.multiline)
 
     @match(r'^svn ?(?:repos|repositories)$')
+    @authorise()
     def handle_repositories(self, event):
         repositories = self.branches.keys()
         if repositories:
@@ -401,6 +426,7 @@ class Subversion(Processor, RPC):
             event.addresponse(u"I don't know about any repositories")
 
     @match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
+    @authorise()
     def commit(self, event, revno, repository, full):
 
         if repository == "full":
