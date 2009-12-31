@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 from datetime import datetime
 
 from dateutil.parser import parse
-from dateutil.tz import gettz, tzutc
+from dateutil.tz import gettz, tzutc, tzlocal
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -114,19 +114,24 @@ class Units(Processor):
 class TimeZone(Processor):
     u"""convert <time> <timezone> to <timezone>"""
 
-    @match(r'^when\s+is\s+(.+)\s+in\s+(\S+)$')
-    def convert(self, event, time, to):
+    @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(\S+)$')
+    def convert(self, event, time, from_, to):
         time = parse(time)
-        if not time.tzinfo:
-            event.addresponse(u"I don't know about that source timezone")
-            return
+
+        if from_:
+            from_zone = gettz(from_)
+            if not from_zone:
+                event.addresponse(u"I don't know about the %s timezone", from_)
+                return
+        else:
+            from_zone = tzlocal()
 
         to_zone = gettz(to)
         if not to_zone:
             event.addresponse(u"I don't know about the %s timezone", to)
             return
 
-        result = time.astimezone(to_zone)
+        result = time.replace(tzinfo=from_zone).astimezone(to_zone)
         event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo.tzname(result)})
 
     @match(r'^time\s+in\s+(\S+)$')
