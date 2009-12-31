@@ -131,8 +131,17 @@ class TimeZone(Processor):
             event.addresponse(u"I don't know about the %s timezone", to)
             return
 
-        result = time.replace(tzinfo=from_zone).astimezone(to_zone)
-        event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo.tzname(result)})
+        source = time.replace(tzinfo=from_zone)
+        result = source.astimezone(to_zone)
+
+        event.addresponse(u'%(sdate)s %(stime)s %(szone)s is %(ddate)s %(dtime)s %(dzone)s', {
+            'sdate': source.strftime('%Y/%m/%d'),
+            'stime': source.strftime('%H:%M:%S'),
+            'szone': source.tzinfo.tzname(source),
+            'ddate': result.strftime('%Y/%m/%d'),
+            'dtime': result.strftime('%H:%M:%S'),
+            'dzone': result.tzinfo.tzname(result),
+        })
 
     @match(r'^time\s+in\s+(\S+)$')
     def time(self, event, place):
@@ -142,6 +151,5 @@ class TimeZone(Processor):
             return
 
         t = datetime.utcnow().replace(tzinfo=tzutc()).astimezone(zone)
-        event.addresponse(u'It is %(time)s on %(date)s in %(zone)s', {'time': t.strftime('%H:%M:%S'), 'date': t.strftime('%A, %d %B'), 'zone': t.tzinfo.tzname(t)})
 
 # vi: set et sta sw=4 ts=4:
