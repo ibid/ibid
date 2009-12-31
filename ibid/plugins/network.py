@@ -202,7 +202,7 @@ class HTTP(Processor):
             site = self.sites[site]
         else:
             if '.' not in site:
-                site = site + '.com'
+                site += '.com'
 
         url = 'http://%s/' % (site,)
 
