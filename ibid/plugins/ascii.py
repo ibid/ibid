@@ -26,24 +26,28 @@ Dependencies:
 help = { 'draw'  : u'Retrieve images from the web and render them in ascii-art.',
          'figlet': u'Render text in ascii-art using figlet.' }
 class DrawImage(Processor):
-    u"""draw <url> [in colour] [<width>x<height>]"""
+    u"""draw <url> [in colour] [width <width>] [height <height>]"""
     feature = 'draw'
 
-    max_size = IntOption('max_size', 'Only request this many KiB', 200)
-    def_height = IntOption('def_height', 'Default height for libaa output', 15)
+    max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
+    def_height = IntOption('def_height', 'Default height for libaa output', 10)
+    max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
+    max_height = IntOption('max_width', 'Maximum width for ascii output', 15)
+    font_width = IntOption('font_width', 'Font width assumed for output', 6)
+    font_height = IntOption('font_height', 'Font height assumed for output', 10)
     img2txt_bin = Option('img2txt_bin', 'libcaca img2txt binary to use', 'img2txt')
 
     def setup(self):
         if not file_in_path(self.img2txt_bin):
             raise Exception('Cannot locate img2txt executable')
 
-    @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+(\d+)x(\d+))?$')
+    @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+w(?:idth)?\s+(\d+))?(?:\s+h(?:eight)\s+(\d+))?$')
     def draw(self, event, url, colour, width, height):
         f = urlopen(url)
 
         filesize = int(f.info().getheaders('Content-Length')[0])
-        if filesize > self.max_size * 1024:
-            event.addresponse(u'File too large (limit is %i KiB)', self.max_size)
+        if filesize > self.max_filesize * 1024:
+            event.addresponse(u'File too large (limit is %i KiB)', self.max_filesize)
             return
 
         try:
@@ -53,6 +57,47 @@ class DrawImage(Processor):
             file.write(f.read())
             file.close()
 
+            try:
+                img = Image.open(StringIO(open(image, 'r').read())).convert('L')
+            except:
+                event.addresponse(u'Cannot understand image format')
+                return
+            input_width, input_height = img.size[0], img.size[1]
+
+            if width is None and height is None:
+                height = self.def_height
+                width = height * input_width * self.font_height / input_height / self.font_width
+                if width > self.max_width:
+                    width = self.max_width
+                    height = width * input_height * self.font_width / input_width / self.font_height
+                    # Assume def_height <= max_height, so we don't check against max_height
+            elif width is None: # only height is set
+                height = int(height)
+                width = height * input_width * self.font_height / input_height / self.font_width
+                if width > self.max_width:
+                    # squash the image, rather than returning an error
+                    width = self.max_width
+                if height > self.max_height:
+                    event.addresponse(u"Sorry, I can't draw that tall")
+                    return
+            elif height is None: # only width is set
+                width = int(width)
+                height = width * input_height * self.font_width / input_width / self.font_height
+                if width > self.max_width:
+                    event.addresponse(u"Sorry, I can't draw that wide")
+                    return
+                if height > self.max_height:
+                    # squash the image, rather than returning an error
+                    height = self.max_height
+            else: # both width and height are set
+                width, height = int(width), int(height)
+                if width > self.max_width:
+                    event.addresponse(u"Sorry, I can't draw that wide")
+                    return
+                if height > self.max_height:
+                    event.addresponse(u"Sorry, I can't draw that tall")
+                    return
+
             if colour is None:
                 self.draw_aa(event, image, width, height)
             else:
@@ -61,30 +106,20 @@ class DrawImage(Processor):
             remove(image)
 
     def draw_aa(self, event, image, width, height):
-        if width is None:
-            width = self.def_height*2
-        if height is None:
-            height = self.def_height
         try:
             image = Image.open(StringIO(open(image, 'r').read())).convert('L')
         except:
             event.addresponse(u'Cannot understand image format')
             return
-        screen = AsciiScreen(width=int(width), height=int(height))
+        screen = AsciiScreen(width=width, height=height)
         image = image.resize(screen.virtual_size)
         screen.put_image((0, 0), image)
         event.addresponse(unicode(screen.render()), address=False, conflate=False)
 
     def draw_caca(self, event, image, width, height):
-        if width is not None:
-            width = '-W %d' % int(width)
-        else:
-            width = ''
-        if height is not None:
-            height = '-H %d' % int(height)
-        else:
-            height = ''
-        process = subprocess.Popen([self.img2txt_bin, '-f', 'irc', width, height, image],
+        from sys import stderr
+        process = subprocess.Popen(
+            [self.img2txt_bin, '-f', 'irc', '-W', str(width), '-H', str(height), image],
             shell=False, stdout=subprocess.PIPE)
         response, error = process.communicate()
         code = process.wait()
