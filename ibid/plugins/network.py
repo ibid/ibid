@@ -2,7 +2,7 @@ import re
 from httplib import HTTPConnection, HTTPSConnection
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
@@ -180,13 +180,18 @@ class HTTP(Processor):
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
     def handler(self, event, action, url):
-        if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
-            url = "http://" + url
-        if url.count("/") < 3:
-            url += "/"
+        url = urljoin('http://', url)
+        status, reason, data = self._request(url, action.upper())
+        reply = u'%s %s' % (status, reason)
 
-        action = action.upper()
+        if action.upper() == 'GET':
+            match = title.search(data)
+            if match:
+                reply += u' "%s"' % match.groups()[0].strip()
 
+        event.addresponse(reply)
+
+    def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
         scheme = scheme.lower()
         proxies = getproxies_environment()
@@ -200,21 +205,15 @@ class HTTP(Processor):
             conn = HTTPConnection(host)
 
         headers={}
-        if action == 'GET':
+        if method == 'GET':
             headers['Range'] = 'bytes=0-%s' % self.max_size
-        conn.request(action.upper(), url, headers=headers)
+        conn.request(method.upper(), url, headers=headers)
 
         response = conn.getresponse()
-        reply = u'%s %s' % (response.status, response.reason)
 
         data = response.read()
         conn.close()
 
-        if action == 'GET':
-            match = title.search(data)
-            if match:
-                reply += u' "%s"' % match.groups()[0].strip()
-
-        event.addresponse(reply)
+        return response.status, response.reason, data
 
 # vi: set et sta sw=4 ts=4:
