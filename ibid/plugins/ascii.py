@@ -18,7 +18,7 @@ from ibid.utils import file_in_path
 """
 Dependencies:
   * libaa (Ubuntu's libaa1-dev package)
-  * libcaca, along with it's img2txt binary (http://caca.zoy.org/wiki/libcaca)
+  * libcaca (Ubuntu's caca-utils package)
   * Imlib2 (Ubuntu's libimlib2-dev package)
   * pyfiglet (http://sourceforge.net/projects/pyfiglet/)
 """
@@ -37,13 +37,13 @@ class DrawImage(Processor):
         if not file_in_path(self.img2txt_bin):
             raise Exception('Cannot locate img2txt executable')
 
-    @match(r'^draw\s+(\S+\.\S+)(?:\s+(in colou?r))?(?:\s+(\d+)x(\d+))?$')
+    @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+(\d+)x(\d+))?$')
     def draw(self, event, url, colour, width, height):
         f = urlopen(url)
 
         filesize = int(f.info().getheaders('Content-Length')[0])
         if filesize > self.max_size * 1024:
-            event.addresponse(u'File too large (limit is', self.max_size, 'KiB)')
+            event.addresponse(u'File too large (limit is %i KiB)', self.max_size)
             return
 
         try:
@@ -89,7 +89,7 @@ class DrawImage(Processor):
         response, error = process.communicate()
         code = process.wait()
         if code == 0:
-            event.addresponse(response.replace('\r', ''), address=False, conflate=False)
+            event.addresponse(unicode(response.replace('\r', '')), address=False, conflate=False)
         else:
             event.addresponse(u'Sorry, cannot understand image format')
 
@@ -98,7 +98,7 @@ class WriteFiglet(Processor):
     list figlet fonts [from <index>]"""
     feature = 'figlet'
 
-    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', '/tmp/pyfiglet-0.4/fonts.zip')
+    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'data/figlet-fonts.zip')
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -131,4 +131,4 @@ class WriteFiglet(Processor):
             del rendered[0]
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
-        event.addresponse('\n'.join(rendered), address=False, conflate=False)
+        event.addresponse(unicode('\n'.join(rendered)), address=False, conflate=False)
