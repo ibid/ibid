@@ -3,7 +3,8 @@ from random import random, randint
 from subprocess import Popen, PIPE
 from datetime import datetime
 
-from pytz import timezone, UnknownTimeZoneError
+from dateutil.parser import parse
+from dateutil.tz import gettz, tzutc
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -113,28 +114,29 @@ class Units(Processor):
 class TimeZone(Processor):
     u"""convert <time> <timezone> to <timezone>"""
 
-    @match(r'^when\s+is\s+(\d+)[:h](\d+)\s+(\S+)\s+in\s+(\S+)$')
-    def convert(self, event, hour, minute, frm, to):
-        time = datetime.today().replace(hour=int(hour), minute=int(minute), second=0)
-        try:
-            frm_zone = timezone(frm)
-            to_zone = timezone(to)
-        except UnknownTimeZoneError, e:
-            event.addresponse(u"I don't know about the %s timezone", (e.message,))
+    @match(r'^when\s+is\s+(.+)\s+in\s+(\S+)$')
+    def convert(self, event, time, to):
+        time = parse(time)
+        if not time.tzinfo:
+            event.addresponse(u"I don't know about that source timezone")
             return
 
-        result = frm_zone.localize(time).astimezone(to_zone)
-        event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo})
+        to_zone = gettz(to)
+        if not to_zone:
+            event.addresponse(u"I don't know about the %s timezone", to)
+            return
+
+        result = time.astimezone(to_zone)
+        event.addresponse(u"%(hour)02d:%(minute)02d %(zone)s", {'hour': result.hour, 'minute': result.minute, 'zone': result.tzinfo.tzname(result)})
 
     @match(r'^time\s+in\s+(\S+)$')
     def time(self, event, place):
-        try:
-            zone = timezone(place)
-        except UnknownTimeZoneError, e:
-            event.addresponse(u"I don't know about the %s timezone", (e.message,))
+        zone = gettz(place)
+        if not zone:
+            event.addresponse(u"I don't know about the %s timezone", place)
             return
 
-        t = datetime.now(zone)
-        event.addresponse(u'It is %(time)s on %(date)s in %(zone)s', {'time': t.strftime('%H:%M:%S'), 'date': t.strftime('%A, %d %B'), 'zone': zone})
+        t = datetime.utcnow().replace(tzinfo=tzutc()).astimezone(zone)
+        event.addresponse(u'It is %(time)s on %(date)s in %(zone)s', {'time': t.strftime('%H:%M:%S'), 'date': t.strftime('%A, %d %B'), 'zone': t.tzinfo.tzname(t)})
 
 # vi: set et sta sw=4 ts=4:
