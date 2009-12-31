@@ -64,44 +64,36 @@ class DrawImage(Processor):
                 return
             input_width, input_height = img.size[0], img.size[1]
 
+            set_size = width is not None or height is not None
             if width is None and height is None:
                 height = self.def_height
                 width = height * input_width * self.font_height / input_height / self.font_width
-                if width > self.max_width:
-                    width = self.max_width
-                    height = width * input_height * self.font_width / input_width / self.font_height
-                    # Assume def_height <= max_height, so we don't check against max_height
             elif width is None: # only height is set
                 height = int(height)
                 width = height * input_width * self.font_height / input_height / self.font_width
-                if width > self.max_width:
-                    # squash the image, rather than returning an error
-                    width = self.max_width
-                if height > self.max_height:
-                    event.addresponse(u"Sorry, I can't draw that tall")
-                    return
             elif height is None: # only width is set
                 width = int(width)
                 height = width * input_height * self.font_width / input_width / self.font_height
-                if width > self.max_width:
-                    event.addresponse(u"Sorry, I can't draw that wide")
-                    return
-                if height > self.max_height:
-                    # squash the image, rather than returning an error
-                    height = self.max_height
             else: # both width and height are set
                 width, height = int(width), int(height)
-                if width > self.max_width:
-                    event.addresponse(u"Sorry, I can't draw that wide")
-                    return
-                if height > self.max_height:
-                    event.addresponse(u"Sorry, I can't draw that tall")
-                    return
+
+            smaller = False
+            if width > self.max_width:
+                width = self.max_width
+                height = width * input_height * self.font_width / input_width / self.font_height
+                smaller = True
+            if height > self.max_height:
+                height = self.max_height
+                width = height * input_width * self.font_height / input_height / self.font_width
+                smaller = True
 
             if colour is None:
                 self.draw_aa(event, image, width, height)
             else:
                 self.draw_caca(event, image, width, height)
+
+            if set_size and smaller:
+                event.addresponse(u'Sorry, I drew that smaller than you asked for')
         finally:
             remove(image)
 
