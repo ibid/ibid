@@ -8,7 +8,7 @@ from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
-from ibid.config import Option, IntOption
+from ibid.config import Option, IntOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join
 
 help = {}
@@ -177,6 +177,7 @@ class HTTP(Processor):
     feature = 'get'
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
+    sites = DictOption('sites', 'Mapping of site names to domains', {})
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
     def get(self, event, action, url):
@@ -197,8 +198,12 @@ class HTTP(Processor):
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, site, type):
-        if '.' not in site:
-            site = site + '.com'
+        if site in self.sites:
+            site = self.sites[site]
+        else:
+            if '.' not in site:
+                site = site + '.com'
+
         url = 'http://%s/' % (site,)
 
         status, reason, data = self._request(url, 'HEAD')
