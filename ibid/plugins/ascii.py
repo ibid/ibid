@@ -32,7 +32,7 @@ class DrawImage(Processor):
     max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
     def_height = IntOption('def_height', 'Default height for libaa output', 10)
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
-    max_height = IntOption('max_width', 'Maximum width for ascii output', 15)
+    max_height = IntOption('max_height', 'Maximum height for ascii output', 15)
     font_width = IntOption('font_width', 'Font width assumed for output', 6)
     font_height = IntOption('font_height', 'Font height assumed for output', 10)
     img2txt_bin = Option('img2txt_bin', 'libcaca img2txt binary to use', 'img2txt')
