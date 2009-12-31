@@ -179,7 +179,7 @@ class HTTP(Processor):
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
-    def handler(self, event, action, url):
+    def get(self, event, action, url):
         url = urljoin('http://', url)
         status, reason, data = self._request(url, action.upper())
         reply = u'%s %s' % (status, reason)
@@ -190,6 +190,18 @@ class HTTP(Processor):
                 reply += u' "%s"' % match.groups()[0].strip()
 
         event.addresponse(reply)
+
+    @match(r'^is\s+(\S+)\s+(up|down)$')
+    def isit(self, event, site, type):
+        if '.' not in site:
+            site = site + '.com'
+        url = urljoin('http://', site)
+        status, reason, data = self._request(url, 'HEAD')
+
+        if status < 400 and type.lower() == 'up':
+            event.addresponse(u'%s is up', (site,))
+        else:
+            event.addresponse(u'%s is down', (site,))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
