@@ -1,4 +1,5 @@
 import re
+import socket
 from httplib import HTTPConnection, HTTPSConnection
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
@@ -240,7 +241,10 @@ class HTTP(Processor):
         conn.request(method.upper(), url, headers=headers)
         conn.sock.settimeout(self.timeout)
 
-        response = conn.getresponse()
+        try:
+            response = conn.getresponse()
+        except socket.error, e:
+            return 502, 'Socket Error: %s' % e, ''
 
         data = response.read(self.max_size)
         conn.close()
