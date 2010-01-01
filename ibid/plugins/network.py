@@ -171,10 +171,11 @@ class IPCalc(Processor):
 
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
-help['get'] = u'Retrieves a URL and returns the HTTP status and optionally the HTML title.'
+help['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
 class HTTP(Processor):
-    u"""(get|head) <url>"""
-    feature = 'get'
+    u"""(get|head) <url>
+    is <domain> (up|down)"""
+    feature = 'http'
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
     sites = DictOption('sites', 'Mapping of site names to domains', {})
