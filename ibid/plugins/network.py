@@ -178,6 +178,7 @@ class HTTP(Processor):
     feature = 'http'
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
+    timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', 'Mapping of site names to domains', {})
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
@@ -237,6 +238,7 @@ class HTTP(Processor):
         if method == 'GET':
             headers['Range'] = 'bytes=0-%s' % self.max_size
         conn.request(method.upper(), url, headers=headers)
+        conn.sock.settimeout(self.timeout)
 
         response = conn.getresponse()
 
