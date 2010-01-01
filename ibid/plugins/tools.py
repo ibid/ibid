@@ -146,7 +146,7 @@ class TimeZone(Processor):
             'dzone': result.tzinfo.tzname(result),
         })
 
-    @match(r'^time\s+in\s+(\S+)$')
+    @match(r"^(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in\s+(\S+)$")
     def time(self, event, place):
         self.convert(event, datetime.now().isoformat(), None, place)
 
