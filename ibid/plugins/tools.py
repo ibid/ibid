@@ -147,7 +147,7 @@ class TimeZone(Processor):
     def _find_timezone(self, string):
         ccode = None
 
-        if string.upper() == 'GMT':
+        if string.upper() in ('GMT', 'UTC', 'UCT', 'ZULU'):
             string = 'UTC'
         zone = gettz(string)
 
