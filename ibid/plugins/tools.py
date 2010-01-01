@@ -181,7 +181,7 @@ class TimeZone(Processor):
 
         return zone
 
-    @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(.+)$')
+    @match(r'^when\s+is\s+([0-9.:/hT -]+)(?:\s+(.+))?\s+in\s+(.+)$')
     def convert(self, event, time, from_, to):
         time = parse(time)
 
