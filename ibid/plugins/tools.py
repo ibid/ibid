@@ -2,6 +2,7 @@ import re
 from random import random, randint
 from subprocess import Popen, PIPE
 from datetime import datetime
+from os.path import exists, join
 
 from dateutil.parser import parse
 from dateutil.tz import gettz, tzutc, tzlocal
@@ -9,6 +10,7 @@ from dateutil.tz import gettz, tzutc, tzlocal
 from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output
+from ibid.compat import defaultdict
 
 help = {}
 
@@ -116,6 +118,28 @@ class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
     time in <place|timezone>"""
     feature = 'timezone'
+
+    zoneinfo = Option('zoneinfo', 'Timezone info directory', '/usr/share/zoneinfo')
+
+    countries = {}
+    timezones = defaultdict(list)
+
+    def setup(self):
+        iso3166 = join(self.zoneinfo, 'iso3166.tab')
+        if exists(iso3166):
+            for line in open(iso3166).readlines():
+                if not line.startswith('#'):
+                    code, name = line.strip().split('\t')
+                    self.countries[name] = code
+
+        zones = join(self.zoneinfo, 'zone.tab')
+        if exists(zones):
+            for line in open(zones).readlines():
+                if not line.startswith('#'):
+                    code, coordinates, zone = line.strip().split('\t', 2)
+                    if '\t' in zone:
+                        zone, comment = zone.split('\t')
+                    self.timezones[code].append(zone)
 
     @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(\S+)$')
     def convert(self, event, time, from_, to):
