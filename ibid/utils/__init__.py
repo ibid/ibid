@@ -136,7 +136,7 @@ def ibid_version():
     except ImportError:
         pass
 
-def format_date(timestamp, length='datetime'):
+def format_date(timestamp, length='datetime', tolocaltime=True):
     "Format a UTC date for displaying in a response"
 
     defaults = {
@@ -148,10 +148,10 @@ def format_date(timestamp, length='datetime'):
     length += '_format'
     format = ibid.config.plugins.get(length, defaults[length])
 
-    if timestamp.tzinfo is None:
-        timestamp = timestamp.replace(tzinfo=tzutc())
-
-    timestamp = timestamp.astimezone(tzlocal())
+    if tolocaltime:
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=tzutc())
+        timestamp = timestamp.astimezone(tzlocal())
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 

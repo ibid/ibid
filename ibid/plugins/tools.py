@@ -9,7 +9,7 @@ from dateutil.tz import gettz, tzutc, tzlocal
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils import file_in_path, unicode_output, human_join, format_date
 from ibid.compat import defaultdict
 
 help = {}
@@ -199,13 +199,9 @@ class TimeZone(Processor):
         source = time.replace(tzinfo=from_zone)
         result = source.astimezone(to_zone)
 
-        event.addresponse(u'%(sdate)s %(stime)s %(szone)s is %(ddate)s %(dtime)s %(dzone)s', {
-            'sdate': source.strftime('%Y/%m/%d'),
-            'stime': source.strftime('%H:%M:%S'),
-            'szone': source.tzinfo.tzname(source),
-            'ddate': result.strftime('%Y/%m/%d'),
-            'dtime': result.strftime('%H:%M:%S'),
-            'dzone': result.tzinfo.tzname(result),
+        event.addresponse(u'%(source)s is %(destination)s', {
+            'source': format_date(source, tolocaltime=False),
+            'destination': format_date(result, tolocaltime=False),
         })
 
     @match(r"^(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in\s+(.+)$")
