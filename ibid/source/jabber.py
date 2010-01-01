@@ -1,6 +1,6 @@
 import logging
 
-from wokkel import client, xmppim
+from wokkel import client, xmppim, subprotocols
 from twisted.internet import reactor, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
@@ -39,27 +39,48 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         for room in self.parent.rooms:
             self.join(room)
 
-    def availableReceived(self, entity, show=None, statuses=None, priority=0):
+        event = Event(self.parent.name, u'source')
+        event.status = u'connected'
+        ibid.dispatcher.dispatch(event)
+
+    def connectionLost(self, reason):
+        self.parent.log.info(u"Disconnected (%s)", reason)
+
+        event = Event(self.parent.name, u'source')
+        event.status = u'disconnected'
+        ibid.dispatcher.dispatch(event)
+
+        subprotocols.XMPPHandler.connectionLost(self, reason)
+
+    def _state_event(self, entity, state):
         event = Event(self.name, u'state')
-        event.sender['connection'] = entity.full()
-        event.sender['id'] = event.sender['connection'].split('/')[0]
-        event.sender['nick'] = event.sender['connection'].split('@')[0]
-        event.state = show or u'online'
-        event.public = False
-        event.channel = entity.full()
-        self.parent.log.debug(u"Received available presence from %s (%s)", event.sender['connection'], event.state)
+        event.state = state
+        if entity.userhost().lower() in self.rooms:
+            nick = entity.full().split('/')[1]
+            event.channel = entity.userhost()
+            if nick == self.parent.nick:
+                event.type = u'connection'
+                event.status = state == u'online' and u'joined' or u'left'
+            else:
+                event.sender['connection'] = entity.full()
+                event.sender['id'] = event.sender['connection']
+                event.sender['nick'] = nick
+                event.public = True
+        else:
+            event.sender['connection'] = entity.full()
+            event.sender['id'] = event.sender['connection'].split('/')[0]
+            event.sender['nick'] = event.sender['connection'].split('@')[0]
+            event.channel = entity.full()
+            event.public = False
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
+    def availableReceived(self, entity, show=None, statuses=None, priority=0):
+        self.parent.log.debug(u"Received available presence from %s (%s)", entity.full(), show)
+        self._state_event(entity, u'online')
+
     def unavailableReceived(self, entity, statuses):
-        event = Event(self.name, u'state')
-        event.sender['connection'] = entity.full()
-        event.sender['id'] = event.sender['connection'].split('/')[0]
-        event.sender['nick'] = event.sender['connection'].split('@')[0]
-        event.state = u'offline'
-        event.public = False
-        event.channel = entity.full()
-        self.parent.log.debug(u"Received unavailable presence from %s", event.sender['connection'])
-        ibid.dispatcher.dispatch(event).addCallback(self.respond)
+        self.parent.log.debug(u"Received unavailable presence from %s", entity.full())
+        self._state_event(entity, u'offline')
 
     def subscribeReceived(self, entity):
         response = xmppim.Presence(to=entity, type='subscribed')
@@ -121,22 +142,24 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.parent.log.debug(u"Sent %s message to %s: %s", message['type'], message['to'], message.body)
 
     def join(self, room):
+        self.parent.log.info(u"Joining %s", room)
         jid = JID('%s/%s' % (room, self.parent.nick))
         presence = xmppim.AvailablePresence(to=jid)
         self.xmlstream.send(presence)
-        self.rooms.append(room)
-        self.parent.log.info(u"Joining %s", room)
+        self.rooms.append(room.lower())
 
-    def part(self, room):
+    def leave(self, room):
+        self.parent.log.info(u"Leaving %s", room)
         jid = JID('%s/%s' % (room, self.parent.nick))
         presence = xmppim.UnavailablePresence(to=jid)
         self.xmlstream.send(presence)
-        self.rooms.remove(room)
-        self.parent.log.info(u"Leaving %s", room)
+        self.rooms.remove(room.lower())
 
 class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     auth = ('implicit',)
+    supports = ('multiline',)
+
     port = IntOption('port', 'Server port number')
     ssl = BoolOption('ssl', 'Usel SSL', False)
     server = Option('server', 'Server hostname')
@@ -180,8 +203,8 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def join(self, room):
         return self.proto.join(room)
 
-    def part(self, room):
-        return self.proto.part(room)
+    def leave(self, room):
+        return self.proto.leave(room)
 
     def url(self):
         return u'xmpp://%s' % (self.jid_str,)

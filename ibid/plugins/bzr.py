@@ -108,9 +108,11 @@ class Bazaar(Processor, RPC):
         revno = revno and int(revno) or None
         commits = self.get_commits(repository, revno, full=full)
 
+        output = u''
         for commit in commits:
             if commit:
-                event.addresponse(commit.strip())
+                output += commit.strip()
+        event.addresponse(output, conflate=False)
 
     def get_commits(self, repository, start, end=None, full=None):
         branch = None

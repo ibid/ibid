@@ -52,6 +52,8 @@ class TelnetProtocol(telnet.StatefulTelnetProtocol):
 class SourceFactory(protocol.ServerFactory, IbidSourceFactory):
     protocol = TelnetProtocol
 
+    supports = ('multiline',)
+
     port = IntOption('port', 'Port to listen on', 3000)
 
     def __init__(self, name, *args, **kwargs):

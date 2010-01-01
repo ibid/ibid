@@ -62,9 +62,8 @@ class Bash(Processor):
 
         soup = get_html_parse_tree('http://bash.org/?%s' % id)
 
-        if id == "random":
-            number = u"".join(soup.find('p', 'quote').find('b').contents)
-            event.addresponse(u'%s:', number)
+        number = u"".join(soup.find('p', 'quote').find('b').contents)
+        output = [u'%s:' % number]
 
         body = soup.find('p', 'qt')
         if not body:
@@ -73,7 +72,8 @@ class Bash(Processor):
             for line in body.contents:
                 line = unicode(line).strip()
                 if line != u'<br />':
-                    event.addresponse(line)
+                    output.append(line)
+            event.addresponse(u'\n'.join(output), conflate=False)
 
 help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
@@ -179,7 +179,7 @@ class FMyLife(Processor):
                 item.get('id'),
             )
             text = item.find('text').text
-            return u'%s - %s' % (text, url)
+            return u'%s\n- %s' % (text, url)
 
     @match(r'^(?:fml\s+|http://www\.fmylife\.com/\S+/)(\d+|random|flop|top|last|love|money|kids|work|health|sex|miscellaneous)$')
     def fml(self, event, id):
@@ -264,7 +264,7 @@ class TextsFromLastNight(Processor):
                 event.addresponse(line)
             event.addresponse(u'- http://textsfromlastnight.com/view/%i', id)
         else:
-            event.addresponse(u'%(body)s - http://textsfromlastnight.com/view/%(id)i', {
+            event.addresponse(u'%(body)s\n- http://textsfromlastnight.com/view/%(id)i', {
                 'id': id,
                 'body': body[0],
             })
@@ -375,7 +375,7 @@ class MyLifeIsAverage(Processor):
             url += 's/%i' % id
         else:
             url += 'story.php?id=%i' % id
-        event.addresponse(u'%(body)s - %(url)s', {
+        event.addresponse(u'%(body)s\n- %(url)s', {
             'url': url,
             'body': body,
         })

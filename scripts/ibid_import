@@ -4,14 +4,12 @@ from sys import argv, exit, stderr, stdout
 
 from chardet import detect
 from dateutil.tz import tzlocal, tzutc
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
-                       or_, ForeignKey, Boolean, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import func
 
 from ibid.config import FileConfig
-from ibid.models import Identity
+from ibid.db.models import Identity
 from ibid.plugins.seen import Sighting
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 from ibid.plugins.karma import Karma
@@ -116,8 +114,7 @@ def identify(session, user, source, created, create=True):
     user = decode(user)
 
     identity = session.query(Identity) \
-            .filter(func.lower(Identity.identity) == user.lower()) \
-            .filter(func.lower(Identity.source) == source.lower()).first()
+            .filter_by(identity=user, source=source).first()
     if not identity:
         identity = Identity(source, user)
         identity.created = created
@@ -153,9 +150,7 @@ def import_factoids(knab, ibid, source):
             stdout.flush()
 
         fname = ibid.query(FactoidName) \
-                    .filter(func.lower(FactoidName.name)
-                            == kfactoid.decoded_fact.lower()) \
-                    .first()
+                    .filter_by(name=kfactoid.decoded_fact).first()
         if not fname:
             factoid = Factoid()
             try:

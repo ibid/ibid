@@ -26,7 +26,7 @@ class Processor(object):
     explicitly required in the configuration file
     """
 
-    event_types = ('message',)
+    event_types = (u'message',)
     addressed = True
     processed = False
     priority = 0

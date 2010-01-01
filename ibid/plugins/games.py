@@ -218,7 +218,7 @@ class DuelDraw(Processor):
     feature = 'duel'
 
     # Parameters for Processor:
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
 
@@ -400,7 +400,7 @@ class DuelDraw(Processor):
 class DuelFlee(Processor):
     feature = 'duel'
     addressed = False
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def dueller_fled(self, event):
@@ -470,7 +470,7 @@ class WerewolfGame(Processor):
     seer_delay = IntOption('seer_delay',
             'Number of players between extra wolf and extra seer', 4)
 
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     @match(r'^(?:start|play|begin)s?\b.*werewolf$')
     def prestart(self, event):
@@ -581,14 +581,16 @@ class WerewolfGame(Processor):
         This state lasts for the whole night. The next state is dawn.
         """
         self.state = self.night
-        event.addresponse(u'Night falls... most villagers are sleeping, '
-                            'but outside, something stirs.')
-        event.addresponse(plural(len(self.wolves),
-                u'Werewolf, you may kill somebody.',
-                u'Werewolves, you may kill somebody.'))
-        event.addresponse(plural(len(self.seers),
-                u"Seer, you may discover somebody's true form.",
-                u"Seers, you may discover somebody's true form."))
+        event.addresponse(
+                u'Night falls... most villagers are sleeping, '
+                u'but outside, something stirs.\n'
+                + plural(len(self.wolves),
+                         u'Werewolf, you may kill somebody.',
+                         u'Werewolves, you may kill somebody.') + '\n'
+                + plural(len(self.seers),
+                         u"Seer, you may discover somebody's true form.",
+                         u"Seers, you may discover somebody's true form."),
+                conflate=False)
         self.say_survivors(event)
 
         self.wolf_targets = {}
@@ -773,15 +775,15 @@ class WerewolfGame(Processor):
         if 2 * len(self.wolves) >= len(self.roles):
             # werewolves win
             event.addresponse(u'The werewolves devour the remaining '
-                    u'villagers and win. OM NOM NOM.')
-            event.addresponse(u'The winning werewolves were: %s',
-                    human_join(self.wolves))
+                              u'villagers and win. OM NOM NOM.\n'
+                              u'The winning werewolves were: %s',
+                              human_join(self.wolves), conflate=False)
         elif not self.wolves:
             # villagers win
             event.addresponse(u'The villagers have defeated the werewolves. '
-                    'Vigilantism FTW.')
-            event.addresponse(u'The surviving villagers were: %s',
-                    human_join(self.roles))
+                              u'Vigilantism FTW.\n'
+                              u'The surviving villagers were: %s',
+                              human_join(self.roles), conflate=False)
         else:
             return False
 
@@ -841,7 +843,7 @@ class WerewolfGame(Processor):
 
 class WerewolfState(Processor):
     feature = 'werewolf'
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def state_change(self, event):

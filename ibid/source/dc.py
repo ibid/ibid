@@ -42,6 +42,11 @@ class DCBot(dcwords.DCClient):
 
     def connectionLost(self, reason):
         self.factory.log.info(u"Disconnected (%s)", reason)
+
+        event = Event(self.factory.name, u'source')
+        event.status = u'disconnected'
+        ibid.dispatcher.dispatch(event)
+
         dcwords.DCClient.connectionLost(self, reason)
 
     def signedOn(self):
@@ -51,6 +56,16 @@ class DCBot(dcwords.DCClient):
             names.append(self.my_nickname)
             ibid.config.plugins['core']['names'] = names
             ibid.reloader.reload_config()
+
+        event = Event(self.factory.name, u'source')
+        event.status = u'connected'
+        ibid.dispatcher.dispatch(event)
+
+        event = Event(self.factory.name, u'source')
+        event.channel = u'$public'
+        event.status = u'joined'
+        ibid.dispatcher.dispatch(event)
+
         self.factory.log.info(u"Signed on")
 
     def _create_event(self, type, user):
@@ -60,7 +75,6 @@ class DCBot(dcwords.DCClient):
         event.sender['nick'] = user
         event.channel = u'$public'
         event.public = True
-        event.source = self.factory.name
         return event
 
     def _state_event(self, user, action):
@@ -97,7 +111,7 @@ class DCBot(dcwords.DCClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].replace('\n', ' ')[:490]
+        message = response['reply']
 
         if message:
             for prefix in self.factory.banned_prefixes:
@@ -142,7 +156,7 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    supports = ('action', 'topic')
+    supports = ('action', 'multiline', 'topic')
     auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)

@@ -7,12 +7,12 @@ import logging
 import re
 
 from pkg_resources import resource_exists, resource_stream
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, ForeignKey, Table
 
 import ibid
 from ibid.plugins import Processor, match, handler
 from ibid.config import Option, ListOption
-from ibid.models import Base, VersionedSchema
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.utils.html import get_html_parse_tree
 
 help = {'url': u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'}
@@ -22,17 +22,23 @@ log = logging.getLogger('plugins.url')
 class URL(Base):
     __table__ = Table('urls', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('url', UnicodeText, nullable=False),
-    Column('channel', Unicode(32), nullable=False),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
+    Column('url', IbidUnicodeText, nullable=False),
+    Column('channel', IbidUnicode(32, case_insensitive=True), nullable=False),
+    Column('identity_id', Integer, ForeignKey('identities.id'),
+           nullable=False, index=True),
     Column('time', DateTime, nullable=False),
     useexisting=True)
 
     class URLSchema(VersionedSchema):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.identity_id)
+        def upgrade_2_to_3(self):
+            self.alter_column(Column('url', IbidUnicodeText, nullable=False))
+            self.alter_column(Column('channel',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     nullable=False), force_rebuild=True)
 
-    __table__.versioned_schema = URLSchema(__table__, 2)
+    __table__.versioned_schema = URLSchema(__table__, 3)
 
     def __init__(self, url, channel, identity_id):
         self.url = url

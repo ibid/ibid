@@ -33,6 +33,8 @@ class IbidRoot(pb.Root):
 
 class SourceFactory(IbidSourceFactory):
 
+    supports = ('multiline',)
+
     port = IntOption('port', 'Port number to listen on', 8789)
 
     def setServiceParent(self, service):
