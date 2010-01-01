@@ -9,7 +9,7 @@ from dateutil.tz import gettz, tzutc, tzlocal
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output
+from ibid.utils import file_in_path, unicode_output, human_join
 from ibid.compat import defaultdict
 
 help = {}
@@ -113,6 +113,9 @@ class Units(Processor):
             else:
                 event.addresponse(u"I can't do that: %s", result)
 
+class TimezoneException(Exception):
+    pass
+
 help['timezone'] = "Converts times between timezones."
 class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
@@ -130,7 +133,7 @@ class TimeZone(Processor):
             for line in open(iso3166).readlines():
                 if not line.startswith('#'):
                     code, name = line.strip().split('\t')
-                    self.countries[name] = code
+                    self.countries[code] = name
 
         zones = join(self.zoneinfo, 'zone.tab')
         if exists(zones):
@@ -141,21 +144,56 @@ class TimeZone(Processor):
                         zone, comment = zone.split('\t')
                     self.timezones[code].append(zone)
 
-    @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(\S+)$')
+    def _find_timezone(self, string):
+        ccode = None
+
+        if string.upper() == 'GMT':
+            string = 'UTC'
+        zone = gettz(string)
+
+        if not zone:
+            for code, name in self.countries.items():
+                if name.lower() == string.lower():
+                    ccode = code
+            if not ccode:
+                if string.replace('.', '').upper() in self.timezones:
+                    ccode = string.replace('.', '').upper()
+
+            if ccode:
+                if len(self.timezones[ccode]) == 1:
+                    zone = gettz(self.timezones[ccode][0])
+                else:
+                    raise TimezoneException(u'%s has multiple timezones: %s' % (self.countries[ccode], human_join(self.timezones[ccode])))
+
+            else:
+                possibles = []
+                for zones in self.timezones.values():
+                    for name in zones:
+                        if string.replace(' ', '_').lower() in name.lower():
+                            possibles.append(name)
+
+                if len(possibles) == 1:
+                    zone = gettz(possibles[0])
+                elif len(possibles) > 1:
+                    raise TimezoneException(u'Multiple timezones found: %s' % (human_join(possibles)))
+                else:
+                    raise TimezoneException(u"I don't know about the %s timezone" % (string,))
+
+        return zone
+
+    @match(r'^when\s+is\s+(.+?)(?:\s+([a-z/_]+))?\s+in\s+(.+)$')
     def convert(self, event, time, from_, to):
         time = parse(time)
 
-        if from_:
-            from_zone = gettz(from_)
-            if not from_zone:
-                event.addresponse(u"I don't know about the %s timezone", from_)
-                return
-        else:
-            from_zone = tzlocal()
+        try:
+            if from_:
+                from_zone = self._find_timezone(from_)
+            else:
+                from_zone = tzlocal()
 
-        to_zone = gettz(to)
-        if not to_zone:
-            event.addresponse(u"I don't know about the %s timezone", to)
+            to_zone = self._find_timezone(to)
+        except TimezoneException, e:
+            event.addresponse(unicode(e))
             return
 
         source = time.replace(tzinfo=from_zone)
@@ -170,7 +208,7 @@ class TimeZone(Processor):
             'dzone': result.tzinfo.tzname(result),
         })
 
-    @match(r"^(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in\s+(\S+)$")
+    @match(r"^(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in\s+(.+)$")
     def time(self, event, place):
         self.convert(event, datetime.now().isoformat(), None, place)
 
