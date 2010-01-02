@@ -9,7 +9,7 @@ from dateutil.tz import gettz, tzutc, tzlocal
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join, format_date
+from ibid.utils import file_in_path, unicode_output, human_join, format_date, json_webservice
 from ibid.compat import defaultdict
 
 help = {}
@@ -181,9 +181,26 @@ class TimeZone(Processor):
                 elif len(possibles) > 1:
                     raise TimezoneException(u'Multiple timezones found: %s' % (human_join(possibles)))
                 else:
-                    raise TimezoneException(u"I don't know about the %s timezone" % (string,))
+                    tz = self._geonames_lookup(string)
+                    if tz:
+                        zone = gettz(tz)
+                    else:
+                        raise TimezoneException(u"I don't know about the %s timezone" % (string,))
 
         return zone
+
+    def _geonames_lookup(self, place):
+        search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1})
+        if search['totalResultsCount'] == 0:
+            return None
+
+        city = search['geonames'][0]
+        timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng']})
+
+        if 'timezoneId' in timezone:
+            return timezone['timezoneId']
+
+        return None
 
     @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
     def convert(self, event, time, from_, to):
