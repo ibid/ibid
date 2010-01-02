@@ -116,6 +116,9 @@ class Units(Processor):
 class TimezoneException(Exception):
     pass
 
+MONTH_SHORT = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+
 help['timezone'] = "Converts times between timezones."
 class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
@@ -181,7 +184,7 @@ class TimeZone(Processor):
 
         return zone
 
-    @match(r'^when\s+is\s+([0-9.:/hTamp -]+)(?:\s+(.+))?\s+in\s+(.+)$')
+    @match(r'^when\s+is\s+((?:[0-9.:/hTamp -]|%s)+)(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG))
     def convert(self, event, time, from_, to):
         time = parse(time)
 
