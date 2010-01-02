@@ -186,7 +186,7 @@ class TimeZone(Processor):
 
     @match(r'^when\s+is\s+((?:[0-9.:/hTamp -]|%s)+)(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG))
     def convert(self, event, time, from_, to):
-        time = parse(time)
+        source = time and parse(time) or datetime.now()
 
         try:
             if from_:
@@ -199,16 +199,16 @@ class TimeZone(Processor):
             event.addresponse(unicode(e))
             return
 
-        source = time.replace(tzinfo=from_zone)
+        source = source.replace(tzinfo=from_zone)
         result = source.astimezone(to_zone)
 
-        event.addresponse(u'%(source)s is %(destination)s', {
+        event.addresponse(time and u'%(source)s is %(destination)s' or '%(destination)s', {
             'source': format_date(source, tolocaltime=False),
             'destination': format_date(result, tolocaltime=False),
         })
 
     @match(r"^(?:(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in|what\s+time\s+is\s+it\s+in)\s+(.+)$")
     def time(self, event, place):
-        self.convert(event, datetime.now().isoformat(), None, place)
+        self.convert(event, None, None, place)
 
 # vi: set et sta sw=4 ts=4:
