@@ -76,16 +76,16 @@ class Delicious(object):
         tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
 
         data = {
-            'url' : url,
-            'description' : title,
-            'tags' : tags,
-            'replace' : u'yes',
+            'url' : url.encode('utf-8'),
+            'description' : title.encode('utf-8'),
+            'tags' : tags.encode('utf-8'),
+            'replace' : 'yes',
             'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'extended' : event.message['raw'],
+            'extended' : event.message['raw'].encode('utf-8'),
             }
 
         self._set_auth(username, password)
-        posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
+        posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data)
 
         try:
             resp = urlopen(posturl).read()
