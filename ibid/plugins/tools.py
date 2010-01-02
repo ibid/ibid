@@ -5,7 +5,7 @@ from datetime import datetime
 from os.path import exists, join
 
 from dateutil.parser import parse
-from dateutil.tz import gettz, tzutc, tzlocal
+from dateutil.tz import gettz, tzutc, tzlocal, tzoffset
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -181,10 +181,8 @@ class TimeZone(Processor):
                 elif len(possibles) > 1:
                     raise TimezoneException(u'Multiple timezones found: %s' % (human_join(possibles)))
                 else:
-                    tz = self._geonames_lookup(string)
-                    if tz:
-                        zone = gettz(tz)
-                    else:
+                    zone = self._geonames_lookup(string)
+                    if not zone:
                         raise TimezoneException(u"I don't know about the %s timezone" % (string,))
 
         return zone
@@ -198,7 +196,11 @@ class TimeZone(Processor):
         timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng']})
 
         if 'timezoneId' in timezone:
-            return timezone['timezoneId']
+            return gettz(timezone['timezoneId'])
+
+        if 'rawOffset' in timezone:
+            offset = timezone['rawOffset']
+            return tzoffset('UTC%s%s' % (offset>=0 and '+' or '', offset), offset*3600)
 
         return None
 
