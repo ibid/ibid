@@ -1,10 +1,9 @@
 import re
 import socket
 from httplib import HTTPConnection, HTTPSConnection
-from encodings.punycode import punycode_encode
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
-from urlparse import urlparse, urlunparse
+from urlparse import urlparse
 from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
@@ -12,7 +11,7 @@ from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption, DictOption
-from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils import file_in_path, unicode_output, human_join, idna_encode
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -258,14 +257,7 @@ class HTTP(Processor):
             headers['Range'] = 'bytes=0-%s' % self.max_size
 
         try:
-            url = url.encode('ascii')
-        except UnicodeEncodeError:
-            parts = list(urlparse(url))
-            parts[1] = punycode_encode(parts[1])
-            url = urlunparse(parts)
-
-        try:
-            conn.request(method.upper(), url.encode('utf8'), headers=headers)
+            conn.request(method.upper(), idna_encode(url).encode('utf8'), headers=headers)
             response = conn.getresponse()
             data = response.read(self.max_size)
             conn.close()

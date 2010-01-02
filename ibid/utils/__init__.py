@@ -9,6 +9,8 @@ import time
 from urllib import urlencode
 import urllib2
 import zlib
+from urlparse import urlparse, urlunparse
+from encodings import idna
 
 from dateutil.tz import tzlocal, tzutc
 
@@ -192,5 +194,17 @@ def plural(count, singular, plural):
     if count == 1:
         return singular
     return plural
+
+def idna_encode(url):
+    parts = list(urlparse(url))
+    components = parts[1].split('.')
+    for index, component in enumerate(components):
+        try:
+            component.encode('ascii')
+        except UnicodeEncodeError:
+            components[index] = idna.ToASCII(component)
+
+    parts[1] = '.'.join(components)
+    return urlunparse(parts)
 
 # vi: set et sta sw=4 ts=4:
