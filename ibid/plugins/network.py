@@ -173,6 +173,9 @@ class IPCalc(Processor):
 
 title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
+class HTTPException(Exception):
+    pass
+
 help['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
 class HTTP(Processor):
     u"""(get|head) <url>
@@ -190,15 +193,19 @@ class HTTP(Processor):
         if not urlparse(url).path:
             url += '/'
 
-        status, reason, data = self._request(url, action.upper())
-        reply = u'%s %s' % (status, reason)
+        try:
+            status, reason, data = self._request(url, action.upper())
+            reply = u'%s %s' % (status, reason)
 
-        if action.upper() == 'GET':
-            match = title.search(data)
-            if match:
-                reply += u' "%s"' % match.groups()[0].strip()
+            if action.upper() == 'GET':
+                match = title.search(data)
+                if match:
+                    reply += u' "%s"' % match.groups()[0].strip()
 
-        event.addresponse(reply)
+            event.addresponse(reply)
+
+        except HTTPException, e:
+            event.addresponse(unicode(e))
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, site, type):
@@ -210,18 +217,22 @@ class HTTP(Processor):
 
         url = 'http://%s/' % (site,)
 
-        status, reason, data = self._request(url, 'HEAD')
+        try:
+            status, reason, data = self._request(url, 'HEAD')
 
-        if status < 400:
-            if type.lower() == 'up':
-                event.addresponse(u'Yes, %s is up', (site,))
+            if status < 400:
+                if type.lower() == 'up':
+                    event.addresponse(u'Yes, %s is up', (site,))
+                else:
+                    event.addresponse(u"No, it's just you")
             else:
-                event.addresponse(u"No, it's just you")
-        else:
-            if type.lower() == 'up':
-                event.addresponse(u'No, %s is down', (site,))
-            else:
-                event.addresponse(u'Yes, %s is down', (site,))
+                if type.lower() == 'up':
+                    event.addresponse(u'No, %s is down', (site,))
+                else:
+                    event.addresponse(u'Yes, %s is down', (site,))
+
+        except HTTPException, e:
+            event.addresponse(unicode(e))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
@@ -252,7 +263,7 @@ class HTTP(Processor):
             data = response.read(self.max_size)
             conn.close()
         except socket.error, e:
-            return 502, 'Socket Error: %s' % e, ''
+            raise HTTPException(e.message or e.args[1])
 
         return response.status, response.reason, data
 
