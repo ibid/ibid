@@ -220,7 +220,7 @@ class TimeZone(Processor):
         source = source.replace(tzinfo=from_zone)
         result = source.astimezone(to_zone)
 
-        event.addresponse(time and u'%(source)s is %(destination)s' or '%(destination)s', {
+        event.addresponse(time and u'%(source)s is %(destination)s' or 'It is %(destination)s', {
             'source': format_date(source, tolocaltime=False),
             'destination': format_date(result, tolocaltime=False),
         })
