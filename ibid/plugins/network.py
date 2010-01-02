@@ -219,20 +219,19 @@ class HTTP(Processor):
 
         try:
             status, reason, data = self._request(url, 'HEAD')
-
-            if status < 400:
-                if type.lower() == 'up':
-                    event.addresponse(u'Yes, %s is up', (site,))
-                else:
-                    event.addresponse(u"No, it's just you")
-            else:
-                if type.lower() == 'up':
-                    event.addresponse(u'No, %s is down', (site,))
-                else:
-                    event.addresponse(u'Yes, %s is down', (site,))
-
         except HTTPException, e:
-            event.addresponse(unicode(e))
+            status = 600
+
+        if status < 400:
+            if type.lower() == 'up':
+                event.addresponse(u'Yes, %s is up', (site,))
+            else:
+                event.addresponse(u"No, it's just you")
+        else:
+            if type.lower() == 'up':
+                event.addresponse(u'No, %s is down', (site,))
+            else:
+                event.addresponse(u'Yes, %s is down', (site,))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
