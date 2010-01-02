@@ -264,6 +264,9 @@ class HTTP(Processor):
         except socket.error, e:
             raise HTTPException(e.message or e.args[1])
 
-        return response.status, response.reason, data
+        contenttype = response.getheader('Content-Type', 'text/html; charset=utf-8')
+        charset = re.search('charset=([a-zA-Z0-9-]+)', contenttype).group(1)
+
+        return response.status, response.reason, data.decode(charset)
 
 # vi: set et sta sw=4 ts=4:
