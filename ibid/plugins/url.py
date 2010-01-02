@@ -126,9 +126,9 @@ class Grab(Processor):
     delicious = Delicious()
 
     def setup(self):
-        if resource_exists(__name__, '../../data/tlds-alpha-by-domain.txt'):
+        if resource_exists(__name__, '../data/tlds-alpha-by-domain.txt'):
             tlds = [tld.strip().lower() for tld
-                    in resource_stream(__name__, '../../data/tlds-alpha-by-domain.txt')
+                    in resource_stream(__name__, '../data/tlds-alpha-by-domain.txt')
                         .readlines()
                     if not tld.startswith('#')
             ]
