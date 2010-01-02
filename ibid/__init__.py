@@ -6,6 +6,7 @@ from ConfigParser import SafeConfigParser
 
 import sys
 sys.path.insert(0, '%s/../lib' % dirname(__file__))
+sys.path.insert(1, '.')
 
 import twisted.python.log
 
