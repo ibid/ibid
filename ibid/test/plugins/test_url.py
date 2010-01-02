@@ -50,6 +50,7 @@ class TestURLGrabber(unittest.TestCase):
         u'x joe@google.com',
         u'<joe@bar.com>',
         u'joe@bar.za.net',
+        u'File "/usr/lib/python2.5/httplib.py", line 866, in request',
     ]
 
     def test_bad_grabs(self):
