@@ -196,14 +196,7 @@ def plural(count, singular, plural):
 
 def idna_encode(url):
     parts = list(urlparse(url))
-    components = parts[1].split('.')
-    for index, component in enumerate(components):
-        try:
-            component.encode('ascii')
-        except UnicodeEncodeError:
-            components[index] = component.encode('idna')
-
-    parts[1] = '.'.join(components)
+    parts[1] = parts[1].encode('idna')
     return urlunparse(parts)
 
 # vi: set et sta sw=4 ts=4:
