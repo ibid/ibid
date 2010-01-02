@@ -4,6 +4,7 @@ from httplib import HTTPConnection, HTTPSConnection
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
 from urlparse import urlparse, urljoin
+from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
@@ -230,24 +231,28 @@ class HTTP(Processor):
             scheme, host = urlparse(proxies[scheme])[:2]
             scheme = scheme.lower()
 
-        if scheme == "https":
-            conn = HTTPSConnection(host)
+        kwargs = {}
+        if version_info[1] >= 6:
+            kwargs['timeout'] = self.timeout
         else:
-            conn = HTTPConnection(host)
+            socket.setdefaulttimeout(self.timeout)
+
+        if scheme == "https":
+            conn = HTTPSConnection(host, **kwargs)
+        else:
+            conn = HTTPConnection(host, **kwargs)
 
         headers={}
         if method == 'GET':
             headers['Range'] = 'bytes=0-%s' % self.max_size
-        conn.request(method.upper(), url, headers=headers)
-        conn.sock.settimeout(self.timeout)
 
         try:
+            conn.request(method.upper(), url, headers=headers)
             response = conn.getresponse()
+            data = response.read(self.max_size)
+            conn.close()
         except socket.error, e:
             return 502, 'Socket Error: %s' % e, ''
-
-        data = response.read(self.max_size)
-        conn.close()
 
         return response.status, response.reason, data
 
