@@ -3,7 +3,7 @@ import socket
 from httplib import HTTPConnection, HTTPSConnection
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
-from urlparse import urlparse, urljoin
+from urlparse import urlparse
 from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
