@@ -181,8 +181,8 @@ class Format(Processor):
             if response.get('action', False) and 'action' not in supports:
                 response['reply'] = u'*%s*' % response['reply']
 
-            if (not response.get('conflate', True)
-                    and 'multiline' not in supports):
+            conflate = response.get('conflate', True)
+            if (not conflate and 'multiline' not in supports):
                 for line in response['reply'].split('\n'):
                     r = {'reply': line}
                     for k in response.iterkeys():
@@ -191,7 +191,9 @@ class Format(Processor):
                     filtered.append(r)
             else:
                 if 'multiline' not in supports:
-                    response['reply'] = response['reply'].expandtabs(1).replace('\n', conflate == True and u' ' or conflate or u'')
+                    response['reply'] = response['reply'].expandtabs(1) \
+                            .replace('\n', conflate == True
+                                           and u' ' or conflate or u'')
                 filtered.append(response)
 
         event.responses = filtered
