@@ -10,7 +10,6 @@ from urllib import urlencode
 import urllib2
 import zlib
 from urlparse import urlparse, urlunparse
-from encodings import idna
 
 from dateutil.tz import tzlocal, tzutc
 
@@ -202,7 +201,7 @@ def idna_encode(url):
         try:
             component.encode('ascii')
         except UnicodeEncodeError:
-            components[index] = idna.ToASCII(component)
+            components[index] = component.encode('idna')
 
     parts[1] = '.'.join(components)
     return urlunparse(parts)
