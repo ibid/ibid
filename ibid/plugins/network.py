@@ -1,9 +1,10 @@
 import re
 import socket
 from httplib import HTTPConnection, HTTPSConnection
+from encodings.punycode import punycode_encode
 from subprocess import Popen, PIPE
 from urllib import getproxies_environment
-from urlparse import urlparse
+from urlparse import urlparse, urlunparse
 from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
@@ -257,7 +258,14 @@ class HTTP(Processor):
             headers['Range'] = 'bytes=0-%s' % self.max_size
 
         try:
-            conn.request(method.upper(), url, headers=headers)
+            url = url.encode('ascii')
+        except UnicodeEncodeError:
+            parts = list(urlparse(url))
+            parts[1] = punycode_encode(parts[1])
+            url = urlunparse(parts)
+
+        try:
+            conn.request(method.upper(), url.encode('utf8'), headers=headers)
             response = conn.getresponse()
             data = response.read(self.max_size)
             conn.close()
