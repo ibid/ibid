@@ -12,6 +12,8 @@ from shutil import copyfileobj
 from pkg_resources import resource_stream
 from twisted.python.modules import getModule
 
+sys.path.insert(0, '.')
+
 import ibid
 from ibid.plugins.auth import hash
 from ibid.config import FileConfig
