@@ -186,10 +186,12 @@ class Format(Processor):
                 for line in response['reply'].split('\n'):
                     r = {'reply': line}
                     for k in response.iterkeys():
-                        if k not in ('reply', 'conflate'):
+                        if k not in ('reply'):
                             r[k] = response[k]
                     filtered.append(r)
             else:
+                if 'multiline' not in supports:
+                    response['reply'] = response['reply'].expandtabs(1).replace('\n', conflate == True and u' ' or conflate or u'')
                 filtered.append(response)
 
         event.responses = filtered
