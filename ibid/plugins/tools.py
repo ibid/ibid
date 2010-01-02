@@ -204,7 +204,7 @@ class TimeZone(Processor):
             'destination': format_date(result, tolocaltime=False),
         })
 
-    @match(r"^(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in\s+(.+)$")
+    @match(r"^(?:(?:what(?:'?s|\s+is)\s+the\s+)?time\s+in|what\s+time\s+is\s+it\s+in)\s+(.+)$")
     def time(self, event, place):
         self.convert(event, datetime.now().isoformat(), None, place)
 
