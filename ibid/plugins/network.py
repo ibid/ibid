@@ -208,14 +208,16 @@ class HTTP(Processor):
             event.addresponse(unicode(e))
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
-    def isit(self, event, site, type):
-        if site in self.sites:
-            site = self.sites[site]
+    def isit(self, event, url, type):
+        if url in self.sites:
+            url = self.sites[url]
         else:
-            if '.' not in site:
-                site += '.com'
-
-        url = 'http://%s/' % (site,)
+            if not urlparse(url).netloc:
+                if '.' not in url:
+                    url += '.com'
+                url = 'http://' + url
+            if not urlparse(url).path:
+                url += '/'
 
         try:
             status, reason, data = self._request(url, 'HEAD')
@@ -224,14 +226,14 @@ class HTTP(Processor):
 
         if status < 400:
             if type.lower() == 'up':
-                event.addresponse(u'Yes, %s is up', (site,))
+                event.addresponse(u'Yes, %s is up', (url,))
             else:
                 event.addresponse(u"No, it's just you")
         else:
             if type.lower() == 'up':
-                event.addresponse(u'No, %s is down', (site,))
+                event.addresponse(u'No, %s is down', (url,))
             else:
-                event.addresponse(u'Yes, %s is down', (site,))
+                event.addresponse(u'Yes, %s is down', (url,))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
