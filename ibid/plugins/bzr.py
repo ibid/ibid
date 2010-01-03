@@ -79,8 +79,8 @@ class Bazaar(Processor, RPC):
                 continue
             if repository.get('poll', 'False').lower() in ('yes', 'true'):
                 must_monitor = True
+        self.check.im_func.disabled = not must_monitor
         if must_monitor:
-            self.check.im_func.interval = timedelta(seconds=self.interval)
             self.seen_revisions = {}
 
     @match(r'^(?:repos|repositories)$')
@@ -155,7 +155,7 @@ class Bazaar(Processor, RPC):
                 self.remote_committed(name,
                     int(event.headers['X-Launchpad-Branch-Revision-Number']))
 
-    @periodic(0)
+    @periodic(config_key='interval')
     def check(self, event):
         for name, repo in self.repositories.iteritems():
             if repo.get('poll', 'False').lower() not in ('yes', 'true'):
