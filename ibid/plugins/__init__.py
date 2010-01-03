@@ -62,10 +62,8 @@ class Processor(object):
     def process(self, event):
         "Process a single event"
         if event.type == 'clock':
-            for name, method in getmembers(self, ismethod):
-                if (hasattr(method, 'run_every')
-                        and method.interval.seconds > 0
-                        and not method.running):
+            for method in self._get_periodic_handlers():
+                if (method.interval.seconds > 0 and not method.running):
                     method.im_func.running = True
                     if method.last_called is None:
                         # Don't fire first time
@@ -73,21 +71,23 @@ class Processor(object):
                         method.im_func.last_called = event.time
                     elif event.time - method.last_called >= method.interval:
                         method.im_func.last_called = event.time
+                        message = None
                         try:
                             method(event)
                             if method.failing:
-                                self.__log.info(u'No longer failing: %s.%s',
-                                        self.__class__.__name__, name)
+                                message = u'No longer failing'
                                 method.im_func.failing = False
                         except:
                             if not method.failing:
+                                message = u'Periodic method failing'
                                 method.im_func.failing = True
-                                self.__log.exception(
-                                        u'Periodic method failing: %s.%s',
-                                        self.__class__.__name__, name)
                             else:
-                                self.__log.debug(u'Still failing: %s.%s',
-                                        self.__class__.__name__, name)
+                                message = u'Still failing'
+                        if message:
+                            self.__log.debug(u'%s: %s.%s',
+                                             message,
+                                             self.__class__.__name__,
+                                             method.__name__)
                     method.im_func.running = False
 
         if event.type not in self.event_types:
@@ -121,9 +121,15 @@ class Processor(object):
         return event
 
     def _get_event_handlers(self):
-        "Find all the handlers (regex matching and otherwise)"
+        "Find all the handlers (regex matching and blind)"
         for name, method in getmembers(self, ismethod):
             if hasattr(method, 'handler'):
+                yield method
+
+    def _get_periodic_handlers(self):
+        "Find all the periodic handlers"
+        for name, method in getmembers(self, ismethod):
+            if hasattr(method, 'periodic'):
                 yield method
 
 # This is a bit yucky, but necessary since ibid.config imports Processor
@@ -176,7 +182,7 @@ def authorise(fallthrough=True):
 def run_every(interval=0, config_key=None):
     "Wrapper: Run this handler every interval seconds"
     def wrap(function):
-        function.run_every = True
+        function.periodic = True
         function.running = False
         function.last_called = None
         function.interval = timedelta(seconds=interval)
