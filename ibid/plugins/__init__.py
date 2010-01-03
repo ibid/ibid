@@ -100,26 +100,31 @@ class Processor(object):
             return
 
         found = False
-        for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'handler'):
-                if not hasattr(method, 'pattern'):
-                    found = True
-                    method(event)
-                elif hasattr(event, 'message'):
-                    found = True
-                    match = method.pattern.search(
-                            event.message[method.message_version])
-                    if match is not None:
-                        if (not getattr(method, 'auth_required', False)
-                                or auth_responses(event, self.permission)):
-                            method(event, *match.groups())
-                        elif not getattr(method, 'auth_fallthrough', True):
-                            event.processed = True
+        for method in self._get_event_handlers():
+            if not hasattr(method, 'pattern'):
+                found = True
+                method(event)
+            elif hasattr(event, 'message'):
+                found = True
+                match = method.pattern.search(
+                        event.message[method.message_version])
+                if match is not None:
+                    if (not getattr(method, 'auth_required', False)
+                            or auth_responses(event, self.permission)):
+                        method(event, *match.groups())
+                    elif not getattr(method, 'auth_fallthrough', True):
+                        event.processed = True
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
 
         return event
+
+    def _get_event_handlers(self):
+        "Find all the handlers (regex matching and otherwise)"
+        for name, method in getmembers(self, ismethod):
+            if hasattr(method, 'handler'):
+                yield method
 
 # This is a bit yucky, but necessary since ibid.config imports Processor
 from ibid.config import BoolOption, IntOption
