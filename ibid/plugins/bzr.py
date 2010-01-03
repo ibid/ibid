@@ -7,7 +7,7 @@ from bzrlib import log
 from bzrlib.errors import NotBranchError, RevisionNotPresent
 
 import ibid
-from ibid.plugins import Processor, match, RPC, handler, run_every
+from ibid.plugins import Processor, match, RPC, handler, periodic
 from ibid.config import DictOption, IntOption
 from ibid.utils import ago, format_date, human_join
 
@@ -155,9 +155,8 @@ class Bazaar(Processor, RPC):
                 self.remote_committed(name,
                     int(event.headers['X-Launchpad-Branch-Revision-Number']))
 
-    @run_every(0)
+    @periodic(0)
     def check(self, event):
-        self.log.debug(u'Checking bzr branches for new commits')
         for name, repo in self.repositories.iteritems():
             if repo.get('poll', 'False').lower() not in ('yes', 'true'):
                 continue

@@ -55,9 +55,9 @@ class Processor(object):
     def setup(self):
         "Apply configuration. Called on every config reload"
         for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'run_every_config_key'):
+            if hasattr(method, 'interval_config_key'):
                 method.im_func.interval = timedelta(
-                        seconds=getattr(self, method.run_every_config_key, 0))
+                        seconds=getattr(self, method.interval_config_key, 0))
 
     def shutdown(self):
         pass
@@ -197,7 +197,7 @@ def authorise(fallthrough=True):
         return function
     return wrap
 
-def run_every(interval=0, config_key=None, initial_delay=60):
+def periodic(interval=0, config_key=None, initial_delay=60):
     """Wrapper: Run this handler every interval seconds
     If a config_key is provided, the interval will be set in Processor.setup()
     """
@@ -209,7 +209,7 @@ def run_every(interval=0, config_key=None, initial_delay=60):
         function.interval = timedelta(seconds=interval)
         function.initial_delay = timedelta(seconds=initial_delay)
         if config_key is not None:
-            function.run_every_config_key = config_key
+            function.interval_config_key = config_key
         function.failing = False
         return function
     return wrap

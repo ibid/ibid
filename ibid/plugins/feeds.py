@@ -9,7 +9,7 @@ from html2text import html2text_file
 from ibid.config import IntOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
-from ibid.plugins import Processor, match, authorise, run_every
+from ibid.plugins import Processor, match, authorise, periodic
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
@@ -272,9 +272,8 @@ class Retrieve(Processor):
         })
 
     last_seen = {}
-    @run_every(config_key='interval')
+    @periodic(config_key='interval')
     def poll(self, event):
-        log.debug(u'Polling feeds')
         feeds = event.session.query(Feed) \
                 .filter(Feed.source != None) \
                 .filter(Feed.target != None).all()
