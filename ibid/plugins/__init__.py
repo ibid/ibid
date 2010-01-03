@@ -30,6 +30,8 @@ class Processor(object):
     event_types = (u'message',)
     addressed = True
     processed = False
+    event_handlers = None
+    periodic_handlers = None
     priority = 0
     autoload = True
 
@@ -98,15 +100,21 @@ class Processor(object):
 
     def _get_event_handlers(self):
         "Find all the handlers (regex matching and blind)"
-        for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'handler'):
-                yield method
+        if self.event_handlers is None:
+            self.event_handlers = sorted(method
+                    for name, method
+                    in getmembers(self, ismethod)
+                    if hasattr(method, 'handler'))
+        return self.event_handlers
 
     def _get_periodic_handlers(self):
         "Find all the periodic handlers"
-        for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'periodic'):
-                yield method
+        if self.periodic_handlers is None:
+            self.periodic_handlers = [method
+                    for name, method
+                    in getmembers(self, ismethod)
+                    if hasattr(method, 'periodic')]
+        return self.periodic_handlers
 
     def _run_periodic_handler(self, method, event):
         "Run a periodic handler, if appropriate"
