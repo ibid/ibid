@@ -3,6 +3,7 @@ from datetime import timedelta
 from inspect import getargspec, getmembers, ismethod
 import logging
 import re
+from threading import Lock
 
 from twisted.spread import pb
 from twisted.web import resource
@@ -63,32 +64,7 @@ class Processor(object):
         "Process a single event"
         if event.type == 'clock':
             for method in self._get_periodic_handlers():
-                if (method.interval.seconds > 0 and not method.running):
-                    method.im_func.running = True
-                    if method.last_called is None:
-                        # Don't fire first time
-                        # Give sources a chance to connect
-                        method.im_func.last_called = event.time
-                    elif event.time - method.last_called >= method.interval:
-                        method.im_func.last_called = event.time
-                        message = None
-                        try:
-                            method(event)
-                            if method.failing:
-                                message = u'No longer failing'
-                                method.im_func.failing = False
-                        except:
-                            if not method.failing:
-                                message = u'Periodic method failing'
-                                method.im_func.failing = True
-                            else:
-                                message = u'Still failing'
-                        if message:
-                            self.__log.debug(u'%s: %s.%s',
-                                             message,
-                                             self.__class__.__name__,
-                                             method.__name__)
-                    method.im_func.running = False
+                self._run_periodic_handler(method, event)
 
         if event.type not in self.event_types:
             return
@@ -131,6 +107,40 @@ class Processor(object):
         for name, method in getmembers(self, ismethod):
             if hasattr(method, 'periodic'):
                 yield method
+
+    def _run_periodic_handler(self, method, event):
+        "Run a periodic handler, if appropriate"
+        if (method.interval.seconds > 0
+                and not method.disabled
+                and method.lock.acquire(0)):
+            if method.last_called is None:
+                # First call, set up initial_delay
+                method.im_func.last_called = event.time
+            elif event.time - method.last_called >= (
+                    method.initial_delay or method.interval):
+                method.im_func.initial_delay = None
+                method.im_func.last_called = event.time
+                message = None
+                try:
+                    self.__log.debug(u'Running periodic event: %s.%s',
+                            self.__class__.__name__,
+                            method.__name__)
+                    method(event)
+                    if method.failing:
+                        message = u'No longer failing'
+                        method.im_func.failing = False
+                except:
+                    if not method.failing:
+                        message = u'Periodic method failing'
+                        method.im_func.failing = True
+                    else:
+                        message = u'Still failing'
+                if message:
+                    self.__log.debug(u'%s: %s.%s',
+                                     message,
+                                     self.__class__.__name__,
+                                     method.__name__)
+            method.lock.release()
 
 # This is a bit yucky, but necessary since ibid.config imports Processor
 from ibid.config import BoolOption, IntOption
@@ -179,13 +189,17 @@ def authorise(fallthrough=True):
         return function
     return wrap
 
-def run_every(interval=0, config_key=None):
-    "Wrapper: Run this handler every interval seconds"
+def run_every(interval=0, config_key=None, initial_delay=60):
+    """Wrapper: Run this handler every interval seconds
+    If a config_key is provided, the interval will be set in Processor.setup()
+    """
     def wrap(function):
         function.periodic = True
-        function.running = False
+        function.disabled = False
+        function.lock = Lock()
         function.last_called = None
         function.interval = timedelta(seconds=interval)
+        function.initial_delay = timedelta(seconds=initial_delay)
         if config_key is not None:
             function.run_every_config_key = config_key
         function.failing = False
