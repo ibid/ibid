@@ -137,26 +137,21 @@ class Processor(object):
                     method.initial_delay or method.interval):
                 method.im_func.initial_delay = None
                 method.im_func.last_called = event.time
-                message = None
+                name = u'%s.%s' % (self.__class__.__name__, method.__name__)
                 try:
-                    self.__log.debug(u'Running periodic event: %s.%s',
-                            self.__class__.__name__,
-                            method.__name__)
+                    self.__log.debug(u'Running periodic event: %s', name)
                     method(event)
                     if method.failing:
-                        message = u'No longer failing'
+                        self.__log.info(u'No longer failing: %s', name)
                         method.im_func.failing = False
                 except:
                     if not method.failing:
-                        message = u'Periodic method failing'
+                        self.__log.exception(u'Periodic method failing: %s',
+                                             name)
                         method.im_func.failing = True
                     else:
-                        message = u'Still failing'
-                if message:
-                    self.__log.debug(u'%s: %s.%s',
-                                     message,
-                                     self.__class__.__name__,
-                                     method.__name__)
+                        self.__log.debug(u'Still failing: %s', name)
+
             method.lock.release()
 
 # This is a bit yucky, but necessary since ibid.config imports Processor
