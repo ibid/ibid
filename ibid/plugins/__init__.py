@@ -11,6 +11,22 @@ from twisted.web import resource
 import ibid
 from ibid.compat import json
 
+class RegistrationMeta(type):
+    """Lets us probe the new class to handle handler registration without
+    disturbing anything
+    """
+    def __new__(cls, name, bases, dict):
+        klass = super(RegistrationMeta, cls).__new__(cls, name, bases, dict)
+        klass.event_handlers = []
+        klass.periodic_handlers = []
+        for name, item in dict.iteritems():
+            if getattr(item, 'handler', False):
+                klass.event_handlers.append(name)
+            if getattr(item, 'periodic', False):
+                klass.periodic_handlers.append(name)
+
+        return klass
+
 class Processor(object):
     """Base class for Ibid plugins.
     Processors receive events and (optionally) do things with them.
@@ -26,6 +42,7 @@ class Processor(object):
     autoload: Load this Processor, when loading the plugin, even if not
     explicitly required in the configuration file
     """
+    __metaclass__ = RegistrationMeta
 
     event_types = (u'message',)
     addressed = True
@@ -100,21 +117,13 @@ class Processor(object):
 
     def _get_event_handlers(self):
         "Find all the handlers (regex matching and blind)"
-        if self.event_handlers is None:
-            self.event_handlers = sorted(method
-                    for name, method
-                    in getmembers(self, ismethod)
-                    if hasattr(method, 'handler'))
-        return self.event_handlers
+        for handler in self.event_handlers:
+            yield getattr(self, handler)
 
     def _get_periodic_handlers(self):
         "Find all the periodic handlers"
-        if self.periodic_handlers is None:
-            self.periodic_handlers = [method
-                    for name, method
-                    in getmembers(self, ismethod)
-                    if hasattr(method, 'periodic')]
-        return self.periodic_handlers
+        for handler in self.periodic_handlers:
+            yield getattr(self, handler)
 
     def _run_periodic_handler(self, method, event):
         "Run a periodic handler, if appropriate"
