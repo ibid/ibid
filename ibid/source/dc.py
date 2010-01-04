@@ -172,6 +172,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     slots = IntOption('slots', 'DC Open Slots', 0)
     action_prefix = Option('action_prefix', 'Command for actions (i.e. +me)', None)
     banned_prefixes = Option('banned_prefixes', 'Prefixes not allowed in bot responses, i.e. !', '')
+    max_message_length = IntOption('max_message_length',
+            'Maximum length of messages', 490)
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:
@@ -203,6 +205,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         if hasattr(self, 'proto'):
             self.proto.transport.loseConnection()
         return True
+
+    def message_max_length(self, response, event=None):
+        return self.max_message_length
 
     def _dc_auth_callback(self, nick, result):
         self._auth[nick] = result

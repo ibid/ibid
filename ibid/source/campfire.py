@@ -125,4 +125,7 @@ class SourceFactory(IbidSourceFactory):
     def leave(self, room_name):
         return self.client.leave(room_name)
 
+    def message_max_length(self, response, event=None):
+        return None
+
 # vi: set et sta sw=4 ts=4:
