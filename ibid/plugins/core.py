@@ -207,11 +207,14 @@ class Format(Processor):
                     parts = [message[:splitpoint].rstrip(),
                              message[splitpoint:].lstrip()]
                     for sep in u'\n.;:, ':
-                        if sep in parts[0]:
-                            splitpoint = parts[0].rindex(sep)
-                            parts = [message[:splitpoint], message[splitpoint:]]
-                            if sep in u'\n ':
-                                parts[1] = parts[1][1:]
+                        if sep in u'\n ':
+                            search = message[:splitpoint+1]
+                        else:
+                            search = message[:splitpoint]
+                        if sep in search:
+                            splitpoint = search.rindex(sep)
+                            parts = [message[:splitpoint+1].rstrip(),
+                                     message[splitpoint+1:]]
                             break
                     r = {'reply': parts[0]}
                     for k in response.iterkeys():
