@@ -172,6 +172,10 @@ class RateLimit(Processor):
 class Format(Processor):
     priority = 2000
 
+    def _truncate(self, line):
+        return line.encode('utf-8')[:489].decode('utf-8', 'ignore') \
+                               + u'\N{horizontal ellipsis}'
+
     def process(self, event):
         filtered = []
         for response in event.responses:
@@ -182,18 +186,55 @@ class Format(Processor):
                 response['reply'] = u'*%s*' % response['reply']
 
             conflate = response.get('conflate', True)
+            # Expand response into multiple single-line responses:
             if (not conflate and 'multiline' not in supports):
                 for line in response['reply'].split('\n'):
+                    if 'trim' in supports and len(line.encode('utf-8')) > 490:
+                        line = self._truncate(line)
                     r = {'reply': line}
                     for k in response.iterkeys():
                         if k not in ('reply'):
                             r[k] = response[k]
                     filtered.append(r)
+
+            # Expand response into multiple multi-line responses:
+            elif (not conflate and 'multiline' in supports
+                               and 'trim' in supports):
+                message = response['reply']
+                while len(message.encode('utf-8')) > 490:
+                    splitpoint = len(message.encode('utf-8')[:490] \
+                                            .decode('utf-8', 'ignore'))
+                    parts = [message[:splitpoint].rstrip(),
+                             message[splitpoint:].lstrip()]
+                    for sep in u'\n.;:, ':
+                        if sep in parts[0]:
+                            splitpoint = parts[0].rindex(sep)
+                            parts = [message[:splitpoint], message[splitpoint:]]
+                            if sep in u'\n ':
+                                parts[1] = parts[1][1:]
+                            break
+                    r = {'reply': parts[0]}
+                    for k in response.iterkeys():
+                        if k not in ('reply'):
+                            r[k] = response[k]
+                    filtered.append(r)
+                    message = parts[1]
+
+                response['reply'] = message
+                filtered.append(response)
+
             else:
+                line = response['reply']
+                # Remove any characters that make no sense on IRC-like sources:
                 if 'multiline' not in supports:
-                    response['reply'] = response['reply'].expandtabs(1) \
-                            .replace('\n', conflate == True
-                                           and u' ' or conflate or u'')
+                    line = line.expandtabs(1) \
+                               .replace('\n', conflate == True
+                                              and u' ' or conflate or u'')
+
+                if 'trim' in supports and len(line.encode('utf-8')) > 490:
+                    line = self._truncate(line)
+                response['reply'] = line
+
                 filtered.append(response)
 
         event.responses = filtered
