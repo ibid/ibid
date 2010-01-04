@@ -1,7 +1,14 @@
 import csv
 
+from mechanize import Browser, ParseError
+
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
+
+"""
+Dependancies:
+    python-mechanize
+"""
 
 help = { u'airport' : u'Search for airports' }
 
@@ -100,5 +107,18 @@ class FlightSearch(Processor):
         dpt = airport_dpt[0]
         to = airport_to[0]
         event.addresponse(u'Searching for flights from %s to %s', (repr_airport(dpt), repr_airport(to)))
+
+        try:
+            br = Browser()
+            response = br.open(self.travelocity_url)
+            br.select_form(name='AirSearchForm')
+            br['leavingFrom'] = airports[dpt][3]
+            br['goingTo'] = airports[to][3]
+            br['leavingFrom1'] = '01/10/2010' # note mm/dd/yyy order
+            br['goingTo1'] = '01/11/2010'
+            response = br.submit()
+            print response.read()
+        except ParseError:
+            event.addresponse(u'ParseError (need to fix!)')
 
 # vi: set et sta sw=4 ts=4:
