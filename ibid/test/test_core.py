@@ -8,6 +8,11 @@ import ibid
 from ibid import core, event
 
 
+def _defer_cb(dfr, *args, **kw):
+    "Call in the future to allow thread stuff to happen."
+    reactor.callLater(0.000001, dfr.callback, *args, **kw)
+
+
 class TestProcessor(object):
     """
     A processor object stub.
@@ -54,11 +59,11 @@ class TestDispatcher(unittest.TestCase):
         "Create an event with some default values."
         return event.Event(source, type)
 
-    def _defer_assertions(self, callback, result, delay=0.000001):
+    def _defer_assertions(self, callback, result):
         "Create a deferred to assert things that only happen later."
         dfr = defer.Deferred()
         dfr.addCallback(callback, self)
-        reactor.callLater(delay, dfr.callback, result)
+        _defer_cb(dfr, result)
         return dfr
 
     def _dispatch_and_assert(self, callback, ev):
@@ -353,6 +358,62 @@ class TestDispatcher(unittest.TestCase):
             _self.assertFalse(hasattr(_oev, 'did_stuff'))
         dfr.addCallback(_cb, self, ev)
         self.dispatcher.call_later(0.01, _cl, ev, val='thingy')
+        return dfr
+
+    def test_call_later_reply(self):
+        "Calling later can send responses."
+        src = TestSource()
+        ibid.sources['testsource'] = src
+        ev = self._ev()
+        ev.channel = None
+        ev.public = None
+        dfr = defer.Deferred()
+        tm = datetime.now()
+        def _cl(_ev):
+            _ev.addresponse('This happens later.', source='testsource')
+            _defer_cb(dfr, _ev)
+        def _cb(_ev, _self, _src):
+            _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
+            _self.assertEqual([{'reply': 'This happens later.',
+                                'target': None,
+                                'source': 'testsource',
+                                'address': True,
+                                'conflate': True}], _src._msgs)
+        dfr.addCallback(_cb, self, src)
+        self.dispatcher.call_later(0.01, _cl, ev)
+        return dfr
+
+    def test_call_later_multi_reply(self):
+        "Calling later can send many responses."
+        src = TestSource()
+        ibid.sources['fakesource'] = src
+        ibid.sources['testsource'] = src
+        ev = self._ev()
+        ev.channel = None
+        ev.public = None
+        dfr = defer.Deferred()
+        tm = datetime.now()
+        def _cl(_ev):
+            _ev.addresponse('This happens later.')
+            _ev.addresponse('So does this.', source='testsource')
+            _defer_cb(dfr, _ev)
+        def _cb(_ev, _self, _src):
+            _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
+            # Order is reversed because 'fakesource' waits until
+            # processing is finished.
+            _self.assertEqual([{'reply': 'So does this.',
+                                'target': None,
+                                'source': 'testsource',
+                                'address': True,
+                                'conflate': True},
+                               {'reply': 'This happens later.',
+                                'target': None,
+                                'source': 'fakesource',
+                                'address': True,
+                                'conflate': True},
+                               ], _src._msgs)
+        dfr.addCallback(_cb, self, src)
+        self.dispatcher.call_later(0.01, _cl, ev)
         return dfr
 
 # vi: set et sta sw=4 ts=4:
