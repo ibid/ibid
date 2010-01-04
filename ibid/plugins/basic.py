@@ -49,10 +49,9 @@ class Redirect(Processor):
         if 'redirect_target' in event:
             responses = []
             for response in event.responses:
-                if isinstance(response, basestring):
-                    response = {'reply': response, 'target': event.redirect_target}
-                    if 'redirect_source' in event:
-                        response['source'] = event.redirect_source
+                response['target'] = event.redirect_target
+                if 'redirect_source' in event:
+                    response['source'] = event.redirect_source
                 responses.append(response)
             event.responses = responses
 
