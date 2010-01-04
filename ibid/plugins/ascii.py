@@ -174,6 +174,6 @@ class WriteFiglet(Processor):
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
         if rendered and len(rendered[0]) > self.max_width:
-            event.addresponse(u"Sorry, that string is too long!")
+            event.addresponse(u"Sorry that's too long, nobody will be able to read it")
             return
         event.addresponse(unicode('\n'.join(rendered)), address=False, conflate=False)
