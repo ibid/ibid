@@ -3,9 +3,7 @@ from cStringIO import StringIO
 import Image
 from os import remove
 import os.path
-import socket
 import subprocess
-from sys import stderr
 from tempfile import mkstemp
 from urllib2 import HTTPError, URLError, urlopen
 from urlparse import urlparse
@@ -126,7 +124,6 @@ class DrawImage(Processor):
         event.addresponse(unicode(screen.render()), address=False, conflate=False)
 
     def draw_caca(self, event, image, width, height):
-        from sys import stderr
         process = subprocess.Popen(
             [self.img2txt_bin, '-f', 'irc', '-W', str(width), '-H', str(height), image],
             shell=False, stdout=subprocess.PIPE)
