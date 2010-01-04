@@ -40,11 +40,11 @@ class AirportSearch(Processor):
             id = ids[0]
             airport = self.airports[id]
             code = 'unknown code'
-            if airport[4] and airport[5]:
+            if airport[3] and airport[4]:
                 code = 'codes %s and %s' % (airport[3], airport[4])
-            elif airport[4]:
+            elif airport[3]:
                 code = 'code %s' % airport[3]
-            elif airport[5]:
+            elif airport[4]:
                 code = 'code %s' % airport[4]
             event.addresponse(u'%s in %s, %s has %s' %
                     (airport[0], airport[1], airport[2], code))
