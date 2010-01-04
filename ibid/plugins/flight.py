@@ -4,10 +4,10 @@ from ibid.config import Option
 from ibid.plugins import Processor, match
 from ibid.utils import human_join
 
-# TODO help
+help = { u'airport' : u'Search for airports' }
 
 class AirportSearch(Processor):
-    # TODO docstring
+    """airport [in] <name|location|code>"""
 
     feature = 'airport'
 
