@@ -129,11 +129,12 @@ class TimeZone(Processor):
     zoneinfo = Option('zoneinfo', 'Timezone info directory', '/usr/share/zoneinfo')
 
     countries = {}
-    timezones = defaultdict(list)
+    timezones = {}
 
     def setup(self):
         iso3166 = join(self.zoneinfo, 'iso3166.tab')
         if exists(iso3166):
+            self.countries = {}
             for line in open(iso3166).readlines():
                 if not line.startswith('#'):
                     code, name = line.strip().split('\t')
@@ -141,6 +142,7 @@ class TimeZone(Processor):
 
         zones = join(self.zoneinfo, 'zone.tab')
         if exists(zones):
+            self.timezones = defaultdict(list)
             for line in open(zones).readlines():
                 if not line.startswith('#'):
                     code, coordinates, zone = line.strip().split('\t', 2)
