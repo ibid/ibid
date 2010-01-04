@@ -218,7 +218,7 @@ class DuelDraw(Processor):
     feature = 'duel'
 
     # Parameters for Processor:
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     addressed = BoolOption('addressed', 'Must the bot be addressed?', True)
 
@@ -400,7 +400,7 @@ class DuelDraw(Processor):
 class DuelFlee(Processor):
     feature = 'duel'
     addressed = False
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def dueller_fled(self, event):
@@ -470,7 +470,7 @@ class WerewolfGame(Processor):
     seer_delay = IntOption('seer_delay',
             'Number of players between extra wolf and extra seer', 4)
 
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action')
 
     @match(r'^(?:start|play|begin)s?\b.*werewolf$')
     def prestart(self, event):
@@ -843,7 +843,7 @@ class WerewolfGame(Processor):
 
 class WerewolfState(Processor):
     feature = 'werewolf'
-    event_types = ('state',)
+    event_types = (u'state',)
 
     @handler
     def state_change(self, event):

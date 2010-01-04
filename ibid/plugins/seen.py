@@ -1,13 +1,11 @@
 from datetime import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, UnicodeText, UniqueConstraint, Table
-from sqlalchemy.orm import relation
-from sqlalchemy.sql import func
-from sqlalchemy.exceptions import IntegrityError
-
-from ibid.plugins import Processor, match
-from ibid.models import Base, VersionedSchema, Identity, Account
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, UniqueConstraint, \
+                    relation, IntegrityError, Base, VersionedSchema
+from ibid.db.models import Identity, Account
+from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')
@@ -17,10 +15,11 @@ help = {'seen': u'Records when people were last seen.'}
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False, index=True),
-    Column('type', Unicode(8), nullable=False, index=True),
-    Column('channel', Unicode(32)),
-    Column('value', UnicodeText),
+    Column('identity_id', Integer, ForeignKey('identities.id'), nullable=False,
+           index=True),
+    Column('type', IbidUnicode(8), nullable=False, index=True),
+    Column('channel', IbidUnicode(32)),
+    Column('value', IbidUnicodeText),
     Column('time', DateTime, nullable=False),
     Column('count', Integer, nullable=False),
     UniqueConstraint('identity_id', 'type'),
@@ -30,12 +29,22 @@ class Sighting(Base):
         def upgrade_1_to_2(self):
             self.add_index(self.table.c.identity_id)
             self.add_index(self.table.c.type)
+        def upgrade_2_to_3(self):
+            self.drop_index(self.table.c.type)
+            self.alter_column(Column('type', IbidUnicode(8), nullable=False,
+                                     index=True), force_rebuild=True)
+            self.alter_column(Column('channel', IbidUnicode(32)),
+                              force_rebuild=True)
+            self.alter_column(Column('value', IbidUnicodeText),
+                              force_rebuild=True)
+            self.add_index(self.table.c.type)
 
-    __table__.versioned_schema = SightingSchema(__table__, 2)
+    __table__.versioned_schema = SightingSchema(__table__, 3)
 
     identity = relation('Identity')
 
-    def __init__(self, identity_id=None, type='message', channel=None, value=None):
+    def __init__(self, identity_id=None, type='message', channel=None,
+                 value=None):
         self.identity_id = identity_id
         self.type = type
         self.channel = channel
@@ -44,20 +53,21 @@ class Sighting(Base):
         self.count = 0
 
     def __repr__(self):
-        return u'<Sighting %s %s in %s at %s: %s>' % (self.type, self.identity_id, self.channel, self.time, self.value)
+        return u'<Sighting %s %s in %s at %s: %s>' % (
+               self.type, self.identity_id, self.channel, self.time, self.value)
 
 class See(Processor):
     feature = 'seen'
 
     priority = 1500
+    event_types = (u'message', u'state')
+    addressed = False
+    processed = True
 
-    def process(self, event):
-        if event.type != 'message' and event.type != 'state':
-            return
-
+    @handler
+    def see(self, event):
         sighting = event.session.query(Sighting) \
-                .filter_by(identity_id=event.identity) \
-                .filter_by(type=event.type).first()
+                .filter_by(identity_id=event.identity, type=event.type).first()
         if not sighting:
             sighting = Sighting(event.identity, event.type)
 
@@ -89,13 +99,14 @@ class Seen(Processor):
 
         account = None
         identity = event.session.query(Identity) \
-                .filter(func.lower(Identity.source) == (source and source or event.source).lower()) \
-                .filter(func.lower(Identity.identity) == who.lower()).first()
+                .filter_by(source=(source or event.source), identity=who) \
+                .first()
         if identity and identity.account and not source:
             account = identity.account
 
         if not identity and not source:
-            account = event.session.query(Account).filter_by(username=who).first()
+            account = event.session.query(Account).filter_by(username=who) \
+                    .first()
 
         if not identity and not account:
             event.addresponse(u"I don't know who %s is", who)

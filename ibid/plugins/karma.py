@@ -2,12 +2,10 @@ from datetime import datetime
 import re
 import logging
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, Table
-from sqlalchemy.sql import func
-
-from ibid.plugins import Processor, match, handler, authorise
 from ibid.config import BoolOption, IntOption, ListOption
-from ibid.models import Base, VersionedSchema
+from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
+                    VersionedSchema
+from ibid.plugins import Processor, match, handler, authorise
 
 help = {'karma': u'Keeps track of karma for people and things.'}
 
@@ -16,7 +14,8 @@ log = logging.getLogger('plugins.karma')
 class Karma(Base):
     __table__ = Table('karma', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('subject', Unicode(64), unique=True, nullable=False, index=True),
+    Column('subject', IbidUnicode(64, case_insensitive=True), unique=True,
+           nullable=False, index=True),
     Column('changes', Integer, nullable=False),
     Column('value', Integer, nullable=False),
     Column('time', DateTime, nullable=False),
@@ -24,11 +23,19 @@ class Karma(Base):
 
     class KarmaSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_index(self.table.c.subject, unique=True)
+            self.add_index(self.table.c.subject)
         def upgrade_2_to_3(self):
-            self.alter_column(Column('subject', Unicode(64), unique=True, nullable=False, index=True))
+            self.alter_column(Column('subject', IbidUnicode(64), unique=True,
+                                     nullable=False, index=True))
+        def upgrade_3_to_4(self):
+            self.drop_index(self.table.c.subject)
+            self.alter_column(Column('subject',
+                                     IbidUnicode(64, case_insensitive=True),
+                                     unique=True, nullable=False, index=True),
+                              force_rebuild=True)
+            self.add_index(self.table.c.subject)
 
-    __table__.versioned_schema = KarmaSchema(__table__, 3)
+    __table__.versioned_schema = KarmaSchema(__table__, 4)
 
     def __init__(self, subject):
         self.subject = subject
@@ -45,16 +52,25 @@ class Set(Processor):
 
     permission = u'karma'
 
-    increase = ListOption('increase', 'Suffixes which indicate increased karma', ('++', 'ftw'))
-    decrease = ListOption('decrease', 'Suffixes which indicate decreased karma', ('--', 'ftl'))
-    neutral = ListOption('neutral', 'Suffixes which indicate neutral karma', ('==',))
+    increase = ListOption('increase',
+                          'Suffixes which indicate increased karma',
+                          ('++', 'ftw'))
+    decrease = ListOption('decrease', 'Suffixes which indicate decreased karma',
+                          ('--', 'ftl'))
+    neutral = ListOption('neutral', 'Suffixes which indicate neutral karma',
+                         ('==',))
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
     public = BoolOption('public', 'Only allow karma changes in public', True)
     ignore = ListOption('ignore', 'Karma subjects to silently ignore', ())
-    importance = IntOption('importance', "Threshold for number of changes after which a karma won't be forgotten", 0)
+    importance = IntOption('importance', 'Threshold for number of changes after'
+                           " which a karma won't be forgotten", 0)
 
     def setup(self):
-        self.set.im_func.pattern = re.compile(r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join([re.escape(token) for token in self.increase + self.decrease + self.neutral]), re.I)
+        self.set.im_func.pattern = re.compile(
+                r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join(
+                    re.escape(token) for token
+                    in self.increase + self.decrease + self.neutral
+                ), re.I)
 
     @handler
     @authorise(fallthrough=False)
@@ -66,8 +82,7 @@ class Set(Processor):
         if subject.lower() in self.ignore:
             return
 
-        karma = event.session.query(Karma) \
-                .filter(func.lower(Karma.subject) == subject.lower()).first()
+        karma = event.session.query(Karma).filter_by(subject=subject).first()
         if not karma:
             karma = Karma(subject)
 
@@ -109,8 +124,7 @@ class Get(Processor):
 
     @match(r'^karma\s+(?:for\s+)?(.+)$')
     def handle_karma(self, event, subject):
-        karma = event.session.query(Karma) \
-                .filter(func.lower(Karma.subject) == subject.lower()).first()
+        karma = event.session.query(Karma).filter_by(subject=subject).first()
         if not karma:
             event.addresponse(u'nobody cares, dude')
         elif karma.value == 0:
@@ -143,8 +157,7 @@ class Forget(Processor):
     @match(r'^forget\s+karma\s+for\s+(.+?)(?:\s*[[{(]+\s*(.+?)\s*[\]})]+)?$')
     @authorise(fallthrough=False)
     def forget(self, event, subject, reason):
-        karma = event.session.query(Karma) \
-                .filter(func.lower(Karma.subject) == subject.lower()).first()
+        karma = event.session.query(Karma).filter_by(subject=subject).first()
         if not karma:
             karma = Karma(subject)
             event.addresponse(u"I was pretty ambivalent about %s, anyway", subject)

@@ -5,11 +5,12 @@ from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
 
 import sys
-sys.path.insert(0, '%s/../lib' % dirname(__file__))
+sys.path.insert(0, '%s/lib' % dirname(__file__))
 
 import twisted.python.log
 
 import ibid.core
+from ibid.compat import defaultdict
 from ibid.config import FileConfig
 
 class InsensitiveDict(dict):
@@ -32,6 +33,7 @@ auth = None
 service = None
 options = {}
 rpc = {}
+channels = defaultdict(lambda: defaultdict(set))
 
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')

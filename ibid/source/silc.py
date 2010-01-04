@@ -20,7 +20,7 @@ class SilcBot(SilcClient):
         self.users = {}
 
         self.factory.join = self.join
-        self.factory.part = self.part
+        self.factory.leave = self.leave
         self.factory.send = self.send
 
     def _create_event(self, type, user, channel):
@@ -34,7 +34,6 @@ class SilcBot(SilcClient):
         else:
             event.channel = event.sender['connection']
         event.public = True
-        event.source = self.factory.name
 
         self.users[event.sender['connection']] = user
         self.users[event.sender['id']] = user
@@ -70,8 +69,7 @@ class SilcBot(SilcClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].expandtabs(1).replace('\n', ' ') \
-                  .encode('utf-8')
+        message = response['reply'].encode('utf-8')
         flags=0
         if response.get('action', False):
             flags=4
@@ -115,7 +113,7 @@ class SilcBot(SilcClient):
         self.command_call('JOIN %s' % channel)
         return True
 
-    def part(self, channel):
+    def leave(self, channel):
         if channel not in self.channels:
             return False
 
@@ -147,6 +145,19 @@ class SilcBot(SilcClient):
         del self.users[self._to_hex(user.user_id)]
         del self.users[self._to_hex(user.fingerprint)]
 
+    def notify_nick_change(self, user, old_nick, new_nick):
+        event = self._create_event(u'state', user, None)
+        event.state = u'offline'
+        event.sender['nick'] = unicode(old_nick, 'utf-8', 'replace')
+        event.othername = unicode(new_nick, 'utf-8', 'replace')
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
+
+        event = self._create_event(u'state', user, None)
+        event.state = u'online'
+        event.sender['nick'] = unicode(new_nick, 'utf-8', 'replace')
+        event.othername = unicode(old_nick, 'utf-8', 'replace')
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
+
     def notify_kicked(self, user, message, kicker, channel):
         self._state_event(user, channel, u'kicked', kicker, message)
 
@@ -162,13 +173,25 @@ class SilcBot(SilcClient):
         for channel in self.factory.channels:
             self.join(channel)
 
+        event = Event(self.factory.name, u'source')
+        event.status = u'connected'
+        ibid.dispatcher.dispatch(event)
+
     def command_reply_join(self, channel, name, topic, hmac, x, y, users):
         self.channels[name] = channel
+        for user in users:
+            self._state_event(user, channel, u'online')
 
     def disconnect(self):
         self.command_call('QUIT')
 
     def disconnected(self, message):
+        self.factory.log.info(u"Disconnected (%s)", reason)
+
+        event = Event(self.factory.name, u'source')
+        event.status = u'disconnected'
+        ibid.dispatcher.dispatch(event)
+
         self.factory.s.stopService()
         self.channels.clear()
         self.users.clear()

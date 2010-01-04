@@ -3,15 +3,13 @@ from datetime import datetime
 import logging
 from urlparse import urljoin
 
-from sqlalchemy import Column, Integer, Unicode, DateTime, UnicodeText, \
-        ForeignKey, Table
-from sqlalchemy.sql import func
 import feedparser
 from html2text import html2text_file
 
 from ibid.config import IntOption
+from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
+                    Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.plugins import Processor, match, authorise, run_every
-from ibid.models import Base, VersionedSchema
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
@@ -22,25 +20,45 @@ log = logging.getLogger('plugins.feeds')
 class Feed(Base):
     __table__ = Table('feeds', Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', Unicode(32), unique=True, nullable=False, index=True),
-    Column('url', UnicodeText, nullable=False),
+    Column('name', IbidUnicode(32, case_insensitive=True),
+           unique=True, nullable=False, index=True),
+    Column('url', IbidUnicodeText, nullable=False),
     Column('identity_id', Integer, ForeignKey('identities.id'),
-        nullable=False, index=True),
+           nullable=False, index=True),
     Column('time', DateTime, nullable=False),
-    Column('source', Unicode(32), index=True),
-    Column('target', Unicode(32), index=True),
+    Column('source', IbidUnicode(32, case_insensitive=True), index=True),
+    Column('target', IbidUnicode(32, case_insensitive=True), index=True),
     useexisting=True)
 
     class FeedSchema(VersionedSchema):
         def upgrade_1_to_2(self):
-            self.add_index(self.table.c.name, unique=True)
+            self.add_index(self.table.c.name)
             self.add_index(self.table.c.identity_id)
         def upgrade_2_to_3(self):
-            from sqlalchemy import Column, Unicode
-            self.add_column(Column('source', Unicode(32), index=True))
-            self.add_column(Column('target', Unicode(32), index=True))
+            from ibid.db import IbidUnicode, Column
+            self.add_column(Column('source', IbidUnicode(32), index=True))
+            self.add_column(Column('target', IbidUnicode(32), index=True))
+        def upgrade_3_to_4(self):
+            self.drop_index(self.table.c.name)
+            self.drop_index(self.table.c.source)
+            self.drop_index(self.table.c.target)
+            self.alter_column(Column('name',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     unique=True, nullable=False, index=True),
+                              force_rebuild=True)
+            self.alter_column(Column('url', IbidUnicodeText, nullable=False),
+                              force_rebuild=True)
+            self.alter_column(Column('source',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     index=True), force_rebuild=True)
+            self.alter_column(Column('target',
+                                     IbidUnicode(32, case_insensitive=True),
+                                     index=True), force_rebuild=True)
+            self.add_index(self.table.c.name)
+            self.add_index(self.table.c.source)
+            self.add_index(self.table.c.target)
 
-    __table__.versioned_schema = FeedSchema(__table__, 3)
+    __table__.versioned_schema = FeedSchema(__table__, 4)
 
     feed = None
     entries = None
@@ -82,8 +100,7 @@ class Manage(Processor):
     @match(r'^add\s+feed\s+(.+?)\s+as\s+(.+?)$')
     @authorise()
     def add(self, event, url, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if feed:
             event.addresponse(u"I already have the %s feed", name)
@@ -134,8 +151,7 @@ class Manage(Processor):
     @match(r'^remove\s+(.+?)\s+feed$')
     @authorise()
     def remove(self, event, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -150,8 +166,7 @@ class Manage(Processor):
     @match(r'^(?:stop|don\'t)\s+poll(?:ing)?\s(.+)\s+feed$')
     @authorise()
     def no_poll(self, event, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -167,8 +182,7 @@ class Manage(Processor):
     @match(r'^poll\s(.+)\s+feed\s+(?:to|notify)\s+(.+)\s+on\s+(.+)$')
     @authorise(fallthrough=False)
     def enable_poll(self, event, name, target, source):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't have the %s feed anyway", name)
@@ -194,8 +208,7 @@ class Retrieve(Processor):
         number = number and int(number) or 10
         start = start and int(start) or 0
 
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)
@@ -214,8 +227,7 @@ class Retrieve(Processor):
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
-        feed = event.session.query(Feed) \
-                .filter(func.lower(Feed.name) == name.lower()).first()
+        feed = event.session.query(Feed).filter_by(name=name).first()
 
         if not feed:
             event.addresponse(u"I don't know about the %s feed", name)
