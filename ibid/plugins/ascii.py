@@ -43,7 +43,10 @@ class DrawImage(Processor):
 
     @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+w(?:idth)?\s+(\d+))?(?:\s+h(?:eight)\s+(\d+))?$')
     def draw(self, event, url, colour, width, height):
-        f = urlopen(url)
+        try:
+            f = urlopen(url)
+        except ValueError:
+            return # ignore if we can't get the URL
 
         filesize = int(f.info().getheaders('Content-Length')[0])
         if filesize > self.max_filesize * 1024:
@@ -59,8 +62,8 @@ class DrawImage(Processor):
 
             try:
                 img = Image.open(StringIO(open(image, 'r').read())).convert('L')
-            except:
-                event.addresponse(u'Cannot understand image format')
+            except IOError:
+                event.addresponse(u"Sorry, I can't draw that for you!")
                 return
             input_width, input_height = img.size[0], img.size[1]
 
@@ -100,8 +103,8 @@ class DrawImage(Processor):
     def draw_aa(self, event, image, width, height):
         try:
             image = Image.open(StringIO(open(image, 'r').read())).convert('L')
-        except:
-            event.addresponse(u'Cannot understand image format')
+        except IOError:
+            event.addresponse(u"Sorry, I can't draw that for you!")
             return
         screen = AsciiScreen(width=width, height=height)
         image = image.resize(screen.virtual_size)
@@ -118,14 +121,14 @@ class DrawImage(Processor):
         if code == 0:
             event.addresponse(unicode(response.replace('\r', '')), address=False, conflate=False)
         else:
-            event.addresponse(u'Sorry, cannot understand image format')
+            event.addresponse(u"Sorry, I can't draw that for you!")
 
 class WriteFiglet(Processor):
     u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
     feature = 'figlet'
 
-    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'data/figlet-fonts.zip')
+    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'ibid/data/figlet-fonts.zip')
 
     def __init__(self, name):
         Processor.__init__(self, name)
