@@ -46,6 +46,9 @@ class DrawImage(Processor):
     def draw(self, event, url, colour, width, height):
         if not urlparse(url).netloc:
             url = 'http://' + url
+        if urlparse(url).netloc != 'file':
+            event.addresponse(u'Are you trying to haxor me?')
+            return
         if not urlparse(url).path:
             url += '/'
 
