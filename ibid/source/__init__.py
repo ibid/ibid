@@ -36,6 +36,18 @@ class IbidSourceFactory(object):
         "Given an identity or connection, return a name suitable for logging"
         return identity
 
+    def message_max_length(self, response, event=None):
+        """Given a target, and possibly a related event, return the number of
+        bytes to clip at, or None to indicate that a complete message will
+        be delivered.
+        """
+        if (event is not None
+                and response.get('target', None) == event.get('channel', None)
+                and event.get('public', True)):
+            return 490
+
+        return None
+
 from ibid.config import Option
 
 options = {

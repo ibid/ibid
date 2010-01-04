@@ -264,7 +264,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
     auth = ('hostmask', 'nickserv')
-    supports = ('action', 'notice', 'topic', 'trim')
+    supports = ('action', 'notice', 'topic')
 
     port = IntOption('port', 'Server port number', 6667)
     ssl = BoolOption('ssl', 'Use SSL', False)

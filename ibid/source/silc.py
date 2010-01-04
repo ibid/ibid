@@ -199,7 +199,7 @@ class SilcBot(SilcClient):
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
-    supports = ('action', 'topic', 'trim')
+    supports = ('action', 'topic')
 
     server = Option('server', 'Server hostname')
     port = IntOption('port', 'Server port number', 706)
