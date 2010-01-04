@@ -302,7 +302,7 @@ class TestDispatcher(unittest.TestCase):
         return self._dispatch_and_assert(_cb, ev)
 
     def test_call_later_no_args(self):
-        "Calling later should call stuff later."
+        "Calling later calls stuff later."
         ev = self._ev()
         ev.channel = None
         ev.public = None
@@ -320,7 +320,7 @@ class TestDispatcher(unittest.TestCase):
         return dfr
 
     def test_call_later_args(self):
-        "Calling later should call stuff later."
+        "Calling later with args calls stuff later."
         ev = self._ev()
         ev.channel = None
         ev.public = None
@@ -338,7 +338,7 @@ class TestDispatcher(unittest.TestCase):
         return dfr
 
     def test_call_later_kwargs(self):
-        "Calling later should call stuff later."
+        "Calling later with kwargs calls stuff later."
         ev = self._ev()
         ev.channel = None
         ev.public = None
