@@ -142,6 +142,7 @@ class WriteFiglet(Processor):
     list figlet fonts [from <index>]"""
     feature = 'figlet'
 
+    max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
     fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'ibid/data/figlet-fonts.zip')
 
     def __init__(self, name):
@@ -175,4 +176,7 @@ class WriteFiglet(Processor):
             del rendered[0]
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
+        if rendered and len(rendered[0]) > self.max_width:
+            event.addresponse(u"Sorry, that string is too long!")
+            return
         event.addresponse(unicode('\n'.join(rendered)), address=False, conflate=False)
