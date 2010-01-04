@@ -1,11 +1,14 @@
+from BaseHTTPServer import BaseHTTPRequestHandler
 from cStringIO import StringIO
 import Image
 from os import remove
 import os.path
+import socket
 import subprocess
 from sys import stderr
 from tempfile import mkstemp
-from urllib2 import urlopen
+from urllib2 import HTTPError, URLError, urlopen
+from urlparse import urlparse
 from zipfile import ZipFile
 
 from aalib import AsciiScreen
@@ -43,27 +46,38 @@ class DrawImage(Processor):
 
     @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+w(?:idth)?\s+(\d+))?(?:\s+h(?:eight)\s+(\d+))?$')
     def draw(self, event, url, colour, width, height):
+        if not urlparse(url).netloc:
+            url = 'http://' + url
+        if not urlparse(url).path:
+            url += '/'
+
         try:
             f = urlopen(url)
-        except ValueError:
-            return # ignore if we can't get the URL
+        except HTTPError, e:
+            event.addresponse(u'Sorry, error fetching URL: %s', BaseHTTPRequestHandler.responses[e.code][0])
+        except URLError:
+            event.addresponse(u'Sorry, error fetching URL')
 
-        filesize = int(f.info().getheaders('Content-Length')[0])
-        if filesize > self.max_filesize * 1024:
+        content_length = f.info().getheaders('Content-Length')
+        if content_length and int(content_length[0]) > self.max_filesize * 1024:
             event.addresponse(u'File too large (limit is %i KiB)', self.max_filesize)
             return
 
+        buffer = f.read(self.max_filesize * 1024)
+        if f.read(1) != '':
+            event.addresponse(u'File too large (limit is %i KiB)', self.max_filesize)
+            return
         try:
             ext = os.path.splitext(url)[1]
             image = mkstemp(suffix=ext)[1]
             file = open(image, 'w')
-            file.write(f.read())
+            file.write(buffer)
             file.close()
 
             try:
                 img = Image.open(StringIO(open(image, 'r').read())).convert('L')
             except IOError:
-                event.addresponse(u"Sorry, I can't draw that for you!")
+                event.addresponse(u"Sorry, that doesn't look like an image")
                 return
             input_width, input_height = img.size[0], img.size[1]
 
@@ -104,7 +118,7 @@ class DrawImage(Processor):
         try:
             image = Image.open(StringIO(open(image, 'r').read())).convert('L')
         except IOError:
-            event.addresponse(u"Sorry, I can't draw that for you!")
+            event.addresponse(u"Sorry, that doesn't look like an image")
             return
         screen = AsciiScreen(width=width, height=height)
         image = image.resize(screen.virtual_size)
@@ -121,7 +135,7 @@ class DrawImage(Processor):
         if code == 0:
             event.addresponse(unicode(response.replace('\r', '')), address=False, conflate=False)
         else:
-            event.addresponse(u"Sorry, I can't draw that for you!")
+            event.addresponse(u"Sorry, that doesn't look like an image")
 
 class WriteFiglet(Processor):
     u"""figlet <text> [in <font>]
