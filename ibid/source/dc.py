@@ -129,8 +129,10 @@ class DCBot(dcwords.DCClient):
         elif response.get('action', False):
             if self.factory.action_prefix and target is None:
                 self.say(target, u'%s %s' % (self.factory.action_prefix, message))
+            elif self.factory.action_prefix:
+                self.say(target, u'*%s*' % message)
             else:
-                self.say(target, u'* %s %s' % (self.my_nickname, message))
+                self.say(target, message)
 
             self.factory.log.debug(u"Sent action to %s: %s", target, message)
         else:
@@ -156,7 +158,7 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    supports = ('action', 'multiline', 'topic', 'trim')
+    supports = ['action', 'multiline', 'topic', 'trim']
     auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)
@@ -182,6 +184,11 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         self._auth = {}
 
     def setServiceParent(self, service):
+        if self.action_prefix is None and 'action' in self.supports:
+            self.supports.remove('action')
+        if self.action_prefix is not None and 'action' not in self.supports:
+            self.supports.append('action')
+
         if service:
             internet.TCPClient(self.server, self.port, self).setServiceParent(service)
         else:
