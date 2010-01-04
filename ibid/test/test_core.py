@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from twisted.trial import unittest
 from twisted.internet import defer, reactor
 
@@ -298,5 +300,59 @@ class TestDispatcher(unittest.TestCase):
                                 'address': True,
                                 'conflate': True}], src._msgs)
         return self._dispatch_and_assert(_cb, ev)
+
+    def test_call_later_no_args(self):
+        "Calling later should call stuff later."
+        ev = self._ev()
+        ev.channel = None
+        ev.public = None
+        dfr = defer.Deferred()
+        tm = datetime.now()
+        def _cl(_ev):
+            _ev.did_stuff = True
+            dfr.callback(_ev)
+        def _cb(_ev, _self, _oev):
+            _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
+            _self.assertTrue(_ev.did_stuff)
+            _self.assertFalse(hasattr(_oev, 'did_stuff'))
+        dfr.addCallback(_cb, self, ev)
+        self.dispatcher.call_later(0.01, _cl, ev)
+        return dfr
+
+    def test_call_later_args(self):
+        "Calling later should call stuff later."
+        ev = self._ev()
+        ev.channel = None
+        ev.public = None
+        dfr = defer.Deferred()
+        tm = datetime.now()
+        def _cl(_ev, val):
+            _ev.did_stuff = val
+            dfr.callback(_ev)
+        def _cb(_ev, _self, _oev):
+            _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
+            _self.assertEqual('thingy', _ev.did_stuff)
+            _self.assertFalse(hasattr(_oev, 'did_stuff'))
+        dfr.addCallback(_cb, self, ev)
+        self.dispatcher.call_later(0.01, _cl, ev, 'thingy')
+        return dfr
+
+    def test_call_later_kwargs(self):
+        "Calling later should call stuff later."
+        ev = self._ev()
+        ev.channel = None
+        ev.public = None
+        dfr = defer.Deferred()
+        tm = datetime.now()
+        def _cl(_ev, val='default'):
+            _ev.did_stuff = val
+            dfr.callback(_ev)
+        def _cb(_ev, _self, _oev):
+            _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
+            _self.assertEqual('thingy', _ev.did_stuff)
+            _self.assertFalse(hasattr(_oev, 'did_stuff'))
+        dfr.addCallback(_cb, self, ev)
+        self.dispatcher.call_later(0.01, _cl, ev, val='thingy')
+        return dfr
 
 # vi: set et sta sw=4 ts=4:
