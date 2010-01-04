@@ -49,7 +49,13 @@ class AirportSearch(Processor):
             event.addresponse(u'%s in %s, %s has %s' %
                     (airport[0], airport[1], airport[2], code))
         else:
-            response = human_join(self.airports[id][0] for id in ids)
-            event.addresponse(u'I found the following airports: %s', response)
+            results = []
+            for id in ids:
+                airport = self.airports[id]
+                code = ''
+                if airport[3] or airport[4]:
+                    code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
+                results.append('%s%s' % (airport[0], code))
+            event.addresponse(u'Found the following airports: %s', human_join(results))
 
 # vi: set et sta sw=4 ts=4:
