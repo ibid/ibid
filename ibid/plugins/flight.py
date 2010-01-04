@@ -56,6 +56,6 @@ class AirportSearch(Processor):
                 if airport[3] or airport[4]:
                     code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
                 results.append('%s%s' % (airport[0], code))
-            event.addresponse(u'Found the following airports: %s', human_join(results))
+            event.addresponse(u'Found the following airports: %s', human_join(results)[:480])
 
 # vi: set et sta sw=4 ts=4:
