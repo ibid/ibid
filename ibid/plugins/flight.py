@@ -37,6 +37,13 @@ def airport_search(query, search_loc = True):
             ids.append(id)
     return ids
 
+def repr_airport(id):
+    airport = airports[id]
+    code = ''
+    if airport[3] or airport[4]:
+        code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
+    return '%s%s' % (airport[0], code)
+
 class AirportSearch(Processor):
     """airport [in] <name|location|code>"""
 
@@ -64,13 +71,34 @@ class AirportSearch(Processor):
             event.addresponse(u'%s in %s, %s has %s' %
                     (airport[0], airport[1], airport[2], code))
         else:
-            results = []
-            for id in ids:
-                airport = airports[id]
-                code = ''
-                if airport[3] or airport[4]:
-                    code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
-                results.append('%s%s' % (airport[0], code))
-            event.addresponse(u'Found the following airports: %s', human_join(results)[:480])
+            event.addresponse(u'Found the following airports: %s', human_join(repr_airport(id) for id in ids)[:480])
+
+class FlightSearch(Processor):
+    """flight from <departure> to <destination>"""
+
+    feature = 'flight'
+
+    travelocity_url = 'http://travel.travelocity.com/flights/InitialSearch.do'
+
+    @match(r'flight\s+from\s+(.+)\s+to\s+(.+)')
+    def flight_search(self, event, dpt, to):
+        airport_dpt = airport_search(dpt)
+        airport_to = airport_search(to)
+        if len(airport_dpt) == 0:
+            event.addresponse(u"Sorry, I don't know the airport you want to leave from")
+            return
+        if len(airport_to) == 0:
+            event.addresponse(u"Sorry, I don't know the airport you want to fly to")
+            return
+        if len(airport_dpt) > 1:
+            event.addresponse(u'The following airports match the departure: %s', human_join(repr_airport(id) for id in airport_dpt)[:480])
+            return
+        if len(airport_to) > 1:
+            event.addresponse(u'The following airports match the destination: %s', human_join(repr_airport(id) for id in airport_to)[:480])
+            return
+
+        dpt = airport_dpt[0]
+        to = airport_to[0]
+        event.addresponse(u'Searching for flights from %s to %s', (repr_airport(dpt), repr_airport(to)))
 
 # vi: set et sta sw=4 ts=4:
