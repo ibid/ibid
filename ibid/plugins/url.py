@@ -138,10 +138,10 @@ class Grab(Processor):
             tlds = 'com.org.net.za'.split('.')
 
         self.grab.im_func.pattern = re.compile((
-            r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundry, but not on an e-mail address
+            r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundary, but not on an e-mail address
             r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
             r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
-            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End Boundry
+            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End boundary
         ) % '|'.join(tlds), re.I | re.DOTALL)
 
     @handler
