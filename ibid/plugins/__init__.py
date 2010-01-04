@@ -11,25 +11,6 @@ from twisted.web import resource
 import ibid
 from ibid.compat import json
 
-class RegistrationMeta(type):
-    """Lets us probe the new class to handle handler registration without
-    disturbing anything
-    """
-    def __new__(cls, name, bases, dict):
-        klass = super(RegistrationMeta, cls).__new__(cls, name, bases, dict)
-        if 'event_handlers' not in dict:
-            klass.event_handlers = []
-            for name, item in dict.iteritems():
-                if getattr(item, 'handler', False):
-                    klass.event_handlers.append(name)
-        if 'periodic_handlers' not in dict:
-            klass.periodic_handlers = []
-            for name, item in dict.iteritems():
-                if getattr(item, 'periodic', False):
-                    klass.periodic_handlers.append(name)
-
-        return klass
-
 class Processor(object):
     """Base class for Ibid plugins.
     Processors receive events and (optionally) do things with them.
@@ -45,7 +26,6 @@ class Processor(object):
     autoload: Load this Processor, when loading the plugin, even if not
     explicitly required in the configuration file
     """
-    __metaclass__ = RegistrationMeta
 
     event_types = (u'message',)
     addressed = True
@@ -65,6 +45,17 @@ class Processor(object):
             new = copy(option)
             new.default = getattr(cls, name)
             setattr(cls, name, new)
+
+        if getattr(cls, 'event_handlers', None) is None:
+            cls.event_handlers = []
+            for name, item in cls.__dict__.iteritems():
+                if getattr(item, 'handler', False):
+                    cls.event_handlers.append(name)
+        if getattr(cls, 'periodic_handlers', None) is None:
+            cls.periodic_handlers = []
+            for name, item in cls.__dict__.iteritems():
+                if getattr(item, 'periodic', False):
+                    cls.periodic_handlers.append(name)
 
         return super(Processor, cls).__new__(cls)
 
