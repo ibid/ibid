@@ -22,18 +22,30 @@ class AirportSearch(Processor):
         for row in reader:
             self.airports[int(row[0])] = [unicode(r, 'utf-8') for r in row[1:]]
 
-    def _airport_search(self, query):
-        query = [unicode(q) for q in query.lower().split(' ') if q]
+    def _airport_search(self, query, search_loc):
+        if search_loc:
+            query = [unicode(q) for q in query.lower().split(' ') if q]
+        else:
+            query = [unicode(query.lower())]
         ids = []
         for id, airport in self.airports.items():
-            data = (' '.join(c.lower() for c in airport[:5])).split(' ')
+            if search_loc:
+                data = (' '.join(c.lower() for c in airport[:5])).split(' ')
+            elif len(query[0]) == 3:
+                data = [airport[3].lower()]
+            else: # assume lenght 4 (won't break if not)
+                data = [airport[4].lower()]
             if len(filter(lambda q: q in data, query)) == len(query):
                 ids.append(id)
         return ids
 
-    @match(r'^airports?\s+(?:in\s+)?(.+)$')
-    def airport_search(self, event, query):
-        ids = self._airport_search(query)
+    @match(r'^airports?\s+(in\s+)?(.+)$')
+    def airport_search(self, event, search_loc, query):
+        search_loc = search_loc is not None
+        if not search_loc and not 3 <= len(query) <= 4:
+            event.addresponse(u'Airport code must be 3 or 4 characters')
+            return
+        ids = self._airport_search(query, search_loc)
         if len(ids) == 0:
             event.addresponse(u"Sorry, I don't know that airport")
         elif len(ids) == 1:
