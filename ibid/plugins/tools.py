@@ -175,7 +175,7 @@ class TimeZone(Processor):
                 possibles = []
                 for zones in self.timezones.values():
                     for name in zones:
-                        if string.replace(' ', '_').lower() in name.lower():
+                        if string.replace(' ', '_').lower() in [part.lower() for part in name.split('/')]:
                             possibles.append(name)
 
                 if len(possibles) == 1:
