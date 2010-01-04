@@ -17,13 +17,16 @@ class RegistrationMeta(type):
     """
     def __new__(cls, name, bases, dict):
         klass = super(RegistrationMeta, cls).__new__(cls, name, bases, dict)
-        klass.event_handlers = []
-        klass.periodic_handlers = []
-        for name, item in dict.iteritems():
-            if getattr(item, 'handler', False):
-                klass.event_handlers.append(name)
-            if getattr(item, 'periodic', False):
-                klass.periodic_handlers.append(name)
+        if 'event_handlers' not in dict:
+            klass.event_handlers = []
+            for name, item in dict.iteritems():
+                if getattr(item, 'handler', False):
+                    klass.event_handlers.append(name)
+        if 'periodic_handlers' not in dict:
+            klass.periodic_handlers = []
+            for name, item in dict.iteritems():
+                if getattr(item, 'periodic', False):
+                    klass.periodic_handlers.append(name)
 
         return klass
 
