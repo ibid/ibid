@@ -62,10 +62,9 @@ class Message:
 
         message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
-            event.message = stripsig.sub('', message).strip().replace('\n', ' ')
+            event.message = stripsig.sub('', (message, 'utf-8', 'replace')).strip().replace('\n', ' ')
         else:
             event.message = event.subject
-        event.message = unicode(event.message, 'utf-8', 'replace')
 
         self.log.debug(u"Received message from %s: %s", event.sender['connection'], event.message)
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
@@ -133,7 +132,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += '\n'
         body += message
 
-        smtp.sendmail(self.relayhost, self.address, response['to'], body)
+        smtp.sendmail(self.relayhost, self.address, response['to'], body.encode('utf-8'))
         self.log.debug(u"Sent email to %s: %s", response['to'], response['subject'])
 
 # vi: set et sta sw=4 ts=4:
