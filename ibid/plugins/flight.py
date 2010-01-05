@@ -3,6 +3,8 @@ from xml.etree import ElementTree
 import re
 from urllib import urlencode
 
+from dateutil.parser import parse
+
 from ibid.config import IntOption
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
@@ -97,17 +99,22 @@ class Flight:
             minutes = int(match.group(1))
         return int(hours)*60 + int(minutes)
 
+MONTH_SHORT = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+OTHER_STUFF = ('st', 'nd', 'rd', 'th')
+DATE = r'(?:[0-9.:/hT -]|%s)+' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF)
+
 class FlightSearch(Processor):
-    """flights from <departure> to <destination>
-    cheapest flight from <departure> to <destination>
-    quickest flight from <departure> to <destination>"""
+    """flights from <departure> to <destination> from <depart_date> to <return_date>
+    cheapest flight from <departure> to <destination> from <depart_date> to <return_date>
+    quickest flight from <departure> to <destination> from <depart_date> to <return_date>"""
 
     feature = 'flight'
 
     travelocity_url = 'http://www.travelocity.com/resolve/default?show=n'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
-    def flight_search(self, event, dpt, to):
+    def flight_search(self, event, dpt, to, dep_date, ret_date):
         airport_dpt = airport_search(dpt)
         airport_to = airport_search(to)
         if len(airport_dpt) == 0:
@@ -123,15 +130,17 @@ class FlightSearch(Processor):
             event.addresponse(u'The following airports match the destination: %s', human_join(repr_airport(id) for id in airport_to)[:480])
             return
 
+        dep_date = parse(dep_date).strftime('%m/%d/%Y')
+        ret_date = parse(ret_date).strftime('%m/%d/%Y')
+
         dpt = airport_dpt[0]
         to = airport_to[0]
-        event.addresponse(u'Searching for flights from %s to %s', (repr_airport(dpt), repr_airport(to)))
 
         params = {}
         params['leavingFrom'] = airports[dpt][3]
         params['goingTo'] = airports[to][3]
-        params['leavingDate'] = '01/10/2010' # note mm/dd/yyy order
-        params['returningDate'] = '01/11/2010'
+        params['leavingDate'] = dep_date
+        params['returningDate'] = ret_date
         etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
             script = [script for script in etree.getiterator('script')][1]
@@ -180,9 +189,9 @@ class FlightSearch(Processor):
 
         return flights
 
-    @match(r'^flights?\s+from\s+(.+)\s+to\s+(.+)$')
-    def list_flights(self, event, dpt, to):
-        flights = self.flight_search(event, dpt, to)
+    @match(r'^flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    def list_flights(self, event, dpt, to, dep_date, ret_date):
+        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
         if len(flights) == 0:
@@ -196,9 +205,9 @@ class FlightSearch(Processor):
             event.addresponse(u"and at least %i more flights, which I haven't returned", len(flights) - self.max_results)
             return
 
-    @match(r'^cheapest flight\s+from\s+(.+)\s+to\s+(.+)$')
-    def cheapest_flight(self, event, dpt, to):
-        flights = self.flight_search(event, dpt, to)
+    @match(r'^cheapest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    def cheapest_flight(self, event, dpt, to, dep_date, ret_date):
+        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
         if len(flights) == 0:
@@ -210,9 +219,9 @@ class FlightSearch(Processor):
                 (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                     flight.arrive_ap, flight.duration, flight.stops, flight.price))
 
-    @match(r'^quickest flight\s+from\s+(.+)\s+to\s+(.+)$')
-    def cheapest_flight(self, event, dpt, to):
-        flights = self.flight_search(event, dpt, to)
+    @match(r'^quickest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    def quickest_flight(self, event, dpt, to, dep_date, ret_date):
+        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
         if len(flights) == 0:
