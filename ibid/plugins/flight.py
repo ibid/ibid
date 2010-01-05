@@ -142,9 +142,12 @@ class FlightSearch(Processor):
                     span = td.find('span')
                     if span is not None and span.get(u'class').strip() == u'tfNextDayDate':
                         arrive_time = u'%s %s' % (arrive_time, span.text.strip()[2:])
-                    # TODO why this failes on nextdate flights?
-                    arrive_ap = '%s %s' % (td.find('div').text.strip(),
-                            td.find('div').find('span').text.strip())
+                        span = [s for s in td.find('div').getiterator('span')][1]
+                        arrive_ap = '%s %s' % (td.find('div').text.strip(),
+                                span.text.strip())
+                    else:
+                        arrive_ap = '%s %s' % (td.find('div').text.strip(),
+                                td.find('div').find('span').text.strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     duration = td.text.strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
