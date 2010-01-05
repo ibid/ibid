@@ -135,13 +135,16 @@ class FlightSearch(Processor):
                     flight = td.find('div').text.strip()
                 if td.get(u'class').strip() == u'tfDepart' and td.text:
                     depart_time = td.text.split('\n')[0].strip()
-                    depart_ap = td.find('div').text.strip()
+                    depart_ap = '%s %s' % (td.find('div').text.strip(),
+                            td.find('div').find('span').text.strip())
                 if td.get(u'class').strip() == u'tfArrive' and td.text:
                     arrive_time = td.text.split('\n')[0].strip()
                     span = td.find('span')
                     if span is not None and span.get(u'class').strip() == u'tfNextDayDate':
                         arrive_time = u'%s %s' % (arrive_time, span.text.strip()[2:])
-                    arrive_ap = td.find('div').text.strip() # TODO why this failes on nextdate flights?
+                    # TODO why this failes on nextdate flights?
+                    arrive_ap = '%s %s' % (td.find('div').text.strip(),
+                            td.find('div').find('span').text.strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     duration = td.text.strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
