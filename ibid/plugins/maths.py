@@ -12,7 +12,7 @@ from ibid.plugins import Processor, match, handler
 from ibid.utils import file_in_path, unicode_output
 
 try:
-    from ast import NodeTransformer, Pow, Name, Load, Call, copy_location, parse
+    from ast import NodeTransformer, Pow, Name, Load, Call, copy_location, parse, Num
     transform_method='ast'
 
 except ImportError:
@@ -96,7 +96,7 @@ def limited_factorial(x):
         raise LimitException
     return factorial(x)
 
-# ast method
+# ast methods
 class PowSubstitutionTransformer(NodeTransformer):
     def visit_BinOp(self, node):
         self.generic_visit(node)
@@ -108,7 +108,13 @@ class PowSubstitutionTransformer(NodeTransformer):
             return cnode
         return node
 
-# compiler method
+class IntToFloatTransformer(NodeTransformer):
+    def visit_Num(self, node):
+        if type(node.n) is int:
+            return Num(float(node.n), lineno=node.lineno, col_offset=node.col_offset)
+        return node
+
+# compiler methods
 class PowSubstitutionWalker(object):
     def visitPower(self, node, *args):
         walk(node.left, self)
@@ -117,6 +123,11 @@ class PowSubstitutionWalker(object):
         node.left = cnode
         # Little hack: instead of trying to turn node into a CallFunc, we just do pow(left, right)**1
         node.right = ast.Const(1)
+
+class IntToFloatWalker(object):
+    def visitConst(self, node, *args):
+        if type(node.asList()[0]) is int:
+            node.value = float(node.asList()[0])
 
 class Calc(Processor):
     u"""[calc] <expression>"""
@@ -148,10 +159,12 @@ class Calc(Processor):
             ast = parse(expression, mode='eval')
             if transform_method == 'ast':
                 ast = PowSubstitutionTransformer().visit(ast)
+                ast = IntToFloatTransformer().visit(ast)
                 code = compile(ast, '<string>', 'eval')
             else:
                 misc.set_filename('<string>', ast)
                 walk(ast, PowSubstitutionWalker())
+                walk(ast, IntToFloatWalker())
                 code = pycodegen.ExpressionCodeGenerator(ast).getCode()
 
             result = eval(code, {'__builtins__': None}, self.safe)
