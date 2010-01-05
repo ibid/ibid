@@ -3,6 +3,7 @@ from xml.etree import ElementTree
 import re
 from urllib import urlencode
 
+from ibid.config import IntOption
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
@@ -83,6 +84,7 @@ class FlightSearch(Processor):
     feature = 'flight'
 
     travelocity_url = 'http://www.travelocity.com/resolve/default?show=n'
+    max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
     @match(r'flight\s+from\s+(.+)\s+to\s+(.+)')
     def flight_search(self, event, dpt, to):
@@ -122,9 +124,10 @@ class FlightSearch(Processor):
 
         table = [t for t in etree.getiterator('table')][3]
         trs = [t for t in table.getiterator('tr')]
-        for tr1, tr2 in zip(trs[1::2], trs[2::2]):
+        for tr1, tr2 in zip(trs[1:self.max_results*2+2:2], trs[2:self.max_results*2+2:2]):
             tds = [t for t in tr1.getiterator('td')] + [t for t in tr2.getiterator('td')]
-            airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, price = None, None, None, None, None, None, None, None
+            airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, stops, price = \
+                    None, None, None, None, None, None, None, None, None
             for td in tds:
                 if td.get(u'class').strip() == u'tfAirline':
                     anchor = td.find('a')
@@ -150,12 +153,13 @@ class FlightSearch(Processor):
                                 td.find('div').find('span').text.strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     duration = td.text.strip()
+                    stops = td.find('span').find('a').text
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
                     price = td.text.strip()
             if airline is None:
                 ElementTree.dump(tr1)
-            event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s) costs %s per person',
-                    (airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, price))
+            event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                    (airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, stops, price))
 
 
 # vi: set et sta sw=4 ts=4:
