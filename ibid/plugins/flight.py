@@ -170,9 +170,15 @@ class FlightSearch(Processor):
         flights = self.flight_search(event, dpt, to)
         if flights is None:
             return
+        if len(flights) == 0:
+            event.addresponse(u'No matching flights found')
+            return
         for flight in flights[:self.max_results]:
             event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                     (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                         flight.arrive_ap, flight.duration, flight.stops, flight.price))
+        if len(flights) > self.max_results:
+            event.addresponse(u"and at least %i more flights, which I haven't returned", len(flights) - self.max_results)
+            return
 
 # vi: set et sta sw=4 ts=4:
