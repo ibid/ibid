@@ -158,7 +158,7 @@ class FlightSearch(Processor):
                                 td.find('div').find('span').text.strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     flight.duration = td.text.strip()
-                    flight.stops = td.find('span').find('a').text
+                    flight.stops = td.find('span').find('a').text.strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
                     flight.price = td.text.strip()
             flights.append(flight)
