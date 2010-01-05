@@ -5,8 +5,21 @@ import logging
 import re
 
 from twisted.spread import pb
-from twisted.plugin import pluginPackagePaths
 from twisted.web import resource
+try:
+    from twisted.plugin import pluginPackagePaths
+except ImportError:
+    # Not available in Twisted 2.5.0 in Ubuntu hardy
+    import os.path
+    import sys
+    def pluginPackagePaths(name):
+        package = name.split('.')
+        return [
+            os.path.abspath(os.path.join(x, *package))
+            for x
+            in sys.path
+            if
+            not os.path.exists(os.path.join(x, *package + ['__init__.py']))]
 
 import ibid
 from ibid.compat import json
