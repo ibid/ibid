@@ -87,9 +87,20 @@ class Flight:
     def int_price(self):
         return int(self.price[1:])
 
+    def int_duration(self):
+        hours, minutes = 0, 0
+        match = re.search(r'(\d+)hr', self.duration)
+        if match:
+            hours = int(match.group(1))
+        match = re.search(r'(\d+)min', self.duration)
+        if match:
+            minutes = int(match.group(1))
+        return int(hours)*60 + int(minutes)
+
 class FlightSearch(Processor):
     """flights from <departure> to <destination>
-    cheapest flight from <departure> to <destination>"""
+    cheapest flight from <departure> to <destination>
+    quickest flight from <departure> to <destination>"""
 
     feature = 'flight'
 
@@ -194,6 +205,20 @@ class FlightSearch(Processor):
             event.addresponse(u'No matching flights found')
             return
         flights.sort(cmp=lambda a, b: a.int_price() < b.int_price())
+        flight = flights[0]
+        event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
+                    flight.arrive_ap, flight.duration, flight.stops, flight.price))
+
+    @match(r'^quickest flight\s+from\s+(.+)\s+to\s+(.+)$')
+    def cheapest_flight(self, event, dpt, to):
+        flights = self.flight_search(event, dpt, to)
+        if flights is None:
+            return
+        if len(flights) == 0:
+            event.addresponse(u'No matching flights found')
+            return
+        flights.sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
         flight = flights[0]
         event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                 (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
