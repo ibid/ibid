@@ -1,15 +1,11 @@
 import csv
+from xml.etree import ElementTree
 import re
-
-from mechanize import Browser, ParseError
+from urllib import urlencode
 
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
-
-"""
-Dependancies:
-    python-mechanize
-"""
+from ibid.utils.html import get_html_parse_tree
 
 help = { u'airport' : u'Search for airports' }
 
@@ -109,25 +105,51 @@ class FlightSearch(Processor):
         to = airport_to[0]
         event.addresponse(u'Searching for flights from %s to %s', (repr_airport(dpt), repr_airport(to)))
 
-        br = Browser()
-        response = br.open(self.travelocity_url)
-        br.select_form(nr=1)
-        br['leavingFrom'] = airports[dpt][3]
-        br['goingTo'] = airports[to][3]
-        br['leavingDate'] = '01/10/2010' # note mm/dd/yyy order
-        br['returningDate'] = '01/11/2010'
-        response = br.submit()
+        params = {}
+        params['leavingFrom'] = airports[dpt][3]
+        params['goingTo'] = airports[to][3]
+        params['leavingDate'] = '01/10/2010' # note mm/dd/yyy order
+        params['returningDate'] = '01/11/2010'
+        etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
-            html = response.read()
-            matches = re.search(r'var finurl = "(.*)"', html)
+            script = [script for script in etree.getiterator('script')][1]
+            matches = script.text and re.search(r'var finurl = "(.*)"', script.text)
             if matches:
                 url = 'http://travel.travelocity.com/flights/%s' % matches.group(1)
-                response = br.open(url)
+                etree = get_html_parse_tree(url, treetype='etree')
             else:
                 break
-        print html
-        f = open('/tmp/foo.html', 'w')
-        f.write(html)
-        f.close()
+
+        table = [t for t in etree.getiterator('table')][3]
+        trs = [t for t in table.getiterator('tr')]
+        for tr1, tr2 in zip(trs[1::2], trs[2::2]):
+            tds = [t for t in tr1.getiterator('td')] + [t for t in tr2.getiterator('td')]
+            airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, price = None, None, None, None, None, None, None, None
+            for td in tds:
+                if td.get(u'class').strip() == u'tfAirline':
+                    anchor = td.find('a')
+                    if anchor is not None:
+                        airline = anchor.text.strip()
+                    else:
+                        airline = td.text.split('\n')[0].strip()
+                    flight = td.find('div').text.strip()
+                if td.get(u'class').strip() == u'tfDepart' and td.text:
+                    depart_time = td.text.split('\n')[0].strip()
+                    depart_ap = td.find('div').text.strip()
+                if td.get(u'class').strip() == u'tfArrive' and td.text:
+                    arrive_time = td.text.split('\n')[0].strip()
+                    span = td.find('span')
+                    if span is not None and span.get(u'class').strip() == u'tfNextDayDate':
+                        arrive_time = u'%s %s' % (arrive_time, span.text.strip()[2:])
+                    arrive_ap = td.find('div').text.strip() # TODO why this failes on nextdate flights?
+                if td.get(u'class').strip() == u'tfTime' and td.text:
+                    duration = td.text.strip()
+                if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
+                    price = td.text.strip()
+            if airline is None:
+                ElementTree.dump(tr1)
+            event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s) costs %s per person',
+                    (airline, flight, depart_time, depart_ap, arrive_time, arrive_ap, duration, price))
+
 
 # vi: set et sta sw=4 ts=4:
