@@ -11,7 +11,7 @@ from dns.reversename import from_address
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption, DictOption
-from ibid.utils import file_in_path, unicode_output, human_join, idna_encode
+from ibid.utils import file_in_path, unicode_output, human_join, url_to_bytestring
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -259,7 +259,7 @@ class HTTP(Processor):
             headers['Range'] = 'bytes=0-%s' % self.max_size
 
         try:
-            conn.request(method.upper(), idna_encode(url).encode('utf8'), headers=headers)
+            conn.request(method.upper(), url_to_bytestring(url), headers=headers)
             response = conn.getresponse()
             data = response.read(self.max_size)
             conn.close()

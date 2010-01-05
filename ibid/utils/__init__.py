@@ -203,9 +203,4 @@ def plural(count, singular, plural):
         return singular
     return plural
 
-def idna_encode(url):
-    parts = list(urlparse(url))
-    parts[1] = parts[1].encode('idna')
-    return urlunparse(parts)
-
 # vi: set et sta sw=4 ts=4:
