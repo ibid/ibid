@@ -10,7 +10,6 @@ from urllib import urlencode
 import urllib2
 from urlparse import urlparse, urlunparse
 import zlib
-from urlparse import urlparse, urlunparse
 
 from dateutil.tz import tzlocal, tzutc
 
