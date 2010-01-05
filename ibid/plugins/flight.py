@@ -84,8 +84,12 @@ class Flight:
                 self.arrive_ap, self.duration, self.stops, self.price = \
                 None, None, None, None, None, None, None, None, None
 
+    def int_price(self):
+        return int(self.price[1:])
+
 class FlightSearch(Processor):
-    """flight from <departure> to <destination>"""
+    """flights from <departure> to <destination>
+    cheapest flight from <departure> to <destination>"""
 
     feature = 'flight'
 
@@ -165,7 +169,7 @@ class FlightSearch(Processor):
 
         return flights
 
-    @match(r'flights?\s+from\s+(.+)\s+to\s+(.+)')
+    @match(r'^flights?\s+from\s+(.+)\s+to\s+(.+)$')
     def list_flights(self, event, dpt, to):
         flights = self.flight_search(event, dpt, to)
         if flights is None:
@@ -180,5 +184,20 @@ class FlightSearch(Processor):
         if len(flights) > self.max_results:
             event.addresponse(u"and at least %i more flights, which I haven't returned", len(flights) - self.max_results)
             return
+
+    @match(r'^cheapest flight\s+from\s+(.+)\s+to\s+(.+)$')
+    def cheapest_flight(self, event, dpt, to):
+        flights = self.flight_search(event, dpt, to)
+        if flights is None:
+            return
+        if len(flights) == 0:
+            event.addresponse(u'No matching flights found')
+            return
+        flights.sort(cmp=lambda a, b: a.int_price() < b.int_price())
+        flight = flights[0]
+        event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
+                    flight.arrive_ap, flight.duration, flight.stops, flight.price))
+
 
 # vi: set et sta sw=4 ts=4:
