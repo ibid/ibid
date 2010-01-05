@@ -76,16 +76,16 @@ class Delicious(object):
         tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
 
         data = {
-            'url' : url,
-            'description' : title,
-            'tags' : tags,
-            'replace' : u'yes',
+            'url' : url.encode('utf-8'),
+            'description' : title.encode('utf-8'),
+            'tags' : tags.encode('utf-8'),
+            'replace' : 'yes',
             'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'extended' : event.message['raw'],
+            'extended' : event.message['raw'].encode('utf-8'),
             }
 
         self._set_auth(username, password)
-        posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data, 'utf-8')
+        posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data)
 
         try:
             resp = urlopen(posturl).read()
@@ -126,9 +126,9 @@ class Grab(Processor):
     delicious = Delicious()
 
     def setup(self):
-        if resource_exists(__name__, '../../data/tlds-alpha-by-domain.txt'):
+        if resource_exists(__name__, '../data/tlds-alpha-by-domain.txt'):
             tlds = [tld.strip().lower() for tld
-                    in resource_stream(__name__, '../../data/tlds-alpha-by-domain.txt')
+                    in resource_stream(__name__, '../data/tlds-alpha-by-domain.txt')
                         .readlines()
                     if not tld.startswith('#')
             ]
@@ -138,10 +138,10 @@ class Grab(Processor):
             tlds = 'com.org.net.za'.split('.')
 
         self.grab.im_func.pattern = re.compile((
-            r'(?:[^@.]\b(?!\.)|\A)('        # Match a boundry, but not on an e-mail address
+            r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundary, but not on an e-mail address
             r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
-            r'|[^@\s:]+\.(?:%s)(?:/\S*?)?'  # Guess at the URL based on TLD
-            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End Boundry
+            r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
+            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End boundary
         ) % '|'.join(tlds), re.I | re.DOTALL)
 
     @handler

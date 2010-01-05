@@ -5,10 +5,12 @@ import gzip
 import logging
 from optparse import OptionParser, OptionGroup
 from os.path import exists
-from sys import stdin, stdout, stderr, exit
+from sys import path, stdin, stdout, stderr, exit
 
 from sqlalchemy import select, DateTime
 from twisted.python.modules import getModule
+
+path.insert(0, '.')
 
 import ibid
 from ibid.compat import json

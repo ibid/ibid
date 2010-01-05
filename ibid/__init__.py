@@ -5,7 +5,7 @@ from os.path import join, dirname, expanduser, exists
 from ConfigParser import SafeConfigParser
 
 import sys
-sys.path.insert(0, '%s/../lib' % dirname(__file__))
+sys.path.insert(0, '%s/lib' % dirname(__file__))
 
 import twisted.python.log
 
@@ -49,6 +49,7 @@ def setup(opts, service=None):
     for key, value in opts.items():
         options[key] = value
     options['base'] = dirname(options['config'])
+    sys.path.insert(0, options['base'])
 
     # Get Twisted to log to Python logging
     twisted.python.log.startLoggingWithObserver(twisted_log)
