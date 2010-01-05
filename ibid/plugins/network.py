@@ -267,7 +267,8 @@ class HTTP(Processor):
             raise HTTPException(e.message or e.args[1])
 
         contenttype = response.getheader('Content-Type', 'text/html; charset=utf-8')
-        charset = re.search('charset=([a-zA-Z0-9-]+)', contenttype).group(1)
+        match = re.search('charset=([a-zA-Z0-9-]+)', contenttype)
+        charset = match and match.group(1) or 'utf-8'
 
         return response.status, response.reason, data.decode(charset)
 
