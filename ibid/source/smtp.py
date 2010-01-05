@@ -132,7 +132,8 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += '\n'
         body += message
 
-        smtp.sendmail(self.relayhost, self.address, response['to'], body.encode('utf-8'))
+        port = ':' in self.relayhost and int(self.relayhost.split(':')[1]) or 25
+        smtp.sendmail(self.relayhost.split(':')[0], self.address, response['to'], body.encode('utf-8'), port=port)
         self.log.debug(u"Sent email to %s: %s", response['to'], response['subject'])
 
 # vi: set et sta sw=4 ts=4:
