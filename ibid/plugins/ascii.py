@@ -14,7 +14,7 @@ from pyfiglet import Figlet
 
 from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
-from ibid.utils import file_in_path
+from ibid.utils import file_in_path, url_to_bytestring
 
 """
 Dependencies:
@@ -53,7 +53,7 @@ class DrawImage(Processor):
             url += '/'
 
         try:
-            f = urlopen(url)
+            f = urlopen(url_to_bytestring(url))
         except HTTPError, e:
             event.addresponse(u'Sorry, error fetching URL: %s', BaseHTTPRequestHandler.responses[e.code][0])
         except URLError:
