@@ -62,7 +62,7 @@ class Message:
 
         message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
-            event.message = stripsig.sub('', (message, 'utf-8', 'replace')).strip().replace('\n', ' ')
+            event.message = stripsig.sub('', unicode(message, 'utf-8', 'replace')).strip().replace('\n', ' ')
         else:
             event.message = event.subject
 
