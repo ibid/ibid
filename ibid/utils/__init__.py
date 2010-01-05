@@ -8,6 +8,7 @@ from threading import Lock
 import time
 from urllib import urlencode
 import urllib2
+from urlparse import urlparse, urlunparse
 import zlib
 
 from dateutil.tz import tzlocal, tzutc
@@ -72,7 +73,7 @@ def _cacheable_download(url, cachefile, headers={}):
 
     exists = os.path.isfile(cachefile)
 
-    req = urllib2.Request(url)
+    req = urllib2.Request(url_to_bytestring(url))
     for name, value in headers:
         req.add_header(name, value)
     if not req.has_header('user-agent'):
@@ -158,6 +159,14 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
 class JSONException(Exception):
     pass
 
+def url_to_bytestring(url):
+    "Expand an IDN hostname and UTF-8 encode the path of a unicode URL"
+    parts = list(urlparse(url))
+    host = parts[1].split(':')
+    host[0] = host[0].encode('idna')
+    parts[1] = ':'.join(host)
+    return urlunparse(parts).encode('utf-8')
+
 def json_webservice(url, params={}, headers={}):
     "Request data from a JSON webservice, and deserialise"
 
@@ -166,7 +175,7 @@ def json_webservice(url, params={}, headers={}):
             params[key] = params[key].encode('utf-8')
 
     if params:
-        url += '?' + urlencode(params)
+        url = url_to_bytestring(url) + '?' + urlencode(params)
 
     req = urllib2.Request(url, headers=headers)
     if not req.has_header('user-agent'):

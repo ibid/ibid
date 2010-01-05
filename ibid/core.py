@@ -180,6 +180,8 @@ class Reloader(object):
             noload = List of plugins / plugin.Processors to skip automatically loading
             autoload = (Boolean) Load all plugins by default?
         """
+        # Sets up twisted.python so that we can iterate modules
+        __import__('ibid.plugins')
 
         load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
         noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
