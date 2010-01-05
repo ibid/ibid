@@ -187,51 +187,50 @@ class FlightSearch(Processor):
                     flight.price = td.text.strip()
             flights.append(flight)
 
-        return flights
+        return (flights, url)
 
     @match(r'^flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
     def list_flights(self, event, dpt, to, dep_date, ret_date):
         flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
-        if len(flights) == 0:
+        if len(flights[0]) == 0:
             event.addresponse(u'No matching flights found')
             return
-        for flight in flights[:self.max_results]:
+        for flight in flights[0][:self.max_results]:
             event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                     (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                         flight.arrive_ap, flight.duration, flight.stops, flight.price))
-        if len(flights) > self.max_results:
-            event.addresponse(u"and at least %i more flights, which I haven't returned", len(flights) - self.max_results)
-            return
+        event.addresponse(u'Full results: %s', flights[1])
 
     @match(r'^cheapest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
     def cheapest_flight(self, event, dpt, to, dep_date, ret_date):
         flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
-        if len(flights) == 0:
+        if len(flights[0]) == 0:
             event.addresponse(u'No matching flights found')
             return
-        flights.sort(cmp=lambda a, b: a.int_price() < b.int_price())
-        flight = flights[0]
+        flights[0].sort(cmp=lambda a, b: a.int_price() < b.int_price())
+        flight = flights[0][0]
         event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                 (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                     flight.arrive_ap, flight.duration, flight.stops, flight.price))
+        event.addresponse(u'Full results: %s', flights[1])
 
     @match(r'^quickest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
     def quickest_flight(self, event, dpt, to, dep_date, ret_date):
         flights = self.flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
-        if len(flights) == 0:
+        if len(flights[0]) == 0:
             event.addresponse(u'No matching flights found')
             return
-        flights.sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
-        flight = flights[0]
+        flights[0].sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
+        flight = flights[0][0]
         event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                 (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                     flight.arrive_ap, flight.duration, flight.stops, flight.price))
-
+        event.addresponse(u'Full results: %s', flights[1])
 
 # vi: set et sta sw=4 ts=4:
