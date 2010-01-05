@@ -56,8 +56,10 @@ class DrawImage(Processor):
             f = urlopen(url_to_bytestring(url))
         except HTTPError, e:
             event.addresponse(u'Sorry, error fetching URL: %s', BaseHTTPRequestHandler.responses[e.code][0])
+            return
         except URLError:
             event.addresponse(u'Sorry, error fetching URL')
+            return
 
         content_length = f.info().getheaders('Content-Length')
         if content_length and int(content_length[0]) > self.max_filesize * 1024:
