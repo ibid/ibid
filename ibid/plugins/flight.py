@@ -1,4 +1,5 @@
 import csv
+import re
 
 from mechanize import Browser, ParseError
 
@@ -35,7 +36,7 @@ def airport_search(query, search_loc = True):
     ids = []
     for id, airport in airports.items():
         if search_loc:
-            data = (' '.join(c.lower() for c in airport[:5])).split(' ')
+            data = (u' '.join(c.lower() for c in airport[:5])).split(' ')
         elif len(query[0]) == 3:
             data = [airport[3].lower()]
         else: # assume lenght 4 (won't break if not)
@@ -85,7 +86,7 @@ class FlightSearch(Processor):
 
     feature = 'flight'
 
-    travelocity_url = 'http://travel.travelocity.com/flights/InitialSearch.do'
+    travelocity_url = 'http://www.travelocity.com/resolve/default?show=n'
 
     @match(r'flight\s+from\s+(.+)\s+to\s+(.+)')
     def flight_search(self, event, dpt, to):
@@ -108,17 +109,25 @@ class FlightSearch(Processor):
         to = airport_to[0]
         event.addresponse(u'Searching for flights from %s to %s', (repr_airport(dpt), repr_airport(to)))
 
-        try:
-            br = Browser()
-            response = br.open(self.travelocity_url)
-            br.select_form(name='AirSearchForm')
-            br['leavingFrom'] = airports[dpt][3]
-            br['goingTo'] = airports[to][3]
-            br['leavingFrom1'] = '01/10/2010' # note mm/dd/yyy order
-            br['goingTo1'] = '01/11/2010'
-            response = br.submit()
-            print response.read()
-        except ParseError:
-            event.addresponse(u'ParseError (need to fix!)')
+        br = Browser()
+        response = br.open(self.travelocity_url)
+        br.select_form(nr=1)
+        br['leavingFrom'] = airports[dpt][3]
+        br['goingTo'] = airports[to][3]
+        br['leavingDate'] = '01/10/2010' # note mm/dd/yyy order
+        br['returningDate'] = '01/11/2010'
+        response = br.submit()
+        while True:
+            html = response.read()
+            matches = re.search(r'var finurl = "(.*)"', html)
+            if matches:
+                url = 'http://travel.travelocity.com/flights/%s' % matches.group(1)
+                response = br.open(url)
+            else:
+                break
+        print html
+        f = open('/tmp/foo.html', 'w')
+        f.write(html)
+        f.close()
 
 # vi: set et sta sw=4 ts=4:
