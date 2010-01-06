@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 import ibid
 from ibid.plugins import Processor, match
@@ -7,7 +8,7 @@ from ibid.utils import human_join
 help = {'help': u'Provides help and usage information about plugins.'}
 
 class Help(Processor):
-    u"""features
+    u"""features [for <word>]
     help [<feature>]
     usage <feature>"""
     feature = 'help'
@@ -63,5 +64,37 @@ class Help(Processor):
                 }, conflate=False)
         else:
             event.addresponse(u"I don't know how to use %s either", feature)
+
+    @match(r'^features\s+(?:for|with)\s+(.*)$')
+    def search (self, event, phrase):
+        features = map(unicode, self._search(phrase))
+        features.sort()
+        if len(features) == 0:
+            event.addresponse(u"I couldn't find that feature.")
+        elif len(features) == 1:
+            event.addresponse(
+                u'The "%s" feature might be what you\'re looking for.',
+                features[0])
+        else:
+            event.addresponse(u"Are you looking for %s?",
+                            human_join(features, conjunction='or'))
+
+    def _search (self, phrase):
+        phrase = phrase.lower()
+        matches = set()
+        processor_modules = set()
+        for processor in ibid.processors:
+            if (hasattr(processor, 'feature') and processor.__doc__ and
+                phrase in processor.__doc__.lower()):
+                matches.add(processor.feature)
+            processor_modules.add(sys.modules[processor.__module__])
+
+        for module in processor_modules:
+            if hasattr(module, 'help'):
+                for feature, help in module.help.iteritems():
+                    if phrase in feature or phrase in help.lower():
+                        matches.add(feature)
+
+        return matches
 
 # vi: set et sta sw=4 ts=4:
