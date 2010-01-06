@@ -112,7 +112,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
         for message in messages.values():
             if 'subject' not in message:
-                message['subject'] = 'Re: ' + event['subject']
+                message['Subject'] = 'Re: ' + event['subject']
             if 'message-id' in event.headers:
                 response['References'] = event.headers['message-id']
                 response['In-Reply-To'] = event.headers['message-id']
@@ -120,10 +120,10 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
     def send(self, response):
         message = response['reply']
-        response['to'] = response['target']
-        response['date'] = smtp.rfc822date()
-        if 'subject' not in response:
-            response['subject'] = 'Message from %s' % ibid.config['botname']
+        response['To'] = response['target']
+        response['Date'] = smtp.rfc822date()
+        if 'Subject' not in response:
+            response['Subject'] = 'Message from %s' % ibid.config['botname']
         response['Content-Type'] = 'text/plain; charset=utf-8'
 
         del response['target']
