@@ -103,10 +103,10 @@ class SourceFactory(IbidSourceFactory):
         self.site = server.Site(root)
 
     def setServiceParent(self, service):
-            if service:
-                return internet.TCPServer(self.port, self.site).setServiceParent(service)
-            else:
-                reactor.listenTCP(self.port, self.site)
+        if service:
+            return internet.TCPServer(self.port, self.site).setServiceParent(service)
+        else:
+            reactor.listenTCP(self.port, self.site)
 
     def url(self):
         return self.myurl
