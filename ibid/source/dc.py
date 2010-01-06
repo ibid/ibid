@@ -185,12 +185,13 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
 
-    def setServiceParent(self, service):
+    def setup(self):
         if self.action_prefix is None and 'action' in self.supports:
             self.supports.remove('action')
         if self.action_prefix is not None and 'action' not in self.supports:
             self.supports.append('action')
 
+    def setServiceParent(self, service):
         if service:
             internet.TCPClient(self.server, self.port, self).setServiceParent(service)
         else:
