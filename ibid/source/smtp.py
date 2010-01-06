@@ -58,7 +58,7 @@ class Message:
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
-        event.headers = dict((i[0], unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
+        event.headers = dict((i[0].lower(), unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
 
         message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
@@ -113,6 +113,9 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         for message in messages.values():
             if 'subject' not in message:
                 message['subject'] = 'Re: ' + event['subject']
+            if 'message-id' in event.headers:
+                response['References'] = event.headers['message-id']
+                response['In-Reply-To'] = event.headers['message-id']
             self.send(message)
 
     def send(self, response):
