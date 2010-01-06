@@ -10,7 +10,8 @@ from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
-help = { u'airport' : u'Search for airports' }
+help = { u'airport' : u'Search for airports',
+         u'flight'  : u'Search for flights on travelocity' }
 
 airports_url = 'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
 
