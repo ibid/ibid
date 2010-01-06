@@ -121,6 +121,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         response['date'] = smtp.rfc822date()
         if 'subject' not in response:
             response['subject'] = 'Message from %s' % ibid.config['botname']
+        response['Content-Type'] = 'text/plain; charset=utf-8'
 
         del response['target']
         del response['source']
