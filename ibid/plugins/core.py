@@ -176,7 +176,8 @@ class Format(Processor):
         if length is not None:
             eline = line.encode('utf-8')
             if len(eline) > length:
-                return eline[:length-1].decode('utf-8', 'ignore') \
+                # horizontal ellipsis = 3 utf-8 bytes
+                return eline[:length-3].decode('utf-8', 'ignore') \
                        + u'\N{horizontal ellipsis}'
         return line
 
