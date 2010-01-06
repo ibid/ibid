@@ -166,6 +166,10 @@ class TimeZone(Processor):
         if zone:
             return zone
 
+        zone = gettz(string.upper())
+        if zone:
+            return zone
+
         if string.lower() in self.lowerzones:
             return gettz(self.lowerzones[string.lower()])
 
