@@ -105,15 +105,14 @@ class Flight:
 
 MONTH_SHORT = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
 MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-OTHER_STUFF = ('st', 'nd', 'rd', 'th')
+OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th', 'morning', 'afternoon', 'evening')
 DATE = r'(?:[0-9.:/hT -]|%s)+' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF)
 
 class FlightSearch(Processor):
-    """[<cheapest|quickest] flight from <departure> to <destination> from <depart_date> to <return_date>"""
+    """[<cheapest|quickest] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
     feature = 'flight'
 
-    travelocity_url = 'http://www.travelocity.com/resolve/default?show=n'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
     def _flight_search(self, event, dpt, to, dep_date, ret_date):
@@ -132,17 +131,42 @@ class FlightSearch(Processor):
             event.addresponse(u'The following airports match the destination: %s', human_join(repr_airport(id) for id in airport_to)[:480])
             return
 
-        dep_date = parse(dep_date).strftime('%m/%d/%Y')
-        ret_date = parse(ret_date).strftime('%m/%d/%Y')
-
         dpt = airport_dpt[0]
         to = airport_to[0]
+
+        def to_travelocity_date(date):
+            date = date.lower()
+            time = None
+            for period in ['anytime', 'morning', 'afternoon', 'evening']:
+                if period in date:
+                    time = period.title()
+                    date = date.replace(period, '')
+                    break
+            date = parse(date)
+            if time is None:
+                if date.hour == 0 and date.minute == 0:
+                    time = 'Anytime'
+                else:
+                    time = date.strftime('%I:00')
+                    if time[0] == '0':
+                        time = time[1:]
+                    if date.hour < 12:
+                        time += 'am'
+                    else:
+                        time += 'pm'
+            date = date.strftime('%m/%d/%Y')
+            return (date, time)
+
+        (dep_date, dep_time) = to_travelocity_date(dep_date)
+        (ret_date, ret_time) = to_travelocity_date(ret_date)
 
         params = {}
         params['leavingFrom'] = airports[dpt][3]
         params['goingTo'] = airports[to][3]
         params['leavingDate'] = dep_date
+        params['dateLeavingTime'] = dap_time
         params['returningDate'] = ret_date
+        params['dateReturningTime'] = ret_time
         etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
             script = [script for script in etree.getiterator('script')][1]
