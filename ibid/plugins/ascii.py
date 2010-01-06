@@ -1,11 +1,12 @@
+from BaseHTTPServer import BaseHTTPRequestHandler
 from cStringIO import StringIO
 import Image
 from os import remove
 import os.path
 import subprocess
-from sys import stderr
 from tempfile import mkstemp
-from urllib2 import urlopen
+from urllib2 import HTTPError, URLError, urlopen
+from urlparse import urlparse
 from zipfile import ZipFile
 
 from aalib import AsciiScreen
@@ -13,7 +14,7 @@ from pyfiglet import Figlet
 
 from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
-from ibid.utils import file_in_path
+from ibid.utils import file_in_path, url_to_bytestring
 
 """
 Dependencies:
@@ -43,24 +44,43 @@ class DrawImage(Processor):
 
     @match(r'^draw\s+(\S+\.\S+)(\s+in\s+colou?r)?(?:\s+w(?:idth)?\s+(\d+))?(?:\s+h(?:eight)\s+(\d+))?$')
     def draw(self, event, url, colour, width, height):
-        f = urlopen(url)
+        if not urlparse(url).netloc:
+            url = 'http://' + url
+        if urlparse(url).scheme == 'file':
+            event.addresponse(u'Are you trying to haxor me?')
+            return
+        if not urlparse(url).path:
+            url += '/'
 
-        filesize = int(f.info().getheaders('Content-Length')[0])
-        if filesize > self.max_filesize * 1024:
+        try:
+            f = urlopen(url_to_bytestring(url))
+        except HTTPError, e:
+            event.addresponse(u'Sorry, error fetching URL: %s', BaseHTTPRequestHandler.responses[e.code][0])
+            return
+        except URLError:
+            event.addresponse(u'Sorry, error fetching URL')
+            return
+
+        content_length = f.info().getheaders('Content-Length')
+        if content_length and int(content_length[0]) > self.max_filesize * 1024:
             event.addresponse(u'File too large (limit is %i KiB)', self.max_filesize)
             return
 
+        buffer = f.read(self.max_filesize * 1024)
+        if f.read(1) != '':
+            event.addresponse(u'File too large (limit is %i KiB)', self.max_filesize)
+            return
         try:
             ext = os.path.splitext(url)[1]
             image = mkstemp(suffix=ext)[1]
             file = open(image, 'w')
-            file.write(f.read())
+            file.write(buffer)
             file.close()
 
             try:
                 img = Image.open(StringIO(open(image, 'r').read())).convert('L')
-            except:
-                event.addresponse(u'Cannot understand image format')
+            except IOError:
+                event.addresponse(u"Sorry, that doesn't look like an image")
                 return
             input_width, input_height = img.size[0], img.size[1]
 
@@ -100,8 +120,8 @@ class DrawImage(Processor):
     def draw_aa(self, event, image, width, height):
         try:
             image = Image.open(StringIO(open(image, 'r').read())).convert('L')
-        except:
-            event.addresponse(u'Cannot understand image format')
+        except IOError:
+            event.addresponse(u"Sorry, that doesn't look like an image")
             return
         screen = AsciiScreen(width=width, height=height)
         image = image.resize(screen.virtual_size)
@@ -109,7 +129,6 @@ class DrawImage(Processor):
         event.addresponse(unicode(screen.render()), address=False, conflate=False)
 
     def draw_caca(self, event, image, width, height):
-        from sys import stderr
         process = subprocess.Popen(
             [self.img2txt_bin, '-f', 'irc', '-W', str(width), '-H', str(height), image],
             shell=False, stdout=subprocess.PIPE)
@@ -118,14 +137,15 @@ class DrawImage(Processor):
         if code == 0:
             event.addresponse(unicode(response.replace('\r', '')), address=False, conflate=False)
         else:
-            event.addresponse(u'Sorry, cannot understand image format')
+            event.addresponse(u"Sorry, that doesn't look like an image")
 
 class WriteFiglet(Processor):
     u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
     feature = 'figlet'
 
-    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'data/figlet-fonts.zip')
+    max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
+    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'ibid/data/figlet-fonts.zip')
 
     def __init__(self, name):
         Processor.__init__(self, name)
@@ -158,4 +178,7 @@ class WriteFiglet(Processor):
             del rendered[0]
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
+        if rendered and len(rendered[0]) > self.max_width:
+            event.addresponse(u"Sorry that's too long, nobody will be able to read it")
+            return
         event.addresponse(unicode('\n'.join(rendered)), address=False, conflate=False)
