@@ -7,6 +7,7 @@ class TestEvent(unittest.TestCase):
         return event.Event(source, type)
 
     def test_empty_event(self):
+        "Events contain some default data."
         ev = self._ev()
         self.assertEqual('fakesource', ev.source)
         self.assertEqual('testmessage', ev.type)
@@ -15,6 +16,7 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(False, ev.processed)
 
     def test_attr(self):
+        "Attibutes and indexed keys are equivalent."
         ev = self._ev()
         self.assertRaises(AttributeError, lambda: ev.foo)
         self.assertRaises(KeyError, lambda: ev['foo'])
@@ -28,12 +30,14 @@ class TestEvent(unittest.TestCase):
         self.assertEqual('foo', ev['bar'])
 
     def test_None_response(self):
+        "None is an invalid response."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         self.assertRaises(Exception, lambda: ev.addresponse(None))
         self.assertEqual([], ev.responses)
 
     def test_str_response(self):
+        "String responses become appropriate structures."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse('foo')
@@ -45,6 +49,7 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(True, ev.processed)
 
     def test_str_response_twice(self):
+        "Two responses are separate."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse('foo')
@@ -62,6 +67,7 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(True, ev.processed)
 
     def test_str_response_unprocessed(self):
+        "Responses don't have to mark the event as processed."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse('foo', processed=False)
@@ -73,6 +79,7 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(False, ev.processed)
 
     def test_str_response_processed_unprocessed(self):
+        "processed=False doesn't clear the processed flag."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.processed = True
@@ -85,6 +92,7 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(True, ev.processed)
 
     def test_str_response_with_channel(self):
+        "Events from a channel send their responses back there."
         ev = self._ev()
         ev.channel = '#chan'
         self.assertEqual([], ev.responses)
@@ -96,6 +104,7 @@ class TestEvent(unittest.TestCase):
                            'conflate': True}], ev.responses)
 
     def test_unicode_response(self):
+        "Unicode responses behave the same as bytestrings."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse(u'foo')
@@ -106,6 +115,7 @@ class TestEvent(unittest.TestCase):
                            'conflate': True}], ev.responses)
 
     def test_unicode_params_response(self):
+        "Responses can contain parameters for dict-string interpolation."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse(u'foo %(name)s', {'name': 'bar'})
@@ -116,6 +126,7 @@ class TestEvent(unittest.TestCase):
                            'conflate': True}], ev.responses)
 
     def test_unicode_tuple_params_response(self):
+        "Responses can contain parameters for tuple-string interpolation."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse(u'foo %s', ('bar',))
@@ -126,6 +137,7 @@ class TestEvent(unittest.TestCase):
                            'conflate': True}], ev.responses)
 
     def test_simple_dict_response(self):
+        "Dicts are valid response values."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse({'reply': 'foo'})
@@ -136,6 +148,7 @@ class TestEvent(unittest.TestCase):
                            'conflate': True}], ev.responses)
 
     def test_complex_dict_response(self):
+        "Dict responses can override event defaults."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse({'reply': 'foo',
@@ -152,6 +165,7 @@ class TestEvent(unittest.TestCase):
                            'mykey': 'myvalue'}], ev.responses)
 
     def test_str_kwargs_response(self):
+        "Keyword arguments to addresponse override event defaults."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse('foo', bar='baz')
@@ -162,7 +176,8 @@ class TestEvent(unittest.TestCase):
                            'conflate': True,
                            'bar': 'baz'}], ev.responses)
 
-    def test_complex_dict_response(self):
+    def test_complex_dict_with_kwargs_response(self):
+        "Keyword arguments to addresponse override response dict values."
         ev = self._ev()
         self.assertEqual([], ev.responses)
         ev.addresponse({'reply': 'r1',
