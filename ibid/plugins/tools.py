@@ -230,7 +230,11 @@ class TimeZone(Processor):
 
     @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
     def convert(self, event, time, from_, to):
-        source = time and parse(time) or datetime.now()
+        try:
+            source = time and parse(time) or datetime.now()
+        except ValueError:
+            event.addresponse(u"That's not a real time")
+            return
 
         try:
             if from_:
