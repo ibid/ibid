@@ -19,17 +19,26 @@ class IbidSourceFactory(object):
 
     def __init__(self, name):
         self.name = name
+        self.setup()
+
+    def setup(self):
+        "Apply configuration. Called on every config reload"
+        pass
 
     def setServiceParent(self, service):
+        "Start the source and connect"
         raise NotImplementedError
 
     def connect(self):
+        "Connect (if disconncted)"
         return self.setServiceParent(None)
 
     def disconnect(self):
+        "Disconnect source"
         raise NotImplementedError
 
     def url(self):
+        "Return a URL describing the source"
         return None
 
     def logging_name(self, identity):
