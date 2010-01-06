@@ -85,9 +85,9 @@ class AirportSearch(Processor):
 
 class Flight:
     def __init__(self):
-        self.airline, self.flight, self.depart_time, self.depart_ap, self.arrive_time, \
+        self.flight, self.depart_time, self.depart_ap, self.arrive_time, \
                 self.arrive_ap, self.duration, self.stops, self.price = \
-                None, None, None, None, None, None, None, None, None
+                [], None, None, None, None, None, None, None
 
     def int_price(self):
         return int(self.price[1:])
@@ -157,17 +157,24 @@ class FlightSearch(Processor):
         flights = []
         table = [t for t in etree.getiterator('table')][3]
         trs = [t for t in table.getiterator('tr')]
-        for tr1, tr2 in zip(trs[1::2], trs[2::2]):
-            tds = [t for t in tr1.getiterator('td')] + [t for t in tr2.getiterator('td')]
+        tr_index = 1
+        while tr_index < len(trs):
+            tds = []
+            while True:
+                new_tds = [t for t in trs[tr_index].getiterator('td')]
+                tds.extend(new_tds)
+                tr_index += 1
+                if len(filter(lambda t: t.get(u'class').strip() == u'tfAirlineSeatsMR', new_tds)):
+                    break
             flight = Flight()
             for td in tds:
                 if td.get(u'class').strip() == u'tfAirline':
                     anchor = td.find('a')
                     if anchor is not None:
-                        flight.airline = anchor.text.strip()
+                        airline = anchor.text.strip()
                     else:
-                        flight.airline = td.text.split('\n')[0].strip()
-                    flight.flight = td.find('div').text.strip()
+                        airline = td.text.split('\n')[0].strip()
+                    flight.flight.append(u'%s %s' % (airline, td.find('div').text.strip()))
                 if td.get(u'class').strip() == u'tfDepart' and td.text:
                     flight.depart_time = td.text.split('\n')[0].strip()
                     flight.depart_ap = '%s %s' % (td.find('div').text.strip(),
@@ -188,6 +195,7 @@ class FlightSearch(Processor):
                     flight.stops = td.find('span').find('a').text.strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
                     flight.price = td.text.strip()
+            flight.flight = human_join(flight.flight)
             flights.append(flight)
 
         return (flights, url)
@@ -201,8 +209,8 @@ class FlightSearch(Processor):
             event.addresponse(u'No matching flights found')
             return
         for flight in flights[0][:self.max_results]:
-            event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
-                    (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
+            event.addresponse('%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                    (flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                         flight.arrive_ap, flight.duration, flight.stops, flight.price))
         event.addresponse(u'Full results: %s', flights[1])
 
