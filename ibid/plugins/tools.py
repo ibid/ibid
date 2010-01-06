@@ -9,7 +9,7 @@ from dateutil.parser import parse
 from dateutil.tz import gettz, tzutc, tzlocal, tzoffset
 
 from ibid.plugins import Processor, match
-from ibid.config import Option
+from ibid.config import Option, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, format_date, json_webservice
 from ibid.compat import defaultdict
 
@@ -121,6 +121,13 @@ MONTH_SHORT = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'O
 MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
 OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th')
 
+CUSTOM_ZONES = {
+    'pst': 'US/Pacific',
+    'mst': 'US/Mountain',
+    'cst': 'US/Central',
+    'est': 'US/Eastern',
+}
+
 help['timezone'] = "Converts times between timezones."
 class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
@@ -128,6 +135,7 @@ class TimeZone(Processor):
     feature = 'timezone'
 
     zoneinfo = Option('zoneinfo', 'Timezone info directory', '/usr/share/zoneinfo')
+    custom_zones = DictOption('timezones', 'Custom timezone names', CUSTOM_ZONES)
 
     countries = {}
     timezones = {}
@@ -160,7 +168,8 @@ class TimeZone(Processor):
                     self.lowerzones[name.lower().replace('etc/', '')] = name
 
     def _find_timezone(self, string):
-        ccode = None
+        if string.lower() in self.custom_zones:
+            return gettz(self.custom_zones[string.lower()])
 
         zone = gettz(string)
         if zone:
@@ -173,6 +182,7 @@ class TimeZone(Processor):
         if string.lower() in self.lowerzones:
             return gettz(self.lowerzones[string.lower()])
 
+        ccode = None
         for code, name in self.countries.items():
             if name.lower() == string.lower():
                 ccode = code
