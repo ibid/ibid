@@ -163,41 +163,41 @@ class TimeZone(Processor):
         ccode = None
 
         zone = gettz(string)
+        if zone:
+            return zone
 
-        if not zone:
-            if string.lower() in self.lowerzones:
-                return gettz(self.lowerzones[string.lower()])
+        if string.lower() in self.lowerzones:
+            return gettz(self.lowerzones[string.lower()])
 
-            for code, name in self.countries.items():
-                if name.lower() == string.lower():
-                    ccode = code
-            if not ccode:
-                if string.replace('.', '').upper() in self.timezones:
-                    ccode = string.replace('.', '').upper()
+        for code, name in self.countries.items():
+            if name.lower() == string.lower():
+                ccode = code
+        if not ccode:
+            if string.replace('.', '').upper() in self.timezones:
+                ccode = string.replace('.', '').upper()
 
-            if ccode:
-                if len(self.timezones[ccode]) == 1:
-                    zone = gettz(self.timezones[ccode][0])
-                else:
-                    raise TimezoneException(u'%s has multiple timezones: %s' % (self.countries[ccode], human_join(self.timezones[ccode])))
-
+        if ccode:
+            if len(self.timezones[ccode]) == 1:
+                return gettz(self.timezones[ccode][0])
             else:
-                possibles = []
-                for zones in self.timezones.values():
-                    for name in zones:
-                        if string.replace(' ', '_').lower() in [part.lower() for part in name.split('/')]:
-                            possibles.append(name)
+                raise TimezoneException(u'%s has multiple timezones: %s' % (self.countries[ccode], human_join(self.timezones[ccode])))
 
-                if len(possibles) == 1:
-                    zone = gettz(possibles[0])
-                elif len(possibles) > 1:
-                    raise TimezoneException(u'Multiple timezones found: %s' % (human_join(possibles)))
-                else:
-                    zone = self._geonames_lookup(string)
-                    if not zone:
-                        raise TimezoneException(u"I don't know about the %s timezone" % (string,))
+        possibles = []
+        for zones in self.timezones.values():
+            for name in zones:
+                if string.replace(' ', '_').lower() in [part.lower() for part in name.split('/')]:
+                    possibles.append(name)
 
-        return zone
+        if len(possibles) == 1:
+            return gettz(possibles[0])
+        elif len(possibles) > 1:
+            raise TimezoneException(u'Multiple timezones found: %s' % (human_join(possibles)))
+
+        zone = self._geonames_lookup(string)
+        if zone:
+            return zone
+
+        raise TimezoneException(u"I don't know about the %s timezone" % (string,))
 
     def _geonames_lookup(self, place):
         search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1})
