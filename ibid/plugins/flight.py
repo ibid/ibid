@@ -108,16 +108,14 @@ OTHER_STUFF = ('st', 'nd', 'rd', 'th')
 DATE = r'(?:[0-9.:/hT -]|%s)+' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF)
 
 class FlightSearch(Processor):
-    """flights from <departure> to <destination> from <depart_date> to <return_date>
-    cheapest flight from <departure> to <destination> from <depart_date> to <return_date>
-    quickest flight from <departure> to <destination> from <depart_date> to <return_date>"""
+    """[<cheapest|quickest] flight from <departure> to <destination> from <depart_date> to <return_date>"""
 
     feature = 'flight'
 
     travelocity_url = 'http://www.travelocity.com/resolve/default?show=n'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
-    def flight_search(self, event, dpt, to, dep_date, ret_date):
+    def _flight_search(self, event, dpt, to, dep_date, ret_date):
         airport_dpt = airport_search(dpt)
         airport_to = airport_search(to)
         if len(airport_dpt) == 0:
@@ -200,48 +198,26 @@ class FlightSearch(Processor):
 
         return (flights, url)
 
-    @match(r'^flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
-    def list_flights(self, event, dpt, to, dep_date, ret_date):
-        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
+    @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    def flight_search(self, event, priority, dpt, to, dep_date, ret_date):
+        flights = self._flight_search(event, dpt, to, dep_date, ret_date)
         if flights is None:
             return
         if len(flights[0]) == 0:
             event.addresponse(u'No matching flights found')
             return
+
+        if priority == 'cheapest':
+            flights[0].sort(cmp=lambda a, b: a.int_price() < b.int_price())
+        elif priority == 'quickest':
+            flights[0].sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
+        if priority:
+            # select best flight based on priority
+            flights = ([flights[0][0]], flights[1])
         for flight in flights[0][:self.max_results]:
             event.addresponse('%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                     (flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                         flight.arrive_ap, flight.duration, flight.stops, flight.price))
-        event.addresponse(u'Full results: %s', flights[1])
-
-    @match(r'^cheapest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
-    def cheapest_flight(self, event, dpt, to, dep_date, ret_date):
-        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
-        if flights is None:
-            return
-        if len(flights[0]) == 0:
-            event.addresponse(u'No matching flights found')
-            return
-        flights[0].sort(cmp=lambda a, b: a.int_price() < b.int_price())
-        flight = flights[0][0]
-        event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
-                (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
-                    flight.arrive_ap, flight.duration, flight.stops, flight.price))
-        event.addresponse(u'Full results: %s', flights[1])
-
-    @match(r'^quickest\s+flight\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
-    def quickest_flight(self, event, dpt, to, dep_date, ret_date):
-        flights = self.flight_search(event, dpt, to, dep_date, ret_date)
-        if flights is None:
-            return
-        if len(flights[0]) == 0:
-            event.addresponse(u'No matching flights found')
-            return
-        flights[0].sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
-        flight = flights[0][0]
-        event.addresponse('%s %s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
-                (flight.airline, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
-                    flight.arrive_ap, flight.duration, flight.stops, flight.price))
         event.addresponse(u'Full results: %s', flights[1])
 
 # vi: set et sta sw=4 ts=4:
