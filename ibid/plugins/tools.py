@@ -2,7 +2,8 @@ import re
 from random import random, randint
 from subprocess import Popen, PIPE
 from datetime import datetime
-from os.path import exists, join
+from os.path import exists, join, relpath
+from os import walk
 
 from dateutil.parser import parse
 from dateutil.tz import gettz, tzutc, tzlocal, tzoffset
@@ -130,6 +131,7 @@ class TimeZone(Processor):
 
     countries = {}
     timezones = {}
+    lowerzones = {}
 
     def setup(self):
         iso3166 = join(self.zoneinfo, 'iso3166.tab')
@@ -150,14 +152,22 @@ class TimeZone(Processor):
                         zone, comment = zone.split('\t')
                     self.timezones[code].append(zone)
 
+        lowerzones = {}
+        for path, directories, filenames in walk(self.zoneinfo):
+            if relpath(path, self.zoneinfo).split('/')[0] not in ('posix', 'right'):
+                for filename in filenames:
+                    name = relpath(join(path, filename), self.zoneinfo)
+                    self.lowerzones[name.lower().replace('etc/', '')] = name
+
     def _find_timezone(self, string):
         ccode = None
 
-        if string.upper() in ('GMT', 'UTC', 'UCT', 'ZULU'):
-            string = 'UTC'
         zone = gettz(string)
 
         if not zone:
+            if string.lower() in self.lowerzones:
+                return gettz(self.lowerzones[string.lower()])
+
             for code, name in self.countries.items():
                 if name.lower() == string.lower():
                     ccode = code
