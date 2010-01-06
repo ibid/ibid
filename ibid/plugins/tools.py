@@ -122,10 +122,10 @@ MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'A
 OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th')
 
 CUSTOM_ZONES = {
-    'pst': 'US/Pacific',
-    'mst': 'US/Mountain',
-    'cst': 'US/Central',
-    'est': 'US/Eastern',
+    'PST': 'US/Pacific',
+    'MST': 'US/Mountain',
+    'CST': 'US/Central',
+    'EST': 'US/Eastern',
 }
 
 help['timezone'] = "Converts times between timezones."
@@ -168,8 +168,9 @@ class TimeZone(Processor):
                     self.lowerzones[name.lower().replace('etc/', '')] = name
 
     def _find_timezone(self, string):
-        if string.lower() in self.custom_zones:
-            return gettz(self.custom_zones[string.lower()])
+        for name, zonename in self.custom_zones.items():
+            if string.lower() == name.lower():
+                return gettz(zonename)
 
         zone = gettz(string)
         if zone:
