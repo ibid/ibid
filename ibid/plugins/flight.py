@@ -29,6 +29,9 @@ def airport_search(query, search_loc = True):
     if not airports:
         read_data()
     if search_loc:
+        ids = airport_search(query, False)
+        if len(ids) == 1:
+            return ids
         query = [unicode(q) for q in query.lower().split(' ') if q]
     else:
         query = [unicode(query.lower())]
