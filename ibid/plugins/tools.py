@@ -228,7 +228,7 @@ class TimeZone(Processor):
             offset = timezone['rawOffset']
             return tzoffset('UTC%s%s' % (offset>=0 and '+' or '', offset), offset*3600)
 
-    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
+    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+in)?(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
     def convert(self, event, time, from_, to):
         try:
             source = time and parse(time) or datetime.now()
