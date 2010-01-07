@@ -1,7 +1,8 @@
 import csv
-from xml.etree import ElementTree
 import re
+from sys import maxint
 from urllib import urlencode
+from xml.etree import ElementTree
 
 from dateutil.parser import parse
 
@@ -91,7 +92,10 @@ class Flight:
                 [], None, None, None, None, None, None, None
 
     def int_price(self):
-        return int(self.price[1:])
+        try:
+            return int(self.price[1:])
+        except ValueError:
+            return maxint # TODO Handle "Select to see price"
 
     def int_duration(self):
         hours, minutes = 0, 0
@@ -164,9 +168,9 @@ class FlightSearch(Processor):
         params['leavingFrom'] = airports[dpt][3]
         params['goingTo'] = airports[to][3]
         params['leavingDate'] = dep_date
-        params['dateLeavingTime'] = dap_time
+#        params['dateLeavingTime'] = dep_time
         params['returningDate'] = ret_date
-        params['dateReturningTime'] = ret_time
+#        params['dateReturningTime'] = ret_time
         etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
             script = [script for script in etree.getiterator('script')][1]
@@ -177,8 +181,31 @@ class FlightSearch(Processor):
             else:
                 break
 
-        flights = []
+        departing_flights = self._parse_travelocity(etree)
+        return_url = None
         table = [t for t in etree.getiterator('table')][3]
+        for tr in table.getiterator('tr'):
+            for td in tr.getiterator('td'):
+                if td.get(u'class').strip() in ['tfPrice', 'tfPriceOrButton']:
+                    div = td.find('div')
+                    if div is not None:
+                        button = div.find('button')
+                        if button is not None:
+                            onclick = button.get('onclick')
+                            match = re.search(r"location.href='\.\./flights/(.+)'", onclick)
+                            url_page = match.group(1)
+                            match = re.search(r'^(.*?)[^/]*$', url)
+                            url_base = match.group(1)
+                            return_url = url_base + url_page
+
+        etree = get_html_parse_tree(return_url, treetype='etree')
+        returning_flights = self._parse_travelocity(etree)
+
+        return (departing_flights, returning_flights, url)
+
+    def _parse_travelocity(self, etree):
+        flights = []
+        table = [t for t in etree.getiterator('table') if t.get(u'id') == 'tfGrid'][0]
         trs = [t for t in table.getiterator('tr')]
         tr_index = 1
         while tr_index < len(trs):
@@ -221,7 +248,7 @@ class FlightSearch(Processor):
             flight.flight = human_join(flight.flight)
             flights.append(flight)
 
-        return (flights, url)
+        return flights
 
     @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
     def flight_search(self, event, priority, dpt, to, dep_date, ret_date):
@@ -229,20 +256,32 @@ class FlightSearch(Processor):
         if flights is None:
             return
         if len(flights[0]) == 0:
-            event.addresponse(u'No matching flights found')
+            event.addresponse(u'No matching departure flights found')
+            return
+        if len(flights[1]) == 0:
+            event.addresponse(u'No matching return flights found')
             return
 
+        cmp = None
         if priority == 'cheapest':
-            flights[0].sort(cmp=lambda a, b: a.int_price() < b.int_price())
+            cmp = lambda a, b: a.int_price() < b.int_price()
         elif priority == 'quickest':
-            flights[0].sort(cmp=lambda a, b: a.int_duration() < b.int_duration())
-        if priority:
+            cmp = lambda a, b: a.int_duration() < b.int_duration()
+        if cmp:
             # select best flight based on priority
-            flights = ([flights[0][0]], flights[1])
-        for flight in flights[0][:self.max_results]:
-            event.addresponse('%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
-                    (flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
-                        flight.arrive_ap, flight.duration, flight.stops, flight.price))
-        event.addresponse(u'Full results: %s', flights[1])
+            for i in xrange(2):
+                flights[i].sort(cmp=cmp)
+                del flights[i][1:]
+        for i, flight_type in zip(xrange(2), ['Departing', 'Returning']):
+            if len(flights[i]) > 1:
+                event.addresponse(u'%s flights:', flight_type)
+            for flight in flights[i][:self.max_results]:
+                leading = ''
+                if len(flights[i]) == 1:
+                    leading = u'%s flight: ' % flight_type
+                event.addresponse('%s%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                        (leading, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
+                            flight.arrive_ap, flight.duration, flight.stops, flight.price))
+        event.addresponse(u'Full results: %s', flights[2])
 
 # vi: set et sta sw=4 ts=4:
