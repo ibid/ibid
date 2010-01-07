@@ -323,7 +323,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             return u''
         return identity.split(u'!')[0]
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         return 490
 
     def url(self):

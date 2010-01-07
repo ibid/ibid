@@ -242,7 +242,7 @@ class SourceFactory(IbidSourceFactory):
     def logging_name(self, identity):
         return self.client.logging_name(identity)
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         if response.get('target', None) in self.client.channels:
             return self.max_public_message_length
         return None

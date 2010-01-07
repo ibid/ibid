@@ -186,7 +186,7 @@ class Format(Processor):
         for response in event.responses:
             source = response['source'].lower()
             supports = ibid.sources[source].supports
-            maxlen = ibid.sources[source].message_max_length(response, event)
+            maxlen = ibid.sources[source].truncation_point(response, event)
 
             if response.get('action', False) and 'action' not in supports:
                 response['reply'] = u'*%s*' % response['reply']

@@ -63,7 +63,7 @@ class TestSource(dict):
     def logging_name(self, name):
         return name
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         return None
 
 ibid.sources[u'test_source'] = TestSource()

@@ -45,7 +45,7 @@ class IbidSourceFactory(object):
         "Given an identity or connection, return a name suitable for logging"
         return identity
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         """Given a target, and possibly a related event, return the number of
         bytes to clip at, or None to indicate that a complete message will
         be delivered.

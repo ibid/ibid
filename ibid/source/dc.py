@@ -207,7 +207,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             self.proto.transport.loseConnection()
         return True
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         return self.max_message_length
 
     def _dc_auth_callback(self, nick, result):

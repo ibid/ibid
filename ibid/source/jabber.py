@@ -214,7 +214,7 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def logging_name(self, identity):
         return identity.split('/')[0]
 
-    def message_max_length(self, response, event=None):
+    def truncation_point(self, response, event=None):
         if response.get('target', None) in self.proto.rooms:
             return self.max_public_message_length
         return None
