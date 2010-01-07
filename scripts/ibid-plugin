@@ -4,6 +4,7 @@ import logging
 from optparse import OptionParser
 from os import getenv
 from os.path import exists
+import sys
 
 try:
     import readline
@@ -13,6 +14,8 @@ except ImportError:
     pass
 
 from sqlalchemy.exceptions import IntegrityError
+
+sys.path.insert(0, '.')
 
 import ibid
 import ibid.plugins

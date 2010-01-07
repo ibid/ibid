@@ -5,10 +5,13 @@ import logging
 import re
 
 from twisted.spread import pb
+from twisted.plugin import pluginPackagePaths
 from twisted.web import resource
 
 import ibid
 from ibid.compat import json
+
+__path__.extend(pluginPackagePaths(__name__))
 
 class Processor(object):
     """Base class for Ibid plugins.
