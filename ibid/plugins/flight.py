@@ -112,6 +112,9 @@ MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'A
 OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th', 'morning', 'afternoon', 'evening')
 DATE = r'(?:[0-9.:/hT -]|%s)+' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF)
 
+class FlightException(Exception):
+    pass
+
 class FlightSearch(Processor):
     """[<cheapest|quickest] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
@@ -180,6 +183,12 @@ class FlightSearch(Processor):
                 etree = get_html_parse_tree(url, treetype='etree')
             else:
                 break
+
+        # Handle error
+        div = [d for d in etree.getiterator('div') if d.get(u'class') == 'e_content']
+        if len(div):
+            error = div[0].find('h3').text
+            raise FlightException(error)
 
         departing_flights = self._parse_travelocity(etree)
         return_url = None
@@ -252,7 +261,11 @@ class FlightSearch(Processor):
 
     @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
     def flight_search(self, event, priority, dpt, to, dep_date, ret_date):
-        flights = self._flight_search(event, dpt, to, dep_date, ret_date)
+        try:
+            flights = self._flight_search(event, dpt, to, dep_date, ret_date)
+        except FlightException, e:
+            event.addresponse(unicode(e))
+            return
         if flights is None:
             return
         if len(flights[0]) == 0:
