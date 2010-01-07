@@ -95,7 +95,7 @@ class Flight:
         try:
             return int(self.price[1:])
         except ValueError:
-            return maxint # TODO Handle "Select to see price"
+            return maxint
 
     def int_duration(self):
         hours, minutes = 0, 0
@@ -168,9 +168,9 @@ class FlightSearch(Processor):
         params['leavingFrom'] = airports[dpt][3]
         params['goingTo'] = airports[to][3]
         params['leavingDate'] = dep_date
-#        params['dateLeavingTime'] = dep_time
+        params['dateLeavingTime'] = dep_time
         params['returningDate'] = ret_date
-#        params['dateReturningTime'] = ret_time
+        params['dateReturningTime'] = ret_time
         etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
             script = [script for script in etree.getiterator('script')][1]
@@ -281,7 +281,7 @@ class FlightSearch(Processor):
                     leading = u'%s flight: ' % flight_type
                 event.addresponse('%s%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
                         (leading, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
-                            flight.arrive_ap, flight.duration, flight.stops, flight.price))
+                            flight.arrive_ap, flight.duration, flight.stops, flight.price or 'unknown'))
         event.addresponse(u'Full results: %s', flights[2])
 
 # vi: set et sta sw=4 ts=4:
