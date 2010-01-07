@@ -195,16 +195,12 @@ class FlightSearch(Processor):
         for tr in table.getiterator('tr'):
             for td in tr.getiterator('td'):
                 if td.get(u'class').strip() in ['tfPrice', 'tfPriceOrButton']:
-                    div = td.find('div')
-                    if div is not None:
-                        button = div.find('button')
-                        if button is not None:
-                            onclick = button.get('onclick')
-                            match = re.search(r"location.href='\.\./flights/(.+)'", onclick)
-                            url_page = match.group(1)
-                            match = re.search(r'^(.*?)[^/]*$', url)
-                            url_base = match.group(1)
-                            return_url = url_base + url_page
+                    onclick = td.find('div/button').get('onclick')
+                    match = re.search(r"location.href='\.\./flights/(.+)'", onclick)
+                    url_page = match.group(1)
+                    match = re.search(r'^(.*?)[^/]*$', url)
+                    url_base = match.group(1)
+                    return_url = url_base + url_page
 
         etree = get_html_parse_tree(return_url, treetype='etree')
         returning_flights = self._parse_travelocity(etree)
@@ -232,25 +228,25 @@ class FlightSearch(Processor):
                         airline = anchor.text.strip()
                     else:
                         airline = td.text.split('\n')[0].strip()
-                    flight.flight.append(u'%s %s' % (airline, td.find('div').text.strip()))
+                    flight.flight.append(u'%s %s' % (airline, td.findtext('div').strip()))
                 if td.get(u'class').strip() == u'tfDepart' and td.text:
                     flight.depart_time = td.text.split('\n')[0].strip()
-                    flight.depart_ap = '%s %s' % (td.find('div').text.strip(),
-                            td.find('div').find('span').text.strip())
+                    flight.depart_ap = '%s %s' % (td.findtext('div').strip(),
+                            td.findtext('div/span').strip())
                 if td.get(u'class').strip() == u'tfArrive' and td.text:
                     flight.arrive_time = td.text.split('\n')[0].strip()
                     span = td.find('span')
                     if span is not None and span.get(u'class').strip() == u'tfNextDayDate':
                         flight.arrive_time = u'%s %s' % (flight.arrive_time, span.text.strip()[2:])
                         span = [s for s in td.find('div').getiterator('span')][1]
-                        flight.arrive_ap = '%s %s' % (td.find('div').text.strip(),
+                        flight.arrive_ap = '%s %s' % (td.findtext('div').strip(),
                                 span.text.strip())
                     else:
-                        flight.arrive_ap = '%s %s' % (td.find('div').text.strip(),
-                                td.find('div').find('span').text.strip())
+                        flight.arrive_ap = '%s %s' % (td.findtext('div').strip(),
+                                td.findtext('div/span').strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     flight.duration = td.text.strip()
-                    flight.stops = td.find('span').find('a').text.strip()
+                    flight.stops = td.findtext('span/a').strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
                     flight.price = td.text.strip()
             flight.flight = human_join(flight.flight)
