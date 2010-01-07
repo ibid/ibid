@@ -172,28 +172,74 @@ class RateLimit(Processor):
 class Format(Processor):
     priority = 2000
 
+    def _truncate(self, line, length):
+        if length is not None:
+            eline = line.encode('utf-8')
+            if len(eline) > length:
+                # horizontal ellipsis = 3 utf-8 bytes
+                return eline[:length-3].decode('utf-8', 'ignore') \
+                       + u'\N{horizontal ellipsis}'
+        return line
+
     def process(self, event):
         filtered = []
         for response in event.responses:
             source = response['source'].lower()
             supports = ibid.sources[source].supports
+            maxlen = ibid.sources[source].truncation_point(response, event)
 
             if response.get('action', False) and 'action' not in supports:
                 response['reply'] = u'*%s*' % response['reply']
 
             conflate = response.get('conflate', True)
+            # Expand response into multiple single-line responses:
             if (not conflate and 'multiline' not in supports):
                 for line in response['reply'].split('\n'):
-                    r = {'reply': line}
+                    r = {'reply': self._truncate(line, maxlen)}
                     for k in response.iterkeys():
                         if k not in ('reply'):
                             r[k] = response[k]
                     filtered.append(r)
+
+            # Expand response into multiple multi-line responses:
+            elif (not conflate and 'multiline' in supports
+                               and maxlen is not None):
+                message = response['reply']
+                while len(message.encode('utf-8')) > maxlen:
+                    splitpoint = len(message.encode('utf-8')[:maxlen] \
+                                            .decode('utf-8', 'ignore'))
+                    parts = [message[:splitpoint].rstrip(),
+                             message[splitpoint:].lstrip()]
+                    for sep in u'\n.;:, ':
+                        if sep in u'\n ':
+                            search = message[:splitpoint+1]
+                        else:
+                            search = message[:splitpoint]
+                        if sep in search:
+                            splitpoint = search.rindex(sep)
+                            parts = [message[:splitpoint+1].rstrip(),
+                                     message[splitpoint+1:]]
+                            break
+                    r = {'reply': parts[0]}
+                    for k in response.iterkeys():
+                        if k not in ('reply'):
+                            r[k] = response[k]
+                    filtered.append(r)
+                    message = parts[1]
+
+                response['reply'] = message
+                filtered.append(response)
+
             else:
+                line = response['reply']
+                # Remove any characters that make no sense on IRC-like sources:
                 if 'multiline' not in supports:
-                    response['reply'] = response['reply'].expandtabs(1) \
-                            .replace('\n', conflate == True
-                                           and u' ' or conflate or u'')
+                    line = line.expandtabs(1) \
+                               .replace('\n', conflate == True
+                                              and u' ' or conflate or u'')
+
+                response['reply'] = self._truncate(line, maxlen)
+
                 filtered.append(response)
 
         event.responses = filtered

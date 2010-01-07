@@ -323,6 +323,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             return u''
         return identity.split(u'!')[0]
 
+    def truncation_point(self, response, event=None):
+        return 490
+
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
 

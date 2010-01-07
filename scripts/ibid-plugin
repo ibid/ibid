@@ -62,7 +62,12 @@ class TestSource(dict):
     type = 'test'
     permissions = []
     supports = ('action', 'multiline', 'notice')
-    logging_name = lambda self, name: name
+
+    def logging_name(self, name):
+        return name
+
+    def truncation_point(self, response, event=None):
+        return None
 
 ibid.sources[u'test_source'] = TestSource()
 
