@@ -114,8 +114,14 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
             if 'subject' not in message:
                 message['Subject'] = 'Re: ' + event['subject']
             if 'message-id' in event.headers:
-                response['References'] = event.headers['message-id']
                 response['In-Reply-To'] = event.headers['message-id']
+                if 'references' in event.headers:
+                    response['References'] = '%(references)s %(message-id)s' % event.headers
+                elif 'in-reply-to' in event.headers:
+                    response['References'] = '%(in-reply-to)s %(message-id)s' % event.headers
+                else:
+                    response['References'] = '%(message-id)s' % event.headers
+                    
             self.send(message)
 
     def send(self, response):
