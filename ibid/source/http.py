@@ -50,6 +50,7 @@ class Message(resource.Resource):
 
     def respond(self, event, request):
         output = '\n'.join([response['reply'].encode('utf-8') for response in event.responses])
+        request.setHeader('Content-Type', 'text/plain; charset=utf-8')
         request.write(output)
         request.finish()
         self.log.debug(u"Responded to request from %s: %s", event.sender['connection'], output)
