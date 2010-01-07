@@ -158,7 +158,7 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    supports = ['action', 'multiline', 'topic']
+    supports = ['multiline', 'topic']
     auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)
