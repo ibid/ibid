@@ -74,7 +74,7 @@ def _cacheable_download(url, cachefile, headers={}):
     exists = os.path.isfile(cachefile)
 
     req = urllib2.Request(url_to_bytestring(url))
-    for name, value in headers:
+    for name, value in headers.iteritems():
         req.add_header(name, value)
     if not req.has_header('user-agent'):
         req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
