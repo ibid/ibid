@@ -2,7 +2,7 @@ import re
 from random import random, randint
 from subprocess import Popen, PIPE
 from datetime import datetime
-from os.path import exists, join, relpath
+from os.path import exists, join
 from os import walk
 
 from dateutil.parser import parse
@@ -162,9 +162,9 @@ class TimeZone(Processor):
 
         lowerzones = {}
         for path, directories, filenames in walk(self.zoneinfo):
-            if relpath(path, self.zoneinfo).split('/')[0] not in ('posix', 'right'):
+            if path.replace(self.zoneinfo, '').lstrip('/').split('/')[0] not in ('posix', 'right'):
                 for filename in filenames:
-                    name = relpath(join(path, filename), self.zoneinfo)
+                    name = join(path, filename).replace(self.zoneinfo, '').lstrip('/')
                     self.lowerzones[name.lower().replace('etc/', '')] = name
 
     def _find_timezone(self, string):
