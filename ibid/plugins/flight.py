@@ -285,16 +285,18 @@ class FlightSearch(Processor):
             for i in xrange(2):
                 flights[i].sort(cmp=cmp)
                 del flights[i][1:]
+        response = []
         for i, flight_type in zip(xrange(2), ['Departing', 'Returning']):
             if len(flights[i]) > 1:
-                event.addresponse(u'%s flights:', flight_type)
+                response.append(u'%s flights:' % flight_type)
             for flight in flights[i][:self.max_results]:
                 leading = ''
                 if len(flights[i]) == 1:
                     leading = u'%s flight: ' % flight_type
-                event.addresponse('%s%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person',
+                response.append('%s%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person' %
                         (leading, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
                             flight.arrive_ap, flight.duration, flight.stops, flight.price or 'unknown'))
-        event.addresponse(u'Full results: %s', flights[2])
+        response.append(u'Full results: %s' % flights[2])
+        event.addresponse('\n'.join(response), conflate=False)
 
 # vi: set et sta sw=4 ts=4:
