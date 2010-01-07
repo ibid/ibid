@@ -109,14 +109,14 @@ class Flight:
 
 MONTH_SHORT = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
 MONTH_LONG = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th', 'morning', 'afternoon', 'evening')
+OTHER_STUFF = ('am', 'pm', 'st', 'nd', 'rd', 'th', 'morning', 'afternoon', 'evening', 'anytime')
 DATE = r'(?:[0-9.:/hT -]|%s)+' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF)
 
 class FlightException(Exception):
     pass
 
 class FlightSearch(Processor):
-    """[<cheapest|quickest] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
+    """[<cheapest|quickest]> flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
     feature = 'flight'
 
