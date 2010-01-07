@@ -43,7 +43,7 @@ def airport_search(query, search_loc = True):
             data = (u' '.join(c.lower() for c in airport[:5])).split(' ')
         elif len(query[0]) == 3:
             data = [airport[3].lower()]
-        else: # assume lenght 4 (won't break if not)
+        else: # assume length 4 (won't break if not)
             data = [airport[4].lower()]
         if len(filter(lambda q: q in data, query)) == len(query):
             ids.append(id)
@@ -61,7 +61,7 @@ class AirportSearch(Processor):
 
     feature = 'airport'
 
-    @match(r'^airports?\s+(in\s+)?(.+)$')
+    @match(r'^airports?\s+((?:in|for)\s+)?(.+)$')
     def airport_search(self, event, search_loc, query):
         search_loc = search_loc is not None
         if not search_loc and not 3 <= len(query) <= 4:
@@ -116,7 +116,7 @@ class FlightException(Exception):
     pass
 
 class FlightSearch(Processor):
-    """[<cheapest|quickest]> flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
+    """[<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
     feature = 'flight'
 
