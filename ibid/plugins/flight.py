@@ -2,7 +2,6 @@ import csv
 import re
 from sys import maxint
 from urllib import urlencode
-from xml.etree import ElementTree
 
 from dateutil.parser import parse
 
