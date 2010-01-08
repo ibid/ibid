@@ -110,8 +110,12 @@ class FlightSearch(Processor):
                 code = 'code %s' % airport[3]
             elif airport[4]:
                 code = 'code %s' % airport[4]
-            event.addresponse(u'%s in %s, %s has %s' %
-                    (airport[0], airport[1], airport[2], code))
+            event.addresponse(u'%(airport)s in %(city)s, %(country)s has %(code)s', {
+                'airport': airport[0],
+                'city': airport[1],
+                'country': airport[2],
+                'code': code,
+            })
         else:
             event.addresponse(u'Found the following airports: %s', human_join(self.repr_airport(id) for id in ids)[:480])
 
@@ -282,9 +286,17 @@ class FlightSearch(Processor):
                 leading = ''
                 if len(flights[i]) == 1:
                     leading = u'%s flight: ' % flight_type
-                response.append('%s%s departing %s from %s, arriving %s at %s (flight time %s, %s) costs %s per person' %
-                        (leading, flight.flight, flight.depart_time, flight.depart_ap, flight.arrive_time,
-                            flight.arrive_ap, flight.duration, flight.stops, flight.price or 'unknown'))
+                response.append(u'%(leading)s%(flight)s departing %(depart_time)s from %(depart_airport)s, arriving %(arrive_time)s at %(arrive_airport)s (flight time %(duration)s, %(stops)s) costs %(price)s per person' % {
+                    'leading': leading,
+                    'flight': flight.flight,
+                    'depart_time': flight.depart_time,
+                    'depart_airport': flight.depart_ap,
+                    'arrive_time': flight.arrive_time,
+                    'arrive_airport': flight.arrive_ap,
+                    'duration': flight.duration,
+                    'stops': flight.stops,
+                    'price': flight.price or 'unknown'
+                })
         response.append(u'Full results: %s' % flights[2])
         event.addresponse('\n'.join(response), conflate=False)
 
