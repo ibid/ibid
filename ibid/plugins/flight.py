@@ -10,79 +10,7 @@ from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
-help = { u'airport' : u'Search for airports',
-         u'flight'  : u'Search for flights on travelocity' }
-
-airports_url = 'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
-
-airports = {}
-
-def read_data():
-    # File is listed as ISO 8859-1 (Latin-1) encoded on
-    # http://openflights.org/data.html, but from decoding it appears to
-    # actually be UTF8
-    filename = cacheable_download(airports_url, 'flight/airports.dat')
-    reader = csv.reader(open(filename), delimiter=',', quotechar='"')
-    for row in reader:
-        airports[int(row[0])] = [unicode(r, 'utf-8') for r in row[1:]]
-
-def airport_search(query, search_loc = True):
-    if not airports:
-        read_data()
-    if search_loc:
-        ids = airport_search(query, False)
-        if len(ids) == 1:
-            return ids
-        query = [unicode(q) for q in query.lower().split(' ') if q]
-    else:
-        query = [unicode(query.lower())]
-    ids = []
-    for id, airport in airports.items():
-        if search_loc:
-            data = (u' '.join(c.lower() for c in airport[:5])).split(' ')
-        elif len(query[0]) == 3:
-            data = [airport[3].lower()]
-        else: # assume length 4 (won't break if not)
-            data = [airport[4].lower()]
-        if len(filter(lambda q: q in data, query)) == len(query):
-            ids.append(id)
-    return ids
-
-def repr_airport(id):
-    airport = airports[id]
-    code = ''
-    if airport[3] or airport[4]:
-        code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
-    return '%s%s' % (airport[0], code)
-
-class AirportSearch(Processor):
-    """airport [in] <name|location|code>"""
-
-    feature = 'airport'
-
-    @match(r'^airports?\s+((?:in|for)\s+)?(.+)$')
-    def airport_search(self, event, search_loc, query):
-        search_loc = search_loc is not None
-        if not search_loc and not 3 <= len(query) <= 4:
-            event.addresponse(u'Airport code must be 3 or 4 characters')
-            return
-        ids = airport_search(query, search_loc)
-        if len(ids) == 0:
-            event.addresponse(u"Sorry, I don't know that airport")
-        elif len(ids) == 1:
-            id = ids[0]
-            airport = airports[id]
-            code = 'unknown code'
-            if airport[3] and airport[4]:
-                code = 'codes %s and %s' % (airport[3], airport[4])
-            elif airport[3]:
-                code = 'code %s' % airport[3]
-            elif airport[4]:
-                code = 'code %s' % airport[4]
-            event.addresponse(u'%s in %s, %s has %s' %
-                    (airport[0], airport[1], airport[2], code))
-        else:
-            event.addresponse(u'Found the following airports: %s', human_join(repr_airport(id) for id in ids)[:480])
+help = { u'flight'  : u'Search for flights on travelocity' }
 
 class Flight:
     def __init__(self):
@@ -115,15 +43,81 @@ class FlightException(Exception):
     pass
 
 class FlightSearch(Processor):
-    """[<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
+    """airport [in] <name|location|code>
+    [<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
     feature = 'flight'
 
+    airports_url = 'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
+    airports = {}
+
+    def read_airport_data(self):
+        # File is listed as ISO 8859-1 (Latin-1) encoded on
+        # http://openflights.org/data.html, but from decoding it appears to
+        # actually be UTF8
+        filename = cacheable_download(self.airports_url, 'flight/airports.dat')
+        reader = csv.reader(open(filename), delimiter=',', quotechar='"')
+        for row in reader:
+            self.airports[int(row[0])] = [unicode(r, 'utf-8') for r in row[1:]]
+
+    def _airport_search(self, query, search_loc = True):
+        if not self.airports:
+            self.read_airport_data()
+        if search_loc:
+            ids = self._airport_search(query, False)
+            if len(ids) == 1:
+                return ids
+            query = [unicode(q) for q in query.lower().split(' ') if q]
+        else:
+            query = [unicode(query.lower())]
+        ids = []
+        for id, airport in self.airports.items():
+            if search_loc:
+                data = (u' '.join(c.lower() for c in airport[:5])).split(' ')
+            elif len(query[0]) == 3:
+                data = [airport[3].lower()]
+            else: # assume length 4 (won't break if not)
+                data = [airport[4].lower()]
+            if len(filter(lambda q: q in data, query)) == len(query):
+                ids.append(id)
+        return ids
+
+    def repr_airport(self, id):
+        airport = self.airports[id]
+        code = ''
+        if airport[3] or airport[4]:
+            code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
+        return '%s%s' % (airport[0], code)
+
+    @match(r'^airports?\s+((?:in|for)\s+)?(.+)$')
+    def airport_search(self, event, search_loc, query):
+        search_loc = search_loc is not None
+        if not search_loc and not 3 <= len(query) <= 4:
+            event.addresponse(u'Airport code must be 3 or 4 characters')
+            return
+        ids = self._airport_search(query, search_loc)
+        if len(ids) == 0:
+            event.addresponse(u"Sorry, I don't know that airport")
+        elif len(ids) == 1:
+            id = ids[0]
+            airport = self.airports[id]
+            code = 'unknown code'
+            if airport[3] and airport[4]:
+                code = 'codes %s and %s' % (airport[3], airport[4])
+            elif airport[3]:
+                code = 'code %s' % airport[3]
+            elif airport[4]:
+                code = 'code %s' % airport[4]
+            event.addresponse(u'%s in %s, %s has %s' %
+                    (airport[0], airport[1], airport[2], code))
+        else:
+            event.addresponse(u'Found the following airports: %s', human_join(self.repr_airport(id) for id in ids)[:480])
+
     def _flight_search(self, event, dpt, to, dep_date, ret_date):
-        airport_dpt = airport_search(dpt)
-        airport_to = airport_search(to)
+        airport_dpt = self._airport_search(dpt)
+        airport_to = self._airport_search(to)
         if len(airport_dpt) == 0:
             event.addresponse(u"Sorry, I don't know the airport you want to leave from")
             return
@@ -131,10 +125,10 @@ class FlightSearch(Processor):
             event.addresponse(u"Sorry, I don't know the airport you want to fly to")
             return
         if len(airport_dpt) > 1:
-            event.addresponse(u'The following airports match the departure: %s', human_join(repr_airport(id) for id in airport_dpt)[:480])
+            event.addresponse(u'The following airports match the departure: %s', human_join(self.repr_airport(id) for id in airport_dpt)[:480])
             return
         if len(airport_to) > 1:
-            event.addresponse(u'The following airports match the destination: %s', human_join(repr_airport(id) for id in airport_to)[:480])
+            event.addresponse(u'The following airports match the destination: %s', human_join(self.repr_airport(id) for id in airport_to)[:480])
             return
 
         dpt = airport_dpt[0]
@@ -167,8 +161,8 @@ class FlightSearch(Processor):
         (ret_date, ret_time) = to_travelocity_date(ret_date)
 
         params = {}
-        params['leavingFrom'] = airports[dpt][3]
-        params['goingTo'] = airports[to][3]
+        params['leavingFrom'] = self.airports[dpt][3]
+        params['goingTo'] = self.airports[to][3]
         params['leavingDate'] = dep_date
         params['dateLeavingTime'] = dep_time
         params['returningDate'] = ret_date
