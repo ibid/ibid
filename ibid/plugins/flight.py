@@ -146,7 +146,10 @@ class FlightSearch(Processor):
                     time = period.title()
                     date = date.replace(period, '')
                     break
-            date = parse(date)
+            try:
+                date = parse(date)
+            except ValueError:
+                raise FlightException(u"Sorry, I can't understand the date %s" % date)
             if time is None:
                 if date.hour == 0 and date.minute == 0:
                     time = 'Anytime'
