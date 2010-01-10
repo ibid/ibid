@@ -19,7 +19,7 @@ class Addressed(Processor):
 
     def setup(self):
         self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
-                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I | re.DOTALL)
+                            re.compile(r'^(?:\S+[,:].*|.*,\s*(%s))\s*$' % '|'.join(self.names), re.I | re.DOTALL)
                         ]
 
     @handler
@@ -29,7 +29,7 @@ class Addressed(Processor):
 
         for pattern in self.patterns:
             matches = pattern.search(event.message['stripped'])
-            if matches:
+            if matches and matches.group(1):
                 new_message = pattern.sub('', event.message['stripped'])
                 if (len(matches.groups()) > 1 and not matches.group(2) and
                         any(new_message.lower().startswith(verb)
