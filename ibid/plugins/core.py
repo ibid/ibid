@@ -18,9 +18,13 @@ class Addressed(Processor):
     verbs = ListOption('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
-        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
-                            re.compile(r'^(?:\S+[,:].*|.*,\s*(%s))\s*$' % '|'.join(self.names), re.I | re.DOTALL)
-                        ]
+        self.patterns = [
+            re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names),
+                       re.I | re.DOTALL),
+            # "hello there, bot"-style addressing
+            re.compile(r'^(?:\S+[,:].*|.*,\s*(%s))\s*$' % '|'.join(self.names),
+                       re.I | re.DOTALL)
+        ]
 
     @handler
     def handle_addressed(self, event):
