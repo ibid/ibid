@@ -19,9 +19,12 @@ try:
 
 except ImportError:
     from compiler import ast, pycodegen, parse, misc, walk
+    transform_method='compiler'
     class NodeTransformer(object):
         pass
-    transform_method='compiler'
+    # ExpressionCodeGenerator doesn't inherit __futures__ from calling module:
+    class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
+        futures = ('division',)
 
 help = {}
 log = logging.getLogger('maths')
@@ -127,10 +130,6 @@ class PowSubstitutionWalker(object):
         node.right = ast.Const(1)
     def visitGetattr(self, node, *args):
         raise AccessException
-
-# ExpressionCodeGenerator doesn't inherit __futures__ from the calling module:
-class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
-    futures = ('division',)
 
 class Calc(Processor):
     u"""[calc] <expression>"""
