@@ -77,7 +77,7 @@ class Ircbot(irc.IRCClient):
             ibid.reloader.reload_config()
         if self.factory.modes:
             self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
-        self.send({'target': self.nickname, 'reply': 'hostmask'})
+        self.ctcpMakeQuery(self.nickname, [('HOSTMASK', None)])
         for channel in self.factory.channels:
             self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
@@ -123,11 +123,6 @@ class Ircbot(irc.IRCClient):
 
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
-        if (event.sender['nick'] == self.nickname and
-            event.message == 'hostmask'):
-            self.hostmask = event.sender['connection']
-            self.factory.log.debug(u"Set hostmask to %s", self.hostmask)
-            return
 
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
 
@@ -265,6 +260,13 @@ class Ircbot(irc.IRCClient):
     def ctcpQuery_SOURCE(self, user, channel, data):
         nick = user.split("!")[0]
         self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
+
+    def ctcpUnknownQuery(self, user, channel, tag, data):
+        if user.split('!')[0] == self.nickname and tag == 'HOSTMASK':
+            self.hostmask = user
+            self.factory.log.debug(u"Set hostmask to %s", self.hostmask)
+        else:
+            irc.IRCClient.ctcpUnknownQuery(self, user, channel, tag, data)
 
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
