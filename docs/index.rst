@@ -6,6 +6,7 @@ Contents
 
    intro
    install
+   configuration
    plugins
    tutorial
    contributing
