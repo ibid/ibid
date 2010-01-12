@@ -1,4 +1,5 @@
 from __future__ import division
+
 import logging
 from os import kill
 import re
@@ -127,6 +128,10 @@ class PowSubstitutionWalker(object):
     def visitGetattr(self, node, *args):
         raise AccessException
 
+# ExpressionCodeGenerator doesn't inherit __futures__ from the calling module:
+class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
+    futures = ('division',)
+
 class Calc(Processor):
     u"""[calc] <expression>"""
     feature = 'calc'
@@ -161,7 +166,7 @@ class Calc(Processor):
             else:
                 misc.set_filename('<string>', ast)
                 walk(ast, PowSubstitutionWalker())
-                code = pycodegen.ExpressionCodeGenerator(ast).getCode()
+                code = FD_ExpressionCodeGenerator(ast).getCode()
 
             result = eval(code, {'__builtins__': None}, self.safe)
 
