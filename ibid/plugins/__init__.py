@@ -10,16 +10,13 @@ try:
     from twisted.plugin import pluginPackagePaths
 except ImportError:
     # Not available in Twisted 2.5.0 in Ubuntu hardy
+    # This is straight from twisted.plugin
     import os.path
     import sys
     def pluginPackagePaths(name):
         package = name.split('.')
-        return [
-            os.path.abspath(os.path.join(x, *package))
-            for x
-            in sys.path
-            if
-            not os.path.exists(os.path.join(x, *package + ['__init__.py']))]
+        return [os.path.abspath(os.path.join(x, *package)) for x in sys.path
+            if not os.path.exists(os.path.join(x, *package + ['__init__.py']))]
 
 import ibid
 from ibid.compat import json
