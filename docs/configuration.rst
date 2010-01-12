@@ -112,6 +112,7 @@ jabber).
    List of permissions that are granted to everyone.
    The name of the permission can be prefixed with a ``+`` to indicate
    that this permission is granted without requiring authentication.
+   Or a ``-`` to revoke a permission granted to all users of a source.
 
    See :ref:`the list of permissions <permissions>`.
 
@@ -124,23 +125,40 @@ The following permissions are used in Ibid core:
 
 ``accounts``
    Alter user's accounts.
-``sources``
-   Start and stop sources. Join and leave channels.
-``plugins``
-   Load and unload plugins.
-``core``
-   Reload Ibid core components.
 ``admin``
    Grant and revoke permissions. Shut down the bot.
 ``config``
    Alter configuration values online. (Rewrites the configuration file)
-``saydo``
-   Use the bot as a puppet.
-``factoidadmin``
-   Delete / modify factoids that you didn't set in the first place.
-``karmaadmin``
-   Delete karma items.
+``core``
+   Reload Ibid core components.
+``plugins``
+   Load and unload plugins.
+``sources``
+   Start and stop sources. Join and leave channels.
+
+Other permissions used in plugins:
+
+``chairmeeting``
+   Start meeting minute-taking.
 ``eval``
    Execute arbitrary Python code.
+``factoid``
+   Set factoids and modify factoids that you have set yourself.
+``factoidadmin``
+   Delete / modify factoids that you didn't set in the first place.
+``feeds``
+   Configure RSS/Atom feeds
+``karma``
+   Promote or demote karma for things.
+``karmaadmin``
+   Delete karma items.
+``recvmemo``
+   Receive memos.
+``saydo``
+   Use the bot as a puppet.
+``sendmemo``
+   Send memos.
+``summon``
+   Summon a user via another source.
 
 .. vi: set et sta sw=3 ts=3:
