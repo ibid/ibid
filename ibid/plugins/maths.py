@@ -1,4 +1,5 @@
 from __future__ import division
+
 import logging
 from os import kill
 import re
@@ -18,9 +19,12 @@ try:
 
 except ImportError:
     from compiler import ast, pycodegen, parse, misc, walk
+    transform_method='compiler'
     class NodeTransformer(object):
         pass
-    transform_method='compiler'
+    # ExpressionCodeGenerator doesn't inherit __futures__ from calling module:
+    class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
+        futures = ('division',)
 
 help = {}
 log = logging.getLogger('maths')
@@ -161,7 +165,7 @@ class Calc(Processor):
             else:
                 misc.set_filename('<string>', ast)
                 walk(ast, PowSubstitutionWalker())
-                code = pycodegen.ExpressionCodeGenerator(ast).getCode()
+                code = FD_ExpressionCodeGenerator(ast).getCode()
 
             result = eval(code, {'__builtins__': None}, self.safe)
 
