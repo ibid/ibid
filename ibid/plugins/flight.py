@@ -48,7 +48,7 @@ class FlightSearch(Processor):
 
     feature = 'flight'
 
-    airports_url = 'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
+    airports_url = u'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)
 
     airports = {}
@@ -57,10 +57,10 @@ class FlightSearch(Processor):
         # File is listed as ISO 8859-1 (Latin-1) encoded on
         # http://openflights.org/data.html, but from decoding it appears to
         # actually be UTF8
-        filename = cacheable_download(self.airports_url, 'flight/airports.dat')
+        filename = cacheable_download(self.airports_url, u'flight/airports.dat')
         reader = csv.reader(open(filename), delimiter=',', quotechar='"')
         for row in reader:
-            self.airports[int(row[0])] = [unicode(r, 'utf-8') for r in row[1:]]
+            self.airports[int(row[0])] = [unicode(r, u'utf-8') for r in row[1:]]
 
     def _airport_search(self, query, search_loc = True):
         if not self.airports:
@@ -69,13 +69,13 @@ class FlightSearch(Processor):
             ids = self._airport_search(query, False)
             if len(ids) == 1:
                 return ids
-            query = [unicode(q) for q in query.lower().split(' ') if q]
+            query = [q for q in query.lower().split()]
         else:
-            query = [unicode(query.lower())]
+            query = [query.lower()]
         ids = []
         for id, airport in self.airports.items():
             if search_loc:
-                data = (u' '.join(c.lower() for c in airport[:5])).split(' ')
+                data = (u' '.join(c.lower() for c in airport[:5])).split()
             elif len(query[0]) == 3:
                 data = [airport[3].lower()]
             else: # assume length 4 (won't break if not)
@@ -86,10 +86,10 @@ class FlightSearch(Processor):
 
     def repr_airport(self, id):
         airport = self.airports[id]
-        code = ''
+        code = u''
         if airport[3] or airport[4]:
-            code = ' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
-        return '%s%s' % (airport[0], code)
+            code = u' (%s)' % u'/'.join(filter(lambda c: c, airport[3:5]))
+        return u'%s%s' % (airport[0], code)
 
     @match(r'^airports?\s+((?:in|for)\s+)?(.+)$')
     def airport_search(self, event, search_loc, query):
@@ -103,18 +103,18 @@ class FlightSearch(Processor):
         elif len(ids) == 1:
             id = ids[0]
             airport = self.airports[id]
-            code = 'unknown code'
+            code = u'unknown code'
             if airport[3] and airport[4]:
-                code = 'codes %s and %s' % (airport[3], airport[4])
+                code = u'codes %s and %s' % (airport[3], airport[4])
             elif airport[3]:
-                code = 'code %s' % airport[3]
+                code = u'code %s' % airport[3]
             elif airport[4]:
-                code = 'code %s' % airport[4]
+                code = u'code %s' % airport[4]
             event.addresponse(u'%(airport)s in %(city)s, %(country)s has %(code)s', {
-                'airport': airport[0],
-                'city': airport[1],
-                'country': airport[2],
-                'code': code,
+                u'airport': airport[0],
+                u'city': airport[1],
+                u'country': airport[2],
+                u'code': code,
             })
         else:
             event.addresponse(u'Found the following airports: %s', human_join(self.repr_airport(id) for id in ids)[:480])
@@ -141,10 +141,10 @@ class FlightSearch(Processor):
         def to_travelocity_date(date):
             date = date.lower()
             time = None
-            for period in ['anytime', 'morning', 'afternoon', 'evening']:
+            for period in [u'anytime', u'morning', u'afternoon', u'evening']:
                 if period in date:
                     time = period.title()
-                    date = date.replace(period, '')
+                    date = date.replace(period, u'')
                     break
             try:
                 date = parse(date)
@@ -152,71 +152,71 @@ class FlightSearch(Processor):
                 raise FlightException(u"Sorry, I can't understand the date %s" % date)
             if time is None:
                 if date.hour == 0 and date.minute == 0:
-                    time = 'Anytime'
+                    time = u'Anytime'
                 else:
-                    time = date.strftime('%I:00')
-                    if time[0] == '0':
+                    time = date.strftime(u'%I:00')
+                    if time[0] == u'0':
                         time = time[1:]
                     if date.hour < 12:
-                        time += 'am'
+                        time += u'am'
                     else:
-                        time += 'pm'
-            date = date.strftime('%m/%d/%Y')
+                        time += u'pm'
+            date = date.strftime(u'%m/%d/%Y')
             return (date, time)
 
         (dep_date, dep_time) = to_travelocity_date(dep_date)
         (ret_date, ret_time) = to_travelocity_date(ret_date)
 
         params = {}
-        params['leavingFrom'] = self.airports[dpt][3]
-        params['goingTo'] = self.airports[to][3]
-        params['leavingDate'] = dep_date
-        params['dateLeavingTime'] = dep_time
-        params['returningDate'] = ret_date
-        params['dateReturningTime'] = ret_time
+        params[u'leavingFrom'] = self.airports[dpt][3]
+        params[u'goingTo'] = self.airports[to][3]
+        params[u'leavingDate'] = dep_date
+        params[u'dateLeavingTime'] = dep_time
+        params[u'returningDate'] = ret_date
+        params[u'dateReturningTime'] = ret_time
         etree = get_html_parse_tree('http://travel.travelocity.com/flights/InitialSearch.do', data=urlencode(params), treetype='etree')
         while True:
-            script = [script for script in etree.getiterator('script')][1]
+            script = [script for script in etree.getiterator(u'script')][1]
             matches = script.text and re.search(r'var finurl = "(.*)"', script.text)
             if matches:
-                url = 'http://travel.travelocity.com/flights/%s' % matches.group(1)
-                etree = get_html_parse_tree(url, treetype='etree')
+                url = u'http://travel.travelocity.com/flights/%s' % matches.group(1)
+                etree = get_html_parse_tree(url, treetype=u'etree')
             else:
                 break
 
         # Handle error
-        div = [d for d in etree.getiterator('div') if d.get(u'class') == 'e_content']
+        div = [d for d in etree.getiterator(u'div') if d.get(u'class') == u'e_content']
         if len(div):
-            error = div[0].find('h3').text
+            error = div[0].find(u'h3').text
             raise FlightException(error)
 
         departing_flights = self._parse_travelocity(etree)
         return_url = None
-        table = [t for t in etree.getiterator('table')][3]
-        for tr in table.getiterator('tr'):
-            for td in tr.getiterator('td'):
-                if td.get(u'class').strip() in ['tfPrice', 'tfPriceOrButton']:
-                    onclick = td.find('div/button').get('onclick')
+        table = [t for t in etree.getiterator(u'table')][3]
+        for tr in table.getiterator(u'tr'):
+            for td in tr.getiterator(u'td'):
+                if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOrButton']:
+                    onclick = td.find(u'div/button').get(u'onclick')
                     match = re.search(r"location.href='\.\./flights/(.+)'", onclick)
                     url_page = match.group(1)
                     match = re.search(r'^(.*?)[^/]*$', url)
                     url_base = match.group(1)
                     return_url = url_base + url_page
 
-        etree = get_html_parse_tree(return_url, treetype='etree')
+        etree = get_html_parse_tree(return_url, treetype=u'etree')
         returning_flights = self._parse_travelocity(etree)
 
         return (departing_flights, returning_flights, url)
 
     def _parse_travelocity(self, etree):
         flights = []
-        table = [t for t in etree.getiterator('table') if t.get(u'id') == 'tfGrid'][0]
-        trs = [t for t in table.getiterator('tr')]
+        table = [t for t in etree.getiterator(u'table') if t.get(u'id') == u'tfGrid'][0]
+        trs = [t for t in table.getiterator(u'tr')]
         tr_index = 1
         while tr_index < len(trs):
             tds = []
             while True:
-                new_tds = [t for t in trs[tr_index].getiterator('td')]
+                new_tds = [t for t in trs[tr_index].getiterator(u'td')]
                 tds.extend(new_tds)
                 tr_index += 1
                 if len(filter(lambda t: t.get(u'class').strip() == u'tfAirlineSeatsMR', new_tds)):
@@ -224,30 +224,30 @@ class FlightSearch(Processor):
             flight = Flight()
             for td in tds:
                 if td.get(u'class').strip() == u'tfAirline':
-                    anchor = td.find('a')
+                    anchor = td.find(u'a')
                     if anchor is not None:
                         airline = anchor.text.strip()
                     else:
-                        airline = td.text.split('\n')[0].strip()
-                    flight.flight.append(u'%s %s' % (airline, td.findtext('div').strip()))
+                        airline = td.text.split(u'\n')[0].strip()
+                    flight.flight.append(u'%s %s' % (airline, td.findtext(u'div').strip()))
                 if td.get(u'class').strip() == u'tfDepart' and td.text:
-                    flight.depart_time = td.text.split('\n')[0].strip()
-                    flight.depart_ap = '%s %s' % (td.findtext('div').strip(),
-                            td.findtext('div/span').strip())
+                    flight.depart_time = td.text.split(u'\n')[0].strip()
+                    flight.depart_ap = u'%s %s' % (td.findtext(u'div').strip(),
+                            td.findtext(u'div/span').strip())
                 if td.get(u'class').strip() == u'tfArrive' and td.text:
-                    flight.arrive_time = td.text.split('\n')[0].strip()
-                    span = td.find('span')
+                    flight.arrive_time = td.text.split(u'\n')[0].strip()
+                    span = td.find(u'span')
                     if span is not None and span.get(u'class').strip() == u'tfNextDayDate':
                         flight.arrive_time = u'%s %s' % (flight.arrive_time, span.text.strip()[2:])
-                        span = [s for s in td.find('div').getiterator('span')][1]
-                        flight.arrive_ap = '%s %s' % (td.findtext('div').strip(),
+                        span = [s for s in td.find(u'div').getiterator(u'span')][1]
+                        flight.arrive_ap = u'%s %s' % (td.findtext(u'div').strip(),
                                 span.text.strip())
                     else:
-                        flight.arrive_ap = '%s %s' % (td.findtext('div').strip(),
-                                td.findtext('div/span').strip())
+                        flight.arrive_ap = u'%s %s' % (td.findtext(u'div').strip(),
+                                td.findtext(u'div/span').strip())
                 if td.get(u'class').strip() == u'tfTime' and td.text:
                     flight.duration = td.text.strip()
-                    flight.stops = td.findtext('span/a').strip()
+                    flight.stops = td.findtext(u'span/a').strip()
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOr'] and td.text:
                     flight.price = td.text.strip()
             flight.flight = human_join(flight.flight)
@@ -272,9 +272,11 @@ class FlightSearch(Processor):
             return
 
         cmp = None
-        if priority == 'cheapest':
+        if priority is not None:
+            priority = priority.lower()
+        if priority == u'cheapest':
             cmp = lambda a, b: a.int_price() < b.int_price()
-        elif priority == 'quickest':
+        elif priority == u'quickest':
             cmp = lambda a, b: a.int_duration() < b.int_duration()
         if cmp:
             # select best flight based on priority
@@ -282,11 +284,11 @@ class FlightSearch(Processor):
                 flights[i].sort(cmp=cmp)
                 del flights[i][1:]
         response = []
-        for i, flight_type in zip(xrange(2), ['Departing', 'Returning']):
+        for i, flight_type in zip(xrange(2), [u'Departing', u'Returning']):
             if len(flights[i]) > 1:
                 response.append(u'%s flights:' % flight_type)
             for flight in flights[i][:self.max_results]:
-                leading = ''
+                leading = u''
                 if len(flights[i]) == 1:
                     leading = u'%s flight: ' % flight_type
                 response.append(u'%(leading)s%(flight)s departing %(depart_time)s from %(depart_airport)s, arriving %(arrive_time)s at %(arrive_airport)s (flight time %(duration)s, %(stops)s) costs %(price)s per person' % {
@@ -301,6 +303,6 @@ class FlightSearch(Processor):
                     'price': flight.price or 'unknown'
                 })
         response.append(u'Full results: %s' % flights[2])
-        event.addresponse('\n'.join(response), conflate=False)
+        event.addresponse(u'\n'.join(response), conflate=False)
 
 # vi: set et sta sw=4 ts=4:
