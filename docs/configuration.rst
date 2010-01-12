@@ -143,6 +143,8 @@ The configuration parameters that applies to all sources are:
    This allows you to have more than one IRC source, for example.
 
    Default: The name of the source.
+   If you specify a type, you are free to name the source anything you
+   want to.
 
 .. describe:: permissions:
 
