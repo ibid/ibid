@@ -21,8 +21,9 @@ class Addressed(Processor):
         self.patterns = [
             re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names),
                        re.I | re.DOTALL),
-            # "hello there, bot"-style addressing
-            re.compile(r'^(?:\S+[,:].*|.*,\s*(%s))\s*$' % '|'.join(self.names),
+            # "hello there, bot"-style addressing. But we want to be sure that
+            # there wasn't normal addressing too:
+            re.compile(r'^(?:\S+:.*|.*,\s*(%s))\s*$' % '|'.join(self.names),
                        re.I | re.DOTALL)
         ]
 
