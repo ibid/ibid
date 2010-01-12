@@ -269,11 +269,6 @@ source tarball)::
    ibid@box $ bzr branch lp:ibid
    ibid@box $ cd ibid
 
-Tell Python that it can find libraries under the current directory (you could
-also do virtualenv install)::
-   
-   ibid@box $ export PYTHONPATH=.
-
 Either edit the bot's configuration file (``ibid.ini``) or delete it (the
 install process will create one for you).
 

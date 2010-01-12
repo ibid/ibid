@@ -55,7 +55,7 @@ development process as the Ibid developers:
 
 #. Run the test-cases::
 
-      user@box $ PYTHONPATH=. trial ibid
+      user@box $ trial ibid
 
 #. Push the branch to Launchpad::
 
@@ -183,7 +183,6 @@ Bazaar.
 
 Ibid can be simply run out of a checkout directory::
 
-   ~/code/ibid/feature-1234 $ export PYTHONPATH=.
    ~/code/ibid/feature-1234 $ scripts/ibid-setup
 
 If you won't need an administrative account, you can hit ``^D`` and

@@ -30,7 +30,6 @@ SQLite database called ``ibid.db`` in your current directory::
 
    user@box ~ $ bzr branch lp:ibid
    user@box ~ $ cd ibid
-   user@box ~/ibid $ export PYTHONPATH=.
    user@box ~/ibid $ scripts/ibid-setup
    ... Messages about setting up tables
    Database tables created
