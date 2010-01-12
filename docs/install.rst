@@ -35,7 +35,7 @@ You'll need a sane `Python <http://python.org>`_ environment and a few Python
 We attempt to support all Python 2.x releases >= 2.4.
 However, we'd recommend the most recent stable 2.x release, as Python memory
 usage has improved and more recent Python releases have been better tested with
-ibid.
+Ibid.
 (We have to go out of our way to test with 2.4...)
 Python 3.x support is off the cards until our dependencies are 3.x capable.
 
@@ -276,7 +276,7 @@ Create a virtualenv to install Ibid to::
    But for long-term deployments it is sensible to separate the source
    from the botdir.
 
-Checkout the latest version of ibid (instead of this, you could extract a
+Checkout the latest version of Ibid (instead of this, you could extract a
 source tarball)::
 
    user@box $ sudo -u ibid -i
