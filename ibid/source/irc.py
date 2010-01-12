@@ -349,7 +349,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         else:
             command_len = len('PRIVMSG')
 
-        return 505 - command_len - len(target) - hostmask_len
+        return 505 - command_len - len(raw_target) - hostmask_len
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
