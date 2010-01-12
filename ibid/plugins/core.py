@@ -19,7 +19,7 @@ class Addressed(Processor):
 
     def setup(self):
         self.patterns = [
-            re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names),
+            re.compile(r'^(%s)([:;.?>!,-]+)*\s*' % '|'.join(self.names),
                        re.I | re.DOTALL),
             # "hello there, bot"-style addressing. But we want to be sure that
             # there wasn't normal addressing too:
