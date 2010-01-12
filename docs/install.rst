@@ -250,17 +250,31 @@ We recommend a recent release of Debian/Ubuntu Linux, and the instructions are
 tailored for such.
 If you use something else, you'll have to interpolate.
 
-Install the required python modules:
-(you can use another DB, but we default to SQLite)::
+Install the required python modules.
+You can use another DB, but we default to SQLite.
+If you are not using Debian/Ubuntu or would prefer to have these
+dependencies installed in a virtualenv, you can skip this step::
 
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
      python-html5lib python-pysqlite2 python-simplejson \
-     python-soappy python-jinja python-dateutil
+     python-soappy python-jinja python-dateutil \
+     python-virtualenv
 
 Create a user to run your bot as::
 
    user@box $ sudo adduser --disabled-login ibid
+
+Create a virtualenv to install Ibid to::
+
+   user@box $ virtualenv ve
+
+.. note::
+
+   This isn't strictly necessary as Ibid can run out of a source
+   checkout for development.
+   But for long-term deployments it is sensible to separate the source
+   from the botdir.
 
 Checkout the latest version of ibid (instead of this, you could extract a
 source tarball)::
@@ -269,15 +283,27 @@ source tarball)::
    ibid@box $ bzr branch lp:ibid
    ibid@box $ cd ibid
 
-Either edit the bot's configuration file (``ibid.ini``) or delete it (the
-install process will create one for you).
+Install Ibid::
+
+   user@box $ . ~/ve/bin/activate
+   user@box $ ./setup.py install --no-dependencies
+
+.. note::
+
+   If you didn't install the packages listed in the first step, you'll
+   have to remove ``--no-dependencies`` so setuptools can do its magic.
 
 If you are going to be using MySQL or PostgreSQL :ref:`set up your
 database now <db-setup>`.
 
+Then you'll need to create a directory for your bot to live in::
+
+   ibid@box $ mkdir ~/botdir
+   ibid@box $ cd ~/botdir
+
 Set up your bot::
 
-   ibid@box $ scripts/ibid-setup
+   ibid@box $ ibid-setup
 
 .. note::
    This will throw out some harmless errors (about plugins that you don't have
@@ -293,7 +319,7 @@ network's name, and a password (e.g. "joebloggs", "freenode", "s3cr3tpass").
 
 Load any factpacks you desire (in this case, common greetings)::
 
-   ibid@box $ scripts/ibid-factpack factpack/greetings.json
+   ibid@box $ ibid-factpack ~/ibid/factpack/greetings.json
 
 Runi your bot::
 
