@@ -77,6 +77,7 @@ class Ircbot(irc.IRCClient):
             ibid.reloader.reload_config()
         if self.factory.modes:
             self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
+        self.send({'target': self.nickname, 'reply': 'hostmask'})
         for channel in self.factory.channels:
             self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
@@ -122,6 +123,12 @@ class Ircbot(irc.IRCClient):
 
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
+        if (event.sender['nick'] == self.nickname and
+            event.message == 'hostmask'):
+            self.hostmask = event.sender['connection']
+            self.factory.log.debug(u"Set hostmask to %s", self.hostmask)
+            return
+
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
 
         if channel.lower() == self.nickname.lower():
@@ -324,7 +331,24 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         return identity.split(u'!')[0]
 
     def truncation_point(self, response, event=None):
-        return 490
+        target = response['target'].split('!')[0]
+        raw_target = target.encode('utf-8')
+        if hasattr(self.proto, 'hostmask'):
+            hostmask_len = len(self.proto.hostmask)
+        else:
+            hostmask_len = 50
+
+        # max = 512 - len(':' + hostmask + ' ' + command + ' ' + target + ' :\r\n')
+
+        cmds = {'notice': len('NOTICE'), 'topic': len('TOPIC'),
+                'action': len('PRIVMSG\001ACTION \001')}
+        for cmd, command_len in cmds.items():
+            if cmd in response:
+                break
+        else:
+            command_len = len('PRIVMSG')
+
+        return 505 - command_len - len(target) - hostmask_len
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)
