@@ -69,23 +69,27 @@ It is in configobj format, an ini-variant with nested sections.
 Whitespace is ignored, all values belong to the most recently defined
 section.
 
+Lines can be commented out by prefixing them with ``#``.
+
 Top Level Options
 ^^^^^^^^^^^^^^^^^
 
 .. describe:: botname:
 
-   The name of the bot.
+   String: The name of the bot.
    It will respond to this name.
 
 .. describe:: logging:
 
-   Defaults to ``logging.ini``.
-   The location of the :mod:`logging` configuration file.
+   String: The location of the :mod:`logging` configuration file.
+
+   Default: ``logging.ini``
 
 .. describe:: mysql_engine:
 
-   Defaults to ``InnoDB``.
-   The engine that MySQL tables will be created in.
+   String: The engine that MySQL tables will be created in.
+
+   Default: ``InnoDB``
 
 Auth
 ^^^^
@@ -100,21 +104,119 @@ jabber).
 
 .. describe:: methods:
 
-   List of authentication methods that can be used on all sources.
+   List: Authentication methods that can be used on all sources.
 
 .. describe:: timeout:
 
-   Time in seconds that authentication should be cached for before
-   requiring re-authentication.
+   Number: Time in seconds that authentication should be cached for
+   before requiring re-authentication.
 
 .. describe:: permissions:
 
-   List of permissions that are granted to everyone.
+   List: Permissions that are granted to everyone.
+   Although they can be overridden for specific users, using the online
+   grant function.
+
    The name of the permission can be prefixed with a ``+`` to indicate
    that this permission is granted without requiring authentication.
    Or a ``-`` to revoke a permission granted to all users of a source.
 
    See :ref:`the list of permissions <permissions>`.
+
+Sources
+^^^^^^^
+
+Sources are the way that Ibid connects to users.
+Every IRC/SILC/DC server is it's own source as are connections to other
+services.
+
+The configuration parameters that applies to all sources are:
+
+.. describe:: disabled:
+
+   Boolean: Every source can be disabled from auto-starting by setting
+   this to ``True`` in the source`s configuration.
+
+.. describe:: type:
+
+   String: The driver that this source should use.
+   This allows you to have more than one IRC source, for example.
+
+   Default: The name of the source.
+
+.. describe:: permissions:
+
+   List: This lets you grant and revoke permissions to all users on the
+   source.
+   They can be overridden for specific users, using the online grant
+   function.
+
+   The name of the permission can be prefixed with a ``+`` to indicate
+   that this permission is granted without requiring authentication.
+   Or a ``-`` to revoke a permission granted to all users of a source.
+
+   See :ref:`the list of permissions <permissions>`.
+
+IRC Source
+""""""""""
+
+.. describe:: server:
+
+   **Reqired**
+   String: The hostname of the IRC server to connect to.
+
+   Ibid `does not currently support
+   <https://bugs.launchpad.net/bugs/363466>`_ falling back to alternate
+   servers, so you may want to use a round-robin hostname.
+
+.. describe:: port:
+
+   Number: The port to connect to.
+
+   Default: ``6667``
+
+.. describe:: ssl:
+
+   Boolean: Use SSL-encrypted connection to the server.
+
+   Default: ``False``
+
+.. describe:: nick:
+
+   String: The nickname for the bot to use on this server.
+
+   Default: The :obj:`botname`
+
+.. describe:: modes:
+
+   String: The IRC modes to set.
+   Some servers require bots to set mode ``B``.
+
+   Default: nothing
+
+.. describe:: channels:
+
+   List: Channels to join on connection to the server.
+
+   .. warning::
+      You must include the leading ``#``, but unless you quote each
+      channel, Ibid will see the rest of the config line as a comment.
+
+      So use quotes around each channel name like this: ``"#ibid",
+      "#fun"``
+
+.. describe:: ping_interval:
+
+   Number: How many seconds in between each keep-alive PING sent to the
+   server.
+
+   Default: ``60``
+
+.. describe:: pong_timeout:
+
+   Number: How long to wait for PONGs before giving up and reconnecting.
+
+   Default: ``300``
 
 .. _permissions:
 
