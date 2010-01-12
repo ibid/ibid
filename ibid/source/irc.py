@@ -345,7 +345,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         cmds = {'notice': len('NOTICE'), 'topic': len('TOPIC'),
                 'action': len('PRIVMSG\001ACTION \001')}
         for cmd, command_len in cmds.items():
-            if cmd in response:
+            if response.get(cmd, False):
                 break
         else:
             command_len = len('PRIVMSG')
