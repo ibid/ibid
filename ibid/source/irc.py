@@ -123,7 +123,6 @@ class Ircbot(irc.IRCClient):
 
         event = self._create_event(msgtype, user, channel)
         event.message = unicode(msg, 'utf-8', 'replace')
-
         self.factory.log.debug(u"Received %s from %s in %s: %s", msgtype, event.sender['id'], event.channel, event.message)
 
         if channel.lower() == self.nickname.lower():
