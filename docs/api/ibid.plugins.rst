@@ -42,6 +42,14 @@ To do anything, the plugin must contain classes extending
 
       Default: ``None``
 
+   .. attribute:: permissions
+
+      List of Strings: The names of permissions that :func:`authorise`
+      methods in this Processor check directly (using
+      :func:`auth_responses`).
+
+      Default: empty
+
    .. attribute:: event_types
 
       A tuple of :class:`Event <ibid.event.Event>` type strings that the
@@ -201,6 +209,9 @@ Other Functions
    This is used internally by :meth:`@authorise() <authorise>`, but you
    can call it directly if you need more complex permission handling
    than :meth:`@authorise() <authorise>` allows for.
+
+   When you use this, you should ensure that *permission* is listed in
+   :attr:`Processor.permission` or :attr:`Processor.permissions`.
 
 RPC
 ---
