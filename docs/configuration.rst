@@ -90,4 +90,57 @@ Top Level Options
 Auth
 ^^^^
 
+This section is for configuring Ibid's user-authentication.
+Permissions that are granted ``…when authed`` require users to
+authenticate themselves to the bot before the permission can be invoked.
+Some sources have special ways of authenticating users (e.g. the
+``nickserv`` authentication method on IRC) or guarantee that their users
+are always authenticated via the ``imlicit`` authentication method (e.g.
+jabber).
+
+.. describe:: methods:
+
+   List of authentication methods that can be used on all sources.
+
+.. describe:: timeout:
+
+   Time in seconds that authentication should be cached for before
+   requiring re-authentication.
+
+.. describe:: permissions:
+
+   List of permissions that are granted to everyone.
+   The name of the permission can be prefixed with a ``+`` to indicate
+   that this permission is granted without requiring authentication.
+
+   See :ref:`the list of permissions <permissions>`.
+
+.. _permissions:
+
+Permissions
+-----------
+
+The following permissions are used in Ibid core:
+
+``accounts``
+   Alter user's accounts.
+``sources``
+   Start and stop sources. Join and leave channels.
+``plugins``
+   Load and unload plugins.
+``core``
+   Reload Ibid core components.
+``admin``
+   Grant and revoke permissions. Shut down the bot.
+``config``
+   Alter configuration values online. (Rewrites the configuration file)
+``saydo``
+   Use the bot as a puppet.
+``factoidadmin``
+   Delete / modify factoids that you didn't set in the first place.
+``karmaadmin``
+   Delete karma items.
+``eval``
+   Execute arbitrary Python code.
+
 .. vi: set et sta sw=3 ts=3:
