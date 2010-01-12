@@ -1,3 +1,4 @@
+from __future__ import division
 import logging
 from os import kill
 import re
@@ -6,7 +7,7 @@ from subprocess import Popen, PIPE
 from time import time, sleep
 
 import ibid
-from ibid.compat import factorial
+from ibid.compat import all, factorial
 from ibid.config import Option, FloatOption
 from ibid.plugins import Processor, match, handler
 from ibid.utils import file_in_path, unicode_output
@@ -76,11 +77,15 @@ help['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syn
 class LimitException(Exception):
     pass
 
+class AccessException(Exception):
+    pass
+
 def limited_pow(*args):
     "We don't want users to DOS the bot. Pow is the most dangerous function. Limit it"
 
-    # Are all the arguments ints?
-    if not [True for arg in args if not isinstance(arg, int) and not isinstance(arg, long)]:
+    # Large modulo-powers are ok, but otherwise we don't want enormous operands
+    if (all(isinstance(arg, (int, long)) for arg in args)
+            and not (len(args) == 3 and args[2] < 1e100)):
         try:
             answer = pow(float(args[0]), float(args[1]))
             if answer > 1e+300:
@@ -107,6 +112,8 @@ class PowSubstitutionTransformer(NodeTransformer):
             copy_location(cnode, node)
             return cnode
         return node
+    def visit_Attribute(self, node):
+        raise AccessException
 
 # compiler method
 class PowSubstitutionWalker(object):
@@ -117,6 +124,8 @@ class PowSubstitutionWalker(object):
         node.left = cnode
         # Little hack: instead of trying to turn node into a CallFunc, we just do pow(left, right)**1
         node.right = ast.Const(1)
+    def visitGetattr(self, node, *args):
+        raise AccessException
 
 class Calc(Processor):
     u"""[calc] <expression>"""
@@ -125,7 +134,7 @@ class Calc(Processor):
     priority = 500
 
     extras = ('abs', 'round', 'min', 'max')
-    banned = ('for', 'yield', 'lambda', '__')
+    banned = ('for', 'yield', 'lambda', '__', 'is')
 
     # Create a safe dict to pass to eval() as locals
     safe = {}
@@ -168,6 +177,9 @@ class Calc(Processor):
             return
         except LimitException, e:
             event.addresponse(u"I'm afraid I'm not allowed to play with big numbers")
+            return
+        except AccessException, e:
+            event.addresponse(u"You're not allowed to do that")
             return
         except Exception, e:
             return
