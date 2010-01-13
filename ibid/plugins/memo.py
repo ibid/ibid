@@ -309,7 +309,7 @@ class Notify(Processor):
                 len(memos), target=event.sender['connection'])
         elif len(memos) > 0:
             event.addresponse(u'You have %s messages. '
-                    u"Say something to me and I'll give them to you.",
+                    u"Would you like to read them now?",
                 len(memos),
                 target=event.sender['connection'])
         else:
