@@ -220,6 +220,55 @@ IRC Source
 
    Default: ``300``
 
+Jabber Source
+^^^^^^^^^^^^^
+
+.. describe:: server:
+
+   **Required**
+   String: The hostname of the server to connect to.
+   Ibid `currently does not support
+   <https://bugs.edge.launchpad.net/ibid/+bug/506889>`_ automatically
+   determining this from the JID.
+
+.. describe:: jid:
+
+   **Required**
+   String: The jabber ID that the bot will connect with.
+   (This looks like an e-mail address)
+
+.. describe:: password:
+
+   **Required**
+   String: The password for the supplied JID.
+
+.. describe:: nick:
+
+   String: The nickname for the bot to use on this server when in MUC
+   chatrooms.
+
+   Default: The :obj:`botname`
+
+.. describe:: rooms:
+
+   List: MUC chatrooms to join on connection.
+
+   Default: Nothing
+
+.. describe:: accept_domains:
+
+   List: Domains that the bot will accept messages from.
+   If this isn't set, it'll accept messages from anyone.
+
+   Default: Nothing (i.e. no restriction)
+
+.. describe:: max_public_message_length:
+
+   Number: The bot will limit public (i.e. MUC) messages to this length
+   (in bytes) to avoid flooding the channel with long messages.
+
+   Default: ``512``
+
 .. _permissions:
 
 Permissions
