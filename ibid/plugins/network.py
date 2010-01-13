@@ -9,8 +9,9 @@ from sys import version_info
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
 
+import ibid
 from ibid.plugins import Processor, match
-from ibid.config import Option, IntOption, DictOption
+from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, url_to_bytestring
 
 help = {}
@@ -185,6 +186,9 @@ class HTTP(Processor):
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
     timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', 'Mapping of site names to domains', {})
+    whensitup_delay = IntOption('whensitup_delay', 'Initial delay between whensitup attemtps in seconds', 60)
+    whensitup_factor = IntOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
+    whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
     def get(self, event, action, url):
@@ -207,8 +211,7 @@ class HTTP(Processor):
         except HTTPException, e:
             event.addresponse(unicode(e))
 
-    @match(r'^is\s+(\S+)\s+(up|down)$')
-    def isit(self, event, url, type):
+    def _makeurl(self, url):
         if url in self.sites:
             url = self.sites[url]
         else:
@@ -218,22 +221,46 @@ class HTTP(Processor):
                 url = 'http://' + url
             if not urlparse(url).path:
                 url += '/'
+        return url
 
+    def _isitup(self, url):
         try:
-            status, reason, data = self._request(url, 'HEAD')
+            status, reason, data = self._request(self._makeurl(url), 'HEAD')
         except HTTPException, e:
             status = 600
 
-        if status < 400:
+        return status < 400
+
+    @match(r'^is\s+(\S+)\s+(up|down)$')
+    def isit(self, event, url, type):
+        if self._isitup(url):
             if type.lower() == 'up':
-                event.addresponse(u'Yes, %s is up', (url,))
+                event.addresponse(u'Yes, %s is up', (self._makeurl(url),))
             else:
                 event.addresponse(u"No, it's just you")
         else:
             if type.lower() == 'up':
-                event.addresponse(u'No, %s is down', (url,))
+                event.addresponse(u'No, %s is down', (self._makeurl(url),))
             else:
-                event.addresponse(u'Yes, %s is down', (url,))
+                event.addresponse(u'Yes, %s is down', (self._makeurl(url),))
+
+    def _whensitup(self, event, url, delay, total_delay = 0):
+        if self._isitup(url):
+            event.addresponse(u'%s is now up', (self._makeurl(url),))
+            return
+        total_delay += delay
+        if total_delay >= self.whensitup_maxperiod * 60 * 60:
+            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any longer.", (self._makeurl(url),))
+        delay *= self.whensitup_factor
+        ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
+
+    @match(r'tell\s+me\s+when\s+(\S+)\s+is\s+up')
+    def whensitup(self, event, url):
+        if self._isitup(url):
+            event.addresponse(u'%s is up right now', (self._makeurl(url),))
+            return
+        ibid.dispatcher.call_later(self.whensitup_delay, self._whensitup, event, url, self.whensitup_delay)
+        event.addresponse(u"I'll let you know when %s is up", (url,))
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
