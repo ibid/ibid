@@ -221,7 +221,7 @@ IRC Source
    Default: ``300``
 
 Jabber Source
-^^^^^^^^^^^^^
+"""""""""""""
 
 .. describe:: server:
 
