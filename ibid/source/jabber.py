@@ -167,7 +167,8 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
     rooms = ListOption('rooms', 'Chatrooms to autojoin', [])
-    accept_domains = Option('accept_domains', 'Only accept messages from these domains')
+    accept_domains = ListOption('accept_domains',
+            'Only accept messages from these domains', [])
     max_public_message_length = IntOption('max_public_message_length',
             'Maximum length of public messages', 512)
 
