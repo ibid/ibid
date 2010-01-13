@@ -180,7 +180,8 @@ class HTTPException(Exception):
 help['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
 class HTTP(Processor):
     u"""(get|head) <url>
-    is <domain> (up|down)"""
+    is <domain> (up|down)
+    tell me when <domain|url> is up"""
     feature = 'http'
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
