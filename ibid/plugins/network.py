@@ -183,6 +183,7 @@ class HTTP(Processor):
     is <domain> (up|down)
     tell me when <domain|url> is up"""
     feature = 'http'
+    priority = -10
 
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
     timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
