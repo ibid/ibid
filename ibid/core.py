@@ -184,20 +184,15 @@ class Reloader(object):
         # Sets up twisted.python so that we can iterate modules
         __import__('ibid.plugins')
 
-        load = load is not None \
-                  and load \
-               or 'load' in ibid.config.plugins \
-                  and ibid.config.plugins['load'] \
-               or []
-        noload = noload is not None \
-                   and noload \
-                 or 'noload' in ibid.config.plugins \
-                    and ibid.config.plugins['noload'] \
-                 or []
+        if load is None:
+            load = ibid.config.plugins.get('load', [])
+        if noload is None:
+            noload = ibid.config.plugins.get('noload', [])
 
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if autoload is None:
-            autoload = ibid.config.plugins.get('autoload', True)
+            autoload = ibid.config.plugins.get('autoload', 'True').lower() \
+                       in ('true', 'yes')
         if autoload:
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '')
                     for plugin in getModule('ibid.plugins').iterModules())
