@@ -63,6 +63,9 @@ class TestSource(dict):
     permissions = []
     supports = ('action', 'multiline', 'notice')
 
+    def setup(self):
+        pass
+
     def logging_name(self, name):
         return name
 
