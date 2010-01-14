@@ -192,7 +192,7 @@ class FlightSearch(Processor):
 
         departing_flights = self._parse_travelocity(etree)
         return_url = None
-        table = [t for t in etree.getiterator(u'table')][3]
+        table = [t for t in etree.getiterator(u'table') if t.get(u'id') == u'tfGrid'][0]
         for tr in table.getiterator(u'tr'):
             for td in tr.getiterator(u'td'):
                 if td.get(u'class').strip() in [u'tfPrice', u'tfPriceOrButton']:
