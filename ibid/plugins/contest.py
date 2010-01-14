@@ -1,3 +1,4 @@
+import re
 from xml.etree import ElementTree
 
 from urllib import urlencode
@@ -13,7 +14,7 @@ class Usaco(Processor):
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
-    def _get_section(monitor_url, user):
+    def _get_section(self, monitor_url, user):
         etree = get_html_parse_tree(monitor_url, treetype=u'etree')
         user = user.lower()
         header = True
@@ -22,15 +23,21 @@ class Usaco(Processor):
                 header = False
                 continue
             tds = [t.text for t in tr.getiterator(u'td')]
-            print tds[0]
             if tds[0] and tds[0].lower() == user:
                 return u'%(name)s is on section %(section)s and last logged in %(days)s ago' % {
                     'name': tds[2],
                     'days': tds[3],
                     'section': tds[5],
-                })
+                }
 
         return None
+
+    def _add_user(self, monitor_url, user):
+        matches = re.search(r'a=(.+)&', monitor_url)
+        auth = matches.group(1)
+        params = urlencode({u'STUDENTID': user, 'ADD': 'ADD STUDENT',
+            u'a': auth, u'monitor': u'1'})
+        etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
 
     @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
     def get_section(self, event, user):
@@ -52,5 +59,13 @@ class Usaco(Processor):
         if section:
             event.addresponse(section)
             return
+
+        try:
+            self._add_user(monitor_url, user)
+        except UsacoException, e:
+            event.addresponse(e.msg)
+            return
+
+        event.addresponse(self._get_section(monitor_url, user))
 
 # vi: set et sta sw=4 ts=4:
