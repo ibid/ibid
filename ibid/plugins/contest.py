@@ -14,6 +14,17 @@ class Usaco(Processor):
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
+    def _login(self, user, password):
+        params = urlencode({u'NAME': user, u'PASSWORD': password})
+        etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
+        for font in etree.getiterator(u'font'):
+            if font.text and font.text.find('Please try again') != -1:
+                return None
+        return etree
+
+    def _check_login(self, user, password):
+        return self._login(user, password) is not None
+
     def _get_section(self, monitor_url, user):
         etree = get_html_parse_tree(monitor_url, treetype=u'etree')
         user = user.lower()
@@ -44,10 +55,9 @@ class Usaco(Processor):
         if self.admin_user is None or self.admin_password is None:
             event.addresponse(u'Sorry, you need to configure a USACO admin account')
             return
-        params = urlencode({u'NAME': self.admin_user, u'PASSWORD': self.admin_password})
-        etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
-
-        #TODO handle invalid login
+        etree = self._login(self.admin_user, self.admin_password)
+        if etree is None:
+            event.addresponse(u'Sorry, the configured USACO admin account is invalid')
 
         urls = [a.get(u'href') for a in etree.getiterator(u'a')]
         monitor_url = [url for url in urls if u'monitor' in url][0]
