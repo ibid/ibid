@@ -154,14 +154,14 @@ class FlightSearch(Processor):
                 if date.hour == 0 and date.minute == 0:
                     time = u'Anytime'
                 else:
-                    time = date.strftime(u'%I:00')
+                    time = date.strftime('%I:00')
                     if time[0] == u'0':
                         time = time[1:]
                     if date.hour < 12:
                         time += u'am'
                     else:
                         time += u'pm'
-            date = date.strftime(u'%m/%d/%Y')
+            date = date.strftime('%m/%d/%Y')
             return (date, time)
 
         (dep_date, dep_time) = to_travelocity_date(dep_date)
