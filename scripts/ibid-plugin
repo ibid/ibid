@@ -58,7 +58,7 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 
-class TestSource(dict):
+class TestSource(object):
     type = 'test'
     permissions = []
     supports = ('action', 'multiline', 'notice')
@@ -67,6 +67,12 @@ class TestSource(dict):
         return name
 
     def truncation_point(self, response, event=None):
+        return None
+
+    def setup(self):
+        pass
+
+    def url(self):
         return None
 
 ibid.sources[u'test_source'] = TestSource()
