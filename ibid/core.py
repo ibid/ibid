@@ -173,8 +173,9 @@ class Reloader(object):
 
         self.load_source(source)
 
-    def load_processors(self):
-        """Configuration:
+    def load_processors(self, load=None, noload=None, autoload=None):
+        """If method parameters are not provided, they'll be looked up from
+        config:
         [plugins]
             load = List of plugins / plugin.Processors to load
             noload = List of plugins / plugin.Processors to skip automatically loading
@@ -183,12 +184,23 @@ class Reloader(object):
         # Sets up twisted.python so that we can iterate modules
         __import__('ibid.plugins')
 
-        load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
-        noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
+        load = load is not None \
+                  and load \
+               or 'load' in ibid.config.plugins \
+                  and ibid.config.plugins['load'] \
+               or []
+        noload = noload is not None \
+                   and noload \
+                 or 'noload' in ibid.config.plugins \
+                    and ibid.config.plugins['noload'] \
+                 or []
 
         all_plugins = set(plugin.split('.')[0] for plugin in load)
-        if 'autoload' not in ibid.config.plugins or ibid.config.plugins['autoload'] == True:
-            all_plugins |= set(plugin.name.replace('ibid.plugins.', '') for plugin in getModule('ibid.plugins').iterModules())
+        if autoload is None:
+            autoload = ibid.config.plugins.get('autoload', True)
+        if autoload:
+            all_plugins |= set(plugin.name.replace('ibid.plugins.', '')
+                    for plugin in getModule('ibid.plugins').iterModules())
 
         for plugin in all_plugins:
             load_processors = [p.split('.')[1] for p in load if p.startswith(plugin + '.')]

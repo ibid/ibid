@@ -24,12 +24,16 @@ from ibid.db.models import Identity
 from ibid.event import Event
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
-plugins is the list of plugins to load. A plugin name followed by a - will be disabled rather than loaded.""")
-parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
+plugins is the list of plugins to load.
+A plugin name followed by a - will be disabled rather than loaded.""")
+parser.add_option("-o", "--only", dest="load_base", action="store_false",
+        default=True,
         help="Only load the specified plugins, not the common base plugins")
-parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
-        help="Load all all configured plugins")
-parser.add_option("-p", "--public", dest="public", action="store_true", default=False,
+parser.add_option("-c", "--configured", dest="load_configured",
+        action="store_true",
+        default=False, help="Load all all configured plugins")
+parser.add_option("-p", "--public", dest="public", action="store_true",
+        default=False,
         help="Make testchan public, it's private by default")
 
 (options, args) = parser.parse_args()
@@ -83,21 +87,11 @@ noload = [plugin[:-1] for plugin in args if plugin.endswith("-")]
 if options.load_base:
     load.extend(("admin", "config", "core", "help", "test"))
 
-if load:
-    if 'load' in ibid.config.plugins:
-        load.extend(ibid.config.plugins['load'])
-    ibid.config.plugins['load'] = load
+load.extend(ibid.config.plugins.get('load', []))
+noload.extend(ibid.config.plugins.get('noload', []))
+autoload = options.load_configured
 
-if noload:
-    if 'noload' in ibid.config.plugins:
-        ibid.config.plugins['noload'].extend(noload)
-    else:
-        ibid.config.plugins['noload'] = noload
-
-if not options.load_configured:
-    ibid.config.plugins['autoload'] = False
-
-ibid.reloader.load_processors()
+ibid.reloader.load_processors(load, noload, autoload)
 
 username = unicode(getenv('USER'))
 if not username:
