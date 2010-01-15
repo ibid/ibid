@@ -189,7 +189,7 @@ class HTTP(Processor):
     timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', 'Mapping of site names to domains', {})
     whensitup_delay = IntOption('whensitup_delay', 'Initial delay between whensitup attemtps in seconds', 60)
-    whensitup_factor = IntOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
+    whensitup_factor = FloatOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
     whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
