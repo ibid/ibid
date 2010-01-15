@@ -116,6 +116,25 @@ class Usaco(Processor):
 
         event.addresponse(self._get_section(monitor_url, usaco_user, user))
 
+    @match(r'^usaco\s+division\s+(?:for\s+)?(.+)$')
+    def get_division(self, event, user):
+        try:
+            usaco_user = self._get_usaco_user(event, user)
+        except UsacoException, e:
+            event.addresponse(e)
+            return
+
+        params = urlencode({u'id': usaco_user, u'search': u'SEARCH'})
+        etree = get_html_parse_tree(u'http://ace.delos.com/showdiv', data=params, treetype=u'etree')
+        division = [b.text for b in etree.getiterator(u'b') if b.text and b.text.find(usaco_user) != -1][0]
+        if division.find(u'would compete') != -1:
+            event.addresponse(u'%(user)s (%(usaco_user)s on USACO) has not competed in a USACO before',
+                    {u'user': user, u'usaco_user': usaco_user})
+        matches = re.search(r'(\w+) Division', division)
+        division = matches.group(1).lower()
+        event.addresponse(u'%(user)s (%(usaco_user)s on USACO) is in the %(division)s division',
+                {u'user': user, u'usaco_user': usaco_user, u'division': division})
+
     def _redact(self, event, term):
         for type in ['raw', 'deaddressed', 'clean', 'stripped']:
             # TODO find better way: usually we only want one specific instance of
