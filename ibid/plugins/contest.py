@@ -1,4 +1,6 @@
+import codecs
 import re
+from urllib2 import HTTPError
 from xml.etree import ElementTree
 
 from urllib import urlencode
@@ -8,6 +10,7 @@ from ibid.config import Option
 from ibid.db import eagerload, and_
 from ibid.db.models import Account, Attribute, Identity
 from ibid.plugins import Processor, match
+from ibid.utils import cacheable_download
 from ibid.utils.html import get_html_parse_tree
 
 help = {u'usaco': u'Query USACO sections, divisions and more. Since this info is private, users are required to provide their USACO password when linking their USACO account to their ibid account and only linked accounts can be queried. Your password is used only to confirm that the account is yours and is discarded immediately.'}
@@ -17,6 +20,7 @@ class UsacoException(Exception):
 
 class Usaco(Processor):
     """usaco <section|division> for <user>
+    usaco <contest> results [for <user>]
     i am <usaco_username> on usaco password <usaco_password>"""
 
     admin_user = Option('admin_user', 'Admin user on USACO', None)
@@ -86,7 +90,6 @@ class Usaco(Processor):
             .first()
         if account is None:
             account = event.session.query(Account) \
-                .options(eagerload('identities')) \
                 .join('identities') \
                 .filter(and_(
                     Identity.identity == user,
@@ -99,6 +102,20 @@ class Usaco(Processor):
         if len(usaco_account) == 0:
             raise UsacoException(u'Sorry, %s has not been linked to a USACO account yet' % user)
         return usaco_account[0]
+
+    def _get_usaco_users(self, event):
+        accounts = event.session.query(Identity) \
+            .join(['account', 'attributes']) \
+            .add_entity(Attribute) \
+            .filter(and_(
+                Attribute.name == u'usaco_account',
+                Identity.source == event.source,
+            )).all()
+
+        users = {}
+        for a in accounts:
+            users[a[1].value] = a[0].identity
+        return users
 
     @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
     def get_section(self, event, user):
@@ -167,5 +184,59 @@ class Usaco(Processor):
         account = event.session.query(Account).get(event.account)
         account.attributes.append(Attribute('usaco_account', user))
         event.addresponse(u'Done')
+
+    @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(\S+))?$')
+    def usaco_results(self, event, contest, user):
+        if user is not None:
+            try:
+                usaco_user = self._get_usaco_user(event, user)
+            except UsacoException, e:
+                event.addresponse(e)
+                return
+
+        url = u'http://ace.delos.com/%sresults' % contest.upper()
+        try:
+            filename = cacheable_download(url, u'usaco/results_%s' % contest.upper())
+        except HTTPError:
+            event.addresponse(u"Sorry, the results for %s aren't released yet", contest)
+
+        if user is not None:
+            users = {usaco_user: user}
+        else:
+            users = self._get_usaco_users(event)
+
+        text = open(filename, 'r').read().decode('ISO-8859-2')
+        divisions = [u'gold', u'silver', u'bronze']
+        results = [[], [], []]
+        division = None
+        for line in text.splitlines():
+            for index, d in enumerate(divisions):
+                if d in line.lower():
+                    division = index
+            # Example results line:
+            #            2010 POL Jakub Pachocki      meret1      ***** ***** 270 ***** ***** * 396 ***** ***** ** 324 1000
+            matches = re.match(r'^\s*(\d{4})\s+([A-Z]{3})\s+(.+?)\s+(\S+\d)\s+([\*xts\.e0-9 ]+?)\s+(\d+)\s*$', line)
+            if matches:
+                year = matches.group(1)
+                country = matches.group(2)
+                name = matches.group(3)
+                usaco_user = matches.group(4)
+                scores = matches.group(5)
+                total = matches.group(6)
+                if usaco_user in users.keys():
+                    results[division].append((year, country, name, usaco_user, scores, total))
+
+        response = []
+        for i, division in enumerate(divisions):
+            if results[i]:
+                response.append(u'%s division results:' % division.title())
+            for result in results[i]:
+                response.append(u'%(user)s (%(usaco_user)s on USACO) scored %(total)s (%(scores)s)' % {
+                    u'user': users[result[3]],
+                    u'usaco_user': result[3],
+                    u'total': result[5],
+                    u'scores': result[4],
+                })
+        event.addresponse(u'\n'.join(response), conflate=False)
 
 # vi: set et sta sw=4 ts=4:
