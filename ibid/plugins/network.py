@@ -190,6 +190,7 @@ class HTTP(Processor):
     sites = DictOption('sites', 'Mapping of site names to domains', {})
     whensitup_delay = IntOption('whensitup_delay', 'Initial delay between whensitup attemtps in seconds', 60)
     whensitup_factor = FloatOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
+    whensitup_maxdelay = IntOption('whensitup_maxdelay', 'Maximum delay between whensitup attempts in seconds', 30*60)
     whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
 
     @match(r'^(get|head)\s+(\S+\.\S+)$')
@@ -254,6 +255,7 @@ class HTTP(Processor):
         if total_delay >= self.whensitup_maxperiod * 60 * 60:
             event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any longer.", self._makeurl(url))
         delay *= self.whensitup_factor
+        delay = max(delay, self.whensitup_maxdelay)
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
 
     @match(r'tell\s+me\s+when\s+(\S+)\s+is\s+up')
