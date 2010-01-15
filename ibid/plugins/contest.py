@@ -5,7 +5,8 @@ from urllib import urlencode
 
 import ibid
 from ibid.config import Option
-from ibid.db.models import Account, Attribute
+from ibid.db import eagerload, and_
+from ibid.db.models import Account, Attribute, Identity
 from ibid.plugins import Processor, match
 from ibid.utils.html import get_html_parse_tree
 
@@ -69,15 +70,36 @@ class Usaco(Processor):
 
         return monitor_url
 
+    def _get_usaco_user(self, event, user):
+        account = event.session.query(Account) \
+            .filter(Account.username == user) \
+            .first()
+        if account is None:
+            account = event.session.query(Account) \
+                .options(eagerload('identities')) \
+                .join(Identity) \
+                .filter(and_(
+                    Identity.identity == user,
+                    Identity.source == event.source)) \
+                .first()
+            if account is None:
+                return
+
+        usaco_account = [attr.value for attr in account.attributes if attr.name == 'usaco_account']
+        if len(usaco_account) == 0:
+            raise UsacoException(u'Sorry, %s has been linked to a USACO account yet' % user)
+        return usaco_account[0]
+
     @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
     def get_section(self, event, user):
         try:
-            monitor_url = _self.get_monitor_url()
+            usaco_user = self._get_usaco_user(event, user)
+            monitor_url = self._get_monitor_url()
         except UsacoException, e:
             event.addresponse(e)
             return
 
-        section = self._get_section(monitor_url, user)
+        section = self._get_section(monitor_url, usaco_user)
         if section:
             event.addresponse(section)
             return
