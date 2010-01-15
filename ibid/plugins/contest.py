@@ -39,12 +39,15 @@ class Usaco(Processor):
                 header = False
                 continue
             tds = [t.text for t in tr.getiterator(u'td')]
+            section = u'is on section %s' % tds[5]
+            if tds[5] == u'DONE':
+                section = u'has completed USACO training'
             if tds[0] and tds[0].lower() == usaco_user:
-                return u'%(user)s (%(usaco_user)s on USACO) is on section %(section)s and last logged in %(days)s ago' % {
+                return u'%(user)s (%(usaco_user)s on USACO) %(section)s and last logged in %(days)s ago' % {
                     'user': user,
                     'usaco_user': usaco_user,
                     'days': tds[3],
-                    'section': tds[5],
+                    'section': section,
                 }
 
         return None
