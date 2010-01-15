@@ -81,17 +81,17 @@ class Usaco(Processor):
         if account is None:
             account = event.session.query(Account) \
                 .options(eagerload('identities')) \
-                .join(Identity) \
+                .join('identities') \
                 .filter(and_(
                     Identity.identity == user,
                     Identity.source == event.source)) \
                 .first()
             if account is None:
-                return
+                raise UsacoException(u'Sorry, %s has not been linked to a USACO account yet' % user)
 
         usaco_account = [attr.value for attr in account.attributes if attr.name == 'usaco_account']
         if len(usaco_account) == 0:
-            raise UsacoException(u'Sorry, %s has been linked to a USACO account yet' % user)
+            raise UsacoException(u'Sorry, %s has not been linked to a USACO account yet' % user)
         return usaco_account[0]
 
     @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
