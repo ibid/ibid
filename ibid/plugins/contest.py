@@ -3,7 +3,9 @@ from xml.etree import ElementTree
 
 from urllib import urlencode
 
+import ibid
 from ibid.config import Option
+from ibid.db.models import Account, Attribute
 from ibid.plugins import Processor, match
 from ibid.utils.html import get_html_parse_tree
 
@@ -13,6 +15,8 @@ class UsacoException(Exception):
 class Usaco(Processor):
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
+
+    priority = -20
 
     def _login(self, user, password):
         params = urlencode({u'NAME': user, u'PASSWORD': password})
@@ -50,19 +54,27 @@ class Usaco(Processor):
             u'a': auth, u'monitor': u'1'})
         etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
 
-    @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
-    def get_section(self, event, user):
+    def _get_monitor_url(self):
         if self.admin_user is None or self.admin_password is None:
-            event.addresponse(u'Sorry, you need to configure a USACO admin account')
+            raise UsacoException(u'Sorry, you need to configure a USACO admin account')
             return
         etree = self._login(self.admin_user, self.admin_password)
         if etree is None:
-            event.addresponse(u'Sorry, the configured USACO admin account is invalid')
+            raise UsacoException(u'Sorry, the configured USACO admin account is invalid')
 
         urls = [a.get(u'href') for a in etree.getiterator(u'a')]
         monitor_url = [url for url in urls if u'monitor' in url][0]
         if len(monitor_url) == 0:
-            event.addresponse(u'USACO admin account does not have teacher status')
+            raise UsacoException(u'USACO admin account does not have teacher status')
+
+        return monitor_url
+
+    @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
+    def get_section(self, event, user):
+        try:
+            monitor_url = _self.get_monitor_url()
+        except UsacoException, e:
+            event.addresponse(e)
             return
 
         section = self._get_section(monitor_url, user)
@@ -73,9 +85,32 @@ class Usaco(Processor):
         try:
             self._add_user(monitor_url, user)
         except UsacoException, e:
-            event.addresponse(e.msg)
+            event.addresponse(e)
             return
 
         event.addresponse(self._get_section(monitor_url, user))
+
+    @match(r'^i\s+am\s+(\S+)\s+on\s+usaco\s+password\s+(\S+)$')
+    def usaco_account(self, event, user, password):
+        # TODO strip password from event
+        if not self._check_login(user, password):
+            event.addresponse(u'Sorry, that account is invalid')
+            return
+        if not event.account:
+            event.addresponse(u'Sorry, you need to create an account first')
+            return
+
+        try:
+            monitor_url = self._get_monitor_url()
+        except UsacoException, e:
+            event.addresponse(e)
+            return
+
+        # TODO handle user not existing
+        self._add_user(monitor_url, user)
+
+        account = event.session.query(Account).get(event.account)
+        account.attributes.append(Attribute('usaco_account', user))
+        event.addresponse(u'Done')
 
 # vi: set et sta sw=4 ts=4:
