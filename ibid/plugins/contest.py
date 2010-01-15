@@ -143,9 +143,7 @@ class Usaco(Processor):
 
     def _redact(self, event, term):
         for type in ['raw', 'deaddressed', 'clean', 'stripped']:
-            # TODO find better way: usually we only want one specific instance of
-            # term redacted if there are multiple occurences
-            event['message'][type] = event['message'][type].replace(term, u'__redacted__')
+            event['message'][type] = re.sub(r'(.*)(%s)' % re.escape(term), r'\1__redacted__', event['message'][type])
 
     @match(r'^i\s+am\s+(\S+)\s+on\s+usaco\s+password\s+(\S+)$')
     def usaco_account(self, event, user, password):
