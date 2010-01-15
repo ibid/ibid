@@ -258,7 +258,7 @@ class HTTP(Processor):
         delay = max(delay, self.whensitup_maxdelay)
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
 
-    @match(r'tell\s+me\s+when\s+(\S+)\s+is\s+up')
+    @match(r'^(?:tell\s+me|let\s+me\s+know)\s+when\s+(\S+)\s+is\s+(?:back\s+)?up$')
     def whensitup(self, event, url):
         if self._isitup(url):
             event.addresponse(u'%s is up right now', self._makeurl(url))
