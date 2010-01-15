@@ -139,7 +139,6 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        # TODO handle user not existing
         self._add_user(monitor_url, user)
 
         account = event.session.query(Account).get(event.account)
