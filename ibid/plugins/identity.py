@@ -391,7 +391,7 @@ class Summon(Processor):
 
         account = event.session.query(Account) \
             .options(eagerload('identities')) \
-            .join(Identity) \
+            .join('identities') \
             .filter(
                 or_(
                     and_(
