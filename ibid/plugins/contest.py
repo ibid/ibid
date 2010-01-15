@@ -30,18 +30,19 @@ class Usaco(Processor):
     def _check_login(self, user, password):
         return self._login(user, password) is not None
 
-    def _get_section(self, monitor_url, user):
+    def _get_section(self, monitor_url, usaco_user, user):
         etree = get_html_parse_tree(monitor_url, treetype=u'etree')
-        user = user.lower()
+        usaco_user = usaco_user.lower()
         header = True
         for tr in etree.getiterator(u'tr'):
             if header:
                 header = False
                 continue
             tds = [t.text for t in tr.getiterator(u'td')]
-            if tds[0] and tds[0].lower() == user:
-                return u'%(name)s is on section %(section)s and last logged in %(days)s ago' % {
-                    'name': tds[2],
+            if tds[0] and tds[0].lower() == usaco_user:
+                return u'%(user)s (%(usaco_user)s on USACO) is on section %(section)s and last logged in %(days)s ago' % {
+                    'user': user,
+                    'usaco_user': usaco_user,
                     'days': tds[3],
                     'section': tds[5],
                 }
@@ -99,7 +100,7 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        section = self._get_section(monitor_url, usaco_user)
+        section = self._get_section(monitor_url, usaco_user, user)
         if section:
             event.addresponse(section)
             return
@@ -110,7 +111,7 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        event.addresponse(self._get_section(monitor_url, user))
+        event.addresponse(self._get_section(monitor_url, usaco_user, user))
 
     @match(r'^i\s+am\s+(\S+)\s+on\s+usaco\s+password\s+(\S+)$')
     def usaco_account(self, event, user, password):
