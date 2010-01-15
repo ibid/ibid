@@ -237,32 +237,32 @@ class HTTP(Processor):
     def isit(self, event, url, type):
         if self._isitup(url):
             if type.lower() == 'up':
-                event.addresponse(u'Yes, %s is up', (self._makeurl(url),))
+                event.addresponse(u'Yes, %s is up', self._makeurl(url))
             else:
                 event.addresponse(u"No, it's just you")
         else:
             if type.lower() == 'up':
-                event.addresponse(u'No, %s is down', (self._makeurl(url),))
+                event.addresponse(u'No, %s is down', self._makeurl(url))
             else:
-                event.addresponse(u'Yes, %s is down', (self._makeurl(url),))
+                event.addresponse(u'Yes, %s is down', self._makeurl(url))
 
     def _whensitup(self, event, url, delay, total_delay = 0):
         if self._isitup(url):
-            event.addresponse(u'%s is now up', (self._makeurl(url),))
+            event.addresponse(u'%s is now up', self._makeurl(url))
             return
         total_delay += delay
         if total_delay >= self.whensitup_maxperiod * 60 * 60:
-            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any longer.", (self._makeurl(url),))
+            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any longer.", self._makeurl(url))
         delay *= self.whensitup_factor
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
 
     @match(r'tell\s+me\s+when\s+(\S+)\s+is\s+up')
     def whensitup(self, event, url):
         if self._isitup(url):
-            event.addresponse(u'%s is up right now', (self._makeurl(url),))
+            event.addresponse(u'%s is up right now', self._makeurl(url))
             return
         ibid.dispatcher.call_later(self.whensitup_delay, self._whensitup, event, url, self.whensitup_delay)
-        event.addresponse(u"I'll let you know when %s is up", (url,))
+        event.addresponse(u"I'll let you know when %s is up", url)
 
     def _request(self, url, method):
         scheme, host = urlparse(url)[:2]
