@@ -10,13 +10,19 @@ from ibid.db.models import Account, Attribute, Identity
 from ibid.plugins import Processor, match
 from ibid.utils.html import get_html_parse_tree
 
+help = {u'usaco': u'Query USACO sections, divisions and more. Since this info is private, users are required to provide their USACO password when linking their USACO account to their ibid account and only linked accounts can be queried. Please note that your password is used only to confirm that the account is yours and is discarded immediately.'}
+
 class UsacoException(Exception):
     pass
 
 class Usaco(Processor):
+    """usaco <section|division> for <user>
+    i am <usaco_username> on usaco password <usaco_password>"""
+
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
+    feature = 'usaco'
     priority = -20
 
     def _login(self, user, password):
