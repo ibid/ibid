@@ -116,9 +116,16 @@ class Usaco(Processor):
 
         event.addresponse(self._get_section(monitor_url, usaco_user, user))
 
+    def _redact(self, event, term):
+        for type in ['raw', 'deaddressed', 'clean', 'stripped']:
+            # TODO find better way: usually we only want one specific instance of
+            # term redacted if there are multiple occurences
+            event['message'][type] = event['message'][type].replace(term, u'__redacted__')
+
     @match(r'^i\s+am\s+(\S+)\s+on\s+usaco\s+password\s+(\S+)$')
     def usaco_account(self, event, user, password):
-        # TODO strip password from event
+        self._redact(event, password)
+
         if not self._check_login(user, password):
             event.addresponse(u'Sorry, that account is invalid')
             return
