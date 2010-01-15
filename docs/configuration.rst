@@ -162,6 +162,9 @@ The configuration parameters that applies to all sources are:
 IRC Source
 """"""""""
 
+Some of the IRC functionality (i.e. NickServ authentication and
+joining/parting channels) is handled by the ``irc`` plugin.
+
 .. describe:: server:
 
    **Reqired**
@@ -179,13 +182,13 @@ IRC Source
 
 .. describe:: ssl:
 
-   Boolean: Use SSL-encrypted connection to the server.
+   Boolean: Use SSL-encrypted connection to the network.
 
    Default: ``False``
 
 .. describe:: nick:
 
-   String: The nickname for the bot to use on this server.
+   String: The nickname for the bot to use on this network.
 
    Default: The :obj:`botname`
 
@@ -198,7 +201,7 @@ IRC Source
 
 .. describe:: channels:
 
-   List: Channels to join on connection to the server.
+   List: Channels to join on connection to the network.
 
    .. warning::
       You must include the leading ``#``, but unless you quote each
@@ -206,6 +209,32 @@ IRC Source
 
       So use quotes around each channel name like this: ``"#ibid",
       "#fun"``
+
+.. describe:: nickserv_password:
+
+   String: The password identifying your bot to NickServ.
+   If set, the bot will respond to authentication requests from
+   NickServ.
+
+   Default: Nothing
+
+.. describe:: nickserv_mask:
+
+   String: The NickServ's hostmask on this network.
+   You can set this to ensure that you don't accidentally give your
+   NickServ password to an imposter, should the network's services
+   module go down.
+
+   You can use glob wildcards, i.e. ``*`` and ``?``.
+
+   Default: ``*``
+
+.. describe:: nickserv_nick:
+
+   String: The NickServ's nickname on this network.
+   You probably won't need to change it.
+
+   Default: ``NickServ``
 
 .. describe:: ping_interval:
 
