@@ -253,7 +253,7 @@ class HTTP(Processor):
             return
         total_delay += delay
         if total_delay >= self.whensitup_maxperiod * 60 * 60:
-            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any longer.", self._makeurl(url))
+            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any more.", self._makeurl(url))
         delay *= self.whensitup_factor
         delay = max(delay, self.whensitup_maxdelay)
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
