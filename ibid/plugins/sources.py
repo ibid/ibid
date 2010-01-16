@@ -1,4 +1,4 @@
-"""Administrative commands for IRC"""
+"""Administrative commands for sources"""
 
 from fnmatch import fnmatch
 import logging
@@ -6,14 +6,14 @@ import logging
 import ibid
 from ibid.plugins import Processor, match, authorise
 
-log = logging.getLogger('plugins.irc')
+log = logging.getLogger('plugins.sources')
 
-help = {"irc": u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
+help = {"actions": u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"}
 
 class Actions(Processor):
     u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
-    feature = 'irc'
+    feature = 'actions'
 
     permission = 'sources'
 
