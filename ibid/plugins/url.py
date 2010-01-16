@@ -1,10 +1,13 @@
 from urllib import urlencode
-from urllib2 import urlopen, build_opener, HTTPError, HTTPRedirectHandler
+from urllib2 import urlopen, build_opener, HTTPError, HTTPRedirectHandler, HTTPCookieProcessor
 import logging
 import re
 
 from ibid.plugins import Processor, handler, match
 from ibid.config import ListOption
+
+default_user_agent = 'Mozilla/5.0'
+default_referer = "http://ibid.omnia.za.net/"
 
 help = {}
 
@@ -59,5 +62,32 @@ class Lengthen(Processor):
             raise
 
         event.addresponse(u"No redirect")
+
+# This Plugin uses code from youtube-dl
+# Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
+# Released under MIT Licence
+
+help['youtube'] = u'Determine the title and a download URL for a Youtube Video'
+class Youtube(Processor):
+    u'<Youtube URL>'
+
+    feature = 'youtube'
+
+    @match(r'^(?:youtube(?:\.com)?\s+)?'
+        r'(?:http://)?(?:\w+\.)?youtube\.com/'
+        r'(?:v/|(?:watch(?:\.php)?)?\?(?:.+&)?v=)'
+        r'([0-9A-Za-z_-]+)(?(1)[&/].*)?$')
+    def youtube(self, event, id):
+        url = 'http://www.youtube.com/watch?v=' + id
+        opener = build_opener(HTTPCookieProcessor())
+        opener.addheaders = [('User-Agent', default_user_agent)]
+        video_webpage = opener.open(url).read()
+        title = re.search(r'<title>\s*YouTube\s+-\s+([^<]*)</title>',
+                video_webpage, re.M | re.I | re.DOTALL).group(1).strip()
+        t = re.search(r', "t": "([^"]+)"', video_webpage).group(1)
+        event.addresponse(u'%(title)s: %(url)s', {
+            'title': title,
+            'url': 'http://www.youtube.com/get_video?video_id=%s&t=%s' % (id, t),
+        })
 
 # vi: set et sta sw=4 ts=4:
