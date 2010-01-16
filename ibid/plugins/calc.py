@@ -1,4 +1,5 @@
 from __future__ import division
+from random import random, randint
 
 import logging
 from os import kill
@@ -188,5 +189,19 @@ class Calc(Processor):
 
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
+
+help['random'] = u'Generates random numbers.'
+class Random(Processor):
+    u"""random [ <max> | <min> <max> ]"""
+    feature = 'random'
+
+    @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
+    def random(self, event, begin, end):
+        if not begin and not end:
+            event.addresponse(u'I always liked %f', random())
+        else:
+            begin = int(begin)
+            end = end and int(end) or 0
+            event.addresponse(u'I always liked %i', randint(min(begin,end), max(begin,end)))
 
 # vi: set et sta sw=4 ts=4:

@@ -75,4 +75,13 @@ class Dvorak(Processor):
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
 
+help['retest'] = u'Checks whether a regular expression matches a given string.'
+class ReTest(Processor):
+    u"""does <pattern> match <string>"""
+    feature = 'retest'
+
+    @match('^does\s+(.+?)\s+match\s+(.+?)$')
+    def retest(self, event, regex, string):
+        event.addresponse(re.search(regex, string) and u'Yes' or u'No')
+
 # vi: set et sta sw=4 ts=4:

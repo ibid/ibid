@@ -1,8 +1,11 @@
+from subprocess import Popen, PIPE
 import logging
 import re
 
 import ibid
-from ibid.plugins import Processor, handler
+from ibid.plugins import Processor, handler, match
+from ibid.config import Option
+from ibid.utils import file_in_path, unicode_output
 
 help = {}
 log = logging.getLogger('conversions')
@@ -202,5 +205,81 @@ class BaseConvert(Processor):
         event.addresponse(u'That is "%s"', output)
         if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
+
+help['units'] = 'Converts values between various units.'
+class Units(Processor):
+    u"""convert [<value>] <unit> to <unit>"""
+    feature = 'units'
+    priority = 10
+
+    units = Option('units', 'Path to units executable', 'units')
+
+    temp_scale_names = {
+        'fahrenheit': 'tempF',
+        'f': 'tempF',
+        'celsius': 'tempC',
+        'celcius': 'tempC',
+        'c': 'tempC',
+        'kelvin': 'tempK',
+        'k': 'tempK',
+        'rankine': 'tempR',
+        'r': 'tempR',
+    }
+
+    temp_function_names = set(temp_scale_names.values())
+
+    def setup(self):
+        if not file_in_path(self.units):
+            raise Exception("Cannot locate units executable")
+
+    def format_temperature(self, unit):
+        "Return the unit, and convert to 'tempX' format if a known temperature scale"
+
+        lunit = unit.lower()
+        if lunit in self.temp_scale_names:
+            unit = self.temp_scale_names[lunit]
+        elif lunit.startswith("deg") and " " in lunit and lunit.split(None, 1)[1] in self.temp_scale_names:
+            unit = self.temp_scale_names[lunit.split(None, 1)[1]]
+        return unit
+
+    @match(r'^convert\s+(-?[0-9.]+)?\s*(.+)\s+(?:in)?to\s+(.+)$')
+    def convert(self, event, value, frm, to):
+
+        # We have to special-case temperatures because GNU units uses function notation
+        # for direct temperature conversions
+        if self.format_temperature(frm) in self.temp_function_names \
+                and self.format_temperature(to) in self.temp_function_names:
+            frm = self.format_temperature(frm)
+            to = self.format_temperature(to)
+
+        if value is not None:
+            if frm in self.temp_function_names:
+                frm = "%s(%s)" % (frm, value)
+            else:
+                frm = '%s %s' % (value, frm)
+
+        units = Popen([self.units, '--verbose', '--', frm, to], stdout=PIPE, stderr=PIPE)
+        output, error = units.communicate()
+        code = units.wait()
+
+        output = unicode_output(output)
+        result = output.splitlines()[0].strip()
+
+        if code == 0:
+            event.addresponse(result)
+        elif code == 1:
+            if result == "conformability error":
+                event.addresponse(u"I don't think %(from)s can be converted to %(to)s", {
+                    'from': frm,
+                    'to': to,
+                })
+            elif result.startswith("conformability error"):
+                event.addresponse(u"I don't think %(from)s can be converted to %(to)s: %(error)s", {
+                    'from': frm,
+                    'to': to,
+                    'error': result.split(":", 1)[1],
+                })
+            else:
+                event.addresponse(u"I can't do that: %s", result)
 
 # vi: set et sta sw=4 ts=4:
