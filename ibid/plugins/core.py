@@ -18,24 +18,29 @@ class Addressed(Processor):
     verbs = ListOption('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
-        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
-                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I | re.DOTALL)
-                        ]
+        names = '|'.join(re.escape(x) for x in self.names)
+        verbs = '|'.join(re.escape(x) for x in self.verbs)
+        self.patterns = [
+            re.compile(r'^(%s)(?:[:;.?>!,-]|\s)+' % names, re.I | re.DOTALL),
+            # "hello there, bot"-style addressing. But we want to be sure that
+            # there wasn't normal addressing too:
+            re.compile(r'^(?:\S+:.*|.*,\s*(%s))\s*$' % names, re.I | re.DOTALL)
+        ]
+        self.verb_pattern = re.compile(r'^(?:%s)\s+(?:%s)\s+' % (names, verbs),
+                                       re.I | re.DOTALL)
 
     @handler
     def handle_addressed(self, event):
         if 'addressed' not in event:
             event.addressed = False
 
+        if self.verb_pattern.match(event.message['stripped']):
+            return
+
         for pattern in self.patterns:
             matches = pattern.search(event.message['stripped'])
-            if matches:
+            if matches and matches.group(1):
                 new_message = pattern.sub('', event.message['stripped'])
-                if (len(matches.groups()) > 1 and not matches.group(2) and
-                        any(new_message.lower().startswith(verb)
-                            for verb in self.verbs)):
-                    return
-
                 event.addressed = matches.group(1)
                 event.message['clean'] = new_message
                 event.message['deaddressed'] = pattern.sub('', event.message['raw'])
