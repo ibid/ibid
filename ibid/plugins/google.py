@@ -1,4 +1,3 @@
-import codecs
 from httplib import BadStatusLine
 import re
 from urllib import quote
@@ -8,9 +7,8 @@ from BeautifulSoup import BeautifulSoup
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import decode_htmlentities, json_webservice, cacheable_download
+from ibid.utils import decode_htmlentities, json_webservice
 from ibid.utils import human_join
-from ibid.utils.html import get_html_parse_tree
 
 help = {'google': u'Retrieves results from Google and Google Calculator.'}
 

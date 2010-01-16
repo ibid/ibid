@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import gc
 import gzip
 import os
-import os.path
 
 import objgraph
 

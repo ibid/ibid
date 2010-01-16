@@ -6,7 +6,7 @@ from os.path import exists, join
 from os import walk
 
 from dateutil.parser import parse
-from dateutil.tz import gettz, tzutc, tzlocal, tzoffset
+from dateutil.tz import gettz, tzlocal, tzoffset
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, DictOption
