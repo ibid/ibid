@@ -53,4 +53,26 @@ class Rot13(Processor):
         repl = lambda x: x.group(0).encode('rot13')
         event.addresponse(re.sub('[a-zA-Z]+', repl, string))
 
+help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
+class Dvorak(Processor):
+    u"""(aoeu|asdf) <text>"""
+    feature = 'dvorak'
+
+    # List of characters on each keyboard layout
+    dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
+    qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?-=_+|"""
+
+    # Typed by a QWERTY typist on a Dvorak-mapped keyboard
+    typed_on_dvorak = dict(zip(map(ord, dvormap), qwermap))
+    # Typed by a Dvorak typist on a QWERTY-mapped keyboard
+    typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
+
+    @match(r'^(?:asdf|dvorak)\s+(.+)$')
+    def convert_from_qwerty(self, event, text):
+        event.addresponse(text.translate(self.typed_on_qwerty))
+
+    @match(r'^(?:aoeu|qwerty)\s+(.+)$')
+    def convert_from_dvorak(self, event, text):
+        event.addresponse(text.translate(self.typed_on_dvorak))
+
 # vi: set et sta sw=4 ts=4:

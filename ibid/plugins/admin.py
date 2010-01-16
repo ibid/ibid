@@ -3,6 +3,7 @@ from twisted.internet import reactor
 import ibid
 from ibid.utils import human_join
 from ibid.plugins import Processor, match, authorise
+from ibid.utils import ibid_version
 
 help = {}
 
@@ -121,5 +122,17 @@ class Info(Processor):
     @match(r'^list\s+configured\s+sources$')
     def listall(self, event):
         event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
+
+help['version'] = u"Show the Ibid version currently running"
+class Version(Processor):
+    u"""version"""
+    feature = 'version'
+
+    @match(r'^version$')
+    def show_version(self, event):
+        if ibid_version():
+            event.addresponse(u'I am version %s', ibid_version())
+        else:
+            event.addresponse(u"I don't know what version I am :-(")
 
 # vi: set et sta sw=4 ts=4:
