@@ -103,7 +103,7 @@ class Delicious(object):
             headers = {'User-Agent': 'Mozilla/5.0'}
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
-            return title
+            return title or url
         except HTTPError, e:
             raise
         except Exception, e:
