@@ -31,7 +31,7 @@ class Usaco(Processor):
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20
-    autoload = False
+#    autoload = False
 
     def _login(self, user, password):
         params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
@@ -69,11 +69,11 @@ class Usaco(Processor):
     def _add_user(self, monitor_url, user):
         matches = re.search(r'a=(.+)&', monitor_url)
         auth = matches.group(1)
-        params = urlencode({'STUDENTID': user.econde('utf-8'), 'ADD': 'ADD STUDENT',
+        params = urlencode({'STUDENTID': user.encode('utf-8'), 'ADD': 'ADD STUDENT',
             'a': auth.encode('utf-8'), 'monitor': '1'})
         etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
         for font in etree.getiterator(u'font'):
-            if u'No STATUS file for' in font.text:
+            if font.text and u'No STATUS file for' in font.text:
                 raise UsacoException(u'Sorry, user %s not found' % user)
 
     def _get_monitor_url(self):
@@ -190,6 +190,9 @@ class Usaco(Processor):
 
         account = event.session.query(Account).get(event.account)
         account.attributes.append(Attribute('usaco_account', user))
+        event.session.save_or_update(account)
+        event.session.commit()
+
         event.addresponse(u'Done')
 
     @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(\S+))?$')
