@@ -1,11 +1,8 @@
-import codecs
 import re
 from urllib2 import HTTPError
-from xml.etree import ElementTree
 
 from urllib import urlencode
 
-import ibid
 from ibid.config import Option
 from ibid.db import eagerload, and_
 from ibid.db.models import Account, Attribute, Identity
