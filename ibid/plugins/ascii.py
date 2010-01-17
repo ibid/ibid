@@ -1,7 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
 from cStringIO import StringIO
 import Image
-from os import remove
+from os import listdir, remove
 import os.path
 import subprocess
 from tempfile import mkstemp
@@ -145,12 +145,22 @@ class WriteFiglet(Processor):
     feature = 'figlet'
 
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
-    fonts_zip = Option('fonts_zip', 'Zip file containing figlet fonts', 'ibid/data/figlet-fonts.zip')
+    fonts_ = Option('fonts', 'Directory or Zip file containing figlet fonts',
+                       '/usr/share/figlet')
 
     def __init__(self, name):
         Processor.__init__(self, name)
-        zip = ZipFile(self.fonts_zip)
-        self.fonts = sorted(map(lambda n: os.path.splitext(os.path.split(n)[1])[0], zip.namelist()))
+        if os.path.isdir(self.fonts_):
+            self.fontstore = 'dir'
+            self.fonts = sorted(os.path.splitext(name)[0]
+                                for name in listdir(self.fonts_)
+                                if name.endswith('.flf'))
+        else:
+            self.fontstore = 'zip'
+            zip = ZipFile(self.fonts_)
+            self.fonts = sorted(map(
+                lambda n: os.path.splitext(os.path.split(n)[1])[0],
+                zip.namelist()))
 
     @match(r'^list\s+figlet\s+fonts(?:\s+from\s+(\d+))?$')
     def list_fonts(self, event, index):
@@ -172,7 +182,10 @@ class WriteFiglet(Processor):
         self._write(event, text, font)
 
     def _write(self, event, text, font):
-        figlet = Figlet(font=font, zipfile=self.fonts_zip)
+        if self.fontstore == 'dir':
+            figlet = Figlet(font=font, dir=self.fonts_)
+        else:
+            figlet = Figlet(font=font, zipfile=self.fonts_)
         rendered = figlet.renderText(text).split('\n')
         while rendered and rendered[0].strip() == '':
             del rendered[0]
