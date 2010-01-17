@@ -24,13 +24,16 @@ class Usaco(Processor):
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
     feature = 'usaco'
+    # Clashes with identity, so lower our priority since if we match, then
+    # this is the better match
     priority = -20
+    autoload = False
 
     def _login(self, user, password):
-        params = urlencode({u'NAME': user, u'PASSWORD': password})
+        params = urlencode({u'NAME': user.encode('utf-8'), u'PASSWORD': password.encode('utf-8')})
         etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
         for font in etree.getiterator(u'font'):
-            if font.text and font.text.find('Please try again') != -1:
+            if font.text and 'Please try again' in font.text:
                 return None
         return etree
 
@@ -62,8 +65,8 @@ class Usaco(Processor):
     def _add_user(self, monitor_url, user):
         matches = re.search(r'a=(.+)&', monitor_url)
         auth = matches.group(1)
-        params = urlencode({u'STUDENTID': user, 'ADD': 'ADD STUDENT',
-            u'a': auth, u'monitor': u'1'})
+        params = urlencode({u'STUDENTID': user.econde('utf-8'), 'ADD': 'ADD STUDENT',
+            u'a': auth.encode('utf-8'), u'monitor': u'1'})
         etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
         for font in etree.getiterator(u'font'):
             if u'No STATUS file for' in font.text:
@@ -147,9 +150,9 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        params = urlencode({u'id': usaco_user, u'search': u'SEARCH'})
+        params = urlencode({u'id': usaco_user.encode('utf-8'), u'search': u'SEARCH'})
         etree = get_html_parse_tree(u'http://ace.delos.com/showdiv', data=params, treetype=u'etree')
-        division = [b.text for b in etree.getiterator(u'b') if b.text and b.text.find(usaco_user) != -1][0]
+        division = [b.text for b in etree.getiterator(u'b') if b.text and usaco_user in b.text][0]
         if division.find(u'would compete') != -1:
             event.addresponse(u'%(user)s (%(usaco_user)s on USACO) has not competed in a USACO before',
                     {u'user': user, u'usaco_user': usaco_user})
