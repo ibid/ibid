@@ -65,6 +65,9 @@ class Usaco(Processor):
         params = urlencode({u'STUDENTID': user, 'ADD': 'ADD STUDENT',
             u'a': auth, u'monitor': u'1'})
         etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
+        for font in etree.getiterator(u'font'):
+            if u'No STATUS file for' in font.text:
+                raise UsacoException(u'Sorry, user %s not found' % user)
 
     def _get_monitor_url(self):
         if self.admin_user is None or self.admin_password is None:
