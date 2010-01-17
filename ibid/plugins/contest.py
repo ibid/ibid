@@ -115,10 +115,9 @@ class Usaco(Processor):
         accounts = event.session.query(Identity) \
             .join(['account', 'attributes']) \
             .add_entity(Attribute) \
-            .filter(and_(
-                Attribute.name == u'usaco_account',
-                Identity.source == event.source,
-            )).all()
+            .filter(Attribute.name == u'usaco_account') \
+            .filter(Identity.source == event.source) \
+            .all()
 
         users = {}
         for a in accounts:
