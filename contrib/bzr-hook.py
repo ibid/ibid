@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from urlparse import urlparse
 from urllib2 import urlopen
 from sys import stderr
