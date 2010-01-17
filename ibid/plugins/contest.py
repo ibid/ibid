@@ -93,14 +93,15 @@ class Usaco(Processor):
 
     def _get_usaco_user(self, event, user):
         account = event.session.query(Account) \
+            .options(eagerload('attributes')) \
             .filter(Account.username == user) \
             .first()
         if account is None:
             account = event.session.query(Account) \
+                .options(eagerload('attributes')) \
                 .join('identities') \
-                .filter(and_(
-                    Identity.identity == user,
-                    Identity.source == event.source)) \
+                .filter(Identity.identity == user) \
+                .filter(Identity.source == event.source) \
                 .first()
             if account is None:
                 raise UsacoException(u'Sorry, %s has not been linked to a USACO account yet' % user)
