@@ -4,6 +4,7 @@ import logging
 
 import ibid
 from ibid.config import Option
+from ibid.compat import any
 from ibid.db import eagerload, IntegrityError, and_, or_
 from ibid.db.models import Account, Identity, Attribute, Credential, Permission
 from ibid.plugins import Processor, match, handler, auth_responses, authorise
