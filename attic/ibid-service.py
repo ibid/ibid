@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright (c) 2008, Jonathan Hitchcock
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import gobject
 
