@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 """
 Compatibility functions for older versions of Python.
 We support 2.4 <= x < 3.
