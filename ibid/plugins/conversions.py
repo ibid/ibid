@@ -10,7 +10,7 @@ from ibid.utils import file_in_path, unicode_output, human_join
 from ibid.utils.html import get_country_codes, get_html_parse_tree
 
 help = {}
-log = logging.getLogger('conversions')
+log = logging.getLogger('plugins.conversions')
 
 help['base'] = u'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
