@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright 2009 Stefano Rivera <scripts@rivera.za.net>
-# Released under the MIT license
+# Copyright (c) 2009-2010, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 # Speaks Campfire API protocol.
 
