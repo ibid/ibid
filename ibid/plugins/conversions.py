@@ -1,11 +1,13 @@
 from subprocess import Popen, PIPE
+from urllib import urlencode
 import logging
 import re
 
 import ibid
 from ibid.plugins import Processor, handler, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output
+from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils.html import get_country_codes, get_html_parse_tree
 
 help = {}
 log = logging.getLogger('conversions')
@@ -281,5 +283,130 @@ class Units(Processor):
                 })
             else:
                 event.addresponse(u"I can't do that: %s", result)
+
+help['currency'] = u'Converts amounts between currencies.'
+class Currency(Processor):
+    u"""exchange <amount> <currency> for <currency>
+    currencies for <country>"""
+
+    feature = "currency"
+
+    headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
+    currencies = {}
+    country_codes = {}
+
+    def _load_currencies(self):
+        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
+
+        tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
+
+        self.currencies = {}
+        for tbl_sub in tbl_main.getiterator('table'):
+            if tbl_sub.get('class') == 'tbl_sub':
+                for tr in tbl_sub.getiterator('tr'):
+                    code, place = [x.text for x in tr.getchildren()]
+                    name = u''
+                    if not place:
+                        place = u''
+                    if u',' in place[1:-1]:
+                        place, name = place.split(u',', 1)
+                    place = place.strip()
+                    if code in self.currencies:
+                        currency = self.currencies[code]
+                        # Are we using another country's currency?
+                        if place != u'' and name != u'' and (currency[1] == u'' or currency[1].rsplit(None, 1)[0] in place
+                                or (u'(also called' in currency[1] and currency[1].split(u'(', 1)[0].rsplit(None, 1)[0] in place)):
+                            currency[0].insert(0, place)
+                            currency[1] = name.strip()
+                        else:
+                            currency[0].append(place)
+                    else:
+                        self.currencies[code] = [[place], name.strip()]
+
+        # Special cases for shared currencies:
+        self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
+        self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
+        self.currencies['XOF'][1] = u'Francs'
+
+    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
+
+    def _resolve_currency(self, name, rough=True):
+        "Return the canonical name for a currency"
+
+        if name.upper() in self.currencies:
+            return name.upper()
+
+        m = self.strip_currency_re.match(name)
+
+        if m is None:
+            return False
+
+        name = m.group(1).lower()
+
+        # TLD -> country name
+        if rough and len(name) == 2 and name.upper() in self.country_codes:
+           name = self.country_codes[name.upper()].lower()
+
+        # Currency Name
+        if name == u'dollar':
+            return "USD"
+
+        name_re = re.compile(r'^(.+\s+)?\(?%ss?\)?(\s+.+)?$' % name, re.I | re.UNICODE)
+        for code, (places, currency) in self.currencies.iteritems():
+            if name_re.match(currency) or [True for place in places if name_re.match(place)]:
+                return code
+
+        return False
+
+    @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
+    def exchange(self, event, command, amount, frm, to):
+        if not self.currencies:
+            self._load_currencies()
+
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        rough = command.lower() == 'exchange'
+
+        canonical_frm = self._resolve_currency(frm, rough)
+        canonical_to = self._resolve_currency(to, rough)
+        if not canonical_frm or not canonical_to:
+            if rough:
+                event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
+            return
+
+        data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
+        etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
+
+        result = [tag.text for tag in etree.getiterator('h2')]
+        if result:
+            event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
+                'fresult': result[0],
+                'tresult': result[2],
+                'fcountry': self.currencies[canonical_frm][0][0],
+                'fcurrency': self.currencies[canonical_frm][1],
+                'tcountry': self.currencies[canonical_to][0][0],
+                'tcurrency': self.currencies[canonical_to][1],
+            })
+        else:
+            event.addresponse(u"The bureau de change appears to be closed for lunch")
+
+    @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
+    def currency(self, event, place):
+        if not self.currencies:
+            self._load_currencies()
+
+        search = re.compile(place, re.I)
+        results = []
+        for code, (places, name) in self.currencies.iteritems():
+            for place in places:
+                if search.search(place):
+                    results.append(u'%s uses %s (%s)' % (place, name, code))
+                    break
+
+        if results:
+            event.addresponse(human_join(results))
+        else:
+            event.addresponse(u'No currencies found')
 
 # vi: set et sta sw=4 ts=4:

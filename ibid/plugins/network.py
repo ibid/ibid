@@ -10,6 +10,7 @@ from urlparse import urlparse
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils.html import get_country_codes
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
@@ -215,5 +216,43 @@ class HTTP(Processor):
                 reply += u' "%s"' % match.groups()[0].strip()
 
         event.addresponse(reply)
+
+help['tld'] = u"Resolve country TLDs (ISO 3166)"
+class TLD(Processor):
+    u""".<tld>
+    tld for <country>"""
+    feature = 'tld'
+
+    country_codes = {}
+
+    @match(r'^\.([a-zA-Z]{2})$')
+    def tld_to_country(self, event, tld):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        tld = tld.upper()
+
+        if tld in self.country_codes:
+            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                'tld': tld,
+                'country': self.country_codes[tld],
+            })
+        else:
+            event.addresponse(u"ISO doesn't know about any such TLD")
+
+    @match(r'^tld\s+for\s+(.+)$')
+    def country_to_tld(self, event, location):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        for tld, country in self.country_codes.iteritems():
+            if location.lower() in country.lower():
+                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                    'tld': tld,
+                    'country': country,
+                })
+                return
+
+        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
 # vi: set et sta sw=4 ts=4:
