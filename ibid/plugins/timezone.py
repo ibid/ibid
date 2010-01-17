@@ -9,6 +9,8 @@ from ibid.config import Option, DictOption
 from ibid.utils import human_join, format_date, json_webservice
 from ibid.compat import defaultdict
 
+help = {}
+
 class TimezoneException(Exception):
     pass
 
