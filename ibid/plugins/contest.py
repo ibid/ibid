@@ -31,7 +31,7 @@ class Usaco(Processor):
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20
-#    autoload = False
+    autoload = False
 
     def _login(self, user, password):
         params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
