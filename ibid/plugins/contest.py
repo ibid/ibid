@@ -13,7 +13,11 @@ from ibid.utils.html import get_html_parse_tree
 help = {u'usaco': u'Query USACO sections, divisions and more. Since this info is private, users are required to provide their USACO password when linking their USACO account to their ibid account and only linked accounts can be queried. Your password is used only to confirm that the account is yours and is discarded immediately.'}
 
 class UsacoException(Exception):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __unicode__(self):
+        return unicode(self.msg)
 
 class Usaco(Processor):
     """usaco <section|division> for <user>
