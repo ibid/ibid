@@ -34,10 +34,10 @@ class Usaco(Processor):
     autoload = False
 
     def _login(self, user, password):
-        params = urlencode({u'NAME': user.encode('utf-8'), u'PASSWORD': password.encode('utf-8')})
+        params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
         etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
         for font in etree.getiterator(u'font'):
-            if font.text and 'Please try again' in font.text:
+            if font.text and u'Please try again' in font.text:
                 return None
         return etree
 
@@ -69,8 +69,8 @@ class Usaco(Processor):
     def _add_user(self, monitor_url, user):
         matches = re.search(r'a=(.+)&', monitor_url)
         auth = matches.group(1)
-        params = urlencode({u'STUDENTID': user.econde('utf-8'), 'ADD': 'ADD STUDENT',
-            u'a': auth.encode('utf-8'), u'monitor': u'1'})
+        params = urlencode({'STUDENTID': user.econde('utf-8'), 'ADD': 'ADD STUDENT',
+            'a': auth.encode('utf-8'), 'monitor': '1'})
         etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
         for font in etree.getiterator(u'font'):
             if u'No STATUS file for' in font.text:
@@ -155,7 +155,7 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        params = urlencode({u'id': usaco_user.encode('utf-8'), u'search': u'SEARCH'})
+        params = urlencode({'id': usaco_user.encode('utf-8'), 'search': 'SEARCH'})
         etree = get_html_parse_tree(u'http://ace.delos.com/showdiv', data=params, treetype=u'etree')
         division = [b.text for b in etree.getiterator(u'b') if b.text and usaco_user in b.text][0]
         if division.find(u'would compete') != -1:
