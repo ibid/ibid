@@ -4,7 +4,7 @@ from urllib2 import HTTPError
 from urllib import urlencode
 
 from ibid.config import Option
-from ibid.db import eagerload, and_
+from ibid.db import eagerload
 from ibid.db.models import Account, Attribute, Identity
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download
@@ -189,7 +189,11 @@ class Usaco(Processor):
         self._add_user(monitor_url, user)
 
         account = event.session.query(Account).get(event.account)
-        account.attributes.append(Attribute('usaco_account', user))
+        usaco_account = [attr for attr in account.attributes if attr.name == u'usaco_account']
+        if usaco_account:
+            usaco_account[0].value = user
+        else:
+            account.attributes.append(Attribute('usaco_account', user))
         event.session.save_or_update(account)
         event.session.commit()
 
