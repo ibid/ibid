@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Jeremy Thurgood
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import ibid
 
 class FakeConfig(dict):
