@@ -157,7 +157,6 @@ class Grab(Processor):
             if e.code == 401:
                 log.error(u"Incorrect password for %s, couldn't post",
                           self.service)
-            print e.hdrs
         except BadStatusLine, e:
             log.error(u"Error posting url '%s' to %s: %s",
                       url, self.service, unicode(e))
