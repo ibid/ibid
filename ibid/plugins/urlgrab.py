@@ -87,7 +87,7 @@ class Grab(Processor):
         u = URL(url, event.channel, event.identity)
         event.session.save_or_update(u)
 
-        if self.service != None and self.username != None:
+        if self.service and self.username:
             self._post_url(event, url)
 
     def _post_url(self, event, url=None):
@@ -136,8 +136,8 @@ class Grab(Processor):
             log.error(u'Unknown social bookmarking service: %s', self.service)
             return
         auth_handler = HTTPBasicAuthHandler()
-        auth_handler.add_password(*service,
-                                  user=self.username, passwd=self.password)
+        auth_handler.add_password(service[0], service[1],
+                                  self.username, self.password)
         opener = build_opener(auth_handler)
 
         posturl = service[1] + '/v1/posts/add?' + urlencode(data)
