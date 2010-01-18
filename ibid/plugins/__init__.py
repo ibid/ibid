@@ -3,6 +3,7 @@ from datetime import timedelta
 from inspect import getargspec, getmembers, ismethod
 import logging
 import re
+from threading import Lock
 
 from twisted.spread import pb
 from twisted.web import resource
@@ -44,6 +45,8 @@ class Processor(object):
     processed = False
     priority = 0
     autoload = True
+    _event_handlers = None
+    _periodic_handlers = None
 
     __log = logging.getLogger('plugins')
 
@@ -56,6 +59,17 @@ class Processor(object):
             new.default = getattr(cls, name)
             setattr(cls, name, new)
 
+        if getattr(cls, '_event_handlers', None) is None:
+            cls._event_handlers = []
+            for name, item in cls.__dict__.iteritems():
+                if getattr(item, 'handler', False):
+                    cls._event_handlers.append(name)
+        if getattr(cls, '_periodic_handlers', None) is None:
+            cls._periodic_handlers = []
+            for name, item in cls.__dict__.iteritems():
+                if getattr(item, 'periodic', False):
+                    cls._periodic_handlers.append(name)
+
         return super(Processor, cls).__new__(cls)
 
     def __init__(self, name):
@@ -65,9 +79,9 @@ class Processor(object):
     def setup(self):
         "Apply configuration. Called on every config reload"
         for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'run_every_config_key'):
+            if hasattr(method, 'interval_config_key'):
                 method.im_func.interval = timedelta(
-                        seconds=getattr(self, method.run_every_config_key, 0))
+                        seconds=getattr(self, method.interval_config_key, 0))
 
     def shutdown(self):
         pass
@@ -75,33 +89,8 @@ class Processor(object):
     def process(self, event):
         "Process a single event"
         if event.type == 'clock':
-            for name, method in getmembers(self, ismethod):
-                if (hasattr(method, 'run_every')
-                        and method.interval.seconds > 0
-                        and not method.running):
-                    method.im_func.running = True
-                    if method.last_called is None:
-                        # Don't fire first time
-                        # Give sources a chance to connect
-                        method.im_func.last_called = event.time
-                    elif event.time - method.last_called >= method.interval:
-                        method.im_func.last_called = event.time
-                        try:
-                            method(event)
-                            if method.failing:
-                                self.__log.info(u'No longer failing: %s.%s',
-                                        self.__class__.__name__, name)
-                                method.im_func.failing = False
-                        except:
-                            if not method.failing:
-                                method.im_func.failing = True
-                                self.__log.exception(
-                                        u'Periodic method failing: %s.%s',
-                                        self.__class__.__name__, name)
-                            else:
-                                self.__log.debug(u'Still failing: %s.%s',
-                                        self.__class__.__name__, name)
-                    method.im_func.running = False
+            for method in self._get_periodic_handlers():
+                self._run_periodic_handler(method, event)
 
         if event.type not in self.event_types:
             return
@@ -113,26 +102,64 @@ class Processor(object):
             return
 
         found = False
-        for name, method in getmembers(self, ismethod):
-            if hasattr(method, 'handler'):
-                if not hasattr(method, 'pattern'):
-                    found = True
-                    method(event)
-                elif hasattr(event, 'message'):
-                    found = True
-                    match = method.pattern.search(
-                            event.message[method.message_version])
-                    if match is not None:
-                        if (not getattr(method, 'auth_required', False)
-                                or auth_responses(event, self.permission)):
-                            method(event, *match.groups())
-                        elif not getattr(method, 'auth_fallthrough', True):
-                            event.processed = True
+        for method in self._get_event_handlers():
+            if not hasattr(method, 'pattern'):
+                found = True
+                method(event)
+            elif hasattr(event, 'message'):
+                found = True
+                match = method.pattern.search(
+                        event.message[method.message_version])
+                if match is not None:
+                    if (not getattr(method, 'auth_required', False)
+                            or auth_responses(event, self.permission)):
+                        method(event, *match.groups())
+                    elif not getattr(method, 'auth_fallthrough', True):
+                        event.processed = True
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
 
         return event
+
+    def _get_event_handlers(self):
+        "Find all the handlers (regex matching and blind)"
+        for handler in self._event_handlers:
+            yield getattr(self, handler)
+
+    def _get_periodic_handlers(self):
+        "Find all the periodic handlers"
+        for handler in self._periodic_handlers:
+            yield getattr(self, handler)
+
+    def _run_periodic_handler(self, method, event):
+        "Run a periodic handler, if appropriate"
+        if (method.interval.seconds > 0
+                and not method.disabled
+                and method.lock.acquire(0)):
+            if method.last_called is None:
+                # First call, set up initial_delay
+                method.im_func.last_called = event.time
+            elif event.time - method.last_called >= (
+                    method.initial_delay or method.interval):
+                method.im_func.initial_delay = None
+                method.im_func.last_called = event.time
+                name = u'%s.%s' % (self.__class__.__name__, method.__name__)
+                try:
+                    self.__log.debug(u'Running periodic event: %s', name)
+                    method(event)
+                    if method.failing:
+                        self.__log.info(u'No longer failing: %s', name)
+                        method.im_func.failing = False
+                except:
+                    if not method.failing:
+                        self.__log.exception(u'Periodic method failing: %s',
+                                             name)
+                        method.im_func.failing = True
+                    else:
+                        self.__log.debug(u'Still failing: %s', name)
+
+            method.lock.release()
 
 # This is a bit yucky, but necessary since ibid.config imports Processor
 from ibid.config import BoolOption, IntOption
@@ -181,15 +208,19 @@ def authorise(fallthrough=True):
         return function
     return wrap
 
-def run_every(interval=0, config_key=None):
-    "Wrapper: Run this handler every interval seconds"
+def periodic(interval=0, config_key=None, initial_delay=60):
+    """Wrapper: Run this handler every interval seconds
+    If a config_key is provided, the interval will be set in Processor.setup()
+    """
     def wrap(function):
-        function.run_every = True
-        function.running = False
+        function.periodic = True
+        function.disabled = False
+        function.lock = Lock()
         function.last_called = None
         function.interval = timedelta(seconds=interval)
+        function.initial_delay = timedelta(seconds=initial_delay)
         if config_key is not None:
-            function.run_every_config_key = config_key
+            function.interval_config_key = config_key
         function.failing = False
         return function
     return wrap
