@@ -1,3 +1,7 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Russell Cloran,
+#                          Adrian Moisey
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from crypt import crypt
 import base64
 import re

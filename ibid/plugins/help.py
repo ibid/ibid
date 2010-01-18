@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import inspect
 import sys
 

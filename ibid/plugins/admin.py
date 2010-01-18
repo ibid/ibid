@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from os.path import join
 from twisted.internet import reactor
 import logging

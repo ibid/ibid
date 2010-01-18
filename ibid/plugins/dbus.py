@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import sys
 import re
 from traceback import print_exc

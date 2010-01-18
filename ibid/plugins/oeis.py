@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from urllib2 import urlopen
 import re
 import logging

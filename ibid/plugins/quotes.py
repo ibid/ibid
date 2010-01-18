@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from urllib2 import urlopen, HTTPError
 from urllib import urlencode, quote
 from httplib import BadStatusLine

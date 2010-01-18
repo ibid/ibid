@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Bradley Whittington, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import re
 from urllib2 import urlopen
 import logging
