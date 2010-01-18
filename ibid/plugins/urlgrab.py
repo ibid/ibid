@@ -52,10 +52,10 @@ class Grab(Processor):
     addressed = False
     processed = True
 
-    username  = Option('urlgrab_username', 'Account name for URL posting')
-    password  = Option('urlgrab_password', 'Password for URL Posting')
-    service   = Option('urlgrab_service',
-                       'URL Posting Service (delicious/faves)', 'delicious')
+    username  = Option('username', 'Account name for URL posting')
+    password  = Option('password', 'Password for URL Posting')
+    service   = Option('service', 'URL Posting Service (delicious/faves)',
+                       'delicious')
 
     def setup(self):
         if resource_exists(__name__, '../data/tlds-alpha-by-domain.txt'):
