@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+import os
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -136,5 +137,45 @@ class AptFile(Processor):
             else:
                 event.addresponse(u'Search error')
             raise Exception("apt-file: %s" % error)
+
+help['man'] = u'Retrieves information from manpages.'
+class Man(Processor):
+    u"""man [<section>] <page>"""
+    feature = 'man'
+
+    man = Option('man', 'Path of the man executable', 'man')
+
+    def setup(self):
+        if not file_in_path(self.man):
+            raise Exception("Cannot locate man executable")
+
+    @match(r'^man\s+(?:(\d)\s+)?(\S+)$')
+    def handle_man(self, event, section, page):
+        command = [self.man, page]
+        if section:
+            command.insert(1, section)
+
+        if page.strip().startswith("-"):
+            event.addresponse(False)
+            return
+
+        env = os.environ.copy()
+        env["COLUMNS"] = "500"
+
+        man = Popen(command, stdout=PIPE, stderr=PIPE, env=env)
+        output, error = man.communicate()
+        code = man.wait()
+
+        if code != 0:
+            event.addresponse(u'Manpage not found')
+        else:
+            output = unicode_output(output.strip(), errors="replace")
+            output = output.splitlines()
+            index = output.index('NAME')
+            if index:
+                event.addresponse(output[index+1].strip())
+            index = output.index('SYNOPSIS')
+            if index:
+                event.addresponse(output[index+1].strip())
 
 # vi: set et sta sw=4 ts=4:

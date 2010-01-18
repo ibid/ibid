@@ -4,7 +4,6 @@ from random import choice
 import logging
 
 import ibid
-from ibid.compat import any
 from ibid.config import IntOption, ListOption, DictOption
 from ibid.plugins import Processor, handler
 from ibid.plugins.identity import identify

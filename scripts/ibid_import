@@ -15,7 +15,7 @@ from ibid.db.models import Identity
 from ibid.plugins.seen import Sighting
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue
 from ibid.plugins.karma import Karma
-from ibid.plugins.url import URL
+from ibid.plugins.urlgrab import URL
 
 def decode(string):
     if string is None:
