@@ -1,7 +1,7 @@
 from datetime import datetime
 from httplib import BadStatusLine
 from urllib import urlencode
-from urllib2 import urlopen, build_opener, HTTPError, HTTPBasicAuthHandler
+from urllib2 import build_opener, HTTPError, HTTPBasicAuthHandler
 import logging
 import re
 
