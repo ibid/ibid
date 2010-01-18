@@ -1,11 +1,11 @@
 from twisted.trial import unittest
 
-from ibid.plugins import url
+from ibid.plugins import urlgrab
 
 class TestURLGrabber(unittest.TestCase):
 
     def setUp(self):
-        self.grab = url.Grab(u'testplugin')
+        self.grab = urlgrab.Grab(u'testplugin')
 
     good_grabs = [
         (u'google.com', u'google.com'),

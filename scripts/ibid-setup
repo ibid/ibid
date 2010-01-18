@@ -19,7 +19,7 @@ from ibid.config import FileConfig
 from ibid.core import DatabaseManager
 from ibid.db import metadata, upgrade_schemas
 from ibid.db.models import Account, Identity, Permission, Credential
-from ibid.plugins.auth import hash
+from ibid.auth import hash
 
 logging.basicConfig(level=logging.DEBUG)
 

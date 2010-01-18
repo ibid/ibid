@@ -308,7 +308,9 @@ class Notify(Processor):
                 u' so ask me in private.',
                 len(memos), target=event.sender['connection'])
         elif len(memos) > 0:
-            event.addresponse(u'You have %s messages', len(memos),
+            event.addresponse(u'You have %s messages. '
+                    u"Would you like to read them now?",
+                len(memos),
                 target=event.sender['connection'])
         else:
             nomemos_cache.add(event.identity)

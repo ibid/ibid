@@ -1,3 +1,5 @@
+import warnings
+
 import ibid
 
 class Event(dict):
@@ -37,8 +39,20 @@ class Event(dict):
             # We want to detect this now, so we know which plugin is to blame
             raise Exception("Can't have a None response")
 
+        if isinstance(params, (tuple, list)):
+            warnings.warn(
+                u'addresponse() params should be a single item or dict. '
+                u"You really shouldn't use tuples / lists as they can cause "
+                u'difficulties with translation later.',
+                SyntaxWarning, stacklevel=2)
+
         if isinstance(response, basestring) and params:
             response = response % params
+
+        if isinstance(response, str):
+            warnings.warn(
+                u"addresponse() response should be unicode, not a byte string",
+                UnicodeWarning, stacklevel=2)
 
         if not isinstance(response, dict):
             response = {'reply': response}

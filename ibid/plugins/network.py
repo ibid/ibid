@@ -3,13 +3,18 @@ from subprocess import Popen, PIPE
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
+from httplib import HTTPConnection, HTTPSConnection
+from urllib import getproxies_environment
+from urlparse import urlparse
 
 from ibid.plugins import Processor, match
-from ibid.config import Option
+from ibid.config import Option, IntOption
 from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils.html import get_country_codes
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
+title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
 help['dns'] = u'Performs DNS lookups'
 class DNS(Processor):
@@ -165,5 +170,89 @@ class IPCalc(Processor):
         else:
             error = unicode_output(error.strip())
             event.addresponse(error.replace(u'\n', u' '))
+
+help['get'] = u'Retrieves a URL and returns the HTTP status and optionally the HTML title.'
+class HTTP(Processor):
+    u"""(get|head) <url>"""
+    feature = 'get'
+
+    max_size = IntOption('max_size', 'Only request this many bytes', 500)
+
+    @match(r'^(get|head)\s+(\S+\.\S+)$')
+    def handler(self, event, action, url):
+        if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
+            url = "http://" + url
+        if url.count("/") < 3:
+            url += "/"
+
+        action = action.upper()
+
+        scheme, host = urlparse(url)[:2]
+        scheme = scheme.lower()
+        proxies = getproxies_environment()
+        if scheme in proxies:
+            scheme, host = urlparse(proxies[scheme])[:2]
+            scheme = scheme.lower()
+
+        if scheme == "https":
+            conn = HTTPSConnection(host)
+        else:
+            conn = HTTPConnection(host)
+
+        headers={}
+        if action == 'GET':
+            headers['Range'] = 'bytes=0-%s' % self.max_size
+        conn.request(action.upper(), url, headers=headers)
+
+        response = conn.getresponse()
+        reply = u'%s %s' % (response.status, response.reason)
+
+        data = response.read()
+        conn.close()
+
+        if action == 'GET':
+            match = title.search(data)
+            if match:
+                reply += u' "%s"' % match.groups()[0].strip()
+
+        event.addresponse(reply)
+
+help['tld'] = u"Resolve country TLDs (ISO 3166)"
+class TLD(Processor):
+    u""".<tld>
+    tld for <country>"""
+    feature = 'tld'
+
+    country_codes = {}
+
+    @match(r'^\.([a-zA-Z]{2})$')
+    def tld_to_country(self, event, tld):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        tld = tld.upper()
+
+        if tld in self.country_codes:
+            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                'tld': tld,
+                'country': self.country_codes[tld],
+            })
+        else:
+            event.addresponse(u"ISO doesn't know about any such TLD")
+
+    @match(r'^tld\s+for\s+(.+)$')
+    def country_to_tld(self, event, location):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        for tld, country in self.country_codes.iteritems():
+            if location.lower() in country.lower():
+                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                    'tld': tld,
+                    'country': country,
+                })
+                return
+
+        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
 # vi: set et sta sw=4 ts=4:
