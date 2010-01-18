@@ -75,7 +75,7 @@ load = [plugin for plugin in args if not plugin.endswith("-")]
 noload = [plugin[:-1] for plugin in args if plugin.endswith("-")]
 
 if options.load_base:
-    load.extend(("admin", "config", "core", "help", "test"))
+    load.extend(("admin", "core", "help", "test"))
 
 if load:
     if 'load' in ibid.config.plugins:
