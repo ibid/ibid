@@ -8,7 +8,6 @@ from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
-from httplib import HTTPConnection, HTTPSConnection
 from urllib import getproxies_environment
 from urlparse import urlparse
 
@@ -196,11 +195,20 @@ class HTTP(Processor):
     whensitup_maxdelay = IntOption('whensitup_maxdelay', 'Maximum delay between whensitup attempts in seconds', 30*60)
     whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
 
+    def _get_header(self, headers, name):
+        for header in headers:
+            if header[0] == name:
+                return header[1]
+        return None
+
     @match(r'^(get|head)\s+(\S+)$')
     def get(self, event, action, url):
         try:
-            status, reason, data = self._request(self._makeurl(url), action.upper())
+            status, reason, data, headers = self._request(self._makeurl(url), action.upper())
             reply = u'%s %s' % (status, reason)
+
+            if status == 301 or status == 302 and self._get_header(headers, 'location'):
+                reply += u' to %s' % self._get_header(headers, 'location')
 
             if action.upper() == 'GET':
                 match = title.search(data)
@@ -226,7 +234,7 @@ class HTTP(Processor):
 
     def _isitup(self, url):
         try:
-            status, reason, data = self._request(self._makeurl(url), 'HEAD')
+            status, reason, data, headers = self._request(self._makeurl(url), 'HEAD')
         except HTTPException, e:
             status = 600
 
@@ -299,7 +307,7 @@ class HTTP(Processor):
         match = re.search('charset=([a-zA-Z0-9-]+)', contenttype)
         charset = match and match.group(1) or 'utf-8'
 
-        return response.status, response.reason, data.decode(charset)
+        return response.status, response.reason, data.decode(charset), response.getheaders()
 
 help['tld'] = u"Resolve country TLDs (ISO 3166)"
 class TLD(Processor):
