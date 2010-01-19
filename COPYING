@@ -11,9 +11,9 @@ MIT/X/Expat license, as below.
 Contribution Licensing:
 =======================
 
-Contributions to Ibid are welcome and will be expected to provided by their
-authors under the same licence(s) and the files they modify.
-Any additional files contributed should clearly state copyright and licencing.
+Contributions to Ibid are welcome but must be provided under the same
+licence(s) as, or a licence compatible with, the files that they modify. Any
+additional files contributed should clearly state copyright and licencing.
 
 Module / plugin contributions will be accepted under any terms compatible with
 the package's GPL license.
