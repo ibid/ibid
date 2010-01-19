@@ -323,7 +323,7 @@ class HTTP(Processor):
                 })
 
     def _whensitup(self, event, url, delay, total_delay = 0):
-        up, _ = self._isitup(url)
+        up = self._isitup(url)[0]
         if up:
             event.addresponse(u'%s is now up', self._makeurl(url))
             return
@@ -339,7 +339,7 @@ class HTTP(Processor):
     @match(r'^(?:tell\s+me|let\s+me\s+know)\s+when\s+(\S+)\s+'
            r'is\s+(?:back\s+)?up$')
     def whensitup(self, event, url):
-        up, _ = self._isitup(self._makeurl(url))
+        up = self._isitup(self._makeurl(url))[0]
         if up:
             event.addresponse(u'%s is up right now', self._makeurl(url))
             return
