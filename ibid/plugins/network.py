@@ -13,7 +13,7 @@ try:
     from dns.resolver import Resolver, NoAnswer, NXDOMAIN
     from dns.reversename import from_address
 except ImportError:
-    Resolver = NoAnswer = NXDOMAIN = from_address = None
+    Resolver = None
 
 import ibid
 from ibid.plugins import Processor, match
@@ -277,6 +277,13 @@ class HTTP(Processor):
         return url
 
     def _isitup(self, url):
+        if Resolver is not None:
+            r = Resolver()
+            host = urlparse(url).netloc.split(':')[0]
+            try:
+                r.query(host)
+            except NXDOMAIN:
+                return False, u'No such domain'
         try:
             status, reason, data, headers = self._request(self._makeurl(url),
                                                           'HEAD')
@@ -288,11 +295,9 @@ class HTTP(Processor):
                     u'status': status,
                     u'reason': reason,
                 }
+            return up, reason
         except HTTPException:
-            up = False
-            reason = u'Server is not responding'
-
-        return up, reason
+            return False, u'Server is not responding'
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, url, type):
