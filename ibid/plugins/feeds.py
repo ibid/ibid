@@ -9,7 +9,7 @@ from html2text import html2text_file
 from ibid.config import IntOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
-from ibid.plugins import Processor, match, authorise, run_every
+from ibid.plugins import Processor, match, authorise, periodic
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
@@ -72,9 +72,13 @@ class Feed(Base):
         self.time = datetime.utcnow()
         self.update()
 
-    def update(self):
+    def update(self, max_age=None):
+        headers = {}
+        if max_age:
+            headers['Cache-Control'] = 'max-age=%i' % max_age
+
         feedfile = cacheable_download(self.url, "feeds/%s-%i.xml" % (
-                re.sub(r'\W+', '_', self.name), self.identity_id))
+                re.sub(r'\W+', '_', self.name), self.identity_id), headers)
         self.feed = feedparser.parse(feedfile)
         self.entries = self.feed['entries']
 
@@ -272,15 +276,14 @@ class Retrieve(Processor):
         })
 
     last_seen = {}
-    @run_every(config_key='interval')
+    @periodic(config_key='interval')
     def poll(self, event):
-        log.debug(u'Polling feeds')
         feeds = event.session.query(Feed) \
                 .filter(Feed.source != None) \
                 .filter(Feed.target != None).all()
 
         for feed in feeds:
-            feed.update()
+            feed.update(max_age=self.interval)
             if not feed.entries:
                 log.warning(u'Error polling feed %s', feed.name)
                 continue

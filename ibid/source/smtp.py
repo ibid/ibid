@@ -58,14 +58,13 @@ class Message:
         event.public = False
         event.addressed = True
         event.subject = unicode(mail['subject'], 'utf-8', 'replace')
-        event.headers = dict((i[0], unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
+        event.headers = dict((i[0].lower(), unicode(i[1], 'utf-8', 'replace')) for i in mail.items())
 
         message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
-            event.message = stripsig.sub('', message).strip().replace('\n', ' ')
+            event.message = stripsig.sub('', unicode(message, 'utf-8', 'replace')).strip().replace('\n', ' ')
         else:
             event.message = event.subject
-        event.message = unicode(event.message, 'utf-8', 'replace')
 
         self.log.debug(u"Received message from %s: %s", event.sender['connection'], event.message)
         ibid.dispatcher.dispatch(event).addCallback(ibid.sources[self.name.lower()].respond)
@@ -113,15 +112,25 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
 
         for message in messages.values():
             if 'subject' not in message:
-                message['subject'] = 'Re: ' + event['subject']
+                message['Subject'] = 'Re: ' + event['subject']
+            if 'message-id' in event.headers:
+                response['In-Reply-To'] = event.headers['message-id']
+                if 'references' in event.headers:
+                    response['References'] = '%(references)s %(message-id)s' % event.headers
+                elif 'in-reply-to' in event.headers:
+                    response['References'] = '%(in-reply-to)s %(message-id)s' % event.headers
+                else:
+                    response['References'] = '%(message-id)s' % event.headers
+                    
             self.send(message)
 
     def send(self, response):
         message = response['reply']
-        response['to'] = response['target']
-        response['date'] = smtp.rfc822date()
-        if 'subject' not in response:
-            response['subject'] = 'Message from %s' % ibid.config['botname']
+        response['To'] = response['target']
+        response['Date'] = smtp.rfc822date()
+        if 'Subject' not in response:
+            response['Subject'] = 'Message from %s' % ibid.config['botname']
+        response['Content-Type'] = 'text/plain; charset=utf-8'
 
         del response['target']
         del response['source']
@@ -133,7 +142,8 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
         body += '\n'
         body += message
 
-        smtp.sendmail(self.relayhost, self.address, response['to'], body)
-        self.log.debug(u"Sent email to %s: %s", response['to'], response['subject'])
+        port = ':' in self.relayhost and int(self.relayhost.split(':')[1]) or 25
+        smtp.sendmail(self.relayhost.split(':')[0], self.address, response['To'], body.encode('utf-8'), port=port)
+        self.log.debug(u"Sent email to %s: %s", response['To'], response['Subject'])
 
 # vi: set et sta sw=4 ts=4:

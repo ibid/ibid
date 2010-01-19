@@ -8,14 +8,19 @@ from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
+from httplib import HTTPConnection, HTTPSConnection
+from urllib import getproxies_environment
+from urlparse import urlparse
 
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, url_to_bytestring
+from ibid.utils.html import get_country_codes
 
 help = {}
 ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
+title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
 help['dns'] = u'Performs DNS lookups'
 class DNS(Processor):
@@ -172,8 +177,6 @@ class IPCalc(Processor):
             error = unicode_output(error.strip())
             event.addresponse(error.replace(u'\n', u' '))
 
-title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
-
 class HTTPException(Exception):
     pass
 
@@ -193,15 +196,10 @@ class HTTP(Processor):
     whensitup_maxdelay = IntOption('whensitup_maxdelay', 'Maximum delay between whensitup attempts in seconds', 30*60)
     whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
 
-    @match(r'^(get|head)\s+(\S+\.\S+)$')
+    @match(r'^(get|head)\s+(\S+)$')
     def get(self, event, action, url):
-        if not urlparse(url).netloc:
-            url = 'http://' + url
-        if not urlparse(url).path:
-            url += '/'
-
         try:
-            status, reason, data = self._request(url, action.upper())
+            status, reason, data = self._request(self._makeurl(url), action.upper())
             reply = u'%s %s' % (status, reason)
 
             if action.upper() == 'GET':
@@ -302,5 +300,43 @@ class HTTP(Processor):
         charset = match and match.group(1) or 'utf-8'
 
         return response.status, response.reason, data.decode(charset)
+
+help['tld'] = u"Resolve country TLDs (ISO 3166)"
+class TLD(Processor):
+    u""".<tld>
+    tld for <country>"""
+    feature = 'tld'
+
+    country_codes = {}
+
+    @match(r'^\.([a-zA-Z]{2})$')
+    def tld_to_country(self, event, tld):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        tld = tld.upper()
+
+        if tld in self.country_codes:
+            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                'tld': tld,
+                'country': self.country_codes[tld],
+            })
+        else:
+            event.addresponse(u"ISO doesn't know about any such TLD")
+
+    @match(r'^tld\s+for\s+(.+)$')
+    def country_to_tld(self, event, location):
+        if not self.country_codes:
+            self.country_codes = get_country_codes()
+
+        for tld, country in self.country_codes.iteritems():
+            if location.lower() in country.lower():
+                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                    'tld': tld,
+                    'country': country,
+                })
+                return
+
+        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
 # vi: set et sta sw=4 ts=4:
