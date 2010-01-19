@@ -251,26 +251,43 @@ class HTTP(Processor):
     def _isitup(self, url):
         try:
             status, reason, data, headers = self._request(self._makeurl(url), 'HEAD')
+            if not urlparse(url).netloc and not urlparse('http://' + url).path:
+                up = True # only domain provided, so since the server responded it is up
+            else:
+                up = status < 400 # url provided, so check the status returned
+                reason = u'%(status)d %(reason)s' % {
+                    u'status': status,
+                    u'reason': reason,
+                }
         except HTTPException, e:
-            status = 600
+            up = False
+            reason = u'Server is not responding'
 
-        return status < 400
+        return up, reason
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, url, type):
-        if self._isitup(url):
+        up, reason = self._isitup(url)
+        if up:
             if type.lower() == 'up':
-                event.addresponse(u'Yes, %s is up', self._makeurl(url))
+                event.addresponse(u'Yes, %s is up', url)
             else:
                 event.addresponse(u"No, it's just you")
         else:
             if type.lower() == 'up':
-                event.addresponse(u'No, %s is down', self._makeurl(url))
+                event.addresponse(u'No, %(url)s is down (%(reason)s)', {
+                    u'url': url,
+                    u'reason': reason,
+                })
             else:
-                event.addresponse(u'Yes, %s is down', self._makeurl(url))
+                event.addresponse(u'Yes, %(url)s is down (%(reason)s)', {
+                    u'url': url,
+                    u'reason': reason,
+                })
 
     def _whensitup(self, event, url, delay, total_delay = 0):
-        if self._isitup(url):
+        up, _, _ = self._isitup(url)
+        if up:
             event.addresponse(u'%s is now up', self._makeurl(url))
             return
         total_delay += delay
