@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Marco Gallotta
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import re
 import socket
 from httplib import HTTPConnection, HTTPSConnection
