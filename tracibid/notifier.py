@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from urllib import urlencode
 from urllib2 import urlopen
 from threading import Timer

@@ -1,24 +1,19 @@
 Copyright and Licensing Structure:
 ==================================
 
-The complete Ibid package is released under the terms of the GPL license, as
-below. The core of Ibid is additionally available under the terms of the
+Ibid copyright is held by Ibid's individual authors, listed in AUTHORS.
+
+The complete Ibid distribution is released under the terms of the GPL license,
+as below. The core of Ibid is additionally available under the terms of the
 MIT/X/Expat license, as below.
-
-3rd-party contributed modules (i.e. plugins) may have copyright held by
-different authors to the ibid core and be released under other, GPL-comaptible,
-licences. Such modules will begin with a header stating copyright and
-additional license terms.
-
-Files in the /lib/ directory are not considered to be part of Ibid core, and
-retain the Licences (GPL-compatible) and Copyright specified within them.
 
 
 Contribution Licensing:
 =======================
 
-Contributions to the Ibid core (files without 3rd-party copyright) will not be
-accepted unless copyright is assigned to the Ibid authors.
+Contributions to Ibid are welcome but must be provided under the same
+licence(s) as, or a licence compatible with, the files that they modify. Any
+additional files contributed should clearly state copyright and licencing.
 
 Module / plugin contributions will be accepted under any terms compatible with
 the package's GPL license.
@@ -27,7 +22,9 @@ the package's GPL license.
 Ibid Core Licence:
 ==================
 
-Copyright (c) 2008-2009: Michael Gorven, Jonathan Hitchcock
+Copyright © 2008-2010: Jonathan Hitchcock, Michael Gorven, Stefano Rivera and
+                       other contributors.
+All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -45,20 +42,38 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. 
+SOFTWARE.
 
 
 Ibid Package License:
 =====================
 
-		    GNU GENERAL PUBLIC LICENSE
-		       Version 3, 29 June 2007
+Copyright © 2008-2010: The Ibid developers and contributors.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+The full GPL text is below.
+
+
+The Full GPL License Text:
+==========================
+
+                    GNU GENERAL PUBLIC LICENSE
+                      Version 3, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
-			    Preamble
+                            Preamble
 
   The GNU General Public License is a free, copyleft license for
 software and other kinds of works.
@@ -121,7 +136,7 @@ patents cannot be used to render the program non-free.
   The precise terms and conditions for copying, distribution and
 modification follow.
 
-		       TERMS AND CONDITIONS
+                       TERMS AND CONDITIONS
 
   0. Definitions.
 
@@ -129,7 +144,7 @@ modification follow.
 
   "Copyright" also means copyright-like laws that apply to other kinds of
 works, such as semiconductor masks.
- 
+
   "The Program" refers to any copyrightable work licensed under this
 License.  Each licensee is addressed as "you".  "Licensees" and
 "recipients" may be individuals or organizations.
@@ -562,7 +577,7 @@ actual knowledge that, but for the patent license, your conveying the
 covered work in a country, or your recipient's use of the covered work
 in a country, would infringe one or more identifiable patents in that
 country that you have reason to believe are valid.
-  
+
   If, pursuant to or in connection with a single transaction or
 arrangement, you convey, or propagate by procuring conveyance of, a
 covered work, and grant a patent license to some of the parties
@@ -671,9 +686,9 @@ an absolute waiver of all civil liability in connection with the
 Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
-		     END OF TERMS AND CONDITIONS
+                     END OF TERMS AND CONDITIONS
 
-	    How to Apply These Terms to Your New Programs
+            How to Apply These Terms to Your New Programs
 
   If you develop a new program, and you want it to be of the greatest
 possible use to the public, the best way to achieve this is to make it

@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Jonathan Hitchock, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from os.path import join, exists
 
 from twisted.application import internet

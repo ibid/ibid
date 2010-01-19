@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Stefano Rivera, Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from datetime import timedelta
 import logging
 from random import choice, gauss, random, shuffle

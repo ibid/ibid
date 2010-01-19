@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Jonathan Hitchcock, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from cgi import parse_qs
 import inspect
 import re

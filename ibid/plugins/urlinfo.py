@@ -1,3 +1,10 @@
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+#
+# The youtube Processor uses code from youtube-dl:
+#   Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
+#   Released under MIT Licence
+
 from urllib import urlencode
 from urllib2 import urlopen, build_opener, HTTPError, HTTPRedirectHandler, HTTPCookieProcessor
 import logging
@@ -62,10 +69,6 @@ class Lengthen(Processor):
             raise
 
         event.addresponse(u"No redirect")
-
-# This Plugin uses code from youtube-dl
-# Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
-# Released under MIT Licence
 
 help['youtube'] = u'Determine the title and a download URL for a Youtube Video'
 class Youtube(Processor):

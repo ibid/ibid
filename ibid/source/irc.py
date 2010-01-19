@@ -1,3 +1,7 @@
+# Copyright (c) 2008-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera,
+#                          Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from fnmatch import fnmatch
 from time import sleep
 import logging

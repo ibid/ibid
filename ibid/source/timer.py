@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from twisted.application import internet
 
 import ibid

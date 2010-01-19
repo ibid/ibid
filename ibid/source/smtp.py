@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import logging
 from datetime import datetime
 from email import message_from_string

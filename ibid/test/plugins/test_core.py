@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Jeremy Thurgood
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from twisted.trial import unittest
 import ibid.test
 

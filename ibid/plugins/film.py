@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Stefano Rivera, JJ Williams
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from urllib2 import urlopen
 from urllib import urlencode
 from time import strptime, strftime

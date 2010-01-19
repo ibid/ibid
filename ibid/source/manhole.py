@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2009, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from twisted.internet import reactor
 from twisted.application import internet
 from twisted.manhole.telnet import ShellFactory

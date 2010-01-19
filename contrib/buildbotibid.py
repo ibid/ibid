@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Russell Cloran
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import re
 from buildbot.interfaces import IEmailLookup, IStatusReceiver
 from buildbot.status import base
