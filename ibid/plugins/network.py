@@ -9,8 +9,11 @@ from urllib import getproxies_environment
 from urlparse import urlparse
 from sys import version_info
 
-from dns.resolver import Resolver, NoAnswer, NXDOMAIN
-from dns.reversename import from_address
+try:
+    from dns.resolver import Resolver, NoAnswer, NXDOMAIN
+    from dns.reversename import from_address
+except ImportError:
+    Resolver = NoAnswer = NXDOMAIN = from_address = None
 
 import ibid
 from ibid.plugins import Processor, match
@@ -27,6 +30,10 @@ class DNS(Processor):
     u"""dns [<record type>] [for] <host> [from <nameserver>]"""
 
     feature = 'dns'
+
+    def setup(self):
+        if Resolver is None:
+            raise Exception("dnspython not installed")
 
     @match(r'^(?:dns|nslookup|dig|host)(?:\s+(a|aaaa|ptr|ns|soa|cname|mx|txt|spf|srv|sshfp|cert))?\s+(?:for\s+)?(\S+?)(?:\s+(?:from\s+|@)\s*(\S+))?$')
     def resolve(self, event, record, host, nameserver):
