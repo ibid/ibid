@@ -11,8 +11,6 @@ from sys import version_info
 
 from dns.resolver import Resolver, NoAnswer, NXDOMAIN
 from dns.reversename import from_address
-from urllib import getproxies_environment
-from urlparse import urlparse
 
 import ibid
 from ibid.plugins import Processor, match
@@ -259,7 +257,7 @@ class HTTP(Processor):
                     u'status': status,
                     u'reason': reason,
                 }
-        except HTTPException, e:
+        except HTTPException:
             up = False
             reason = u'Server is not responding'
 
