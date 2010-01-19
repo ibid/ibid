@@ -277,17 +277,20 @@ class HTTP(Processor):
         return url
 
     def _isitup(self, url):
+        valid_url = self._makeurl(url)
         if Resolver is not None:
             r = Resolver()
-            host = urlparse(url).netloc.split(':')[0]
+            host = urlparse(valid_url).netloc.split(':')[0]
             try:
-                r.query(host)
+                response = r.query(host)
+            except NoAnswer:
+                return False, u'No DNS A/CNAME-records for that domain'
             except NXDOMAIN:
                 return False, u'No such domain'
+
         try:
-            status, reason, data, headers = self._request(self._makeurl(url),
-                                                          'HEAD')
-            if not urlparse(url).netloc and not urlparse('http://' + url).path:
+            status, reason, data, headers = self._request(valid_url, 'HEAD')
+            if not urlparse(url).scheme:
                 up = True # only domain provided: any response = Up
             else:
                 up = status < 400 # url provided: check http status
