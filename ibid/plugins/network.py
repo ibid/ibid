@@ -18,7 +18,8 @@ except ImportError:
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption, FloatOption, DictOption
-from ibid.utils import file_in_path, unicode_output, human_join, url_to_bytestring
+from ibid.utils import file_in_path, unicode_output, human_join, \
+                       url_to_bytestring
 from ibid.utils.html import get_country_codes
 
 help = {}
@@ -35,7 +36,9 @@ class DNS(Processor):
         if Resolver is None:
             raise Exception("dnspython not installed")
 
-    @match(r'^(?:dns|nslookup|dig|host)(?:\s+(a|aaaa|ptr|ns|soa|cname|mx|txt|spf|srv|sshfp|cert))?\s+(?:for\s+)?(\S+?)(?:\s+(?:from\s+|@)\s*(\S+))?$')
+    @match(r'^(?:dns|nslookup|dig|host)'
+           r'(?:\s+(a|aaaa|ptr|ns|soa|cname|mx|txt|spf|srv|sshfp|cert))?\s+'
+           r'(?:for\s+)?(\S+?)(?:\s+(?:from\s+|@)\s*(\S+))?$')
     def resolve(self, event, record, host, nameserver):
         if not record:
             if ipaddr.search(host):
@@ -53,10 +56,11 @@ class DNS(Processor):
         try:
             answers = resolver.query(host, str(record))
         except NoAnswer:
-            event.addresponse(u"I couldn't find any %(type)s records for %(host)s", {
-                'type': record,
-                'host': host,
-            })
+            event.addresponse(
+                u"I couldn't find any %(type)s records for %(host)s", {
+                    'type': record,
+                    'host': host,
+                })
             return
         except NXDOMAIN:
             event.addresponse(u"I couldn't find the domain %s", host)
@@ -94,7 +98,8 @@ class Ping(Processor):
             output = u' '.join(output.splitlines()[-2:])
             event.addresponse(output)
         else:
-            error = unicode_output(error).replace(u'\n', u' ').replace(u'ping:', u'', 1).strip()
+            error = unicode_output(error).replace(u'\n', u' ') \
+                                         .replace(u'ping:', u'', 1).strip()
             event.addresponse(u'Error: %s', error)
 
 help['tracepath'] = u'Traces the path to the given host.'
@@ -135,14 +140,16 @@ class IPCalc(Processor):
             raise Exception("Cannot locate ipcalc executable")
 
     def call_ipcalc(self, parameters):
-        ipcalc = Popen([self.ipcalc, '-n', '-b'] + parameters, stdout=PIPE, stderr=PIPE)
+        ipcalc = Popen([self.ipcalc, '-n', '-b'] + parameters,
+                       stdout=PIPE, stderr=PIPE)
         output, error = ipcalc.communicate()
         code = ipcalc.wait()
         output = unicode_output(output)
 
         return (code, output, error)
 
-    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})'
+           r'(?:(?:/|\s+)((?:\d{1,3}\.){3}\d{1,3}|\d{1,2}))?$')
     def ipcalc_netmask(self, event, address, netmask):
         address = address
         if netmask:
@@ -151,7 +158,8 @@ class IPCalc(Processor):
 
         if code == 0:
             if output.startswith(u'INVALID ADDRESS'):
-                event.addresponse(u"That's an invalid address. Try something like 192.168.1.0/24")
+                event.addresponse(u"That's an invalid address. "
+                                  u"Try something like 192.168.1.0/24")
             else:
                 response = {}
                 for line in output.splitlines():
@@ -164,22 +172,27 @@ class IPCalc(Processor):
                             value, response['class'] = value.split(None, 1)
                         response[name] = value
 
-                event.addresponse(u'Host: %(address)s/%(netmask)s (/%(cidr)s) Wildcard: %(wildcard)s | '
-                    u'Network: %(network)s (%(hostmin)s - %(hostmax)s) Broadcast: %(broadcast)s Hosts: %(hosts/net)s %(class)s',
+                event.addresponse(u'Host: %(address)s/%(netmask)s (/%(cidr)s) '
+                    u'Wildcard: %(wildcard)s | '
+                    u'Network: %(network)s (%(hostmin)s - %(hostmax)s) '
+                    u'Broadcast: %(broadcast)s Hosts: %(hosts/net)s %(class)s',
                     response)
         else:
             error = unicode_output(error.strip())
             event.addresponse(error.replace(u'\n', u' '))
 
-    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})\s*-\s*((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})$')
+    @match(r'^ipcalc\s+((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})\s*-\s*'
+           r'((?:\d{1,3}\.){3}\d{1,3}|(?:0x)?[0-9A-F]{8})$')
     def ipcalc_deggregate(self, event, frm, to):
         code, output, error = self.call_ipcalc([frm, '-', to])
 
         if code == 0:
             if output.startswith(u'INVALID ADDRESS'):
-                event.addresponse(u"That's an invalid address. Try something like 192.168.1.0")
+                event.addresponse(u"That's an invalid address. "
+                                  u"Try something like 192.168.1.0")
             else:
-                event.addresponse(u'Deaggregates to: %s', human_join(output.splitlines()[1:]))
+                event.addresponse(u'Deaggregates to: %s',
+                                  human_join(output.splitlines()[1:]))
         else:
             error = unicode_output(error.strip())
             event.addresponse(error.replace(u'\n', u' '))
@@ -195,14 +208,21 @@ class HTTP(Processor):
     feature = 'http'
     priority = -10
 
-    max_size = IntOption('max_size', 'Only request this many bytes', 500)
-    timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
-    sites = DictOption('sites', 'Mapping of site names to domains', {})
-    max_hops = IntOption('max_hops', 'Maximum hops in get/head when receiving a 30[12]', 3)
-    whensitup_delay = IntOption('whensitup_delay', 'Initial delay between whensitup attempts in seconds', 60)
-    whensitup_factor = FloatOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
-    whensitup_maxdelay = IntOption('whensitup_maxdelay', 'Maximum delay between whensitup attempts in seconds', 30*60)
-    whensitup_maxperiod = FloatOption('whensitup_maxperiod', 'Maximum period after which to stop checking the url for whensitup in hours', 72)
+    max_size = IntOption('max_size', u'Only request this many bytes', 500)
+    timeout = IntOption('timeout',
+            u'Timeout for HTTP connections in seconds', 15)
+    sites = DictOption('sites', u'Mapping of site names to domains', {})
+    max_hops = IntOption('max_hops',
+            u'Maximum hops in get/head when receiving a 30[12]', 3)
+    whensitup_delay = IntOption('whensitup_delay',
+            u'Initial delay between whensitup attempts in seconds', 60)
+    whensitup_factor = FloatOption('whensitup_factor',
+            u'Factor to mutliply subsequent delays by for whensitup', 1.03)
+    whensitup_maxdelay = IntOption('whensitup_maxdelay',
+            u'Maximum delay between whensitup attempts in seconds', 30*60)
+    whensitup_maxperiod = FloatOption('whensitup_maxperiod',
+            u'Maximum period after which to stop checking the url '
+            u'for whensitup in hours', 72)
 
     def _get_header(self, headers, name):
         for header in headers:
@@ -213,18 +233,21 @@ class HTTP(Processor):
     @match(r'^(get|head)\s+(\S+)$')
     def get(self, event, action, url):
         try:
-            status, reason, data, headers = self._request(self._makeurl(url), action.upper())
+            status, reason, data, headers = self._request(self._makeurl(url),
+                                                          action.upper())
             reply = u'%s %s' % (status, reason)
 
             hops = 0
-            while status == 301 or status == 302 and self._get_header(headers, 'location'):
+            while status in (301, 302) and self._get_header(headers,
+                                                            'location'):
                 location = self._get_header(headers, 'location')
                 status, reason, data, headers = self._request(location, 'GET')
                 if hops >= self.max_hops:
                     reply += u' to %s' % location
                     break
                 hops += 1
-                reply += u' to %(location)s, which gets a %(status)d %(reason)s' % {
+                reply += u' to %(location)s, which gets a ' \
+                         u'%(status)d %(reason)s' % {
                     u'location': location,
                     u'status': status,
                     u'reason': reason,
@@ -255,11 +278,12 @@ class HTTP(Processor):
 
     def _isitup(self, url):
         try:
-            status, reason, data, headers = self._request(self._makeurl(url), 'HEAD')
+            status, reason, data, headers = self._request(self._makeurl(url),
+                                                          'HEAD')
             if not urlparse(url).netloc and not urlparse('http://' + url).path:
-                up = True # only domain provided, so since the server responded it is up
+                up = True # only domain provided: any response = Up
             else:
-                up = status < 400 # url provided, so check the status returned
+                up = status < 400 # url provided: check http status
                 reason = u'%(status)d %(reason)s' % {
                     u'status': status,
                     u'reason': reason,
@@ -297,18 +321,22 @@ class HTTP(Processor):
             return
         total_delay += delay
         if total_delay >= self.whensitup_maxperiod * 60 * 60:
-            event.addresponse(u"Sorry, it appears %s is never coming up. I'm not going to check any more.", self._makeurl(url))
+            event.addresponse(u"Sorry, it appears %s is never coming up. "
+                              u"I'm not going to check any more.",
+                              self._makeurl(url))
         delay *= self.whensitup_factor
         delay = max(delay, self.whensitup_maxdelay)
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
 
-    @match(r'^(?:tell\s+me|let\s+me\s+know)\s+when\s+(\S+)\s+is\s+(?:back\s+)?up$')
+    @match(r'^(?:tell\s+me|let\s+me\s+know)\s+when\s+(\S+)\s+'
+           r'is\s+(?:back\s+)?up$')
     def whensitup(self, event, url):
         up, _ = self._isitup(self._makeurl(url))
         if up:
             event.addresponse(u'%s is up right now', self._makeurl(url))
             return
-        ibid.dispatcher.call_later(self.whensitup_delay, self._whensitup, event, url, self.whensitup_delay)
+        ibid.dispatcher.call_later(self.whensitup_delay, self._whensitup,
+                                   event, url, self.whensitup_delay)
         event.addresponse(u"I'll let you know when %s is up", url)
 
     def _request(self, url, method):
@@ -335,18 +363,21 @@ class HTTP(Processor):
             headers['Range'] = 'bytes=0-%s' % self.max_size
 
         try:
-            conn.request(method.upper(), url_to_bytestring(url), headers=headers)
+            conn.request(method.upper(), url_to_bytestring(url),
+                         headers=headers)
             response = conn.getresponse()
             data = response.read(self.max_size)
             conn.close()
         except socket.error, e:
             raise HTTPException(e.message or e.args[1])
 
-        contenttype = response.getheader('Content-Type', 'text/html; charset=utf-8')
+        contenttype = response.getheader('Content-Type',
+                                         'text/html; charset=utf-8')
         match = re.search('charset=([a-zA-Z0-9-]+)', contenttype)
         charset = match and match.group(1) or 'utf-8'
 
-        return response.status, response.reason, data.decode(charset), response.getheaders()
+        return response.status, response.reason, data.decode(charset), \
+               response.getheaders()
 
 help['tld'] = u"Resolve country TLDs (ISO 3166)"
 class TLD(Processor):
