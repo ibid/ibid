@@ -109,6 +109,25 @@ Web Service Functions
          'http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm',
          'lookup/iso-3166-1_decoding_table.htm')
 
+.. function:: json_webservice(url, params={}, headers={})
+
+   Request *url*, with optional parameters *params* and headers
+   *headers*, and parse as JSON.
+
+   :exc:`JSONException` will be raised if the returned data isn't valid
+   JSON.
+
+.. exception:: JSONException(Exception)
+
+   Raised by :func:`json_webservice` if invalid JSON is returned.
+
+:mod:`ibid.utils.html` -- HTML Parsing
+--------------------------------------
+
+.. module:: ibid.utils.html
+   :synopsis: HTML Parsing helper functions for plugins
+.. moduleauthor:: Ibid Core Developers
+
 .. function:: get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup)
 
    Request *url*, and return a parse-tree of type *treetype*.
@@ -120,23 +139,8 @@ Web Service Functions
    :exc:`ContentTypeException` will be raised if the returned data isn't
    HTML.
 
-.. function:: json_webservice(url, params={}, headers={})
-
-   Request *url*, with optional parameters *params* and headers
-   *headers*, and parse as JSON.
-
-   :exc:`JSONException` will be raised if the returned data isn't valid
-   JSON.
-
-Exceptions
-----------
-
 .. exception:: ContentTypeException(Exception)
 
    Raised by :func:`get_html_parse_tree` if the content type isn't HTML.
-
-.. exception:: JSONException(Exception)
-
-   Raised by :func:`json_webservice` if invalid JSON is returned.
 
 .. vi: set et sta sw=3 ts=3:
