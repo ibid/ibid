@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Jonathan Groll
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from datetime import datetime
 from httplib import BadStatusLine
 from urllib import urlencode

@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Jonathan Hitchcock
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from __future__ import division
 from random import random, randint
 

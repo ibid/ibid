@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Neil Blakey-Milner
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 """
 Configuration:
 

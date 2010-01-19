@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from sqlalchemy.types import TypeDecorator, Integer, DateTime, Boolean, \
                              Unicode as _Unicode, UnicodeText as _UnicodeText
 

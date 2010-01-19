@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from httplib import BadStatusLine
 from urllib import quote
 from urllib2 import urlopen, Request

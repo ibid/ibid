@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from unicodedata import normalize
 from random import choice, random
 import re

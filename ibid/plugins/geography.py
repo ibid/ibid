@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from math import acos, sin, cos, radians
 from urllib import quote
 from urlparse import urljoin

@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from copy import copy
 from datetime import timedelta
 from inspect import getargspec, getmembers, ismethod

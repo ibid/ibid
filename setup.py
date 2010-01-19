@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright (c) 2008-2010 Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from sys import version_info, argv
 
