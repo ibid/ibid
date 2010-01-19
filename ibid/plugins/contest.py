@@ -1,3 +1,6 @@
+# Copyright (c) 2010, Marco Gallotta
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import re
 from urllib2 import HTTPError
 
