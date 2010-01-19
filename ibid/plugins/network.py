@@ -190,6 +190,7 @@ class HTTP(Processor):
     max_size = IntOption('max_size', 'Only request this many bytes', 500)
     timeout = IntOption('timeout', 'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', 'Mapping of site names to domains', {})
+    max_hops = IntOption('max_hops', 'Maximum hops in get/head when receiving a 30[12]', 3)
     whensitup_delay = IntOption('whensitup_delay', 'Initial delay between whensitup attemtps in seconds', 60)
     whensitup_factor = FloatOption('whensitup_factor', 'Factor to mutliply subsequent delays by for whensitup', 1.03)
     whensitup_maxdelay = IntOption('whensitup_maxdelay', 'Maximum delay between whensitup attempts in seconds', 30*60)
@@ -207,11 +208,23 @@ class HTTP(Processor):
             status, reason, data, headers = self._request(self._makeurl(url), action.upper())
             reply = u'%s %s' % (status, reason)
 
-            if status == 301 or status == 302 and self._get_header(headers, 'location'):
-                reply += u' to %s' % self._get_header(headers, 'location')
+            hops = 0
+            while status == 301 or status == 302 and self._get_header(headers, 'location'):
+                location = self._get_header(headers, 'location')
+                status, reason, data, headers = self._request(location, 'GET')
+                if hops >= self.max_hops:
+                    reply += u' to %s' % location
+                    break
+                hops += 1
+                reply += u' to %(location)s, which gets a %(status)d %(reason)s' % {
+                    u'location': location,
+                    u'status': status,
+                    u'reason': reason,
+                }
 
             if action.upper() == 'GET':
                 match = title.search(data)
+                print data
                 if match:
                     reply += u' "%s"' % match.groups()[0].strip()
 
