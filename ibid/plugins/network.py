@@ -290,10 +290,10 @@ class HTTP(Processor):
 
         try:
             status, reason, data, headers = self._request(valid_url, 'HEAD')
-            # If the URL is only a hostname, we consider any response to mean up
-            # Full URLs are checked for a sensible response code
+            # If the URL is only a hostname, we consider 400 series errors to
+            # mean up. Full URLs are checked for a sensible response code
             if url == urlparse(url).path and '/' not in url:
-                up = True
+                up = status < 500
             else:
                 up = status < 400
                 reason = u'%(status)d %(reason)s' % {
