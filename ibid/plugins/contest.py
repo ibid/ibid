@@ -176,6 +176,10 @@ class Usaco(Processor):
     def usaco_account(self, event, user, password):
         self._redact(event, password)
 
+        if event.public:
+            event.addresponse(u"Giving your password in public is bad! Please tell me that again in a private message.")
+            return
+
         if not self._check_login(user, password):
             event.addresponse(u'Sorry, that account is invalid')
             return
