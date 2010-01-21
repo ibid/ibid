@@ -2,14 +2,14 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import re
-from urllib2 import HTTPError
+from urllib2 import HTTPError, URLError
 
 from urllib import urlencode
 
 from ibid.config import Option
 from ibid.db import eagerload
 from ibid.db.models import Account, Attribute, Identity
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, auth_responses
 from ibid.utils import cacheable_download
 from ibid.utils.html import get_html_parse_tree
 
@@ -25,7 +25,7 @@ class UsacoException(Exception):
 class Usaco(Processor):
     """usaco <section|division> for <user>
     usaco <contest> results [for <name|user>]
-    i am <usaco_username> on usaco password <usaco_password>"""
+    (i am|<user> is) <usaco_username> on usaco [password <usaco_password>]"""
 
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
@@ -172,20 +172,34 @@ class Usaco(Processor):
         for type in ['raw', 'deaddressed', 'clean', 'stripped']:
             event['message'][type] = re.sub(r'(.*)(%s)' % re.escape(term), r'\1[redacted]', event['message'][type])
 
-    @match(r'^i\s+am\s+(\S+)\s+on\s+usaco\s+password\s+(\S+)$')
-    def usaco_account(self, event, user, password):
-        self._redact(event, password)
+    @match(r'^(\S+)\s+(?:is|am)\s+(\S+)\s+on\s+usaco(?:\s+password\s+(\S+))?$')
+    def usaco_account(self, event, user, usaco_user, password):
+        if password:
+            self._redact(event, password)
 
-        if event.public:
+        if event.public and password:
             event.addresponse(u"Giving your password in public is bad! Please tell me that again in a private message.")
             return
 
-        if not self._check_login(user, password):
-            event.addresponse(u'Sorry, that account is invalid')
-            return
         if not event.account:
             event.addresponse(u'Sorry, you need to create an account first')
             return
+        admin = auth_responses(event, u'usacoadmin')
+        if user.lower() == 'i':
+            if password is None and not admin:
+                event.addresponse(u'Sorry, I need your USACO password to verify your account')
+            if password and not self._check_login(user, password):
+                event.addresponse(u'Sorry, that account is invalid')
+                return
+            account = event.session.query(Account).get(event.account)
+        else:
+            if not admin:
+                event.addresponse(event.complain)
+                return
+            account = event.session.query(Account).filter_by(username=user).first()
+            if account is None:
+                event.addresponse(u"I don't know who %s is", user)
+                return
 
         try:
             monitor_url = self._get_monitor_url()
@@ -193,14 +207,17 @@ class Usaco(Processor):
             event.addresponse(e)
             return
 
-        self._add_user(monitor_url, user)
+        try:
+            self._add_user(monitor_url, usaco_user)
+        except UsacoException, e:
+            event.addresponse(e)
+            return
 
-        account = event.session.query(Account).get(event.account)
         usaco_account = [attr for attr in account.attributes if attr.name == u'usaco_account']
         if usaco_account:
-            usaco_account[0].value = user
+            usaco_account[0].value = usaco_user
         else:
-            account.attributes.append(Attribute('usaco_account', user))
+            account.attributes.append(Attribute('usaco_account', usaco_user))
         event.session.save_or_update(account)
         event.session.commit()
 
@@ -216,7 +233,7 @@ class Usaco(Processor):
 
         url = u'http://ace.delos.com/%sresults' % contest.upper()
         try:
-            filename = cacheable_download(url, u'usaco/results_%s' % contest.upper(), timeout=10)
+            filename = cacheable_download(url, u'usaco/results_%s' % contest.upper(), timeout=30)
         except HTTPError:
             event.addresponse(u"Sorry, the results for %s aren't released yet", contest)
         except URLError:
