@@ -11,7 +11,7 @@ from html5lib import HTMLParser, treebuilders
 from BeautifulSoup import BeautifulSoup
 
 from ibid.compat import ElementTree
-from ibid.utils import url_to_bytestring
+from ibid.utils import cacheable_download, url_to_bytestring
 
 class ContentTypeException(Exception):
     pass
