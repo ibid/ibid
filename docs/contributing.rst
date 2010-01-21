@@ -20,7 +20,7 @@ that caused the bug, and any logging information / exceptions from
 Submitting Patches
 ------------------
 
-.. highlight:: console
+.. highlight:: text
 
 Want to go one step further, and fix your bug or add a new feature.
 We welcome contributions from everyone.

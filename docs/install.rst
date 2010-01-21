@@ -96,7 +96,7 @@ running ``ibid-setup``.
 MySQL
 ^^^^^
 
-.. highlight:: console
+.. highlight:: text
 
 Install MySQL. On Debian/Ubuntu::
 

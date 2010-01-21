@@ -10,7 +10,7 @@ Getting Started
 Install an Ibid
 ^^^^^^^^^^^^^^^
 
-.. highlight:: console
+.. highlight:: text
 
 Before we can write a plugin, we need a working base Ibid install.
 There are :ref:`better instructions <installation>` for a more permanent
@@ -162,7 +162,7 @@ returned to the user.
 Test it out, anything you say to the bot should provoke a "Hello World!"
 response:
 
-.. code-block:: console
+.. code-block:: text
 
    user@box ~/ibid $ scripts/ibid-plugin tutorial
    ... Messages about loading plugins
