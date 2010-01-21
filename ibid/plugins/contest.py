@@ -195,7 +195,7 @@ class Usaco(Processor):
             return
 
         if not event.account:
-            event.addresponse(u'Sorry, you need to create an account first')
+            event.addresponse(u'Sorry, you need to create an account with me first (type "usage accounts" to see how)')
             return
         admin = auth_responses(event, u'usacoadmin')
         if user.lower() == 'i':
