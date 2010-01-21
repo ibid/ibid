@@ -51,6 +51,7 @@ Python Libraries:
 * `SQLAlchemy <http://www.sqlalchemy.org/>`_ 0.5 preferred, 0.4 compatible.
 * `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ (configuration)
 * `python-dateutil <http://labix.org/python-dateutil>`_
+* `SOAPpy <http://pywebsvcs.sourceforge.net/>`_ [#soappy-install]_
 
 Many core plugins require the following Web scraping & parsing libraries:
 
@@ -61,7 +62,6 @@ Many core plugins require the following Web scraping & parsing libraries:
 
 Web source and web services:
 
-* `SOAPpy <http://pywebsvcs.sourceforge.net/>`_
 * `Jinja <http://jinja.pocoo.org/>`_
 
 Other sources:
@@ -334,5 +334,8 @@ Runi your bot::
 .. [#db-required] If you don't need user-accounts (and many other features),
    the database code could be removed.
    It'd probably be quite a bit of work, though.
+
+.. [#soappy-install] SOAPpy can be hard to install, so we have debian
+   packages and eggs to help. ``setup.py`` knows where to look.
 
 .. vi: set et sta sw=3 ts=3:
