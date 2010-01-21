@@ -212,9 +212,11 @@ class Usaco(Processor):
 
         url = u'http://ace.delos.com/%sresults' % contest.upper()
         try:
-            filename = cacheable_download(url, u'usaco/results_%s' % contest.upper())
+            filename = cacheable_download(url, u'usaco/results_%s' % contest.upper(), timeout=10)
         except HTTPError:
             event.addresponse(u"Sorry, the results for %s aren't released yet", contest)
+        except URLError:
+            event.addresponse(u"Sorry, I couldn't fetch the USACO results. Maybe USACO is down?")
 
         if user is not None:
             users = {usaco_user: user.lower()}
