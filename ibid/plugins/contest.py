@@ -24,7 +24,7 @@ class UsacoException(Exception):
 
 class Usaco(Processor):
     """usaco <section|division> for <user>
-    usaco <contest> results [for <user>]
+    usaco <contest> results [for <name|user>]
     i am <usaco_username> on usaco password <usaco_password>"""
 
     admin_user = Option('admin_user', 'Admin user on USACO', None)
@@ -34,7 +34,7 @@ class Usaco(Processor):
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20
-    autoload = False
+#    autoload = False
 
     def _login(self, user, password):
         params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
@@ -202,14 +202,13 @@ class Usaco(Processor):
 
         event.addresponse(u'Done')
 
-    @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(\S+))?$')
+    @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(.+))?$')
     def usaco_results(self, event, contest, user):
         if user is not None:
             try:
                 usaco_user = self._get_usaco_user(event, user)
             except UsacoException, e:
-                event.addresponse(e)
-                return
+                usaco_user = user
 
         url = u'http://ace.delos.com/%sresults' % contest.upper()
         try:
@@ -218,7 +217,7 @@ class Usaco(Processor):
             event.addresponse(u"Sorry, the results for %s aren't released yet", contest)
 
         if user is not None:
-            users = {usaco_user: user}
+            users = {usaco_user: user.lower()}
         else:
             users = self._get_usaco_users(event)
 
@@ -226,6 +225,7 @@ class Usaco(Processor):
         divisions = [u'gold', u'silver', u'bronze']
         results = [[], [], []]
         division = None
+        found = False
         for line in text.splitlines():
             for index, d in enumerate(divisions):
                 if d in line.lower():
@@ -240,20 +240,43 @@ class Usaco(Processor):
                 usaco_user = matches.group(4)
                 scores = matches.group(5)
                 total = matches.group(6)
-                if usaco_user in users.keys():
+                match = False
+                if usaco_user.lower() in users.keys():
+                    match = True
+                elif user is not None and name.lower() == user.lower():
+                    match = True
+                    users[usaco_user] = user
+                if match:
                     results[division].append((year, country, name, usaco_user, scores, total))
+                    found = True
 
         response = []
         for i, division in enumerate(divisions):
             if results[i]:
                 response.append(u'%s division results:' % division.title())
             for result in results[i]:
-                response.append(u'%(user)s (%(usaco_user)s on USACO) scored %(total)s (%(scores)s)' % {
-                    u'user': users[result[3]],
-                    u'usaco_user': result[3],
+                user_string = users[result[3]]
+                if users[result[3]] != result[3]:
+                    user_string = u'%(user)s (%(usaco_user)s on USACO)' % {
+                        u'user': users[result[3]],
+                        u'usaco_user': result[3],
+                    }
+                response.append(u'%(user)s scored %(total)s (%(scores)s)' % {
+                    u'user': user_string,
                     u'total': result[5],
                     u'scores': result[4],
                 })
+
+        if not found:
+            if user is not None:
+                event.addresponse(u'%(user)s did not compete in %(contest)s', {
+                    u'user': user,
+                    u'contest': contest,
+                })
+            else:
+                event.addresponse(u"Sorry, I don't know anyone that entered %s", contest)
+            return
+
         event.addresponse(u'\n'.join(response), conflate=False)
 
 # vi: set et sta sw=4 ts=4:
