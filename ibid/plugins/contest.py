@@ -270,7 +270,7 @@ class Usaco(Processor):
         divisions = [u'gold', u'silver', u'bronze']
         results = [[], [], []]
         division = None
-        found = False
+        count = 0
         for line in text.splitlines():
             for index, d in enumerate(divisions):
                 if d in line.lower():
@@ -293,11 +293,11 @@ class Usaco(Processor):
                     users[usaco_user] = user
                 if match:
                     results[division].append((year, country, name, usaco_user, scores, total))
-                    found = True
+                    count += 1
 
         response = []
         for i, division in enumerate(divisions):
-            if results[i]:
+            if results[i] and count > 1:
                 response.append(u'%s division results:' % division.title())
             for result in results[i]:
                 user_string = users[result[3]]
@@ -306,13 +306,18 @@ class Usaco(Processor):
                         u'user': users[result[3]],
                         u'usaco_user': result[3],
                     }
-                response.append(u'%(user)s scored %(total)s (%(scores)s)' % {
+                if count <= 1:
+                    division_string = u' in the %s division' % division.title()
+                else:
+                    division_string = u''
+                response.append(u'%(user)s scored %(total)s%(division)s (%(scores)s)' % {
                     u'user': user_string,
                     u'total': result[5],
                     u'scores': result[4],
+                    u'division': division_string
                 })
 
-        if not found:
+        if count == 0:
             if user is not None:
                 event.addresponse(u'%(user)s did not compete in %(contest)s', {
                     u'user': user,
