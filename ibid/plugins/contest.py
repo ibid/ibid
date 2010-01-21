@@ -127,16 +127,15 @@ class Usaco(Processor):
         return usaco_account[0]
 
     def _get_usaco_users(self, event):
-        accounts = event.session.query(Identity) \
-            .join(['account', 'attributes']) \
+        accounts = event.session.query(Account) \
+            .join(['attributes']) \
             .add_entity(Attribute) \
             .filter(Attribute.name == u'usaco_account') \
-            .filter(Identity.source == event.source) \
             .all()
 
         users = {}
         for a in accounts:
-            users[a[1].value] = a[0].identity
+            users[a[1].value] = a[0].username
         return users
 
     @match(r'^usaco\s+section\s+(?:for\s+)?(.+)$')
@@ -239,6 +238,7 @@ class Usaco(Processor):
 
     @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(.+))?$')
     def usaco_results(self, event, contest, user):
+        self._get_usaco_users(event) # TODO remove
         if user is not None:
             try:
                 usaco_user = self._get_usaco_user(event, user)
@@ -261,6 +261,7 @@ class Usaco(Processor):
         else:
             try:
                 users = self._get_usaco_users(event)
+                print users
             except UsacoException, e:
                 event.addresponse(e)
                 return
