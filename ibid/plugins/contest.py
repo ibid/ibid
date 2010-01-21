@@ -38,7 +38,10 @@ class Usaco(Processor):
 
     def _login(self, user, password):
         params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
-        etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
+        try:
+            etree = get_html_parse_tree(u'http://ace.delos.com/usacogate', data=params, treetype=u'etree')
+        except URLError:
+            raise UsacoException(u'Sorry, USACO (or my connection?) is down')
         for font in etree.getiterator(u'font'):
             if font.text and u'Please try again' in font.text:
                 return None
@@ -48,7 +51,10 @@ class Usaco(Processor):
         return self._login(user, password) is not None
 
     def _get_section(self, monitor_url, usaco_user, user):
-        etree = get_html_parse_tree(monitor_url, treetype=u'etree')
+        try:
+            etree = get_html_parse_tree(monitor_url, treetype=u'etree')
+        except URLError:
+            raise UsacoException(u'Sorry, USACO (or my connection?) is down')
         usaco_user = usaco_user.lower()
         header = True
         for tr in etree.getiterator(u'tr'):
@@ -74,7 +80,10 @@ class Usaco(Processor):
         auth = matches.group(1)
         params = urlencode({'STUDENTID': user.encode('utf-8'), 'ADD': 'ADD STUDENT',
             'a': auth.encode('utf-8'), 'monitor': '1'})
-        etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
+        try:
+            etree = get_html_parse_tree(monitor_url, treetype=u'etree', data=params)
+        except URLError:
+            raise UsacoException(u'Sorry, USACO (or my connection?) is down')
         for font in etree.getiterator(u'font'):
             if font.text and u'No STATUS file for' in font.text:
                 raise UsacoException(u'Sorry, user %s not found' % user)
@@ -83,7 +92,10 @@ class Usaco(Processor):
         if self.admin_user is None or self.admin_password is None:
             raise UsacoException(u'Sorry, you need to configure a USACO admin account')
             return
-        etree = self._login(self.admin_user, self.admin_password)
+        try:
+            etree = self._login(self.admin_user, self.admin_password)
+        except URLError:
+            raise UsacoException(u'Sorry, USACO (or my connection?) is down')
         if etree is None:
             raise UsacoException(u'Sorry, the configured USACO admin account is invalid')
 
@@ -132,22 +144,21 @@ class Usaco(Processor):
         try:
             usaco_user = self._get_usaco_user(event, user)
             monitor_url = self._get_monitor_url()
+            section = self._get_section(monitor_url, usaco_user, user)
         except UsacoException, e:
             event.addresponse(e)
             return
 
-        section = self._get_section(monitor_url, usaco_user, user)
         if section:
             event.addresponse(section)
             return
 
         try:
             self._add_user(monitor_url, user)
+            event.addresponse(self._get_section(monitor_url, usaco_user, user))
         except UsacoException, e:
             event.addresponse(e)
             return
-
-        event.addresponse(self._get_section(monitor_url, usaco_user, user))
 
     @match(r'^usaco\s+division\s+(?:for\s+)?(.+)$')
     def get_division(self, event, user):
@@ -158,7 +169,10 @@ class Usaco(Processor):
             return
 
         params = urlencode({'id': usaco_user.encode('utf-8'), 'search': 'SEARCH'})
-        etree = get_html_parse_tree(u'http://ace.delos.com/showdiv', data=params, treetype=u'etree')
+        try:
+            etree = get_html_parse_tree(u'http://ace.delos.com/showdiv', data=params, treetype=u'etree')
+        except URLError:
+            event.addresponse(u'Sorry, USACO (or my connection?) is down')
         division = [b.text for b in etree.getiterator(u'b') if b.text and usaco_user in b.text][0]
         if division.find(u'would compete') != -1:
             event.addresponse(u'%(user)s (%(usaco_user)s on USACO) has not competed in a USACO before',
@@ -229,6 +243,9 @@ class Usaco(Processor):
             try:
                 usaco_user = self._get_usaco_user(event, user)
             except UsacoException, e:
+                if 'down' in e.msg:
+                    event.addresponse(e)
+                    return
                 usaco_user = user
 
         url = u'http://ace.delos.com/%sresults' % contest.upper()
@@ -242,7 +259,11 @@ class Usaco(Processor):
         if user is not None:
             users = {usaco_user: user.lower()}
         else:
-            users = self._get_usaco_users(event)
+            try:
+                users = self._get_usaco_users(event)
+            except UsacoException, e:
+                event.addresponse(e)
+                return
 
         text = open(filename, 'r').read().decode('ISO-8859-2')
         divisions = [u'gold', u'silver', u'bronze']
