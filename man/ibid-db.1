@@ -1,11 +1,11 @@
 .\" Copyright (c) 2010, Stefano Rivera
 .\" Released under terms of the MIT/X/Expat Licence. See COPYING for details.
-.TH IBID-DB "1" "January 2010" "ibid-db 0.0" "User Commands"
+.TH IBID-DB "1" "January 2010" "Ibid 0.0" "Multi-protocol Chat Bot"
 .SH NAME
-ibid-db \- Database management utilitiy for Ibid (chat bot)
+ibid-db \- Database management utilitiy for Ibid (the multi-protocol chat bot)
 .SH SYNOPSIS
 .B ibid-db command
-[\fIoptions\fR...]
+.RI [ options ...]
 .SH DESCRIPTION
 This utility is for offline management of your Ibid bot's database.
 Used for import, export, and upgrades.
@@ -14,26 +14,28 @@ The export format is DBMS-agnostic and can be used to migrate between different
 databases.
 .SH COMMANDS
 .TP
-\fB\-e\fR FILE, \fB\-\-export\fR=\fIFILE\fR
-Export DB contents to FILE.
+\fB\-e\fR \fIFILE\fR, \fB\-\-export\fR=\fIFILE\fR
+Export DB contents to \fIFILE\fR.
 Export format is JSON.
 .IP
-FILE can be \- for stdin/stdout or can end in .gz for automatic Gzip
-compression.
+FILE can be \fB\-\fR for stdin/stdout or can end in \fB.gz\fR for automatic
+Gzip compression.
 .TP
-\fB\-i\fR FILE, \fB\-\-import\fR=\fIFILE\fR
-Import DB contents from FILE as exported by this utility.
+\fB\-i\fR \fIFILE\fR, \fB\-\-import\fR=\fIFILE\fR
+Import DB contents from \fIFILE\fR as exported by this utility.
 .IP
-FILE can be \- for stdin/stdout or can end in .gz for automatic Gzip
-compression.
+FILE can be \fB\-\fR for stdin/stdout or can end in \fB.gz\fR for automatic
+Gzip compression.
 .IP
-\fBNote: \fRThe DB must be empty first.
+.B Note:
+The DB must be empty first.
 .TP
 \fB\-u\fR, \fB\-\-upgrade\fR
 Upgrade DB schema to the latest version.
 You need to run this after upgrading your bot.
 .IP
-\fBNote: \fRYou should backup first.
+.B Note:
+You should backup first.
 .SH OPTIONS
 .TP
 \fB\-\-version\fR
@@ -46,7 +48,7 @@ show this help message and exit
 Turn on debugging output to STDERR.
 .SH FILES
 .TP
-\fIibid.ini\fR
+.I ibid.ini
 Locates the database to act upon by looking for the \fB[databases].ibid\fR value
 in the bot configuration file in the current directory.
 .SH SEE ALSO
