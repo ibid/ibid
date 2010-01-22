@@ -59,7 +59,7 @@ setup(
         'scripts/ibid-setup',
         'scripts/ibid-factpack',
         'scripts/ibid_pb',
-        'scripts/ibid_import',
+        'scripts/ibid-knab-import',
         'scripts/ibid.tac',
     ],
 
