@@ -58,7 +58,7 @@ setup(
         'scripts/ibid-plugin',
         'scripts/ibid-setup',
         'scripts/ibid-factpack',
-        'scripts/ibid_pb',
+        'scripts/ibid-pb-client',
         'scripts/ibid-knab-import',
         'scripts/ibid.tac',
     ],
