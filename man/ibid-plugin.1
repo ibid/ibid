@@ -37,6 +37,18 @@ Show a help message and exit.
 .I ibid.ini
 Locates the database to act upon by looking for the \fB[databases].ibid\fR value
 in the bot configuration file in the current directory.
+.SH BUGS
+\fBibid-plugin\fR doesn't emulate a complete Ibid environment, and will
+ignore all of the following:
+.TP
+*
+Delayed and periodically executed functions.
+.TP
+*
+Messages to alternate sources.
+.TP
+*
+Messages directly dispatched, rather than added to responses.
 .SH SEE ALSO
 ibid(1),
 ibid.ini(5),
