@@ -13,7 +13,7 @@ path.insert(0, '.')
 
 from ibid.compat import json
 
-parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <parameters>')
+parser = OptionParser(usage='%prog [options] message <message> | plugin <feature> <method> <parameters>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
 parser.add_option('-p', '--port', help='Port number of Ibid instance')
 
