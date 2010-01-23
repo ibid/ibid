@@ -1,9 +1,10 @@
+# Copyright (c) 2010, Jeremy Thurgood
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 from datetime import datetime, timedelta
 
 from twisted.trial import unittest
 from twisted.internet import defer, reactor
 
-import ibid.test
 import ibid
 from ibid import core, event
 
@@ -121,12 +122,12 @@ class TestDispatcher(unittest.TestCase):
         "A processor can add a reply."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
+            e.addresponse(u'foo')
         self._add_processor(prc)
         pev = self.dispatcher._process(ev)
         self.assertEqual(ev, pev)
         self.assertTrue('complain' not in pev)
-        self.assertEqual([{'reply': 'foo',
+        self.assertEqual([{'reply': u'foo',
                            'target': None,
                            'source': 'fakesource',
                            'address': True,
@@ -137,12 +138,12 @@ class TestDispatcher(unittest.TestCase):
         "A processor can add a reply."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
+            e.addresponse(u'foo')
         self._add_processor(prc)
         def _cb(_ev, _self):
             _self.assertEqual(ev, _ev)
             _self.assertTrue('complain' not in _ev)
-            _self.assertEqual([{'reply': 'foo',
+            _self.assertEqual([{'reply': u'foo',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
@@ -179,18 +180,18 @@ class TestDispatcher(unittest.TestCase):
         "We can add multiple replies to an event."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar')
         self._add_processor(prc)
         pev = self.dispatcher._process(ev)
         self.assertEqual(ev, pev)
         self.assertTrue('complain' not in pev)
-        self.assertEqual([{'reply': 'foo',
+        self.assertEqual([{'reply': u'foo',
                            'target': None,
                            'source': 'fakesource',
                            'address': True,
                            'conflate': True},
-                          {'reply': 'bar',
+                          {'reply': u'bar',
                            'target': None,
                            'source': 'fakesource',
                            'address': True,
@@ -201,18 +202,18 @@ class TestDispatcher(unittest.TestCase):
         "We can add multiple replies to an event."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar')
         self._add_processor(prc)
         def _cb(_ev, _self):
             _self.assertEqual(ev, _ev)
             _self.assertTrue('complain' not in _ev)
-            _self.assertEqual([{'reply': 'foo',
+            _self.assertEqual([{'reply': u'foo',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
                                 'conflate': True},
-                               {'reply': 'bar',
+                               {'reply': u'bar',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
@@ -224,13 +225,13 @@ class TestDispatcher(unittest.TestCase):
         "Messages to invalid sources get silently swallowed."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar', source='testsource')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar', source='testsource')
         self._add_processor(prc)
         pev = self.dispatcher._process(ev)
         self.assertEqual(ev, pev)
         self.assertTrue('complain' not in pev)
-        self.assertEqual([{'reply': 'foo',
+        self.assertEqual([{'reply': u'foo',
                            'target': None,
                            'source': 'fakesource',
                            'address': True,
@@ -241,13 +242,13 @@ class TestDispatcher(unittest.TestCase):
         "Messages to invalid sources get silently swallowed."
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar', source='testsource')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar', source='testsource')
         self._add_processor(prc)
         def _cb(_ev, _self):
             _self.assertEqual(ev, _ev)
             _self.assertTrue('complain' not in _ev)
-            _self.assertEqual([{'reply': 'foo',
+            _self.assertEqual([{'reply': u'foo',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
@@ -261,20 +262,20 @@ class TestDispatcher(unittest.TestCase):
         ibid.sources['testsource'] = src
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar', source='testsource')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar', source='testsource')
         self._add_processor(prc)
         pev = self.dispatcher._process(ev)
         self.assertEqual(ev, pev)
         self.assertTrue('complain' not in pev)
-        self.assertEqual([{'reply': 'foo',
+        self.assertEqual([{'reply': u'foo',
                            'target': None,
                            'source': 'fakesource',
                            'address': True,
                            'conflate': True}], pev.responses)
         self.assertEqual(True, pev.processed)
         def _cb(_src, _self):
-            _self.assertEqual([{'reply': 'bar',
+            _self.assertEqual([{'reply': u'bar',
                                 'target': None,
                                 'source': 'testsource',
                                 'address': True,
@@ -287,19 +288,19 @@ class TestDispatcher(unittest.TestCase):
         ibid.sources['testsource'] = src
         ev = self._ev()
         def prc(e):
-            e.addresponse('foo')
-            e.addresponse('bar', source='testsource')
+            e.addresponse(u'foo')
+            e.addresponse(u'bar', source='testsource')
         self._add_processor(prc)
         def _cb(_ev, _self):
             _self.assertEqual(ev, _ev)
             _self.assertTrue('complain' not in _ev)
-            _self.assertEqual([{'reply': 'foo',
+            _self.assertEqual([{'reply': u'foo',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
                                 'conflate': True}], _ev.responses)
             _self.assertEqual(True, _ev.processed)
-            _self.assertEqual([{'reply': 'bar',
+            _self.assertEqual([{'reply': u'bar',
                                 'target': None,
                                 'source': 'testsource',
                                 'address': True,
@@ -370,11 +371,11 @@ class TestDispatcher(unittest.TestCase):
         dfr = defer.Deferred()
         tm = datetime.now()
         def _cl(_ev):
-            _ev.addresponse('This happens later.', source='testsource')
+            _ev.addresponse(u'This happens later.', source='testsource')
             _defer_cb(dfr, _ev)
         def _cb(_ev, _self, _src):
             _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
-            _self.assertEqual([{'reply': 'This happens later.',
+            _self.assertEqual([{'reply': u'This happens later.',
                                 'target': None,
                                 'source': 'testsource',
                                 'address': True,
@@ -394,19 +395,19 @@ class TestDispatcher(unittest.TestCase):
         dfr = defer.Deferred()
         tm = datetime.now()
         def _cl(_ev):
-            _ev.addresponse('This happens later.')
-            _ev.addresponse('So does this.', source='testsource')
+            _ev.addresponse(u'This happens later.')
+            _ev.addresponse(u'So does this.', source='testsource')
             _defer_cb(dfr, _ev)
         def _cb(_ev, _self, _src):
             _self.assertTrue(tm + timedelta(seconds=0.01) < datetime.now())
             # Order is reversed because 'fakesource' waits until
             # processing is finished.
-            _self.assertEqual([{'reply': 'So does this.',
+            _self.assertEqual([{'reply': u'So does this.',
                                 'target': None,
                                 'source': 'testsource',
                                 'address': True,
                                 'conflate': True},
-                               {'reply': 'This happens later.',
+                               {'reply': u'This happens later.',
                                 'target': None,
                                 'source': 'fakesource',
                                 'address': True,
