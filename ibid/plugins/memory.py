@@ -1,9 +1,11 @@
+# Copyright (c) 2009-2010, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import csv
 from datetime import datetime, timedelta
 import gc
 import gzip
 import os
-import os.path
 
 import objgraph
 

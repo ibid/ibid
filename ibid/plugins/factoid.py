@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from datetime import datetime
 import logging
 from random import choice
@@ -15,7 +18,7 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
 
-help = {'factoids': u'Factoids are arbitrary pieces of information stored by a key. '
+help = {'factoid': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
                     u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 
@@ -257,7 +260,7 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
 
 class Utils(Processor):
     u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
-    feature = 'factoids'
+    feature = 'factoid'
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     def literal(self, event, name, number, pattern, is_regex):
@@ -272,7 +275,7 @@ class Utils(Processor):
 class Forget(Processor):
     u"""forget <name> [( #<number> | /<pattern>/[r] )]
     <name> is the same as <other name>"""
-    feature = 'factoids'
+    feature = 'factoid'
 
     priority = 10
     permission = u'factoid'
@@ -368,7 +371,7 @@ class Forget(Processor):
 
 class Search(Processor):
     u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
-    feature = 'factoids'
+    feature = 'factoid'
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
     default = IntOption('search_default', u'Default number of results to return', 10)
@@ -443,7 +446,7 @@ def _interpolate(message, event):
 
 class Get(Processor, RPC):
     u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
-    feature = 'factoids'
+    feature = 'factoid'
 
     priority = 200
 
@@ -497,7 +500,7 @@ class Set(Processor):
     <name> (<verb>|=<verb>=) [also] <value>
     last set factoid
     """
-    feature = 'factoids'
+    feature = 'factoid'
 
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
@@ -575,7 +578,7 @@ class Set(Processor):
 class Modify(Processor):
     u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
     <name> [( #<number> | /<pattern>/[r] )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
-    feature = 'factoids'
+    feature = 'factoid'
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)

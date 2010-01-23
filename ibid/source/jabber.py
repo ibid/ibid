@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import logging
 
 from wokkel import client, xmppim, subprotocols
@@ -167,7 +170,10 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
     rooms = ListOption('rooms', 'Chatrooms to autojoin', [])
-    accept_domains = Option('accept_domains', 'Only accept messages from these domains')
+    accept_domains = ListOption('accept_domains',
+            'Only accept messages from these domains', [])
+    max_public_message_length = IntOption('max_public_message_length',
+            'Maximum length of public messages', 512)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
@@ -211,5 +217,10 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
     def logging_name(self, identity):
         return identity.split('/')[0]
+
+    def truncation_point(self, response, event=None):
+        if response.get('target', None) in self.proto.rooms:
+            return self.max_public_message_length
+        return None
 
 # vi: set et sta sw=4 ts=4:

@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Jonathan Hitchcock, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from cgi import parse_qs
 import inspect
 import re
@@ -180,6 +183,8 @@ class Reloader(object):
             noload = List of plugins / plugin.Processors to skip automatically loading
             autoload = (Boolean) Load all plugins by default?
         """
+        # Sets up twisted.python so that we can iterate modules
+        __import__('ibid.plugins')
 
         load = 'load' in ibid.config.plugins and ibid.config.plugins['load'] or []
         noload = 'noload' in ibid.config.plugins and ibid.config.plugins['noload'] or []
@@ -271,6 +276,8 @@ class Reloader(object):
     def reload_config(self):
         for processor in ibid.processors:
             processor.setup()
+        for source in ibid.sources:
+            ibid.sources[source].setup()
         self.log.info(u"Notified all processors of config reload")
 
 def regexp(pattern, item):

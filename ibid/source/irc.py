@@ -1,3 +1,7 @@
+# Copyright (c) 2008-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera,
+#                          Max Rabkin
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from fnmatch import fnmatch
 from time import sleep
 import logging
@@ -77,6 +81,7 @@ class Ircbot(irc.IRCClient):
             ibid.reloader.reload_config()
         if self.factory.modes:
             self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
+        self.ctcpMakeQuery(self.nickname, [('HOSTMASK', None)])
         for channel in self.factory.channels:
             self.join(channel.encode('utf-8'))
         self.factory.log.info(u"Signed on")
@@ -259,6 +264,13 @@ class Ircbot(irc.IRCClient):
         nick = user.split("!")[0]
         self.ctcpMakeReply(nick, [('SOURCE', 'http://ibid.omnia.za.net/')])
 
+    def ctcpUnknownQuery(self, user, channel, tag, data):
+        if user.split('!')[0] == self.nickname and tag == 'HOSTMASK':
+            self.hostmask = user
+            self.factory.log.debug(u"Set hostmask to %s", self.hostmask)
+        else:
+            irc.IRCClient.ctcpUnknownQuery(self, user, channel, tag, data)
+
 
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
@@ -322,6 +334,26 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         if identity is None:
             return u''
         return identity.split(u'!')[0]
+
+    def truncation_point(self, response, event=None):
+        target = response['target'].split('!')[0]
+        raw_target = target.encode('utf-8')
+        if hasattr(self.proto, 'hostmask'):
+            hostmask_len = len(self.proto.hostmask)
+        else:
+            hostmask_len = 50
+
+        # max = 512 - len(':' + hostmask + ' ' + command + ' ' + target + ' :\r\n')
+
+        cmds = {'notice': len('NOTICE'), 'topic': len('TOPIC'),
+                'action': len('PRIVMSG\001ACTION \001')}
+        for cmd, command_len in cmds.items():
+            if response.get(cmd, False):
+                break
+        else:
+            command_len = len('PRIVMSG')
+
+        return 505 - command_len - len(raw_target) - hostmask_len
 
     def url(self):
         return u'irc://%s@%s:%s' % (self.nick, self.server, self.port)

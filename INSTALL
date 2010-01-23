@@ -8,9 +8,11 @@ Supported releases:
 * Ubuntu lucid
 * Debian lenny
 * Debian squeeze
+* but it should work on any unixy system where you can get the required Python
+  modules.
 
 Add the Ibid PPA to your APT sources:
-# echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -c | cut -f2` main > /etc/apt/sources.list.d/ibid.list
+# echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -cs` main > /etc/apt/sources.list.d/ibid.list
 # apt-key adv --recv-keys --keyserver keyserver.ubuntu.com c2d0f8531bba37930c0d85e3d59f9e8dfd1c44ba
 # aptitude update
 
@@ -22,15 +24,20 @@ Install required modules:
 	python-simplejson python-soappy python-sqlalchemy \
 	python-twisted python-wokkel
 
-Switch to the user ibid will be running as.
-$ export PYTHONPATH=.
+Install into a virtualenv or your system:
+$ ./setup.py install --no-dependencies
+
+*Or* to get setup.py to find the dependencies for you:
+$ ./setup.py install
 
 Set up your bot:
-$ scripts/ibid-setup
-$ mkdir logs
+$ mkdir bothome
+$ cd bothome
+$ ibid-setup
 
 Run your bot:
-$ scripts/ibid
+$ cd bothome
+$ twistd -n ibid
 
 Other things we recommend:
 * Install a dictd on localhost for the dict plugin (debian/ubuntu package "dictd")

@@ -1,4 +1,8 @@
+# Copyright (c) 2008-2010, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import sys
+import re
 from traceback import print_exc
 
 import ibid
@@ -8,7 +12,7 @@ class Proxy(Processor):
     autoload = False
 
     def __init__(self, name):
-        Module.__init__(self, name)
+        Processor.__init__(self, name)
         if 'dbus' not in sys.modules:
             raise Exception('dbus library not loaded')
 

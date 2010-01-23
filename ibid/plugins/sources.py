@@ -1,58 +1,151 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+"""Administrative commands for sources"""
+
+from fnmatch import fnmatch
+import logging
+
 import ibid
-from ibid.plugins import Processor, match, authorise
-from ibid.utils import human_join
+from ibid.plugins import Processor, match, authorise, handler
 
-help = {'sources': u'Controls and lists the configured sources.'}
+log = logging.getLogger('plugins.sources')
 
-class Admin(Processor):
-    u"""(connect|disconnect) (to|from) <source>
-    load <source> source"""
-    feature = 'sources'
+help = {}
 
-    permission = u'sources'
 
-    @match(r'^connect\s+(?:to\s+)?(\S+)$')
+help["actions"] = u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"
+
+class Actions(Processor):
+    u"""(join|part|leave) [<channel> [on <source>]]
+    change nick to <nick> [on <source>]"""
+    feature = 'actions'
+
+    permission = 'sources'
+
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
     @authorise()
-    def connect(self, event, source):
-        if source not in ibid.sources:
-            event.addresponse(u"I don't have a source called %s", source)
-        elif ibid.sources[source].connect():
-            event.addresponse(u'Connecting to %s', source)
-        else:
-            event.addresponse(u"I couldn't connect to %s", source)
+    def channel(self, event, action, channel, source):
+        action = action.lower()
 
-    @match(r'^disconnect\s+(?:from\s+)?(\S+)$')
-    @authorise()
-    def disconnect(self, event, source):
+        if not source:
+            source = event.source
+        if not channel:
+            if action == 'join':
+                return
+            channel = event.channel
+
         if source not in ibid.sources:
             event.addresponse(u"I am not connected to %s", source)
-        elif ibid.sources[source].disconnect():
-            event.addresponse(u'Disconnecting from %s', source)
-        else:
-            event.addresponse(u"I couldn't disconnect from %s", source)
+            return
 
-    @match(r'^(?:re)?load\s+(\S+)\s+source$')
+        source = ibid.sources[source]
+
+        if not hasattr(source, 'join'):
+            event.addresponse(u'%s cannot join/part channels', source.name)
+            return
+
+        if action == 'join':
+            source.join(channel)
+            event.addresponse(u'Joining %s', channel)
+        else:
+            source.leave(channel)
+            event.addresponse(u'Leaving %s', channel)
+
+    @match(r'^change\s+nick\s+to\s+(\S+)(?:\s+on\s+(\S+))?$')
     @authorise()
-    def load(self, event, source):
-        if ibid.reloader.load_source(source, ibid.service):
-            event.addresponse(u"%s source loaded", source)
+    def change_nick(self, event, nick, source):
+
+        if not source:
+            source = event.source
+
+        if source not in ibid.sources:
+            event.addresponse(u"I am not connected to %s", source.lower())
+            return
+
+        source = ibid.sources[source]
+
+        if not hasattr(source, 'change_nick'):
+            event.addresponse(u'%s cannot change nicks', source)
         else:
-            event.addresponse(u"Couldn't load %s source", source)
+            source.change_nick(nick)
+            event.addresponse(u'Changing nick to %s', nick)
 
-class Info(Processor):
-    u"""(sources|list configured sources)"""
-    feature = 'sources'
+class NickServ(Processor):
+    event_types = (u'notice',)
 
-    @match(r'^sources$')
-    def list(self, event):
-        sources = []
-        for name, source in ibid.sources.items():
-            url = source.url()
-            sources.append(url and u'%s (%s)' % (name, url) or name)
-        event.addresponse(u'Sources: %s', human_join(sorted(sources)) or u'none')
+    def is_nickserv(self, event):
+        source_cfg = ibid.config['sources'][event.source]
+        return (ibid.sources[event.source].type == 'irc' and
+                event.sender.get('nick') ==
+                    source_cfg.get(u'nickserv_nick', u'NickServ') and
+                fnmatch(event.sender['connection'].split('!', 1)[1],
+                    source_cfg.get(u'nickserv_mask', '*')
+        ))
 
-    @match(r'^list\s+configured\s+sources$')
-    def listall(self, event):
-        event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
+    @match(r'^(?:This nickname is registered\. Please choose a different nickname'
+            r'|This nickname is registered and protected\.  If it is your'
+            r'|If this is your nickname, type \/msg NS)')
+    def auth(self, event):
+        if self.is_nickserv(event):
+            source_cfg = ibid.config['sources'][event.source]
+            if u'nickserv_password' in source_cfg:
+                event.addresponse(u'IDENTIFY %s', source_cfg[u'nickserv_password'])
+
+    @match(r'^(?:You are now identified for'
+            r'|Password accepted -+ you are now recognized)')
+    def success(self, event):
+        if self.is_nickserv(event):
+            log.info(u'Authenticated with NickServ')
+
+help['saydo'] = u'Says or does stuff in a channel.'
+class SayDo(Processor):
+    u"""(say|do) in <channel> [on <source>] <text>"""
+    feature = 'saydo'
+
+    permission = u'saydo'
+
+    @match(r'^(say|do)\s+(?:in|to)\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.*)$', 'deaddressed')
+    @authorise()
+    def saydo(self, event, action, channel, source, what):
+        event.addresponse(what, address=False, target=channel, source=source or event.source,
+                action=(action.lower() == u"do"))
+
+help['redirect'] = u'Redirects the response to a command to a different channel.'
+class RedirectCommand(Processor):
+    u"""redirect [to] <channel> [on <source>] <command>"""
+    feature = 'redirect'
+
+    priority = -1200
+    permission = u'saydo'
+
+    @match(r'^redirect\s+(?:to\s+)?(\S+)\s+(?:on\s+(\S+)\s+)?(.+)$')
+    @authorise()
+    def redirect(self, event, channel, source, command):
+        if source:
+            if source.lower() not in ibid.sources:
+                event.addresponse(u'No such source: %s', source)
+                return
+            event.redirect_source = source
+        event.redirect_target = channel
+        event.message['clean'] = command
+
+class Redirect(Processor):
+    feature = 'redirect'
+
+    processed = True
+    priority = 940
+
+    @handler
+    def redirect(self, event):
+        if 'redirect_target' in event:
+            responses = []
+            for response in event.responses:
+                response['target'] = event.redirect_target
+                if 'redirect_source' in event:
+                    response['source'] = event.redirect_source
+                responses.append(response)
+            event.responses = responses
+
 
 # vi: set et sta sw=4 ts=4:

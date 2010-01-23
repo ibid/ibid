@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import logging
 import logging.config
 from os import makedirs
@@ -49,6 +52,7 @@ def setup(opts, service=None):
     for key, value in opts.items():
         options[key] = value
     options['base'] = dirname(options['config'])
+    sys.path.insert(0, options['base'])
 
     # Get Twisted to log to Python logging
     twisted.python.log.startLoggingWithObserver(twisted_log)

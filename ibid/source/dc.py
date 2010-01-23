@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from time import sleep
 import logging
 
@@ -129,8 +132,10 @@ class DCBot(dcwords.DCClient):
         elif response.get('action', False):
             if self.factory.action_prefix and target is None:
                 self.say(target, u'%s %s' % (self.factory.action_prefix, message))
+            elif self.factory.action_prefix:
+                self.say(target, u'*%s*' % message)
             else:
-                self.say(target, u'* %s %s' % (self.my_nickname, message))
+                self.say(target, message)
 
             self.factory.log.debug(u"Sent action to %s: %s", target, message)
         else:
@@ -156,7 +161,7 @@ class DCBot(dcwords.DCClient):
 class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = DCBot
 
-    supports = ('action', 'multiline', 'topic')
+    supports = ['multiline', 'topic']
     auth = ('op',)
 
     port = IntOption('port', 'Server port number', 411)
@@ -170,6 +175,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     slots = IntOption('slots', 'DC Open Slots', 0)
     action_prefix = Option('action_prefix', 'Command for actions (i.e. +me)', None)
     banned_prefixes = Option('banned_prefixes', 'Prefixes not allowed in bot responses, i.e. !', '')
+    max_message_length = IntOption('max_message_length',
+            'Maximum length of messages', 490)
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
     pong_timeout = FloatOption('pong_timeout', 'Seconds to wait for PONG', 300)
     # ReconnectingClient uses this:
@@ -180,6 +187,12 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % self.name)
         self._auth = {}
+
+    def setup(self):
+        if self.action_prefix is None and 'action' in self.supports:
+            self.supports.remove('action')
+        if self.action_prefix is not None and 'action' not in self.supports:
+            self.supports.append('action')
 
     def setServiceParent(self, service):
         if service:
@@ -196,6 +209,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
         if hasattr(self, 'proto'):
             self.proto.transport.loseConnection()
         return True
+
+    def truncation_point(self, response, event=None):
+        return self.max_message_length
 
     def _dc_auth_callback(self, nick, result):
         self._auth[nick] = result

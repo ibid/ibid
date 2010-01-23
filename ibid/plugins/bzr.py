@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from cStringIO import StringIO
 from datetime import datetime, timedelta
 import logging
@@ -7,7 +10,7 @@ from bzrlib import log
 from bzrlib.errors import NotBranchError, RevisionNotPresent
 
 import ibid
-from ibid.plugins import Processor, match, RPC, handler, run_every
+from ibid.plugins import Processor, match, RPC, handler, periodic
 from ibid.config import DictOption, IntOption
 from ibid.utils import ago, format_date, human_join
 
@@ -79,8 +82,8 @@ class Bazaar(Processor, RPC):
                 continue
             if repository.get('poll', 'False').lower() in ('yes', 'true'):
                 must_monitor = True
+        self.check.im_func.disabled = not must_monitor
         if must_monitor:
-            self.check.im_func.interval = timedelta(seconds=self.interval)
             self.seen_revisions = {}
 
     @match(r'^(?:repos|repositories)$')
@@ -155,9 +158,8 @@ class Bazaar(Processor, RPC):
                 self.remote_committed(name,
                     int(event.headers['X-Launchpad-Branch-Revision-Number']))
 
-    @run_every(0)
+    @periodic(config_key='interval')
     def check(self, event):
-        self.log.debug(u'Checking bzr branches for new commits')
         for name, repo in self.repositories.iteritems():
             if repo.get('poll', 'False').lower() not in ('yes', 'true'):
                 continue

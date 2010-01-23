@@ -1,13 +1,51 @@
-import logging
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+from unicodedata import normalize
 from random import choice, random
+import re
+
+from nickometer import nickometer
 
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
-from ibid.utils import ibid_version, human_join
+from ibid.utils import human_join
 
 help = {}
-log = logging.getLogger('plugins.misc')
+
+help['nickometer'] = u'Calculates how lame a nick is.'
+class Nickometer(Processor):
+    u"""nickometer [<nick>] [with reasons]"""
+    feature = 'nickometer'
+
+    @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
+    def handle_nickometer(self, event, nick, wreasons):
+        nick = nick or event.sender['nick']
+        if u'\ufffd' in nick:
+            score, reasons = 100., ((u'Not UTF-8 clean', u'infinite'),)
+        else:
+            score, reasons = nickometer(normalize('NFKD', nick).encode('ascii', 'ignore'))
+
+        event.addresponse(u'%(nick)s is %(score)s%% lame', {
+            'nick': nick,
+            'score': score,
+        })
+        if wreasons:
+            if not reasons:
+                reasons = ((u'A good, traditional nick', 0),)
+            event.addresponse(u'Because: %s', u', '.join(['%s (%s)' % reason for reason in reasons]))
+
+help['choose'] = u'Choose one of the given options.'
+class Choose(Processor):
+    u"""choose <choice> or <choice>..."""
+    feature = 'choose'
+
+    choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
+
+    @match(r'^(?:choose|choice|pick)\s+(.+)$')
+    def choose(self, event, choices):
+        event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
 
 help['coffee'] = u"Times coffee brewing and reserves cups for people"
 class Coffee(Processor):
@@ -59,40 +97,6 @@ class Coffee(Processor):
         else:
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
-
-help['version'] = u"Show the Ibid version currently running"
-class Version(Processor):
-    u"""version"""
-    feature = 'version'
-
-    @match(r'^version$')
-    def show_version(self, event):
-        if ibid_version():
-            event.addresponse(u'I am version %s', ibid_version())
-        else:
-            event.addresponse(u"I don't know what version I am :-(")
-
-help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
-class Dvorak(Processor):
-    u"""(aoeu|asdf) <text>"""
-    feature = 'dvorak'
-
-    # List of characters on each keyboard layout
-    dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
-    qwermap = u"""qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?-=_+|"""
-
-    # Typed by a QWERTY typist on a Dvorak-mapped keyboard
-    typed_on_dvorak = dict(zip(map(ord, dvormap), qwermap))
-    # Typed by a Dvorak typist on a QWERTY-mapped keyboard
-    typed_on_qwerty = dict(zip(map(ord, qwermap), dvormap))
-
-    @match(r'^(?:asdf|dvorak)\s+(.+)$')
-    def convert_from_qwerty(self, event, text):
-        event.addresponse(text.translate(self.typed_on_qwerty))
-
-    @match(r'^(?:aoeu|qwerty)\s+(.+)$')
-    def convert_from_dvorak(self, event, text):
-        event.addresponse(text.translate(self.typed_on_dvorak))
 
 help['insult'] = u"Slings verbal abuse at someone"
 class Insult(Processor):

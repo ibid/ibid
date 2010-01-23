@@ -1,3 +1,6 @@
+# Copyright (c) 2008-2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import logging
 
 from configobj import ConfigObj

@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Jonathan Hitchock, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from os.path import join, exists
 
 from twisted.application import internet
@@ -69,7 +72,7 @@ class SilcBot(SilcClient):
             self.send(response)
 
     def send(self, response):
-        message = response['reply'].encode('utf-8')
+        message = response['reply']
         flags=0
         if response.get('action', False):
             flags=4
@@ -186,7 +189,7 @@ class SilcBot(SilcClient):
         self.command_call('QUIT')
 
     def disconnected(self, message):
-        self.factory.log.info(u"Disconnected (%s)", reason)
+        self.factory.log.info(u"Disconnected (%s)", message)
 
         event = Event(self.factory.name, u'source')
         event.status = u'disconnected'
@@ -208,6 +211,8 @@ class SourceFactory(IbidSourceFactory):
     realname = Option('realname', 'Real Name', ibid.config['botname'])
     public_key = Option('public_key', 'Filename of public key', 'silc.pub')
     private_key = Option('private_key', 'Filename of private key', 'silc.prv')
+    max_public_message_length = IntOption('max_public_message_length',
+            'Maximum length of public messages', 512)
 
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
@@ -239,5 +244,10 @@ class SourceFactory(IbidSourceFactory):
 
     def logging_name(self, identity):
         return self.client.logging_name(identity)
+
+    def truncation_point(self, response, event=None):
+        if response.get('target', None) in self.client.channels:
+            return self.max_public_message_length
+        return None
 
 # vi: set et sta sw=4 ts=4:

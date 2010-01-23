@@ -1,3 +1,6 @@
+# Copyright (c) 2009-2010, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import logging
 
 from campfirewords import CampfireClient
@@ -124,5 +127,8 @@ class SourceFactory(IbidSourceFactory):
 
     def leave(self, room_name):
         return self.client.leave(room_name)
+
+    def truncation_point(self, response, event=None):
+        return None
 
 # vi: set et sta sw=4 ts=4:

@@ -1,3 +1,6 @@
+# Copyright (c) 2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 from zope.interface import implements
 
 from twisted.python import usage

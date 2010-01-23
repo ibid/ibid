@@ -1,10 +1,12 @@
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 import re
 from datetime import datetime, timedelta
 from random import choice
 import logging
 
 import ibid
-from ibid.compat import any
 from ibid.config import IntOption, ListOption, DictOption
 from ibid.plugins import Processor, handler
 from ibid.plugins.identity import identify
@@ -18,24 +20,29 @@ class Addressed(Processor):
     verbs = ListOption('verbs', u'Verbs to ignore', ('is', 'has', 'was', 'might', 'may', 'would', 'will', "isn't", "hasn't", "wasn't", "wouldn't", "won't", 'can', "can't", 'did', "didn't", 'said', 'says', 'should', "shouldn't", 'does', "doesn't"))
 
     def setup(self):
-        self.patterns = [   re.compile(r'^(%s)([:;.?>!,-]+)*\s+' % '|'.join(self.names), re.I | re.DOTALL),
-                            re.compile(r',\s*(%s)\s*$' % '|'.join(self.names), re.I | re.DOTALL)
-                        ]
+        names = '|'.join(re.escape(x) for x in self.names)
+        verbs = '|'.join(re.escape(x) for x in self.verbs)
+        self.patterns = [
+            re.compile(r'^(%s)(?:[:;.?>!,-]|\s)+' % names, re.I | re.DOTALL),
+            # "hello there, bot"-style addressing. But we want to be sure that
+            # there wasn't normal addressing too:
+            re.compile(r'^(?:\S+:.*|.*,\s*(%s))\s*$' % names, re.I | re.DOTALL)
+        ]
+        self.verb_pattern = re.compile(r'^(?:%s)\s+(?:%s)\s+' % (names, verbs),
+                                       re.I | re.DOTALL)
 
     @handler
     def handle_addressed(self, event):
         if 'addressed' not in event:
             event.addressed = False
 
+        if self.verb_pattern.match(event.message['stripped']):
+            return
+
         for pattern in self.patterns:
             matches = pattern.search(event.message['stripped'])
-            if matches:
+            if matches and matches.group(1):
                 new_message = pattern.sub('', event.message['stripped'])
-                if (len(matches.groups()) > 1 and not matches.group(2) and
-                        any(new_message.lower().startswith(verb)
-                            for verb in self.verbs)):
-                    return
-
                 event.addressed = matches.group(1)
                 event.message['clean'] = new_message
                 event.message['deaddressed'] = pattern.sub('', event.message['raw'])
@@ -172,28 +179,74 @@ class RateLimit(Processor):
 class Format(Processor):
     priority = 2000
 
+    def _truncate(self, line, length):
+        if length is not None:
+            eline = line.encode('utf-8')
+            if len(eline) > length:
+                # horizontal ellipsis = 3 utf-8 bytes
+                return eline[:length-3].decode('utf-8', 'ignore') \
+                       + u'\N{horizontal ellipsis}'
+        return line
+
     def process(self, event):
         filtered = []
         for response in event.responses:
             source = response['source'].lower()
             supports = ibid.sources[source].supports
+            maxlen = ibid.sources[source].truncation_point(response, event)
 
             if response.get('action', False) and 'action' not in supports:
                 response['reply'] = u'*%s*' % response['reply']
 
             conflate = response.get('conflate', True)
+            # Expand response into multiple single-line responses:
             if (not conflate and 'multiline' not in supports):
                 for line in response['reply'].split('\n'):
-                    r = {'reply': line}
+                    r = {'reply': self._truncate(line, maxlen)}
                     for k in response.iterkeys():
                         if k not in ('reply'):
                             r[k] = response[k]
                     filtered.append(r)
+
+            # Expand response into multiple multi-line responses:
+            elif (not conflate and 'multiline' in supports
+                               and maxlen is not None):
+                message = response['reply']
+                while len(message.encode('utf-8')) > maxlen:
+                    splitpoint = len(message.encode('utf-8')[:maxlen] \
+                                            .decode('utf-8', 'ignore'))
+                    parts = [message[:splitpoint].rstrip(),
+                             message[splitpoint:].lstrip()]
+                    for sep in u'\n.;:, ':
+                        if sep in u'\n ':
+                            search = message[:splitpoint+1]
+                        else:
+                            search = message[:splitpoint]
+                        if sep in search:
+                            splitpoint = search.rindex(sep)
+                            parts = [message[:splitpoint+1].rstrip(),
+                                     message[splitpoint+1:]]
+                            break
+                    r = {'reply': parts[0]}
+                    for k in response.iterkeys():
+                        if k not in ('reply'):
+                            r[k] = response[k]
+                    filtered.append(r)
+                    message = parts[1]
+
+                response['reply'] = message
+                filtered.append(response)
+
             else:
+                line = response['reply']
+                # Remove any characters that make no sense on IRC-like sources:
                 if 'multiline' not in supports:
-                    response['reply'] = response['reply'].expandtabs(1) \
-                            .replace('\n', conflate == True
-                                           and u' ' or conflate or u'')
+                    line = line.expandtabs(1) \
+                               .replace('\n', conflate == True
+                                              and u' ' or conflate or u'')
+
+                response['reply'] = self._truncate(line, maxlen)
+
                 filtered.append(response)
 
         event.responses = filtered
