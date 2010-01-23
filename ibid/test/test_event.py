@@ -1,3 +1,7 @@
+# Copyright (c) 2010, Jeremy Thurgood, Stefano Rivera
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+from inspect import stack
+
 from twisted.trial import unittest
 
 from ibid import event
@@ -5,6 +9,24 @@ from ibid import event
 class TestEvent(unittest.TestCase):
     def _ev(self, source='fakesource', type='testmessage'):
         return event.Event(source, type)
+
+    def assertByteStringWarning(self, count=1):
+        "Check that addresponse raised an error about using bytestrings"
+        caller = getattr(self, stack()[1][3])
+        warnings = self.flushWarnings(offendingFunctions=[caller])
+        self.assertEqual(len(warnings), count)
+        for i in range(count):
+            self.assertTrue('byte string' in warnings[i]['message'],
+                'Byte-String response should provoke a warning')
+
+    def assertListSubstitutionWarning(self, count=1):
+        "Check that addresponse raised an error about substituting lists"
+        caller = getattr(self, stack()[1][3])
+        warnings = self.flushWarnings(offendingFunctions=[caller])
+        self.assertEqual(len(warnings), count)
+        for i in range(count):
+            self.assertTrue('single item or dict' in warnings[i]['message'],
+                'Byte-String response should provoke a warning')
 
     def test_empty_event(self):
         "Events contain some default data."
@@ -47,6 +69,7 @@ class TestEvent(unittest.TestCase):
                            'address': True,
                            'conflate': True}], ev.responses)
         self.assertEqual(True, ev.processed)
+        self.assertByteStringWarning()
 
     def test_str_response_twice(self):
         "Two responses are separate."
@@ -65,6 +88,7 @@ class TestEvent(unittest.TestCase):
                            'address': True,
                            'conflate': True}], ev.responses)
         self.assertEqual(True, ev.processed)
+        self.assertByteStringWarning(2)
 
     def test_str_response_unprocessed(self):
         "Responses don't have to mark the event as processed."
@@ -77,6 +101,7 @@ class TestEvent(unittest.TestCase):
                            'address': True,
                            'conflate': True}], ev.responses)
         self.assertEqual(False, ev.processed)
+        self.assertByteStringWarning(1)
 
     def test_str_response_processed_unprocessed(self):
         "processed=False doesn't clear the processed flag."
@@ -90,6 +115,7 @@ class TestEvent(unittest.TestCase):
                            'address': True,
                            'conflate': True}], ev.responses)
         self.assertEqual(True, ev.processed)
+        self.assertByteStringWarning(1)
 
     def test_str_response_with_channel(self):
         "Events from a channel send their responses back there."
@@ -102,6 +128,7 @@ class TestEvent(unittest.TestCase):
                            'source': 'fakesource',
                            'address': True,
                            'conflate': True}], ev.responses)
+        self.assertByteStringWarning(1)
 
     def test_unicode_response(self):
         "Unicode responses behave the same as bytestrings."
@@ -135,6 +162,7 @@ class TestEvent(unittest.TestCase):
                            'source': 'fakesource',
                            'address': True,
                            'conflate': True}], ev.responses)
+        self.assertListSubstitutionWarning()
 
     def test_simple_dict_response(self):
         "Dicts are valid response values."
@@ -175,6 +203,7 @@ class TestEvent(unittest.TestCase):
                            'address': True,
                            'conflate': True,
                            'bar': 'baz'}], ev.responses)
+        self.assertByteStringWarning(1)
 
     def test_complex_dict_with_kwargs_response(self):
         "Keyword arguments to addresponse override response dict values."
