@@ -23,8 +23,6 @@ from ibid.utils import file_in_path, unicode_output, human_join, \
 from ibid.utils.html import get_country_codes
 
 help = {}
-ipaddr = re.compile('\d+\.\d+\.\d+\.\d+')
-title = re.compile(r'<title>(.*)<\/title>', re.I+re.S)
 
 help['dns'] = u'Performs DNS lookups'
 class DNS(Processor):
@@ -40,6 +38,7 @@ class DNS(Processor):
            r'(?:\s+(a|aaaa|ptr|ns|soa|cname|mx|txt|spf|srv|sshfp|cert))?\s+'
            r'(?:for\s+)?(\S+?)(?:\s+(?:from\s+|@)\s*(\S+))?$')
     def resolve(self, event, record, host, nameserver):
+        ipaddr = re.compile(r'\d+\.\d+\.\d+\.\d+')
         if not record:
             if ipaddr.search(host):
                 host = from_address(host)
@@ -254,7 +253,8 @@ class HTTP(Processor):
                 }
 
             if action.upper() == 'GET':
-                match = title.search(data)
+                match = re.search(r'<title>(.*)<\/title>', data,
+                                  re.I | re.DOTALL)
                 if match:
                     reply += u' "%s"' % match.groups()[0].strip()
 
