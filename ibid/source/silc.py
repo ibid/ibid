@@ -199,6 +199,9 @@ class SilcBot(SilcClient):
         self.channels.clear()
         self.users.clear()
 
+    def failure(self):
+        self.factory.log.error(u'Connection failure')
+
 class SourceFactory(IbidSourceFactory):
 
     auth = ('implicit',)
