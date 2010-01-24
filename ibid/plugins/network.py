@@ -255,7 +255,6 @@ class HTTP(Processor):
 
             if action.upper() == 'GET':
                 match = title.search(data)
-                print data
                 if match:
                     reply += u' "%s"' % match.groups()[0].strip()
 
