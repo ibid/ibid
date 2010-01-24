@@ -168,7 +168,7 @@ def url_to_bytestring(url):
     host = parts[1].split(':')
     host[0] = host[0].encode('idna')
     parts[1] = ':'.join(host)
-    parts[2] = quote(parts[2].encode('utf-8'))
+    parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
 def json_webservice(url, params={}, headers={}):
