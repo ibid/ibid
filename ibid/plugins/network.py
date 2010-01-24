@@ -281,7 +281,7 @@ class HTTP(Processor):
             r = Resolver()
             host = urlparse(valid_url).netloc.split(':')[0]
             try:
-                response = r.query(host)
+                r.query(host)
             except NoAnswer:
                 return False, u'No DNS A/CNAME-records for that domain'
             except NXDOMAIN:
@@ -335,7 +335,8 @@ class HTTP(Processor):
                               self._makeurl(url))
         delay *= self.whensitup_factor
         delay = max(delay, self.whensitup_maxdelay)
-        ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay)
+        ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay,
+                                   total_delay)
 
     @match(r'^(?:tell\s+me|let\s+me\s+know)\s+when\s+(\S+)\s+'
            r'is\s+(?:back\s+)?up$')
