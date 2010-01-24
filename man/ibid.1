@@ -11,11 +11,12 @@ This runs an Ibid bot in the foreground.
 .P
 There should there be an existing \fBibid.ini\fR in the current
 directory, or one should be provided on the command line.
+.P
+Where possible, you should run \fBtwistd -n ibid\fR instead of this
+program, as otherwise some classes of errors go unreported.
+.RB "See " BUGS .
 .SH BUGS
-Note that you should use
-.BR twistd (1)
-where possible instead of calling this directly, as certain classes of
-error (problems in twisted callbacks) will go unnoticed in this program.
+Exceptions in twisted callbacks can go unnoticed in this program.
 That has no harmful effects, but the developers may miss out on some
 good bug reports.
 .SH FILES
