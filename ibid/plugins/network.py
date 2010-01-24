@@ -79,7 +79,7 @@ class Ping(Processor):
         output, error = ping.communicate()
         code = ping.wait()
 
-        if code == 0:
+        if not error:
             output = unicode_output(output)
             output = u' '.join(output.splitlines()[-2:])
             event.addresponse(output)
