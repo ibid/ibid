@@ -107,11 +107,11 @@ class GoogleScrapeSearch(Processor):
     def calc(self, event, expression):
         soup = self._google_scrape_search(expression)
 
-        font = soup.find('font', size='+1')
-        if not font:
+        container = soup.find('h2', 'r')
+        if not container:
             event.addresponse(u'No result')
         else:
-            event.addresponse(font.b.string)
+            event.addresponse(container.b.string)
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
