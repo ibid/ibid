@@ -22,10 +22,14 @@ from ibid.db import metadata, upgrade_schemas
 from ibid.db.types import IbidUnicode, IbidUnicodeText
 from ibid.utils import ibid_version
 
+version = ibid_version() or "bzr"
+
 parser = OptionParser(usage='%prog [options...]', description=
 """Ibid Database management tool. Used for import, export, and upgrades.
 Export format is JSON. FILE can be - for stdin/stdout or can end
-in .gz for automatic Gzip compression.""")
+in .gz for automatic Gzip compression.""",
+version=("%prog " + version))
+
 commands = OptionGroup(parser, 'Modes')
 commands.add_option('-e', '--export', dest='export', metavar='FILE',
         help='Export DB contents to FILE.')
@@ -102,7 +106,7 @@ elif options.export is not None:
 
     output.write(('# Ibid %(version)s Database dump for %(botname)s '
             'made on %(date)s\n') % {
-        'version': ibid_version() or 'bzr',
+        'version': version,
         'botname': ibid.config['botname'],
         'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
     })

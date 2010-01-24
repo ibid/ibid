@@ -2,16 +2,18 @@
 # Copyright (c) 2009, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sys import argv, exit
+from sys import argv, exit, path
 from optparse import OptionParser, OptionGroup
 
 from twisted.spread import pb
 from twisted.internet import reactor
 from twisted.python import util
 
+path.insert(0, '.')
+
 from ibid.compat import json
 
-parser = OptionParser(usage='%prog [options] message <message> | plugin <plugin> <class> <method> <parameters>')
+parser = OptionParser(usage='%prog [options] message <message> | plugin <feature> <method> <parameters>')
 parser.add_option('-s', '--server', help='Hostname of Ibid instance')
 parser.add_option('-p', '--port', help='Port number of Ibid instance')
 

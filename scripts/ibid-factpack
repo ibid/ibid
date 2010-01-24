@@ -2,9 +2,11 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sys import exit, stderr
+from sys import exit, stderr, path
 from os.path import basename, exists
 from optparse import OptionParser
+
+path.insert(0, '.')
 
 import ibid
 from ibid.compat import json

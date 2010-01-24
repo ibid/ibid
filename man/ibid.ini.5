@@ -1,0 +1,113 @@
+.\" Copyright (c) 2010, Stefano Rivera
+.\" Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+.TH IBID.INI "5" "January 2010" "Ibid 0.0" "Ibid - Multi-protocol Bot"
+.SH NAME
+ibid.ini \- Configuration file for Ibid
+.SH DESCRIPTION
+ibid.ini contains all the configuration for an Ibid bot.
+.P
+A complete description of the contents of this file is out of the scope of this
+manpage.
+For more details see the Ibid documentation:
+.UR http://ibid.omnia.za.net/docs/
+.BR http://ibid.omnia.za.net/docs/
+.P
+Lines beginning with \fB#\fR are considered to be comments and ignored.
+To use a \fB#\fR symbol in an option (e.g. an IRC channel name), quote the
+option with double-quotes, e.g.
+.BR channels = """#ibid"","
+.P
+This file will be written to by the bot when configuration settings are
+altered online.
+It can also be edited manually and a running bot told to
+\fB"reload config"\fR.
+Manual edits and comments will be preserved when the bot modifies its
+own configuration, provided that they have not been edited since bot
+start-up or the last config reload.
+.SH SECTIONS
+.SS auth
+Settings related to permissions and authentication.
+Permissions listed in \fBauth.permissions\fR are granted to all users unless
+revoked by source or account.
+.SS sources
+Sources are Ibid connections to an IM service.
+They range from IRC networks to the bot's built-in HTTP server.
+.P
+Each source is configured in a section named after the source.
+The source name will define the driver that the source should use, unless a
+\fBtype\fR option is provided.
+.P
+Sources can be disabled by setting
+.BR disabled = True .
+.SS plugins
+Plugin configuration.
+Each plugin is configured within a section named after the plugin.
+.P
+.TP
+.B cachedir
+The directory that temporary files (such as downloaded data), useful to be the
+bot but expendable, is stored in.
+.TP
+.B core.autoload
+If \fBTrue\fR, all plugins not explicitly ignored will be loaded.
+(Note that some plugins mark themselves as non-auto-loadable).
+Defaults to \fBTrue\fR.
+.TP
+.B core.load
+The list of plugins (or \fBplugin\fR.\fBProcessor\fRs) to load.
+.TP
+.B core.noload
+The list of plugins (or \fBplugin\fR.\fBProcessor\fRs) to ignore and not load.
+.TP
+.B core.names
+The names that the bot should respond to.
+.TP
+.B core.ignore
+Nicks that the bot should completely ignore (e.g. other bots).
+.SH EXAMPLE
+.nf
+botname = joebot
+logging = logging.ini
+
+[auth]
+    methods = password,
+    timeout = 300
+    permissions = +factoid, +karma, +sendmemo, +recvmemo, +feeds, +publicresponse
+
+[sources]
+    [[telnet]]
+    [[timer]]
+    [[http]]
+        url = http://joebot.example.com
+    [[smtp]]
+    [[pb]]
+    [[atrum]]
+        channels = "#ibid",
+        nick = $botname
+        type = irc
+        auth = hostmask, nickserv
+        server = irc.atrum.org
+
+[plugins]
+    cachedir = /tmp/ibid
+    [[core]]
+        names = $botname, bot, ant
+        ignore = ,
+
+[databases]
+    ibid = sqlite:///ibid.db
+.fi
+.SH FILES
+.TP
+.I logging.ini
+A standard Python \fBlogging.config\fR configuration file describing
+loggers, handlers, and formatters for log messages.
+See
+.UR http://docs.python.org/library/logging.html
+.BR http://docs.python.org/library/logging.html
+.SH SEE ALSO
+.BR ibid (1),
+.BR ibid.ini (5),
+.BR twistd (1),
+.UR http://ibid.omnia.za.net/
+.BR http://ibid.omnia.za.net/
