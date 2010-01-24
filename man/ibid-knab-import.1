@@ -9,12 +9,12 @@ ibid-knab-import \- Knab->Ibid Import utility
 .I source
 .RI [ config-file ]
 .SH DESCRIPTION
-This utility imports users, seen, factoids, and URLs from a Knab bot's database
-into an Ibid.
+This utility imports users, last seen information, factoids, and URLs
+from a Knab bot's database into an Ibid.
 .P
 For best results, import directly into a brand new, clean Ibid install.
 .P
-On import, strings are converted to unicode, guessing UTF-8 and falling back to
+On import, strings are converted to Unicode, guessing UTF-8 and falling back to
 detection.
 .SH OPTIONS
 .TP
@@ -24,7 +24,7 @@ The format is
 .BI mysql:// user : pass @ hostname / dbname
 .TP
 .I source
-The name in the Ibid bot for the source that the knab was previously connected to.
+The name in the Ibid bot for the source that the Knab was previously connected to.
 .TP
 .I config-file
 If supplied, this is configuration file is used for locating the Ibid's
