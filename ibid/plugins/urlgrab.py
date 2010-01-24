@@ -174,4 +174,4 @@ class Grab(Processor):
             log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
 
- # vi: set et sta sw=4 ts=4:
+# vi: set et sta sw=4 ts=4:
