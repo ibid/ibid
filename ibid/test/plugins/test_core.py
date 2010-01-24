@@ -25,7 +25,8 @@ class TestAddressed(unittest.TestCase):
     def assert_addressed(self, event, addressed, message):
         self.assert_(hasattr(event, 'addressed'))
         self.assertEqual(event.addressed, addressed)
-        self.assertEqual(event.message['deaddressed'].strip(), message)
+        self.assertEqual(event.message['deaddressed'].strip(), message,
+                         repr(event.message))
 
     def create_event(self, message, event_type=u'message'):
         event = Event(u'fakesource', event_type)
