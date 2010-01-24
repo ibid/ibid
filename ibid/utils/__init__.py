@@ -83,9 +83,14 @@ def _cacheable_download(url, cachefile, headers={}):
         req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
 
     if exists:
-        modified = os.path.getmtime(cachefile)
-        modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
-        req.add_header("If-Modified-Since", modified)
+        if os.path.isfile(cachefile + '.etag'):
+            f = file(cachefile + '.etag', 'r')
+            req.add_header("If-None-Match", f.readline().strip())
+            f.close()
+        else:
+            modified = os.path.getmtime(cachefile)
+            modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
+            req.add_header("If-Modified-Since", modified)
 
     try:
         connection = urllib2.urlopen(req)
@@ -108,6 +113,12 @@ def _cacheable_download(url, cachefile, headers={}):
             compressedstream = StringIO(data)
             gzipper = GzipFile(fileobj=compressedstream)
             data = gzipper.read()
+
+    etag = connection.headers.get('etag')
+    if etag:
+        f = file(cachefile + '.etag', 'w')
+        f.write(etag + '\n')
+        f.close()
 
     outfile = file(cachefile, 'wb')
     outfile.write(data)
