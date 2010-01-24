@@ -9,8 +9,9 @@ ibid \- Run an Ibid bot
 .SH DESCRIPTION
 This runs an Ibid bot in the foreground.
 .P
-There should there be an existing \fBibid.ini\fR in the current
-directory, or one should be provided on the command line.
+There should there be an existing \fBibid.ini\fR (created by
+.BR ibid-setup (1))
+in the current directory or one should be provided on the command line.
 .P
 Where possible, you should run \fBtwistd -n ibid\fR instead of this
 program, as otherwise some classes of errors go unreported.
@@ -24,8 +25,8 @@ good bug reports.
 .I ibid.ini
 The Ibid bot's configuration file, will be created if it doesn't exist.
 .SH SEE ALSO
-.BR ibid (1),
 .BR ibid.ini (5),
+.BR ibid-setup (1),
 .BR twistd (1),
 .UR http://ibid.omnia.za.net/
 .BR http://ibid.omnia.za.net/
