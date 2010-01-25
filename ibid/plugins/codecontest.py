@@ -34,7 +34,7 @@ class Usaco(Processor):
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20
-#    autoload = False
+    autoload = False
 
     def _login(self, user, password):
         params = urlencode({'NAME': user.encode('utf-8'), 'PASSWORD': password.encode('utf-8')})
@@ -238,7 +238,6 @@ class Usaco(Processor):
 
     @match(r'^usaco\s+(\S+)\s+results(?:\s+for\s+(.+))?$')
     def usaco_results(self, event, contest, user):
-        self._get_usaco_users(event) # TODO remove
         if user is not None:
             try:
                 usaco_user = self._get_usaco_user(event, user)
