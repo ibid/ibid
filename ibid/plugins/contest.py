@@ -100,11 +100,11 @@ class Usaco(Processor):
             raise UsacoException(u'Sorry, the configured USACO admin account is invalid')
 
         urls = [a.get(u'href') for a in etree.getiterator(u'a')]
-        monitor_url = [url for url in urls if u'monitor' in url][0]
+        monitor_url = [url for url in urls if u'monitor' in url]
         if len(monitor_url) == 0:
             raise UsacoException(u'USACO admin account does not have teacher status')
 
-        return monitor_url
+        return monitor_url[0]
 
     def _get_usaco_user(self, event, user):
         account = event.session.query(Account) \
