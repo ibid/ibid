@@ -413,6 +413,8 @@ class Currency(Processor):
         else:
             event.addresponse(u'No currencies found')
 
+class UnassignedCharacter(Exception): pass
+
 help['unicode'] = """Look up characters in the Unicode database."""
 class UnicodeData(Processor):
     """U+<hex code>
@@ -458,10 +460,12 @@ class UnicodeData(Processor):
 
         try:
             char = unichr(code)
+            info = self.info(char)
         except (ValueError, OverflowError):
             event.addresponse(u"Unicode isn't *that* big!")
+        except UnassignedCharacter:
+            event.addresponse(u"That character isn't in Unicode")
         else:
-            info = self.info(char)
             if info['example']:
                 info['example'] = ' (' + info['example'] + ')'
             event.addresponse(u"U+%(code)s is %(name)s%(example)s, "
@@ -470,14 +474,19 @@ class UnicodeData(Processor):
 
     @match(r'^unicode\s+(.)$', 'deaddressed')
     def ord (self, event, char):
-        info = self.info(char)
-        if info['example']:
-            info['example'] = "'" + info['example'] + "'"
+        try:
+            info = self.info(char)
+        except UnassignedCharacter:
+            event.addresponse(u"That character isn't in Unicode. "
+                              u"Where did you even find it?")
         else:
-            info['example'] = 'That'
-        event.addresponse(u"%(example)s is %(name)s (U+%(code)s), "
-                          u"%(category)s with %(bidi)s directionality",
-                          info)
+            if info['example']:
+                info['example'] = "'" + info['example'] + "'"
+            else:
+                info['example'] = 'That'
+            event.addresponse(u"%(example)s is %(name)s (U+%(code)s), "
+                              u"%(category)s with %(bidi)s directionality",
+                              info)
 
     @match(r'^unicode\s([a-z ]{2,})$')
     def fromname (self, event, name):
@@ -495,6 +504,9 @@ class UnicodeData(Processor):
 
     def info (self, char):
         cat = unicodedata.category(char)
+        if cat == 'Cn':
+            raise UnassignedCharacter
+
         catname = self.categories[cat]
         bidi = self.bidis[unicodedata.bidirectional(char)]
         name = unicodedata.name(char, 'an unnamed character').decode('ascii')
