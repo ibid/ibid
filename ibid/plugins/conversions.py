@@ -420,33 +420,33 @@ class UnicodeData(Processor):
 
     feature = 'unicode'
 
-    bidis = {'AL': 'right-to-left Arabic', 'AN': 'Arabic number',
-             'B': 'paragraph separator', 'BN': 'boundary neutral',
-             'CS': 'common number separator', 'EN': 'European number',
-             'ES': 'European number separator',
-             'ET': 'European number terminator',
-             'L': 'left-to-right', 'LRE': 'left-to-right embedding',
-             'LRO': 'left-to-right override', 'NSM': 'non-spacing mark',
-             'ON': 'other neutral', 'PDF': 'pop directional format',
-             'R': 'right-to-left', 'RLE': 'right-to-left embedding',
-             'RLO': 'right-to-left override', 'S': 'segment separator',
-             'WS': 'whitespace'}
+    bidis = {'AL': u'right-to-left Arabic', 'AN': u'Arabic number',
+             'B': u'paragraph separator', 'BN': u'boundary neutral',
+             'CS': u'common number separator', 'EN': u'European number',
+             'ES': u'European number separator',
+             'ET': u'European number terminator',
+             'L': u'left-to-right', u'LRE': 'left-to-right embedding',
+             'LRO': u'left-to-right override', 'NSM': u'non-spacing mark',
+             'ON': u'other neutral', 'PDF': u'pop directional format',
+             'R': u'right-to-left', 'RLE': u'right-to-left embedding',
+             'RLO': u'right-to-left override', 'S': u'segment separator',
+             'WS': u'whitespace'}
 
-    categories = {'Cc': 'a control character', 'Cf': 'a formatting character',
-                  'Cn': 'an unassigned character', 'Co': 'a private-use character',
-                  'Cs': 'a surrogate character', 'Ll': 'a Lowercase Letter',
-                  'Lm': 'a Modifier Letter', 'Lo': 'a Letter',
-                  'Lt': 'a Titlecase Letter', 'Lu': 'an Uppercase Letter',
-                  'Mc': 'a Spacing Combining Mark', 'Me': 'an Enclosing Mark',
-                  'Mn': 'a Nonspacing Mark', 'Nd': 'a Decimal Digit Number',
-                  'Nl': 'a Letter Number', 'No': 'a Number',
-                  'Pc': 'a Connector', 'Pd': 'a Dash',
-                  'Pe': 'a Close Punctuation mark', 'Pf': 'a Final quote',
-                  'Pi': 'an Initial quote', 'Po': 'a Punctuation character',
-                  'Ps': 'an Open Punctuation mark', 'Sc': 'a Currency Symbol',
-                  'Sk': 'a Modifier Symbol', 'Sm': 'a Math Symbol',
-                  'So': 'a Symbol', 'Zl': 'a Line Separator',
-                  'Zp': 'a Paragraph Separator', 'Zs': 'a Space Separator'}
+    categories = {'Cc': u'a control character', 'Cf': u'a formatting character',
+                  'Cn': u'an unassigned character', 'Co': u'a private-use character',
+                  'Cs': u'a surrogate character', 'Ll': u'a Lowercase Letter',
+                  'Lm': u'a Modifier Letter', 'Lo': u'a Letter',
+                  'Lt': u'a Titlecase Letter', 'Lu': u'an Uppercase Letter',
+                  'Mc': u'a Spacing Combining Mark', 'Me': u'an Enclosing Mark',
+                  'Mn': u'a Nonspacing Mark', 'Nd': u'a Decimal Digit Number',
+                  'Nl': u'a Letter Number', 'No': u'a Number',
+                  'Pc': u'a Connector', 'Pd': u'a Dash',
+                  'Pe': u'a Close Punctuation mark', 'Pf': u'a Final quote',
+                  'Pi': u'an Initial quote', 'Po': u'a Punctuation character',
+                  'Ps': u'an Open Punctuation mark', 'Sc': u'a Currency Symbol',
+                  'Sk': u'a Modifier Symbol', 'Sm': u'a Math Symbol',
+                  'So': u'a Symbol', 'Zl': u'a Line Separator',
+                  'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
 
     @match(r'^U\+([0-9a-f]+)|(?:unicode|ascii)\s+(\d{2,})$')
     def unichr (self, event, hexcode, deccode):
@@ -456,14 +456,14 @@ class UnicodeData(Processor):
             code = int(deccode)
 
         char = unichr(code)
-        event.addresponse("U+%(code)s is %(name)s (%(char)s), "
-                          "%(category)s with %(bidi)s directionality",
+        event.addresponse(u"U+%(code)s is %(name)s (%(char)s), "
+                          u"%(category)s with %(bidi)s directionality",
                           self.info(char))
 
     @match(r'^unicode\s+(.)$', 'deaddressed')
     def ord (self, event, char):
-        event.addresponse("'%(char)s' is %(name)s (U+%(code)s), "
-                          "%(category)s with %(bidi)s directionality",
+        event.addresponse(u"'%(char)s' is %(name)s (U+%(code)s), "
+                          u"%(category)s with %(bidi)s directionality",
                           self.info(char))
 
     @match(r'^unicode\s([a-z ]{2,})$')
@@ -471,17 +471,17 @@ class UnicodeData(Processor):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
         except SyntaxError:
-            event.addresponse("I couldn't find that character")
+            event.addresponse(u"I couldn't find that character")
         else:
-            event.addresponse("%(name)s is U+%(code)s (%(char)s), "
-                              "%(category)s with %(bidi)s directionality",
+            event.addresponse(u"%(name)s is U+%(code)s (%(char)s), "
+                              u"%(category)s with %(bidi)s directionality",
                               self.info(char))
 
     def info (self, char):
         cat = self.categories[unicodedata.category(char)]
         bidi = self.bidis[unicodedata.bidirectional(char)]
-        return {'code': '%04X' % ord(char),
-                'name': unicodedata.name(char, 'an unnamed character'),
+        name = unicodedata.name(char, 'an unnamed character').decode('ascii')
+        return {'code': u'%04X' % ord(char), 'name': name,
                    'char': char, 'category': cat.lower(), 'bidi': bidi}
 
 # vi: set et sta sw=4 ts=4:
