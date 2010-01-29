@@ -94,4 +94,17 @@ class TestAddressed(unittest.TestCase):
             self.processor.process(event)
             self.assert_addressed(event, False, u'foo%s%s' % suffix)
 
+    strip_cases = [
+        (u' ', u'.za'),
+        (u': ', u'.za'),
+        (u', ', u'.za'),
+        (u' - ', u'.za'),
+    ]
+
+    def test_strip_punct(self):
+        for sep, message in self.strip_cases:
+            event = self.create_event(u'bot%s%s' % (sep, message))
+            self.processor.process(event)
+            self.assert_addressed(event, u'bot', message)
+
 # vi: set et sta sw=4 ts=4:
