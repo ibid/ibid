@@ -90,7 +90,7 @@ class Ping(Processor):
 
         ping = Popen([self.ping, '-q', '-c5', host], stdout=PIPE, stderr=PIPE)
         output, error = ping.communicate()
-        code = ping.wait()
+        ping.wait()
 
         if not error:
             output = unicode_output(output)
@@ -373,13 +373,17 @@ class HTTP(Processor):
             headers['Range'] = 'bytes=0-%s' % self.max_size
 
         try:
-            conn.request(method.upper(), url_to_bytestring(url),
-                         headers=headers)
-            response = conn.getresponse()
-            data = response.read(self.max_size)
-            conn.close()
-        except socket.error, e:
-            raise HTTPException(e.message or e.args[1])
+            try:
+                conn.request(method.upper(), url_to_bytestring(url),
+                             headers=headers)
+                response = conn.getresponse()
+                data = response.read(self.max_size)
+                conn.close()
+            except socket.error, e:
+                raise HTTPException(e.message or e.args[1])
+        finally:
+            if version_info[1] < 6:
+                socket.setdefaulttimeout(None)
 
         contenttype = response.getheader('Content-Type',
                                          'text/html; charset=utf-8')

@@ -100,12 +100,16 @@ def _cacheable_download(url, cachefile, headers={}, timeout=60):
     else:
         socket.setdefaulttimeout(timeout)
     try:
-        connection = urllib2.urlopen(req, **kwargs)
-    except urllib2.HTTPError, e:
-        if e.code == 304 and exists:
-            return cachefile
-        else:
-            raise
+        try:
+            connection = urllib2.urlopen(req, **kwargs)
+        except urllib2.HTTPError, e:
+            if e.code == 304 and exists:
+                return cachefile
+            else:
+                raise
+    finally:
+        if version_info[1] < 6:
+            socket.setdefaulttimeout(None)
 
     data = connection.read()
 
