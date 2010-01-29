@@ -461,15 +461,23 @@ class UnicodeData(Processor):
         except (ValueError, OverflowError):
             event.addresponse(u"Unicode isn't *that* big!")
         else:
-            event.addresponse(u"U+%(code)s is %(name)s (%(char)s), "
+            info = self.info(char)
+            if info['example']:
+                info['example'] = ' (' + info['example'] + ')'
+            event.addresponse(u"U+%(code)s is %(name)s%(example)s, "
                           u"%(category)s with %(bidi)s directionality",
-                          self.info(char))
+                          info)
 
     @match(r'^unicode\s+(.)$', 'deaddressed')
     def ord (self, event, char):
-        event.addresponse(u"'%(char)s' is %(name)s (U+%(code)s), "
+        info = self.info(char)
+        if info['example']:
+            info['example'] = "'" + info['example'] + "'"
+        else:
+            info['example'] = 'That'
+        event.addresponse(u"%(example)s is %(name)s (U+%(code)s), "
                           u"%(category)s with %(bidi)s directionality",
-                          self.info(char))
+                          info)
 
     @match(r'^unicode\s([a-z ]{2,})$')
     def fromname (self, event, name):
@@ -478,15 +486,27 @@ class UnicodeData(Processor):
         except SyntaxError:
             event.addresponse(u"I couldn't find that character")
         else:
-            event.addresponse(u"%(name)s is U+%(code)s (%(char)s), "
+            info = self.info(char)
+            if info['example']:
+                info['example'] = ' (' + info['example'] + ')'
+            event.addresponse(u"%(name)s is U+%(code)s%(example)s, "
                               u"%(category)s with %(bidi)s directionality",
-                              self.info(char))
+                              info)
 
     def info (self, char):
-        cat = self.categories[unicodedata.category(char)]
+        cat = unicodedata.category(char)
+        catname = self.categories[cat]
         bidi = self.bidis[unicodedata.bidirectional(char)]
         name = unicodedata.name(char, 'an unnamed character').decode('ascii')
-        return {'code': u'%04X' % ord(char), 'name': name,
-                   'char': char, 'category': cat.lower(), 'bidi': bidi}
+
+        if cat[0] == 'C' or cat in ('Zp', 'Zl'):
+            example = ''
+        elif cat[0] == 'M':
+            example = ' ' + char
+        else:
+            example = char
+
+        return {'code': u'%04X' % ord(char), 'name': name, 'char': char,
+                'example': example, 'category': catname.lower(), 'bidi': bidi}
 
 # vi: set et sta sw=4 ts=4:
