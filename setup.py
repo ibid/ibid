@@ -19,6 +19,7 @@ install_requires=[
     'BeautifulSoup',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
+    'objgraph',
 ]
 
 if version_info[0] == 2 and version_info[1] < 6:
