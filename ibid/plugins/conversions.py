@@ -456,8 +456,12 @@ class UnicodeData(Processor):
         else:
             code = int(deccode)
 
-        char = unichr(code)
-        event.addresponse(u"U+%(code)s is %(name)s (%(char)s), "
+        try:
+            char = unichr(code)
+        except (ValueError, OverflowError):
+            event.addresponse(u"Unicode isn't *that* big!")
+        else:
+            event.addresponse(u"U+%(code)s is %(name)s (%(char)s), "
                           u"%(category)s with %(bidi)s directionality",
                           self.info(char))
 
