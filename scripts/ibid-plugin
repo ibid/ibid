@@ -127,7 +127,7 @@ while True:
     event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
     event.identity = identity_id
     event.account =  None
-    event.addressed = True
+    event.addressed = not options.public
     event.public = options.public
     event.channel = u"testchan"
 
