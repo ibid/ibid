@@ -385,7 +385,7 @@ class CancelAfterTimeout(object):
 
     def __call__(self):
         return datetime.now() > self.cancel_at
-    
+
     def done(self):
         pass
 
