@@ -4,12 +4,12 @@
 import logging
 
 from wokkel import client, xmppim, subprotocols
-from twisted.internet import reactor, protocol
+from twisted.internet import protocol, reactor, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
 
 import ibid
-from ibid.config import Option, IntOption, ListOption
+from ibid.config import Option, BoolOption, IntOption, ListOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
@@ -160,19 +160,26 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
 
 class IbidXMPPClientConnector(client.XMPPClientConnector):
-    def __init__(self, reactor, domain, factory, server, port):
+    def __init__(self, reactor, domain, factory, server, port, ssl):
         client.XMPPClientConnector.__init__(self, reactor, domain, factory)
         self.overridden_server = server
         self.overridden_port = port
+        self.overridden_ssl = ssl
 
     def pickServer(self):
         srvhost, srvport = client.XMPPClientConnector.pickServer(self)
         host, port = self.overridden_server, self.overridden_port
         if host is None:
             host = srvhost
+        if self.overridden_ssl:
+            if port is None:
+                port = 5223
+            self.connectFuncName = 'connectSSL'
+            self.connectFuncArgs = [ssl.ClientContextFactory()]
         if port is None:
             port = srvport
-        self.factory.log.info(u'Connecting to: %s:%s', host, port)
+        self.factory.log.info(u'Connecting to: %s:%s%s', host, port,
+                              self.overridden_ssl and ' using SSL' or '')
         return host, port
 
     def connectionFailed(self, reason):
@@ -195,6 +202,7 @@ class SourceFactory(client.DeferredClientFactory,
                               'falling back to JID domain)')
     port = IntOption('port', 'Server port number (defaults to SRV lookup, '
                              'falling back to 5222/5223')
+    ssl = BoolOption('ssl', 'Use SSL instead of automatic TLS')
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
     rooms = ListOption('rooms', 'Chatrooms to autojoin', [])
@@ -214,7 +222,7 @@ class SourceFactory(client.DeferredClientFactory,
 
     def setServiceParent(self, service):
         c = IbidXMPPClientConnector(reactor, self.authenticator.jid.host, self,
-                                    self.server, self.port)
+                                    self.server, self.port, self.ssl)
         c.connect()
 
     def connect(self):
