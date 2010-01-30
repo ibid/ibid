@@ -26,6 +26,7 @@ class Ircbot(irc.IRCClient):
 
     def connectionMade(self):
         self.nickname = self.factory.nick.encode('utf-8')
+        self.realname = self.factory.realname.encode('utf-8')
 
         irc.IRCClient.connectionMade(self)
 
@@ -282,6 +283,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     ssl = BoolOption('ssl', 'Use SSL', False)
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
+    realname = Option('realname', 'Full Name', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
     channels = ListOption('channels', 'Channels to autojoin', [])
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)
