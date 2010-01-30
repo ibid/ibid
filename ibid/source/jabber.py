@@ -22,6 +22,7 @@ class Message(domish.Element):
         self['type'] = 'chat'
         self.addElement('body', content=body)
 
+
 class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.RosterClientProtocol):
 
     def __init__(self):
@@ -157,7 +158,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(presence)
         self.rooms.remove(room.lower())
 
-class IbidXMPPClientConnector(client.XMPPClientConnector, ):
+
+class IbidXMPPClientConnector(client.XMPPClientConnector):
     def __init__(self, reactor, domain, factory, server, port):
         client.XMPPClientConnector.__init__(self, reactor, domain, factory)
         self.overridden_server = server
@@ -170,7 +172,7 @@ class IbidXMPPClientConnector(client.XMPPClientConnector, ):
             host = srvhost
         if port is None:
             port = srvport
-        self.factory.log.debug(u'Connecting to: %s:%s', host, port)
+        self.factory.log.info(u'Connecting to: %s:%s', host, port)
         return host, port
 
     def connectionFailed(self, reason):
@@ -181,10 +183,10 @@ class IbidXMPPClientConnector(client.XMPPClientConnector, ):
         self.factory.log.error(u'Connection lost: %s', reason)
         self.factory.clientConnectionLost(self, reason)
 
+
 class SourceFactory(client.DeferredClientFactory,
                     protocol.ReconnectingClientFactory,
                     IbidSourceFactory):
-
     auth = ('implicit',)
     supports = ('multiline',)
 
