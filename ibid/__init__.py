@@ -30,7 +30,7 @@ class InsensitiveDict(dict):
 class MultiSet(object):
     """Multi-Set for channel member tracking.
     Allows out-of-order updates.
-    Atomic: add, remove, discard, and __contains__
+    Atomic: add, remove, discard
     There are no other guarantees.
     """
     __slots__ = ['lock', '_dict']
@@ -62,10 +62,7 @@ class MultiSet(object):
         self.lock.release()
 
     def __contains__(self, value):
-        self.lock.acquire()
-        rv = self._dict.get(value) > 0
-        self.lock.release()
-        return rv
+        return self._dict.get(value, 0) > 0
 
     def __iter__(self):
         for item in self._dict.iterkeys():
