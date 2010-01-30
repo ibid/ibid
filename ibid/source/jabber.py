@@ -7,10 +7,9 @@ from wokkel import client, xmppim, subprotocols
 from twisted.internet import reactor, protocol
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
-from twisted.application import internet
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption, ListOption
+from ibid.config import Option, IntOption, ListOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
