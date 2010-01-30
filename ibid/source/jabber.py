@@ -175,9 +175,11 @@ class IbidXMPPClientConnector(client.XMPPClientConnector, ):
         return host, port
 
     def connectionFailed(self, reason):
+        self.factory.log.error(u'Connection failed: %s', reason)
         self.factory.clientConnectionFailed(self, reason)
 
     def connectionLost(self, reason):
+        self.factory.log.error(u'Connection lost: %s', reason)
         self.factory.clientConnectionLost(self, reason)
 
 class SourceFactory(client.DeferredClientFactory,
@@ -222,16 +224,6 @@ class SourceFactory(client.DeferredClientFactory,
         self.stopFactory()
         self.proto.xmlstream.transport.loseConnection()
         return True
-
-    def clientConnectionFailed(self, connector, reason):
-        self.log.debug(u'Connection failed: %s', reason)
-        protocol.ReconnectingClientFactory.clientConnectionFailed(self,
-                connector, reason)
-
-    def clientConnectionLost(self, connector, reason):
-        self.log.debug(u'Connection lost: %s', reason)
-        protocol.ReconnectingClientFactory.clientConnectionLost(self,
-                connector, reason)
 
     def join(self, room):
         return self.proto.join(room)
