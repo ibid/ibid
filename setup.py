@@ -9,7 +9,7 @@ from setuptools import setup
 install_requires=[
     'dnspython',
     'feedparser',
-    'wokkel==0.4',
+    'wokkel',
     'SOAPpy',
     'pyopenssl',
     'pysqlite',
