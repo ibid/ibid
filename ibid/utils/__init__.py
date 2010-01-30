@@ -6,7 +6,9 @@ from htmlentitydefs import name2codepoint
 import os
 import os.path
 import re
+import socket
 from StringIO import StringIO
+from sys import version_info
 from threading import Lock
 import time
 from urllib import urlencode, quote
@@ -92,13 +94,22 @@ def _cacheable_download(url, cachefile, headers={}, timeout=60):
             modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
             req.add_header("If-Modified-Since", modified)
 
+    kwargs = {}
+    if version_info[1] >= 6:
+        kwargs['timeout'] = timeout
+    else:
+        socket.setdefaulttimeout(timeout)
     try:
-        connection = urllib2.urlopen(req, timeout=timeout)
-    except urllib2.HTTPError, e:
-        if e.code == 304 and exists:
-            return cachefile
-        else:
-            raise
+        try:
+            connection = urllib2.urlopen(req, **kwargs)
+        except urllib2.HTTPError, e:
+            if e.code == 304 and exists:
+                return cachefile
+            else:
+                raise
+    finally:
+        if version_info[1] < 6:
+            socket.setdefaulttimeout(None)
 
     data = connection.read()
 

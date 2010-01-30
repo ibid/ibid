@@ -7,18 +7,19 @@ from sys import version_info, argv
 from setuptools import setup
 
 install_requires=[
+    'BeautifulSoup',
     'dnspython',
     'feedparser',
-    'wokkel',
-    'SOAPpy',
+    'html2text',
+    'html5lib',
+    'jinja',
     'pyopenssl',
     'pysqlite',
     'python-dateutil',
-    'jinja',
-    'html5lib',
-    'BeautifulSoup',
+    'SOAPpy',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
+    'wokkel',
 ]
 
 if version_info[0] == 2 and version_info[1] < 6:
@@ -43,6 +44,8 @@ setup(
     install_requires=install_requires,
     extras_require = {
         'imdb': ['imdbpy'],
+        'memory': ['objgraph'],
+        'asciiart': ['python-aalib'],
     },
     dependency_links=[
         'http://ibid.omnia.za.net/eggs/',
