@@ -19,7 +19,7 @@ install_requires=[
     'SOAPpy',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
-    'wokkel==0.4',
+    'wokkel',
 ]
 
 if version_info[0] == 2 and version_info[1] < 6:
