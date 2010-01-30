@@ -28,15 +28,16 @@ from ibid.event import Event
 parser = OptionParser(usage="""%prog [options...] [plugins...]
 plugins is the list of plugins to load.
 A plugin name followed by a - will be disabled rather than loaded.""")
-parser.add_option("-o", "--only", dest="load_base", action="store_false",
+parser.add_option('-o', '--only', dest='load_base', action='store_false',
         default=True,
-        help="Only load the specified plugins, not the common base plugins")
-parser.add_option("-c", "--configured", dest="load_configured",
-        action="store_true",
-        default=False, help="Load all all configured plugins")
-parser.add_option("-p", "--public", dest="public", action="store_true",
-        default=False,
+        help='Only load the specified plugins, not the common base plugins')
+parser.add_option('-c', '--configured', dest='load_configured',
+        action='store_true', default=False,
+        help='Load all all configured plugins')
+parser.add_option('-p', '--public', action='store_true', default=False,
         help="Make testchan public, it's private by default")
+parser.add_option('-v', '--verbose', action='store_true', default=False,
+        help="Output final event objects")
 
 (options, args) = parser.parse_args()
 
@@ -126,7 +127,7 @@ while True:
     event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
     event.identity = identity_id
     event.account =  None
-    event.addressed = True
+    event.addressed = not options.public
     event.public = options.public
     event.channel = u"testchan"
 
@@ -158,6 +159,9 @@ while True:
                 event.session.rollback()
                 event.session.close()
                 del event['session']
+
+    if options.verbose:
+        print "Event: %s" % repr(event)
 
     for response in event.responses:
         if isinstance(response, basestring):
