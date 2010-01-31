@@ -27,6 +27,7 @@ class InsensitiveDict(dict):
     def __contains__(self, key):
         return dict.__contains__(self, key.lower())
 
+ms_log = logging.getLogger('core.channel_tracking')
 class MultiSet(object):
     """Multi-Set for channel member tracking.
     Allows out-of-order updates.
@@ -45,6 +46,9 @@ class MultiSet(object):
             del self._dict[value]
         else:
             self._dict[value] = self._dict.get(value, 0) + 1
+            if self._dict[value] > 2:
+                ms_log.warning(u'High value in multi-set: %s: %s',
+                               repr(value), repr(self._dict[value]))
         self.lock.release()
 
     def remove(self, value):
@@ -53,6 +57,9 @@ class MultiSet(object):
             del self._dict[value]
         else:
             self._dict[value] = self._dict.get(value, 0) - 1
+            if self._dict[value] < -1:
+                ms_log.warning(u'Low value in multi-set: %s: %s',
+                               repr(value), repr(self._dict[value]))
         self.lock.release()
 
     def discard(self, value):
