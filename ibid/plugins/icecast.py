@@ -20,7 +20,7 @@ class ICECast(Processor):
 
     interval = IntOption('interval',
             'Interval between checking for song changes', 60)
-    streams = DictOption('streams', 
+    streams = DictOption('streams',
             'Dictionary of Stream names to base URL (include trailing /)', {})
 
     last_checked = None

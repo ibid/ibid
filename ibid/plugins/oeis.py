@@ -17,7 +17,7 @@ help['oeis'] = 'Query the Online Encyclopedia of Integer Sequences'
 class OEIS(Processor):
     u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
     oeis <term>[, ...]"""
-    
+
     feature = 'oeis'
 
     @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
@@ -31,11 +31,11 @@ class OEIS(Processor):
         if results_m:
             f.next()
             sequence = Sequence(f)
-            event.addresponse(u'%(name)s - %(url)s - %(values)s', 
+            event.addresponse(u'%(name)s - %(url)s - %(values)s',
                                 {'name': sequence.name,
                                  'url': sequence.url(),
                                  'values': sequence.values})
-        
+
             results = int(results_m.group(1))
             if results > 1:
                 event.addresponse(u'There %(was)s %(count)d more %(results)s. '
@@ -68,7 +68,7 @@ class Sequence(object):
         # Otherwise, only %S, %T and %U are given.
         self.values = (''.join(cmds['V'] + cmds['W'] + cmds['X']) or
                         ''.join(cmds['S'] + cmds['T'] + cmds['U']))
-        
+
         self.name = ''.join(cmds['N'])
 
     def url (self):
