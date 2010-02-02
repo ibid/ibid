@@ -519,7 +519,7 @@ class UnicodeData(Processor):
         else:
             example = char
 
-        return {'code': u'%04X' % ord(char), 'name': name, 'char': char,
+        return {'code': u'%04X' % ord(char), 'name': name.title(), 'char': char,
                 'example': example, 'category': catname.lower(), 'bidi': bidi}
 
 # vi: set et sta sw=4 ts=4:
