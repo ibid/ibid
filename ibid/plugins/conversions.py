@@ -519,9 +519,9 @@ class UnicodeData(Processor):
         name = unicodedata.name(char, 'an unnamed character').decode('ascii')
 
         if cat[0] == 'C' or cat in ('Zp', 'Zl'):
-            example = ''
-        elif cat[0] == 'M':
-            example = ' ' + char
+            example = u''
+        elif cat[0] == 'M' and cat[1] != 'c':
+            example = u'\N{DOTTED CIRCLE}' + char
         else:
             example = char
 
