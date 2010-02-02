@@ -450,8 +450,8 @@ class UnicodeData(Processor):
                   'So': u'a Symbol', 'Zl': u'a Line Separator',
                   'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
 
-    @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)|'
-           r'(?:unicode|ascii)\s+#?(\d{2,})$')
+    @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)$|'
+           r'^(?:unicode|ascii)\s+#?(\d{2,})$')
     def unichr (self, event, hexcode, deccode):
         if hexcode:
             code = int(hexcode, 16)
