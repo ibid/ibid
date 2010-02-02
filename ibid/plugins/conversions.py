@@ -503,6 +503,12 @@ class UnicodeData(Processor):
                               u"%(category)s with %(bidi)s directionality",
                               info)
 
+    # Match any string that can't be a character name or a number.
+    @match(r'^unicode\s+(.*[^0-9a-z#+\s].+|.+[^0-9a-z#+\s].*)$', 'deaddressed')
+    def characters (self, event, string):
+        event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
+                                        for c in string))
+
     def info (self, char):
         cat = unicodedata.category(char)
         if cat == 'Cn':
