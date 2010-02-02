@@ -451,10 +451,11 @@ class UnicodeData(Processor):
                   'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
 
     @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)$|'
+           r'^(?:unicode|ascii)\s+([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
            r'^(?:unicode|ascii)\s+#?(\d{2,})$')
-    def unichr (self, event, hexcode, deccode):
-        if hexcode:
-            code = int(hexcode, 16)
+    def unichr (self, event, hexcode, hexcode2, deccode):
+        if hexcode or hexcode2:
+            code = int(hexcode or hexcode2, 16)
         else:
             code = int(deccode)
 
@@ -493,7 +494,7 @@ class UnicodeData(Processor):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
         except SyntaxError:
-            event.addresponse(u"I couldn't find that character")
+            event.addresponse(u"I couldn't find a character with that name")
         else:
             info = self.info(char)
             if info['example']:
