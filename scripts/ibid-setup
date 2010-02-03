@@ -11,7 +11,7 @@ from getpass import getpass
 from os.path import exists
 from shutil import copyfileobj
 
-from pkg_resources import resource_stream
+from pkg_resources import resource_filename, resource_stream
 from twisted.python.modules import getModule
 
 sys.path.insert(0, '.')
@@ -38,7 +38,7 @@ if exists('ibid.ini'):
     sname = None
 
 else:
-    sample_config = resource_stream('ibid', 'config.ini')
+    sample_config = resource_filename('ibid', 'config.ini')
     ibid.config = FileConfig(sample_config)
 
     botname = raw_input(u'What would you like to call your bot? ')
