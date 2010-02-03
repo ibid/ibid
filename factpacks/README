@@ -1,0 +1,17 @@
+Ibid Factpacks are a way to distribute packages of related factoids.
+They can be installed and removed collectively using the ibid-factpack utility.
+
+Format
+------
+
+JSON-formatted files containing a list of factoids.
+Each factoid is a (names, values) pair.
+names is a list of strings: names for the factoid.
+values is a list of strings: contents of the factoid.
+
+Copyright
+---------
+
+The factpacks (.json files) in this directory are:
+Copyright (c) 2003-2010 Jonathan Hitchcock, Michael Gorven, Stefano Rivera
+Released under terms of the MIT/X/Expat Licence. See COPYING for details.
