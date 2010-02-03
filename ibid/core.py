@@ -314,9 +314,7 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]
-        echo = (u'debugging' in ibid.config and
-                u'sqlalchemy_echo' in ibid.config.debugging and
-                ibid.config.debugging.as_bool(u'sqlalchemy_echo'))
+        echo = ibid.config.debugging.get(u'sqlalchemy_echo', False)
 
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
