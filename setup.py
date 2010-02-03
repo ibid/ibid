@@ -8,6 +8,7 @@ from setuptools import setup
 
 install_requires=[
     'BeautifulSoup',
+    'configobj>=4.7.0',
     'dnspython',
     'feedparser',
     'html2text',
@@ -19,7 +20,7 @@ install_requires=[
     'SOAPpy',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
-    'wokkel',
+    'wokkel>=0.6.3',
 ]
 
 if version_info[0] == 2 and version_info[1] < 6:
