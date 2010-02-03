@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2009 Michael Gorven
+# Copyright (c) 2009, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 #
 # Usage: knab.py <filename> <factoid name> [<factoid name>...]

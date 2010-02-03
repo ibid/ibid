@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# Copyright (c) 2009 Michael Gorven
+# Copyright (c) 2009, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 KNABDIR="$1"
