@@ -50,13 +50,13 @@ else:
     print u"Please enter the details for the primary source. Press Enter for the default option."
     source = {'nick': '$botname'}
     sname = raw_input(u'Source name (e.g. freenode, atrum, jabber): ')
-    source['server'] = raw_input(u'Server: ')
-    port = raw_input(u'Port: ')
-    if port:
-        source['port'] = port
     source['type'] = raw_input(u'Source type (irc or jabber): ')
 
     if source['type'].lower() == 'irc':
+        source['server'] = raw_input(u'Server: ')
+        port = raw_input(u'Port: ')
+        if port:
+            source['port'] = port
         source['channels'] = [c.strip() for c in raw_input(u'Default channels to join (comma separated): ').split(',')]
         source['auth'] = ['hostmask', 'nickserv']
     elif source['type'].lower() == 'jabber':
@@ -64,7 +64,6 @@ else:
         source['password'] = getpass(u'Password: ')
         source['rooms'] = [r.strip() for r in raw_input(u'Default rooms to join (comma separated): ').split(',')]
         source['auth'] = ['implicit']
-        source['ssl'] = raw_input(u'SSL (Y/N): ').lower() in ('y', 'yes', 'true')
     else:
         print 'Invalid source type'
         exit(1)
