@@ -79,9 +79,11 @@ db = DatabaseManager(check_schema_versions=False)
 Session = db['ibid']
 upgrade_schemas(Session)
 
-print u'Database tables created'
+print u"""Database tables created
 
-print u'Please enter the details for your account. This account will be given full admin permissions.'
+Now we need to create an account for you in the bot so it knows who its
+master is. This account will be given full admin permissions.
+Please enter the details for your account."""
 identity = unicode(raw_input('Nick/JID: '))
 source = sname or unicode(raw_input('Source name: '))
 pass1 = getpass('Password: ')
