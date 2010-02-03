@@ -194,8 +194,8 @@ class Reloader(object):
 
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if autoload is None:
-            autoload = ibid.config.plugins.get('autoload', 'True').lower() \
-                       in ('true', 'yes')
+            autoload = ibid.config.plugins.get('autoload', True)
+
         if autoload:
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '')
                     for plugin in getModule('ibid.plugins').iterModules())

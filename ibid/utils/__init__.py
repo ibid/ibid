@@ -63,7 +63,7 @@ def _cacheable_download(url, cachefile, headers={}, timeout=60):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
-        cachedir = ibid.config.plugins['cachedir']
+        cachedir = ibid.config.plugins.get('cachedir', None)
         if not cachedir:
             cachedir = os.path.join(ibid.options['base'], 'cache')
         elif cachedir[0] == "~":
