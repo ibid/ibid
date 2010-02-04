@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Neil Blakey-Milner
+# Copyright (c) 2009-2010, Neil Blakey-Milner, Adrianna Pinska
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 """
