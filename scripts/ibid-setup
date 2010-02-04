@@ -40,36 +40,51 @@ else:
     sample_config = resource_filename('ibid', 'config.ini')
     ibid.config = FileConfig(sample_config)
 
-    botname = raw_input(u'What would you like to call your bot? ')
+    botname = raw_input(u'\nWhat would you like to call your bot? ')
     ibid.config['botname'] = botname
 
-    print u'Please enter the full URL of the database to use, or just press ' \
-          u'Enter for an SQLite database.'
-    ibid.config.databases['ibid'] = raw_input(u'Database URL: ') \
-                                    or 'sqlite:///ibid.db'
+    print u"""
+Database configuration:
+If you want to use the default SQLite database, just press Enter.
+Otherwise please enter a SQLAlchemy database URL.
+Supported databases:
+* mysql://user:pass@host/database
+* postgres://user:pass@host/database (load the CITEXT contrib module first)
+* sqlite:///filename"""
+    ibid.config.databases['ibid'] = raw_input(
+            u'Database URL [Default: sqlite:///ibid.db]: '
+        ) or 'sqlite:///ibid.db'
 
-    print u'Please enter the details for the primary source. ' \
-          u'Press Enter for the default option.'
+    print u"""
+Source configuration:
+Your bot needs to connect to an IM service (in Ibid terminology, a source) like
+an IRC server or jabber account. Please enter the details for the primary
+source.
+
+The source name should be the IRC network name or a generic description for the
+source like 'jabber'.
+"""
     source = {'nick': '$botname'}
-    sname = raw_input(u'Source name (e.g. freenode, atrum, jabber): ')
-    source['type'] = raw_input(u'Source type (irc or jabber): ')
+    sname = raw_input(u'Source name (e.g. freenode, jabber): ')
+    source['type'] = raw_input(u'Source type (irc, jabber): ')
 
     if source['type'].lower() == 'irc':
-        source['server'] = raw_input(u'Server: ')
-        port = raw_input(u'Port: ')
+        source['server'] = raw_input(u'IRC Server: ')
+        port = raw_input(u'Port [Default: 6667]: ')
         if port:
             source['port'] = port
         source['channels'] = [c.strip() for c in raw_input(
-                u'Default channels to join (comma separated): ').split(',')]
+                u'Channels to join (comma separated): ').split(',')]
         source['auth'] = ['hostmask', 'nickserv']
     elif source['type'].lower() == 'jabber':
-        source['jid'] = raw_input(u'JID: ')
+        source['jid'] = raw_input(u'JID (Jabber address): ')
         source['password'] = getpass(u'Password: ')
         source['rooms'] = [r.strip() for r in raw_input(
-                u'Default rooms to join (comma separated): ').split(',')]
+            u'MUC rooms to join (comma separated) [Default: none]: '
+        ).split(',')]
         source['auth'] = ['implicit']
     else:
-        print 'Invalid source type'
+        print 'Invalid source type.'
         exit(1)
 
     ibid.config.sources[sname] = source
@@ -88,7 +103,7 @@ print u"""Database tables created
 Now we need to create an account for you in the bot so it knows who its
 master is. This account will be given full admin permissions.
 Please enter the details for your account."""
-identity = unicode(raw_input('Nick/JID: '))
+identity = unicode(raw_input('Your Nick/JID: '))
 source = sname or unicode(raw_input('Source name: '))
 pass1 = getpass('Password: ')
 pass2 = getpass('Confirm password: ')
