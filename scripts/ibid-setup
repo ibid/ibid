@@ -29,7 +29,8 @@ for module in getModule('ibid.plugins').iterModules():
     try:
         __import__(module.name)
     except Exception, e:
-        print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), unicode(e))
+        print >> stderr, u"Couldn't load %s plugin: %s" % (
+                         module.name.replace('ibid.plugins.', ''), unicode(e))
 
 ibid.options = {'base': '.'}
 if exists('ibid.ini'):
@@ -44,10 +45,13 @@ else:
     botname = raw_input(u'What would you like to call your bot? ')
     ibid.config['botname'] = botname
 
-    print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
-    ibid.config.databases['ibid'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
+    print u'Please enter the full URL of the database to use, or just press ' \
+          u'Enter for an SQLite database.'
+    ibid.config.databases['ibid'] = raw_input(u'Database URL: ') \
+                                    or 'sqlite:///ibid.db'
 
-    print u"Please enter the details for the primary source. Press Enter for the default option."
+    print u'Please enter the details for the primary source. ' \
+          u'Press Enter for the default option.'
     source = {'nick': '$botname'}
     sname = raw_input(u'Source name (e.g. freenode, atrum, jabber): ')
     source['type'] = raw_input(u'Source type (irc or jabber): ')
@@ -57,12 +61,14 @@ else:
         port = raw_input(u'Port: ')
         if port:
             source['port'] = port
-        source['channels'] = [c.strip() for c in raw_input(u'Default channels to join (comma separated): ').split(',')]
+        source['channels'] = [c.strip() for c in raw_input(
+                u'Default channels to join (comma separated): ').split(',')]
         source['auth'] = ['hostmask', 'nickserv']
     elif source['type'].lower() == 'jabber':
         source['jid'] = raw_input(u'JID: ')
         source['password'] = getpass(u'Password: ')
-        source['rooms'] = [r.strip() for r in raw_input(u'Default rooms to join (comma separated): ').split(',')]
+        source['rooms'] = [r.strip() for r in raw_input(
+                u'Default rooms to join (comma separated): ').split(',')]
         source['auth'] = ['implicit']
     else:
         print 'Invalid source type'
@@ -72,7 +78,8 @@ else:
 
     ibid.config.write(open('ibid.ini', 'w'))
     if not exists('logging.ini'):
-        copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
+        copyfileobj(resource_stream('ibid', 'logging.ini'),
+                    open('logging.ini', 'w'))
 
 db = DatabaseManager(check_schema_versions=False)
 Session = db['ibid']
