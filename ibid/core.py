@@ -194,8 +194,8 @@ class Reloader(object):
 
         all_plugins = set(plugin.split('.')[0] for plugin in load)
         if autoload is None:
-            autoload = ibid.config.plugins.get('autoload', 'True').lower() \
-                       in ('true', 'yes')
+            autoload = ibid.config.plugins.get('autoload', True)
+
         if autoload:
             all_plugins |= set(plugin.name.replace('ibid.plugins.', '')
                     for plugin in getModule('ibid.plugins').iterModules())
@@ -314,9 +314,7 @@ class DatabaseManager(dict):
 
     def load(self, name):
         uri = ibid.config.databases[name]
-        echo = (u'debugging' in ibid.config and
-                u'sqlalchemy_echo' in ibid.config.debugging and
-                ibid.config.debugging.as_bool(u'sqlalchemy_echo'))
+        echo = ibid.config.debugging.get(u'sqlalchemy_echo', False)
 
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
