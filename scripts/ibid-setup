@@ -5,8 +5,6 @@
 import logging
 import sys
 from sys import exit, stderr
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from getpass import getpass
 from os.path import exists
 from shutil import copyfileobj
@@ -19,7 +17,7 @@ sys.path.insert(0, '.')
 import ibid
 from ibid.config import FileConfig
 from ibid.core import DatabaseManager
-from ibid.db import metadata, upgrade_schemas
+from ibid.db import upgrade_schemas
 from ibid.db.models import Account, Identity, Permission, Credential
 from ibid.auth import hash
 
