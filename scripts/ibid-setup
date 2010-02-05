@@ -80,7 +80,7 @@ source like 'jabber'.
 """
     source = {'nick': '$botname'}
     sname = raw_input(u'Source name (e.g. freenode, jabber): ')
-    source['type'] = raw_input(u'Source type (irc, jabber): ')
+    source['type'] = raw_input(u'Source type (irc, jabber) [Default: irc]: ')
 
     if source['type'].lower() in (u'irc', u''):
         source['server'] = raw_input(u'IRC Server: ')
