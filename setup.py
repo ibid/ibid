@@ -59,11 +59,13 @@ setup(
     scripts=[
         'scripts/ibid',
         'scripts/ibid-db',
+        'scripts/ibid-factpack',
+        'scripts/ibid-knab-import',
+        'scripts/ibid-memgraph',
+        'scripts/ibid-objgraph',
+        'scripts/ibid-pb-client',
         'scripts/ibid-plugin',
         'scripts/ibid-setup',
-        'scripts/ibid-factpack',
-        'scripts/ibid-pb-client',
-        'scripts/ibid-knab-import',
         'scripts/ibid.tac',
     ],
 
