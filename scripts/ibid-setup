@@ -103,7 +103,10 @@ print u"""Database tables created
 Now we need to create an account for you in the bot so it knows who its
 master is. This account will be given full admin permissions.
 Please enter the details for your account."""
-identity = unicode(raw_input('Your Nick/JID: '))
+identity = unicode(raw_input('Your IRC Nick/Jabber ID: '))
+if not identity:
+    print 'Skipping account creation'
+    exit(0)
 source = sname or unicode(raw_input('Source name: '))
 pass1 = getpass('Password: ')
 pass2 = getpass('Confirm password: ')
