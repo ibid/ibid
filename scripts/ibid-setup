@@ -33,19 +33,11 @@ if options.verbose:
 else:
     logging.basicConfig(level=logging.INFO)
 
-for module in getModule('ibid.plugins').iterModules():
-    try:
-        __import__(module.name)
-    except Exception, e:
-        print >> stderr, u"Couldn't load %s plugin: %s" % (
-                         module.name.replace('ibid.plugins.', ''), unicode(e))
-
 ibid.options = {'base': '.'}
 if exists('ibid.ini'):
     ibid.config = FileConfig('ibid.ini')
     ibid.config.merge(FileConfig('local.ini'))
     sname = None
-
 else:
     sample_config = resource_filename('ibid', 'config.ini')
     ibid.config = FileConfig(sample_config)
@@ -53,6 +45,16 @@ else:
     botname = raw_input(u'\nWhat would you like to call your bot? ')
     ibid.config['botname'] = botname
 
+print u'Loading plugins...'
+for module in getModule('ibid.plugins').iterModules():
+    try:
+        __import__(module.name)
+    except Exception, e:
+        if options.verbose:
+            print >> stderr, u"Couldn't load %s plugin: %s" % (
+                    module.name.replace('ibid.plugins.', ''), unicode(e))
+
+if not exists('ibid.ini'):
     print u"""
 Database configuration:
 If you want to use the default SQLite database, just press Enter.
