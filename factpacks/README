@@ -12,6 +12,49 @@ values is a list of strings: contents of the factoid.
 Copyright
 ---------
 
-The factpacks (.json files) in this directory are:
-Copyright (c) 2003-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
-Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+divine.json:
+ Copyright (c), Mattel Inc.
+ Additions by the Stefano Rivera
+
+greetings.json:
+ Copyright (c) 2008-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
+ Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+handey.json:
+ Copyright (c), Jack Handey
+
+http.json:
+ Copyright (c) 2008-2010, Jonathan Hitchcock
+ Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+overlord.json:
+ This Evil Overlord List is Copyright 1996-1997 by Peter Anspach. If you enjoy
+ it, feel free to pass it along or post it anywhere, provided that (1) it is
+ not altered in any way, and (2) this copyright notice is attached.
+
+roshambo.json:
+ Copyright (c) 2008-2010, Adrian Moisey, Michael Gorven
+ Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+rubaiyat.json:
+ Public Domain
+
+smtp.json:
+ Copyright (c) 2008-2010, Jonathan Hitchcock, Michael Gorven
+ Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+tao.json:
+ Public Domain
+
+verbs.json:
+ Copyright (c) 2008-2010, Jonathan Hitchcock
+ Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
+wrestling.json:
+ Copyright Unknown, widely distributed on the Internet.
+
+zen.json:
+ Public Domain
+
+zippy.json:
+ Copyright Bill Griffith, widely distributed on the Internet.
