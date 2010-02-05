@@ -68,7 +68,7 @@ source like 'jabber'.
     sname = raw_input(u'Source name (e.g. freenode, jabber): ')
     source['type'] = raw_input(u'Source type (irc, jabber): ')
 
-    if source['type'].lower() == 'irc':
+    if source['type'].lower() == u'irc':
         source['server'] = raw_input(u'IRC Server: ')
         port = raw_input(u'Port [Default: 6667]: ')
         if port:
@@ -76,7 +76,7 @@ source like 'jabber'.
         source['channels'] = [c.strip() for c in raw_input(
                 u'Channels to join (comma separated): ').split(',')]
         source['auth'] = ['hostmask', 'nickserv']
-    elif source['type'].lower() == 'jabber':
+    elif source['type'].lower() == u'jabber':
         source['jid'] = raw_input(u'JID (Jabber address): ')
         source['password'] = getpass(u'Password: ')
         source['rooms'] = [r.strip() for r in raw_input(
@@ -84,7 +84,7 @@ source like 'jabber'.
         ).split(',')]
         source['auth'] = ['implicit']
     else:
-        print 'Invalid source type.'
+        print u'Invalid source type.'
         exit(1)
 
     ibid.config.sources[sname] = source
@@ -103,16 +103,16 @@ print u"""Database tables created
 Now we need to create an account for you in the bot so it knows who its
 master is. This account will be given full admin permissions.
 Please enter the details for your account."""
-identity = unicode(raw_input('Your IRC Nick/Jabber ID: '))
+identity = unicode(raw_input(u'Your IRC Nick/Jabber ID: '))
 if not identity:
-    print 'Skipping account creation'
+    print u'Skipping account creation'
     exit(0)
-source = sname or unicode(raw_input('Source name: '))
-pass1 = getpass('Password to identify yourself to the bot: ')
-pass2 = getpass('Confirm password: ')
+source = sname or unicode(raw_input(u'Source name: '))
+pass1 = getpass(u'Password to identify yourself to the bot: ')
+pass2 = getpass(u'Confirm password: ')
 
 if pass1 != pass2:
-    print 'Password do not match'
+    print u'Password do not match'
     exit(1)
 
 session = Session()
@@ -134,6 +134,6 @@ session.save_or_update(identity)
 session.commit()
 session.close()
 
-print 'Account created with admin permissions'
+print u'Account created with admin permissions'
 
 # vi: set et sta sw=4 ts=4:
