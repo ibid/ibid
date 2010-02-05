@@ -13,12 +13,11 @@ Copyright
 ---------
 
 divine.json:
- Copyright (c) 1996-2000, Sarah Burcham, Kevin Lenzo,
-               2003-2010, Jonathan Hitchcock,
-               2008-2010, Stefano Rivera
- The Infobot is covered under the same terms as Perl itself (the Artistic
- License). This software is meant to be freely available under those terms in
- perpetuity.
+ Copyright (c) 2008-2010, Jonathan Hitchcock, Stefano Rivera
+ Released under terms of the same terms as Perl itself (the Artistic License).
+ This software is meant to be freely available under those terms in perpetuity.
+ Derived from knab: Copyright (c) 2003-2009 Jonathan Hitchcock
+ Derived from infobot: Copyright (c) 1996-2000, Sarah Burcham, Kevin Lenzo
 
 greetings.json:
  Copyright (c) 2008-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
