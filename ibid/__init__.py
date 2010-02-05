@@ -5,9 +5,10 @@ import logging
 import logging.config
 from os import makedirs
 from os.path import join, dirname, expanduser, exists
+import sys
+from threading import Lock
 from ConfigParser import SafeConfigParser
 
-import sys
 sys.path.insert(0, '%s/lib' % dirname(__file__))
 
 import twisted.python.log
@@ -26,6 +27,58 @@ class InsensitiveDict(dict):
     def __contains__(self, key):
         return dict.__contains__(self, key.lower())
 
+ms_log = logging.getLogger('core.channel_tracking')
+class MultiSet(object):
+    """Multi-Set for channel member tracking.
+    Allows out-of-order updates.
+    Atomic: add, remove, discard
+    There are no other guarantees.
+    """
+    __slots__ = ['lock', '_dict']
+
+    def __init__(self):
+        self.lock = Lock()
+        self._dict = {}
+
+    def add(self, value):
+        self.lock.acquire()
+        if value in self._dict and self._dict[value] == -1:
+            del self._dict[value]
+        else:
+            self._dict[value] = self._dict.get(value, 0) + 1
+            if self._dict[value] > 2:
+                ms_log.warning(u'High value in multi-set: %s: %s',
+                               repr(value), repr(self._dict[value]))
+        self.lock.release()
+
+    def remove(self, value):
+        self.lock.acquire()
+        if value in self._dict and self._dict[value] == 1:
+            del self._dict[value]
+        else:
+            self._dict[value] = self._dict.get(value, 0) - 1
+            if self._dict[value] < -1:
+                ms_log.warning(u'Low value in multi-set: %s: %s',
+                               repr(value), repr(self._dict[value]))
+        self.lock.release()
+
+    def discard(self, value):
+        self.lock.acquire()
+        if value in self._dict:
+            del self._dict[value]
+        self.lock.release()
+
+    def __contains__(self, value):
+        return self._dict.get(value, 0) > 0
+
+    def __iter__(self):
+        for item in self._dict.iterkeys():
+            if self._dict.get(item, 0) > 0:
+                yield item
+
+    def __repr__(self):
+        return self._dict.__repr__()
+
 sources = InsensitiveDict()
 config = {}
 dispatcher = None
@@ -36,7 +89,7 @@ auth = None
 service = None
 options = {}
 rpc = {}
-channels = defaultdict(lambda: defaultdict(set))
+channels = defaultdict(lambda: defaultdict(MultiSet))
 
 def twisted_log(eventDict):
     log = logging.getLogger('twisted')
