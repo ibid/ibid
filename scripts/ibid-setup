@@ -108,7 +108,7 @@ if not identity:
     print 'Skipping account creation'
     exit(0)
 source = sname or unicode(raw_input('Source name: '))
-pass1 = getpass('Password: ')
+pass1 = getpass('Password to identify yourself to the bot: ')
 pass2 = getpass('Confirm password: ')
 
 if pass1 != pass2:
