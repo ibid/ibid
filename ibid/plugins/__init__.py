@@ -25,7 +25,7 @@ except ImportError:
 import ibid
 from ibid.compat import json
 
-__path__.extend(pluginPackagePaths(__name__))
+__path__ = pluginPackagePaths(__name__) + __path__
 
 class Processor(object):
     """Base class for Ibid plugins.

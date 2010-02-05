@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Jonathan Hitchock, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from os.path import join, exists
@@ -226,7 +226,7 @@ class SourceFactory(IbidSourceFactory):
             keys = create_key_pair(pub, prv, passphrase='')
         else:
             keys = load_key_pair(pub, prv, passphrase='')
-        self.client = SilcBot(keys, self.nick, self.nick, self.name, self)
+        self.client = SilcBot(keys, self.nick, self.nick, self.realname, self)
 
     def run_one(self):
         self.client.run_one()
