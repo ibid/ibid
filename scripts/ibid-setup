@@ -82,7 +82,7 @@ source like 'jabber'.
     sname = raw_input(u'Source name (e.g. freenode, jabber): ')
     source['type'] = raw_input(u'Source type (irc, jabber): ')
 
-    if source['type'].lower() == u'irc':
+    if source['type'].lower() in (u'irc', u''):
         source['server'] = raw_input(u'IRC Server: ')
         port = raw_input(u'Port [Default: 6667]: ')
         if port:
