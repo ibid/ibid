@@ -7,6 +7,7 @@ from optparse import OptionParser
 import sys
 from sys import exit, stderr
 from getpass import getpass
+from os import getenv
 from os.path import exists
 from shutil import copyfileobj
 
@@ -33,6 +34,18 @@ if options.verbose:
 else:
     logging.basicConfig(level=logging.INFO)
 
+try:
+    encoding = getenv("LANG").split(".")[1]
+except:
+    encoding = "ascii"
+
+def prompt(prompt, secret=False):
+    if secret:
+        r = getpass(prompt)
+    else:
+        r = raw_input(prompt)
+    return unicode(r, encoding)
+
 ibid.options = {'base': '.'}
 if exists('ibid.ini'):
     ibid.config = FileConfig('ibid.ini')
@@ -42,7 +55,7 @@ else:
     sample_config = resource_filename('ibid', 'config.ini')
     ibid.config = FileConfig(sample_config)
 
-    botname = raw_input(u'\nWhat would you like to call your bot? ')
+    botname = prompt(u'\nWhat would you like to call your bot? ')
     ibid.config['botname'] = botname
 
 print u'Loading plugins...'
@@ -63,7 +76,7 @@ Supported databases:
 * mysql://user:pass@host/database
 * postgres://user:pass@host/database (load the CITEXT contrib module first)
 * sqlite:///filename"""
-    ibid.config.databases['ibid'] = raw_input(
+    ibid.config.databases['ibid'] = prompt(
             u'Database URL [Default: sqlite:///ibid.db]: '
         ) or 'sqlite:///ibid.db'
 
@@ -79,23 +92,24 @@ The source name should be the IRC network name or a generic description for the
 source like 'jabber'.
 """
     source = {'nick': '$botname'}
-    sname = raw_input(u'Source name (e.g. freenode, jabber): ')
-    source['type'] = raw_input(u'Source type (irc, jabber) [Default: irc]: ')
+    sname = prompt(u'Source name (e.g. freenode, jabber): ')
+    source['type'] = prompt(u'Source type (irc, jabber) [Default: irc]: ')
 
     if source['type'].lower() in (u'irc', u''):
-        source['server'] = raw_input(u'IRC Server: ')
-        port = raw_input(u'Port [Default: 6667]: ')
+        source['server'] = prompt(u'IRC Server: ')
+        port = prompt(u'Port [Default: 6667]: ')
         if port:
             source['port'] = port
-        source['channels'] = [c.strip() for c in raw_input(
-                u'Channels to join (comma separated): ').split(',')]
+        source['channels'] = [c.strip() for c in prompt(
+            u'Channels to join (comma separated) [Default: none]: '
+        ).split(u',')]
         source['auth'] = ['hostmask', 'nickserv']
     elif source['type'].lower() == u'jabber':
-        source['jid'] = raw_input(u'JID (Jabber address): ')
-        source['password'] = getpass(u'Password: ')
-        source['rooms'] = [r.strip() for r in raw_input(
+        source['jid'] = prompt(u'JID (Jabber address): ')
+        source['password'] = prompt(u'Password: ', secret=True)
+        source['rooms'] = [r.strip() for r in prompt(
             u'MUC rooms to join (comma separated) [Default: none]: '
-        ).split(',')]
+        ).split(u',')]
         source['auth'] = ['implicit']
     else:
         print u'Invalid source type.'
@@ -117,13 +131,13 @@ print u"""Database tables created
 Now we need to create an account for you in the bot so it knows who its
 master is. This account will be given full admin permissions.
 Please enter the details for your account."""
-identity = unicode(raw_input(u'Your IRC Nick/Jabber ID: '))
+identity = prompt(u'Your IRC Nick/Jabber ID: ')
 if not identity:
     print u'Skipping account creation'
     exit(0)
-source = sname or unicode(raw_input(u'Source name: '))
-pass1 = getpass(u'Password to identify yourself to the bot: ')
-pass2 = getpass(u'Confirm password: ')
+source = sname or prompt(u'Source name: ')
+pass1 = prompt(u'Password to identify yourself to the bot: ', secret=True)
+pass2 = prompt(u'Confirm password: ', secret=True)
 
 if pass1 != pass2:
     print u'Password do not match'
