@@ -3,6 +3,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import logging
+from optparse import OptionParser
 import sys
 from sys import exit, stderr
 from getpass import getpass
@@ -21,7 +22,16 @@ from ibid.db import upgrade_schemas
 from ibid.db.models import Account, Identity, Permission, Credential
 from ibid.auth import hash
 
-logging.basicConfig(level=logging.DEBUG)
+parser = OptionParser(usage="%prog [options...]")
+parser.add_option('-v', '--verbose', action='store_true', default=False,
+        help="Output debugging information")
+
+(options, args) = parser.parse_args()
+
+if options.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
 
 for module in getModule('ibid.plugins').iterModules():
     try:
