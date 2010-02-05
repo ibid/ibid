@@ -72,6 +72,8 @@ Source configuration:
 Your bot needs to connect to an IM service (in Ibid terminology, a source) like
 an IRC server or jabber account. Please enter the details for the primary
 source.
+Note: This setup script currently only supports IRC and jabber. You can set up
+other sources manually in ibid.ini.
 
 The source name should be the IRC network name or a generic description for the
 source like 'jabber'.
