@@ -469,6 +469,8 @@ class UnicodeData(Processor):
         else:
             if info['example']:
                 info['example'] = ' (' + info['example'] + ')'
+            if deccode:
+                info['code'] += ' (%i)' % code
             event.addresponse(u"U+%(code)s is %(name)s%(example)s, "
                           u"%(category)s with %(bidi)s directionality",
                           info)
