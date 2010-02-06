@@ -6,13 +6,13 @@ import logging
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
-from pkg_resources import resource_filename
 from jinja import Environment, PackageLoader
 
 import ibid
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 from ibid.config import Option, IntOption
+from ibid.utils import locate_resource
 
 templates = Environment(loader=PackageLoader('ibid', 'templates'))
 
@@ -101,7 +101,7 @@ class SourceFactory(IbidSourceFactory):
         root = Plugin(name)
         root.putChild('', Index(name))
         root.putChild('message', Message(name))
-        root.putChild('static', static.File(resource_filename('ibid', 'static')))
+        root.putChild('static', static.File(locate_resource('ibid', 'static')))
         root.putChild('RPC2', XMLRPC())
         root.putChild('SOAP', SOAP())
         self.site = server.Site(root)

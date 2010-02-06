@@ -8,13 +8,12 @@ from urllib2 import build_opener, HTTPError, HTTPBasicAuthHandler
 import logging
 import re
 
-from pkg_resources import resource_exists, resource_stream
-
 import ibid
 from ibid.plugins import Processor, handler
 from ibid.config import Option
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
+from ibid.utils import locate_resource
 from ibid.utils.html import get_html_parse_tree
 
 help = {}
@@ -61,13 +60,12 @@ class Grab(Processor):
                        'delicious')
 
     def setup(self):
-        if resource_exists(__name__, '../data/tlds-alpha-by-domain.txt'):
-            tlds = [tld.strip().lower() for tld
-                    in resource_stream(__name__, '../data/tlds-alpha-by-domain.txt')
-                        .readlines()
-                    if not tld.startswith('#')
-            ]
-
+        tldfile = locate_resource('ibid.data', 'tlds-alpha-by-domain.txt')
+        if tldfile:
+            f = file(tldfile, 'r')
+            tlds = [tld.strip().lower() for tld in f.readlines()
+                    if not tld.startswith('#')]
+            f.close()
         else:
             log.warning(u"Couldn't open TLD list, falling back to minimal default")
             tlds = 'com.org.net.za'.split('.')

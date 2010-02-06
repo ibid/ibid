@@ -5,9 +5,9 @@ import logging
 
 from configobj import ConfigObj
 from validate import Validator
-from pkg_resources import resource_stream
 
 import ibid
+from ibid.utils import locate_resource
 
 def monkeypatch(self, name):
     if self.has_key(name):
@@ -17,7 +17,7 @@ def monkeypatch(self, name):
 ConfigObj.__getattr__ = monkeypatch
 
 def FileConfig(filename):
-    spec = resource_stream(__name__, 'configspec.ini')
+    spec = file(locate_resource('ibid', 'configspec.ini'), 'r')
     configspec = ConfigObj(spec, list_values=False, encoding='utf-8')
     config = ConfigObj(filename, configspec=configspec, interpolation='Template', encoding='utf-8')
     config.validate(Validator())
