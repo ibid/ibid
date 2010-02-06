@@ -20,7 +20,6 @@ from sqlalchemy.exceptions import IntegrityError
 sys.path.insert(0, '.')
 
 import ibid
-import ibid.plugins
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
@@ -57,6 +56,7 @@ ibid.auth = FakeAuth()
 
 #ibid.plugins.auth_responses = auth_responses
 ibid.options = {'base': '.'}
+import ibid.plugins
 
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")

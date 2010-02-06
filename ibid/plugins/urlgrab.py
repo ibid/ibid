@@ -60,7 +60,7 @@ class Grab(Processor):
                        'delicious')
 
     def setup(self):
-        tldfile = locate_resource('ibid.data', 'tlds-alpha-by-domain.txt')
+        tldfile = locate_resource('ibid', 'data/tlds-alpha-by-domain.txt')
         if tldfile:
             f = file(tldfile, 'r')
             tlds = [tld.strip().lower() for tld in f.readlines()
