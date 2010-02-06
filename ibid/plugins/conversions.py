@@ -1,10 +1,11 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from subprocess import Popen, PIPE
 from urllib import urlencode
 import logging
 import re
+import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
@@ -411,5 +412,123 @@ class Currency(Processor):
             event.addresponse(human_join(results))
         else:
             event.addresponse(u'No currencies found')
+
+class UnassignedCharacter(Exception): pass
+
+help['unicode'] = """Look up characters in the Unicode database."""
+class UnicodeData(Processor):
+    """U+<hex code>
+    unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""
+
+    feature = 'unicode'
+
+    bidis = {'AL': u'right-to-left Arabic', 'AN': u'Arabic number',
+             'B': u'paragraph separator', 'BN': u'boundary neutral',
+             'CS': u'common number separator', 'EN': u'European number',
+             'ES': u'European number separator',
+             'ET': u'European number terminator',
+             'L': u'left-to-right', u'LRE': 'left-to-right embedding',
+             'LRO': u'left-to-right override', 'NSM': u'non-spacing mark',
+             'ON': u'other neutral', 'PDF': u'pop directional format',
+             'R': u'right-to-left', 'RLE': u'right-to-left embedding',
+             'RLO': u'right-to-left override', 'S': u'segment separator',
+             'WS': u'whitespace'}
+
+    categories = {'Cc': u'a control character', 'Cf': u'a formatting character',
+                  'Cn': u'an unassigned character', 'Co': u'a private-use character',
+                  'Cs': u'a surrogate character', 'Ll': u'a Lowercase Letter',
+                  'Lm': u'a Modifier Letter', 'Lo': u'a Letter',
+                  'Lt': u'a Titlecase Letter', 'Lu': u'an Uppercase Letter',
+                  'Mc': u'a Spacing Combining Mark', 'Me': u'an Enclosing Mark',
+                  'Mn': u'a Nonspacing Mark', 'Nd': u'a Decimal Digit Number',
+                  'Nl': u'a Letter Number', 'No': u'a Number',
+                  'Pc': u'a Connector', 'Pd': u'a Dash',
+                  'Pe': u'a Close Punctuation mark', 'Pf': u'a Final quote',
+                  'Pi': u'an Initial quote', 'Po': u'a Punctuation character',
+                  'Ps': u'an Open Punctuation mark', 'Sc': u'a Currency Symbol',
+                  'Sk': u'a Modifier Symbol', 'Sm': u'a Math Symbol',
+                  'So': u'a Symbol', 'Zl': u'a Line Separator',
+                  'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
+
+    @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)$|'
+           r'^(?:unicode|ascii)\s+([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
+           r'^(?:unicode|ascii)\s+#?(\d{2,})$')
+    def unichr (self, event, hexcode, hexcode2, deccode):
+        if hexcode or hexcode2:
+            code = int(hexcode or hexcode2, 16)
+        else:
+            code = int(deccode)
+
+        try:
+            char = unichr(code)
+            info = self.info(char)
+        except (ValueError, OverflowError):
+            event.addresponse(u"Unicode isn't *that* big!")
+        except UnassignedCharacter:
+            event.addresponse(u"That character isn't in Unicode")
+        else:
+            if info['example']:
+                info['example'] = ' (' + info['example'] + ')'
+            if deccode:
+                info['code'] += ' (%i)' % code
+            event.addresponse(u"U+%(code)s is %(name)s%(example)s, "
+                          u"%(category)s with %(bidi)s directionality",
+                          info)
+
+    @match(r'^unicode\s+(.)$', 'deaddressed')
+    def ord (self, event, char):
+        try:
+            info = self.info(char)
+        except UnassignedCharacter:
+            event.addresponse(u"That character isn't in Unicode. "
+                              u"Where did you even find it?")
+        else:
+            if info['example']:
+                info['example'] = "'" + info['example'] + "'"
+            else:
+                info['example'] = 'That'
+            event.addresponse(u"%(example)s is %(name)s (U+%(code)s), "
+                              u"%(category)s with %(bidi)s directionality",
+                              info)
+
+    @match(r'^unicode\s+([a-z -]{2,})$')
+    def fromname (self, event, name):
+        try:
+            char = eval(ur'u"\N{%s}"' % name.upper())
+        except SyntaxError:
+            event.addresponse(u"I couldn't find a character with that name")
+        else:
+            info = self.info(char)
+            if info['example']:
+                info['example'] = ' (' + info['example'] + ')'
+            event.addresponse(u"%(name)s is U+%(code)s%(example)s, "
+                              u"%(category)s with %(bidi)s directionality",
+                              info)
+
+    # Match any string that can't be a character name or a number.
+    @match(r'^unicode\s+(.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)$', 'deaddressed')
+    def characters (self, event, string):
+        event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
+                                        for c in string))
+
+    def info (self, char):
+        cat = unicodedata.category(char)
+        if cat == 'Cn':
+            raise UnassignedCharacter
+
+        catname = self.categories[cat]
+        bidi = self.bidis[unicodedata.bidirectional(char)]
+        name = unicodedata.name(char, 'an unnamed character').decode('ascii')
+
+        if cat[0] == 'C' or cat in ('Zp', 'Zl'):
+            example = u''
+        elif cat[0] == 'M' and cat[1] != 'c':
+            example = u'\N{DOTTED CIRCLE}' + char
+        else:
+            example = char
+
+        return {'code': u'%04X' % ord(char),
+                'name': name.title().replace('Cjk', 'CJK'), 'char': char,
+                'example': example, 'category': catname.lower(), 'bidi': bidi}
 
 # vi: set et sta sw=4 ts=4:
