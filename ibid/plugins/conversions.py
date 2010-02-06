@@ -489,7 +489,7 @@ class UnicodeData(Processor):
                               u"%(category)s with %(bidi)s directionality",
                               info)
 
-    @match(r'^unicode\s+([a-z ]{2,})$')
+    @match(r'^unicode\s+([a-z -]{2,})$')
     def fromname (self, event, name):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
@@ -504,7 +504,7 @@ class UnicodeData(Processor):
                               info)
 
     # Match any string that can't be a character name or a number.
-    @match(r'^unicode\s+(.*[^0-9a-z#+\s].+|.+[^0-9a-z#+\s].*)$', 'deaddressed')
+    @match(r'^unicode\s+(.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)$', 'deaddressed')
     def characters (self, event, string):
         event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
                                         for c in string))
