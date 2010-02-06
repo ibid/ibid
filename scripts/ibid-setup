@@ -3,15 +3,15 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import logging
+from optparse import OptionParser
 import sys
 from sys import exit, stderr
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from getpass import getpass
+from os import getenv
 from os.path import exists
 from shutil import copyfileobj
 
-from pkg_resources import resource_stream
+from pkg_resources import resource_filename, resource_stream
 from twisted.python.modules import getModule
 
 sys.path.insert(0, '.')
@@ -19,76 +19,128 @@ sys.path.insert(0, '.')
 import ibid
 from ibid.config import FileConfig
 from ibid.core import DatabaseManager
-from ibid.db import metadata, upgrade_schemas
+from ibid.db import upgrade_schemas
 from ibid.db.models import Account, Identity, Permission, Credential
 from ibid.auth import hash
 
-logging.basicConfig(level=logging.DEBUG)
+parser = OptionParser(usage="%prog [options...]")
+parser.add_option('-v', '--verbose', action='store_true', default=False,
+        help="Output debugging information")
 
-for module in getModule('ibid.plugins').iterModules():
-    try:
-        __import__(module.name)
-    except Exception, e:
-        print >> stderr, u"Couldn't load %s plugin: %s" % (module.name.replace('ibid.plugins.', ''), unicode(e))
+(options, args) = parser.parse_args()
+
+if options.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
+
+try:
+    encoding = getenv("LANG").split(".")[1]
+except:
+    encoding = "ascii"
+
+def prompt(prompt, secret=False):
+    if secret:
+        r = getpass(prompt)
+    else:
+        r = raw_input(prompt)
+    return unicode(r, encoding)
 
 ibid.options = {'base': '.'}
 if exists('ibid.ini'):
     ibid.config = FileConfig('ibid.ini')
     ibid.config.merge(FileConfig('local.ini'))
     sname = None
-
 else:
-    sample_config = resource_stream('ibid', 'config.ini')
+    sample_config = resource_filename('ibid', 'config.ini')
     ibid.config = FileConfig(sample_config)
 
-    botname = raw_input(u'What would you like to call your bot? ')
+    botname = prompt(u'\nWhat would you like to call your bot? ')
     ibid.config['botname'] = botname
 
-    print u'Please enter the full URL of the database to use, or just press Enter for an SQLite database.'
-    ibid.config.databases['ibid'] = raw_input(u'Database URL: ') or 'sqlite:///ibid.db'
+print u'Loading plugins...'
+for module in getModule('ibid.plugins').iterModules():
+    try:
+        __import__(module.name)
+    except Exception, e:
+        if options.verbose:
+            print >> stderr, u"Couldn't load %s plugin: %s" % (
+                    module.name.replace('ibid.plugins.', ''), unicode(e))
 
-    print u"Please enter the details for the primary source. Press Enter for the default option."
+if not exists('ibid.ini'):
+    print u"""
+Database configuration:
+If you want to use the default SQLite database, just press Enter.
+Otherwise please enter a SQLAlchemy database URL.
+Supported databases:
+* mysql://user:pass@host/database
+* postgres://user:pass@host/database (load the CITEXT contrib module first)
+* sqlite:///filename"""
+    ibid.config.databases['ibid'] = prompt(
+            u'Database URL [Default: sqlite:///ibid.db]: '
+        ) or 'sqlite:///ibid.db'
+
+    print u"""
+Source configuration:
+Your bot needs to connect to an IM service (in Ibid terminology, a source) like
+an IRC server or jabber account. Please enter the details for the primary
+source.
+Note: This setup script currently only supports IRC and jabber. You can set up
+other sources manually in ibid.ini.
+
+The source name should be the IRC network name or a generic description for the
+source like 'jabber'.
+"""
     source = {'nick': '$botname'}
-    sname = raw_input(u'Source name (e.g. freenode, atrum, jabber): ')
-    source['server'] = raw_input(u'Server: ')
-    port = raw_input(u'Port: ')
-    if port:
-        source['port'] = port
-    source['type'] = raw_input(u'Source type (irc or jabber): ')
+    sname = prompt(u'Source name (e.g. freenode, jabber): ')
+    source['type'] = prompt(u'Source type (irc, jabber) [Default: irc]: ')
 
-    if source['type'].lower() == 'irc':
-        source['channels'] = [c.strip() for c in raw_input(u'Default channels to join (comma separated): ').split(',')]
+    if source['type'].lower() in (u'irc', u''):
+        source['server'] = prompt(u'IRC Server: ')
+        port = prompt(u'Port [Default: 6667]: ')
+        if port:
+            source['port'] = port
+        source['channels'] = [c.strip() for c in prompt(
+            u'Channels to join (comma separated) [Default: none]: '
+        ).split(u',')]
         source['auth'] = ['hostmask', 'nickserv']
-    elif source['type'].lower() == 'jabber':
-        source['jid'] = raw_input(u'JID: ')
-        source['password'] = getpass(u'Password: ')
-        source['rooms'] = [r.strip() for r in raw_input(u'Default rooms to join (comma separated): ').split(',')]
+    elif source['type'].lower() == u'jabber':
+        source['jid'] = prompt(u'JID (Jabber address): ')
+        source['password'] = prompt(u'Password: ', secret=True)
+        source['rooms'] = [r.strip() for r in prompt(
+            u'MUC rooms to join (comma separated) [Default: none]: '
+        ).split(u',')]
         source['auth'] = ['implicit']
-        source['ssl'] = raw_input(u'SSL (Y/N): ').lower() in ('y', 'yes', 'true')
     else:
-        print 'Invalid source type'
+        print u'Invalid source type.'
         exit(1)
 
     ibid.config.sources[sname] = source
 
     ibid.config.write(open('ibid.ini', 'w'))
     if not exists('logging.ini'):
-        copyfileobj(resource_stream('ibid', 'logging.ini'), open('logging.ini', 'w'))
+        copyfileobj(resource_stream('ibid', 'logging.ini'),
+                    open('logging.ini', 'w'))
 
 db = DatabaseManager(check_schema_versions=False)
 Session = db['ibid']
 upgrade_schemas(Session)
 
-print u'Database tables created'
+print u"""Database tables created
 
-print u'Please enter the details for your account. This account will be given full admin permissions.'
-identity = unicode(raw_input('Nick/JID: '))
-source = sname or unicode(raw_input('Source name: '))
-pass1 = getpass('Password: ')
-pass2 = getpass('Confirm password: ')
+Now we need to create an account for you in the bot so it knows who its
+master is. This account will be given full admin permissions.
+Please enter the details for your account."""
+identity = prompt(u'Your IRC Nick/Jabber ID: ')
+if not identity:
+    print u'Skipping account creation'
+    exit(0)
+source = sname or prompt(u'Source name: ')
+pass1 = prompt(u'Password to identify yourself to the bot: ', secret=True)
+pass2 = prompt(u'Confirm password: ', secret=True)
 
 if pass1 != pass2:
-    print 'Password do not match'
+    print u'Password do not match'
     exit(1)
 
 session = Session()
@@ -97,7 +149,8 @@ identity = Identity(source, identity)
 account.identities.append(identity)
 
 for permission in (u'accounts', u'sources', u'plugins', u'core', u'admin',
-    u'config', u'saydo', u'factoidadmin', u'karmaadmin', u'eval'):
+    u'config', u'saydo', u'factoidadmin', u'karmaadmin', u'eval',
+    u'chairmeeting'):
     perm = Permission(permission, u'auth')
     account.permissions.append(perm)
 
@@ -109,6 +162,6 @@ session.save_or_update(identity)
 session.commit()
 session.close()
 
-print 'Account created with admin permissions'
+print u'Account created with admin permissions'
 
 # vi: set et sta sw=4 ts=4:
