@@ -17,12 +17,12 @@ import ibid
 from ibid.compat import json
 from ibid.config import BoolOption, IntOption, Option
 from ibid.plugins import Processor, match, authorise
+from ibid.source.http import templates
 from ibid.utils import format_date, plural
 
 help = {}
 log = logging.getLogger('plugins.meetings')
 
-templates = Environment(loader=PackageLoader('ibid', 'templates'))
 meetings = {}
 
 help['meeting'] = u'Take minutes of an IRC Meeting'

@@ -6,7 +6,7 @@ import logging
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
-from jinja import Environment, PackageLoader
+from jinja import Environment, FileSystemLoader
 
 import ibid
 from ibid.source import IbidSourceFactory
@@ -14,7 +14,8 @@ from ibid.event import Event
 from ibid.config import Option, IntOption
 from ibid.utils import locate_resource
 
-templates = Environment(loader=PackageLoader('ibid', 'templates'))
+templates = Environment(loader=FileSystemLoader(
+                               locate_resource('ibid', 'templates')))
 
 class Index(resource.Resource):
 
