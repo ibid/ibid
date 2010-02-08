@@ -1,8 +1,10 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from subprocess import Popen, PIPE
 import os
+from collections import defaultdict
+from os.path import exists
+from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
@@ -180,5 +182,43 @@ class Man(Processor):
             index = output.index('SYNOPSIS')
             if index:
                 event.addresponse(output[index+1].strip())
+
+help['ports'] = u'Looks up port numbers for protocols'
+class Ports(Processor):
+    feature = 'ports'
+
+    services = Option('services', 'Path to services file', '/etc/services')
+    protocols = {}
+    ports = {}
+
+    def setup(self):
+        if exists(self.services):
+            self.protocols = defaultdict(list)
+            self.ports = defaultdict(list)
+            f = open(self.services)
+            for line in f.readlines():
+                parts = line.split()
+                if parts and not parts[0].startswith('#'):
+                    self.protocols[parts[0]].append(parts[1])
+                    for proto in parts[2:]:
+                        if proto.startswith('#'):
+                            break
+                        self.protocols[proto].append(parts[1])
+                    self.ports[parts[1]].append(parts[0])
+
+    @match(r'^port\s+for\s+(.+)$')
+    def portfor(self, event, protocol):
+        if protocol.lower() in self.protocols:
+            event.addresponse(human_join(self.protocols[protocol.lower()]))
+        else:
+            event.addresponse(u"I don't know about that protocol")
+
+    @match(r'^(udp|tcp)\s+port\s+(.+)$')
+    def port(self, event, transport, number):
+        port = '%s/%s' % (number, transport.lower())
+        if port in self.ports:
+            event.addresponse(human_join(self.ports[port]))
+        else:
+            event.addresponse(u"I don't know about any protocols using that port")
 
 # vi: set et sta sw=4 ts=4:
