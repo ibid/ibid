@@ -185,6 +185,8 @@ class Man(Processor):
 
 help['ports'] = u'Looks up port numbers for protocols'
 class Ports(Processor):
+    u"""port for <protocol>
+    (tcp|udp) port <number>"""
     feature = 'ports'
 
     services = Option('services', 'Path to services file', '/etc/services')
@@ -206,14 +208,14 @@ class Ports(Processor):
                         self.protocols[proto].append(parts[1])
                     self.ports[parts[1]].append(parts[0])
 
-    @match(r'^port\s+for\s+(.+)$')
+    @match(r'^ports?\s+for\s+(.+)$')
     def portfor(self, event, protocol):
         if protocol.lower() in self.protocols:
             event.addresponse(human_join(self.protocols[protocol.lower()]))
         else:
             event.addresponse(u"I don't know about that protocol")
 
-    @match(r'^(udp|tcp)\s+port\s+(.+)$')
+    @match(r'^(udp|tcp)\s+port\s+(\d+)$')
     def port(self, event, transport, number):
         port = '%s/%s' % (number, transport.lower())
         if port in self.ports:
