@@ -2,8 +2,6 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import os
-from collections import defaultdict
-from os.path import exists
 from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
@@ -182,63 +180,5 @@ class Man(Processor):
             index = output.index('SYNOPSIS')
             if index:
                 event.addresponse(output[index+1].strip())
-
-help['ports'] = u'Looks up port numbers for protocols'
-class Ports(Processor):
-    u"""port for <protocol>
-    (tcp|udp) port <number>"""
-    feature = 'ports'
-
-    services = Option('services', 'Path to services file', '/etc/services')
-    nmapservices = Option('nmap-services', "Path to Nmap's services file", '/usr/share/nmap/nmap-services')
-    protocols = {}
-    ports = {}
-
-    def setup(self):
-        filename = None
-        if exists(self.nmapservices):
-            filename = self.nmapservices
-            nmap = True
-        elif exists(self.services):
-            filename = self.services
-            nmap = False
-
-        if not filename:
-            raise Exception(u"Services file doesn't exist")
-
-        self.protocols = defaultdict(list)
-        self.ports = defaultdict(list)
-        f = open(filename)
-        for line in f.readlines():
-            parts = line.split()
-            if parts and not parts[0].startswith('#') and parts[0] != 'unknown':
-                self.protocols[parts[0]].append(parts[1])
-                self.ports[parts[1]].append(parts[0])
-                if not nmap:
-                    for proto in parts[2:]:
-                        if proto.startswith('#'):
-                            break
-                        self.protocols[proto].append(parts[1])
-
-    @match(r'^ports?\s+for\s+(.+)$')
-    def portfor(self, event, protocol):
-        if protocol.lower() in self.protocols:
-            event.addresponse(human_join(self.protocols[protocol.lower()]))
-        else:
-            event.addresponse(u"I don't know about that protocol")
-
-    @match(r'^(?:(udp|tcp|sctp)\s+)?port\s+(\d+)$')
-    def port(self, event, transport, number):
-        results = []
-        if transport:
-            results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
-        else:
-            for transport in ('tcp', 'udp', 'sctp'):
-                results.extend('%s (%s)' % (protocol, transport.upper()) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
-
-        if results:
-            event.addresponse(human_join(results))
-        else:
-            event.addresponse(u"I don't know about any protocols using that port")
 
 # vi: set et sta sw=4 ts=4:
