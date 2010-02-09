@@ -234,7 +234,7 @@ class Ports(Processor):
             results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
         else:
             for transport in ('tcp', 'udp', 'sctp'):
-                results.extend('%s (%s)' % (protocol, transport) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
+                results.extend('%s (%s)' % (protocol, transport.upper()) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
 
         if results:
             event.addresponse(human_join(results))
