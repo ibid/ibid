@@ -215,11 +215,17 @@ class Ports(Processor):
         else:
             event.addresponse(u"I don't know about that protocol")
 
-    @match(r'^(udp|tcp)\s+port\s+(\d+)$')
+    @match(r'^(?:(udp|tcp)\s+)?port\s+(\d+)$')
     def port(self, event, transport, number):
-        port = '%s/%s' % (number, transport.lower())
-        if port in self.ports:
-            event.addresponse(human_join(self.ports[port]))
+        results = []
+        if transport:
+            results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
+        else:
+            for transport in ('tcp', 'udp'):
+                results.extend('%s (%s)' % (protocol, transport) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
+
+        if results:
+            event.addresponse(human_join(results))
         else:
             event.addresponse(u"I don't know about any protocols using that port")
 
