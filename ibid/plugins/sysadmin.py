@@ -190,23 +190,35 @@ class Ports(Processor):
     feature = 'ports'
 
     services = Option('services', 'Path to services file', '/etc/services')
+    nmapservices = Option('nmap-services', "Path to Nmap's services file", '/usr/share/nmap/nmap-services')
     protocols = {}
     ports = {}
 
     def setup(self):
-        if exists(self.services):
-            self.protocols = defaultdict(list)
-            self.ports = defaultdict(list)
-            f = open(self.services)
-            for line in f.readlines():
-                parts = line.split()
-                if parts and not parts[0].startswith('#'):
-                    self.protocols[parts[0]].append(parts[1])
+        filename = None
+        if exists(self.nmapservices):
+            filename = self.nmapservices
+            nmap = True
+        elif exists(self.services):
+            filename = self.services
+            nmap = False
+
+        if not filename:
+            raise Exception(u"Services file doesn't exist")
+
+        self.protocols = defaultdict(list)
+        self.ports = defaultdict(list)
+        f = open(filename)
+        for line in f.readlines():
+            parts = line.split()
+            if parts and not parts[0].startswith('#') and parts[0] != 'unknown':
+                self.protocols[parts[0]].append(parts[1])
+                self.ports[parts[1]].append(parts[0])
+                if not nmap:
                     for proto in parts[2:]:
                         if proto.startswith('#'):
                             break
                         self.protocols[proto].append(parts[1])
-                    self.ports[parts[1]].append(parts[0])
 
     @match(r'^ports?\s+for\s+(.+)$')
     def portfor(self, event, protocol):
