@@ -227,13 +227,13 @@ class Ports(Processor):
         else:
             event.addresponse(u"I don't know about that protocol")
 
-    @match(r'^(?:(udp|tcp)\s+)?port\s+(\d+)$')
+    @match(r'^(?:(udp|tcp|sctp)\s+)?port\s+(\d+)$')
     def port(self, event, transport, number):
         results = []
         if transport:
             results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
         else:
-            for transport in ('tcp', 'udp'):
+            for transport in ('tcp', 'udp', 'sctp'):
                 results.extend('%s (%s)' % (protocol, transport) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
 
         if results:
