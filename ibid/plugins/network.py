@@ -470,7 +470,7 @@ class Ports(Processor):
                             break
                         self.protocols[proto].append(parts[1])
 
-    @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))?$')
+    @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))$')
     def portfor(self, event, proto1, proto2):
         protocol = (proto1 or proto2).lower()
         if protocol in self.protocols:
