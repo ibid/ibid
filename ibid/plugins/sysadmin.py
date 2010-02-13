@@ -187,7 +187,7 @@ class Mac(Processor):
     u"""mac <address>"""
     feature = 'mac'
 
-    @match(r'^(?:mac|oui|ether)\s+([0-9a-f-:]{6,})$')
+    @match(r'^(?:mac|oui|ether|ether(?:net)?(?:\s*code)?)\s+([0-9a-f-:]{6,})$')
     def lookup_mac(self, event, mac):
         oui = mac.replace('-', '').replace(':', '').upper()[:6]
         try:
