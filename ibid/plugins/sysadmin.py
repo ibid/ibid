@@ -2,11 +2,12 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import os
+import re
 from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils import file_in_path, unicode_output, human_join, cacheable_download
 
 help = {}
 
@@ -180,5 +181,22 @@ class Man(Processor):
             index = output.index('SYNOPSIS')
             if index:
                 event.addresponse(output[index+1].strip())
+
+help ['mac'] = u'Finds the organization owning the specific MAC address.'
+class Mac(Processor):
+    u"""mac <address>"""
+    feature = 'mac'
+
+    @match(r'^((?:mac|oui|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}(?(1)[:-]?|:))){2,5}[0-9a-f]{2})$')
+    def lookup_mac(self, event, _, mac):
+        oui = mac.replace('-', '').replace(':', '').upper()[:6]
+        ouis = open(cacheable_download('http://standards.ieee.org/regauth/oui/oui.txt', 'sysadmin/oui.txt'))
+        match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
+        ouis.close()
+        if match:
+            name = match.group(1).decode('utf8').title()
+            event.addresponse(u"That belongs to %s", name)
+        else:
+            event.addresponse(u"I don't know who that belongs to")
 
 # vi: set et sta sw=4 ts=4:
