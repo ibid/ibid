@@ -7,7 +7,7 @@ import os
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join
+from ibid.utils import file_in_path, unicode_output, human_join, cacheable_download
 
 help = {}
 
@@ -196,7 +196,7 @@ class Mac(Processor):
             event.addresponse(u"That's not a valid MAC address or OUI")
             return
 
-        ouis = open('/tmp/oui.txt')
+        ouis = open(cacheable_download('http://standards.ieee.org/regauth/oui/oui.txt', 'sysadmin/oui.txt'))
         match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
         if match:
             event.addresponse(u"That belongs to %s", match.group(1).decode('utf8'))
