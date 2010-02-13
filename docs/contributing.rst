@@ -80,6 +80,18 @@ base thus happy developers.
 
 * Single quotes are preferred to double, where sensible.
 
+* Almost all of Ibid should be compatible with Python 2.4+ (but not 3).
+  Compatibility functions, imports, and libraries can be found in
+  :mod:`ibid.compat`.
+
+Naming Conventions
+^^^^^^^^^^^^^^^^^^
+
+* Features should either go into an existing plugin, or if large enough
+  into a plugin of the same name as the feature (singular).
+
+* Database table names are plural.
+
 Sources
 ^^^^^^^
 
