@@ -3,11 +3,13 @@
 
 import re
 import socket
+from ibid.compat import defaultdict
 from httplib import HTTPConnection, HTTPSConnection
+from os.path import exists
 from subprocess import Popen, PIPE
+from sys import version_info
 from urllib import getproxies_environment
 from urlparse import urlparse
-from sys import version_info
 
 try:
     from dns.resolver import Resolver, NoAnswer, NXDOMAIN
@@ -430,5 +432,73 @@ class TLD(Processor):
                 return
 
         event.addresponse(u"ISO doesn't know about any TLD for %s", location)
+
+help['ports'] = u'Looks up port numbers for protocols'
+class Ports(Processor):
+    u"""port for <protocol>
+    (tcp|udp) port <number>"""
+    feature = 'ports'
+    priority = 10
+
+    services = Option('services', 'Path to services file', '/etc/services')
+    nmapservices = Option('nmap-services', "Path to Nmap's services file", '/usr/share/nmap/nmap-services')
+    protocols = {}
+    ports = {}
+
+    def setup(self):
+        self.filename = None
+        if exists(self.nmapservices):
+            self.filename = self.nmapservices
+            self.nmap = True
+        elif exists(self.services):
+            self.filename = self.services
+            self.nmap = False
+
+        if not self.filename:
+            raise Exception(u"Services file doesn't exist")
+
+    def _load_services(self):
+        if self.protocols:
+            return
+
+        self.protocols = defaultdict(list)
+        self.ports = defaultdict(list)
+        f = open(self.filename)
+        for line in f.readlines():
+            parts = line.split()
+            if parts and not parts[0].startswith('#') and parts[0] != 'unknown':
+                number, transport = parts[1].split('/')
+                port = '%s (%s)' % (number, transport.upper())
+                self.protocols[parts[0].lower()].append(port)
+                self.ports[parts[1]].append(parts[0])
+                if not self.nmap:
+                    for proto in parts[2:]:
+                        if proto.startswith('#'):
+                            break
+                        self.protocols[proto.lower()].append(port)
+
+    @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))$')
+    def portfor(self, event, proto1, proto2):
+        self._load_services()
+        protocol = (proto1 or proto2).lower()
+        if protocol in self.protocols:
+            event.addresponse(human_join(self.protocols[protocol]))
+        else:
+            event.addresponse(u"I don't know about that protocol")
+
+    @match(r'^(?:(udp|tcp|sctp)\s+)?port\s+(\d+)$')
+    def port(self, event, transport, number):
+        self._load_services()
+        results = []
+        if transport:
+            results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
+        else:
+            for transport in ('tcp', 'udp', 'sctp'):
+                results.extend('%s (%s)' % (protocol, transport.upper()) for protocol in self.ports.get('%s/%s' % (number, transport.lower()), []))
+
+        if results:
+            event.addresponse(human_join(results))
+        else:
+            event.addresponse(u"I don't know about any protocols using that port")
 
 # vi: set et sta sw=4 ts=4:

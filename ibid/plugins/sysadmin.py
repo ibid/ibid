@@ -1,8 +1,8 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from subprocess import Popen, PIPE
 import os
+from subprocess import Popen, PIPE
 
 from ibid.plugins import Processor, match
 from ibid.config import Option
