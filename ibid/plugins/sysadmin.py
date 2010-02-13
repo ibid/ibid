@@ -192,6 +192,7 @@ class Mac(Processor):
         oui = mac.replace('-', '').replace(':', '').upper()[:6]
         ouis = open(cacheable_download('http://standards.ieee.org/regauth/oui/oui.txt', 'sysadmin/oui.txt'))
         match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
+        ouis.close()
         if match:
             name = match.group(1).decode('utf8').title()
             event.addresponse(u"That belongs to %s", name)
