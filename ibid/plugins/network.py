@@ -446,26 +446,30 @@ class Ports(Processor):
     ports = {}
 
     def setup(self):
-        filename = None
+        self.filename = None
         if exists(self.nmapservices):
-            filename = self.nmapservices
-            nmap = True
+            self.filename = self.nmapservices
+            self.nmap = True
         elif exists(self.services):
-            filename = self.services
-            nmap = False
+            self.filename = self.services
+            self.nmap = False
 
-        if not filename:
+        if not self.filename:
             raise Exception(u"Services file doesn't exist")
+
+    def _load_services(self):
+        if self.protocols:
+            return
 
         self.protocols = defaultdict(list)
         self.ports = defaultdict(list)
-        f = open(filename)
+        f = open(self.filename)
         for line in f.readlines():
             parts = line.split()
             if parts and not parts[0].startswith('#') and parts[0] != 'unknown':
                 self.protocols[parts[0]].append(parts[1])
                 self.ports[parts[1]].append(parts[0])
-                if not nmap:
+                if not self.nmap:
                     for proto in parts[2:]:
                         if proto.startswith('#'):
                             break
@@ -473,6 +477,7 @@ class Ports(Processor):
 
     @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))$')
     def portfor(self, event, proto1, proto2):
+        self._load_services()
         protocol = (proto1 or proto2).lower()
         if protocol in self.protocols:
             event.addresponse(human_join(self.protocols[protocol]))
@@ -481,6 +486,7 @@ class Ports(Processor):
 
     @match(r'^(?:(udp|tcp|sctp)\s+)?port\s+(\d+)$')
     def port(self, event, transport, number):
+        self._load_services()
         results = []
         if transport:
             results.extend(self.ports.get('%s/%s' % (number, transport.lower()), []))
