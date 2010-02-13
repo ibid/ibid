@@ -3,7 +3,7 @@
 
 import re
 import socket
-from collections import defaultdict
+from ibid.compat import defaultdict
 from httplib import HTTPConnection, HTTPSConnection
 from os.path import exists
 from subprocess import Popen, PIPE
@@ -438,6 +438,7 @@ class Ports(Processor):
     u"""port for <protocol>
     (tcp|udp) port <number>"""
     feature = 'ports'
+    priority = 10
 
     services = Option('services', 'Path to services file', '/etc/services')
     nmapservices = Option('nmap-services', "Path to Nmap's services file", '/usr/share/nmap/nmap-services')
