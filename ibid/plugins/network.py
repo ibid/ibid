@@ -467,13 +467,15 @@ class Ports(Processor):
         for line in f.readlines():
             parts = line.split()
             if parts and not parts[0].startswith('#') and parts[0] != 'unknown':
-                self.protocols[parts[0].lower()].append(parts[1])
+                number, transport = parts[1].split('/')
+                port = '%s (%s)' % (number, transport.upper())
+                self.protocols[parts[0].lower()].append(port)
                 self.ports[parts[1]].append(parts[0])
                 if not self.nmap:
                     for proto in parts[2:]:
                         if proto.startswith('#'):
                             break
-                        self.protocols[proto.lower()].append(parts[1])
+                        self.protocols[proto.lower()].append(port)
 
     @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))$')
     def portfor(self, event, proto1, proto2):
