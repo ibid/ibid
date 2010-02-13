@@ -187,8 +187,8 @@ class Mac(Processor):
     u"""mac <address>"""
     feature = 'mac'
 
-    @match(r'^(?:(?:mac|oui|ether|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}[:-]?){3}){1,2})$')
-    def lookup_mac(self, event, mac):
+    @match(r'^((?:mac|oui|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}(?(1)[:-]?|:))){2,5}[0-9a-f]{2})$')
+    def lookup_mac(self, event, _, mac):
         oui = mac.replace('-', '').replace(':', '').upper()[:6]
         ouis = open(cacheable_download('http://standards.ieee.org/regauth/oui/oui.txt', 'sysadmin/oui.txt'))
         match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
