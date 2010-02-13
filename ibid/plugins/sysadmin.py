@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import re
 from subprocess import Popen, PIPE
 import os
 
@@ -180,5 +181,26 @@ class Man(Processor):
             index = output.index('SYNOPSIS')
             if index:
                 event.addresponse(output[index+1].strip())
+
+help ['mac'] = u'Finds the organization owning the specific MAC address.'
+class Mac(Processor):
+    u"""mac <address>"""
+    feature = 'mac'
+
+    @match(r'^(?:mac|oui|ether)\s+([0-9a-f-:]{6,})$')
+    def lookup_mac(self, event, mac):
+        oui = mac.replace('-', '').replace(':', '').upper()[:6]
+        try:
+            oui.decode('hex')
+        except TypeError:
+            event.addresponse(u"That's not a valid MAC address or OUI")
+            return
+
+        ouis = open('/tmp/oui.txt')
+        match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
+        if match:
+            event.addresponse(u"That belongs to %s", match.group(1).decode('utf8'))
+        else:
+            event.addresponse(u"I don't know who that belongs to")
 
 # vi: set et sta sw=4 ts=4:
