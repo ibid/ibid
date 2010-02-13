@@ -190,12 +190,6 @@ class Mac(Processor):
     @match(r'^(?:(?:mac|oui|ether|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}[:-]?){3}){1,2})$')
     def lookup_mac(self, event, mac):
         oui = mac.replace('-', '').replace(':', '').upper()[:6]
-        try:
-            oui.decode('hex')
-        except TypeError:
-            event.addresponse(u"That's not a valid MAC address or OUI")
-            return
-
         ouis = open(cacheable_download('http://standards.ieee.org/regauth/oui/oui.txt', 'sysadmin/oui.txt'))
         match = re.search(r'^%s\s+\(base 16\)\s+(.+?)$' % oui, ouis.read(), re.MULTILINE)
         if match:
