@@ -44,20 +44,11 @@ if options.load_configured and not options.load_base:
     parser.error("Incompatible combination: --configured and --only")
 
 # Setup Ibid core:
-
-def auth_responses(event, permission):
-    return True
-
 class FakeAuth(object):
     def authorise(self, event, permission):
         return True
 
 ibid.auth = FakeAuth()
-
-#ibid.plugins.auth_responses = auth_responses
-ibid.options = {'base': '.'}
-import ibid.plugins
-
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
@@ -78,9 +69,6 @@ class TestSource(object):
 
     def truncation_point(self, response, event=None):
         return None
-
-    def setup(self):
-        pass
 
     def url(self):
         return None

@@ -87,7 +87,9 @@ reloader = None
 databases = {}
 auth = None
 service = None
-options = {}
+options = {
+        'base': '.',
+}
 rpc = {}
 channels = defaultdict(lambda: defaultdict(MultiSet))
 

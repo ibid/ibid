@@ -46,7 +46,6 @@ def prompt(prompt, secret=False):
         r = raw_input(prompt)
     return unicode(r, encoding)
 
-ibid.options = {'base': '.'}
 if exists('ibid.ini'):
     ibid.config = FileConfig('ibid.ini')
     ibid.config.merge(FileConfig('local.ini'))

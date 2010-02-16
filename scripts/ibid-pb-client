@@ -2,8 +2,8 @@
 # Copyright (c) 2009, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sys import argv, exit, path
-from optparse import OptionParser, OptionGroup
+from sys import path
+from optparse import OptionParser
 
 from twisted.spread import pb
 from twisted.internet import reactor

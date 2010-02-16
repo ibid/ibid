@@ -62,7 +62,6 @@ for module in getModule('ibid.plugins').iterModules():
         print >> stderr, u"Couldn't load %s plugin: %s" % (
                 module.name.replace('ibid.plugins.', ''), unicode(e))
 
-ibid.options = {'base': '.'}
 ibid.config = FileConfig('ibid.ini')
 ibid.config.merge(FileConfig('local.ini'))
 
