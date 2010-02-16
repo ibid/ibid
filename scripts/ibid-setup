@@ -93,23 +93,27 @@ source like 'jabber'.
 """
     source = {'nick': '$botname'}
     sname = prompt(u'Source name (e.g. freenode, jabber): ')
-    source['type'] = prompt(u'Source type (irc, jabber) [Default: irc]: ')
+    type_ = prompt(u'Source type (irc, jabber) [Default: irc]: ')
+    type_ = type_.lower()
 
-    if source['type'].lower() in (u'irc', u''):
+    if type_ in (u'irc', u''):
+        source['type'] = u'irc'
         source['server'] = prompt(u'IRC Server: ')
         port = prompt(u'Port [Default: 6667]: ')
         if port:
             source['port'] = port
-        source['channels'] = [c.strip() for c in prompt(
-            u'Channels to join (comma separated) [Default: none]: '
-        ).split(u',')]
+        channels = prompt(
+            u'Channels to join (comma separated) [Default: none]: ')
+        if channels:
+            source['channels'] = [c.strip() for c in channels.split(u',')]
         source['auth'] = ['hostmask', 'nickserv']
-    elif source['type'].lower() == u'jabber':
+    elif type_ == u'jabber':
         source['jid'] = prompt(u'JID (Jabber address): ')
         source['password'] = prompt(u'Password: ', secret=True)
-        source['rooms'] = [r.strip() for r in prompt(
-            u'MUC rooms to join (comma separated) [Default: none]: '
-        ).split(u',')]
+        rooms = prompt(
+            u'MUC rooms to join (comma separated) [Default: none]: ')
+        if rooms:
+            source['rooms'] = [r.strip() for r in rooms.split(u',')]
         source['auth'] = ['implicit']
     else:
         print u'Invalid source type.'
