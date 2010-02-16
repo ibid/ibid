@@ -11,7 +11,6 @@ from xmlrpclib import ServerProxy
 
 from dateutil.parser import parse
 from dateutil.tz import tzlocal, tzutc
-from jinja import Environment, PackageLoader
 
 import ibid
 from ibid.compat import json
