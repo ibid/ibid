@@ -28,7 +28,6 @@ if len(args) != 1:
 
 filename = unicode(args[0])
 
-ibid.options = {'base': '.'}
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()

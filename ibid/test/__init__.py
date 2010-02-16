@@ -3,8 +3,6 @@
 
 import ibid
 
-ibid.options['base'] = '.'
-
 class FakeConfig(dict):
     def __init__(self, basedict=None):
         if basedict is None: basedict = {}

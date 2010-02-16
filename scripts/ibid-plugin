@@ -55,7 +55,6 @@ class FakeAuth(object):
 ibid.auth = FakeAuth()
 
 #ibid.plugins.auth_responses = auth_responses
-ibid.options = {'base': '.'}
 import ibid.plugins
 
 logging.basicConfig(level=logging.DEBUG)
