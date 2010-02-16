@@ -17,6 +17,7 @@ from urlparse import urlparse, urlunparse
 import zlib
 
 from dateutil.tz import tzlocal, tzutc
+from pkg_resources import resource_exists, resource_filename
 
 import ibid
 from ibid.compat import defaultdict, json
@@ -227,5 +228,16 @@ def plural(count, singular, plural):
     if count == 1:
         return singular
     return plural
+
+def locate_resource(path, filename):
+    "Locate a resource either within the botdir or the source tree"
+    fspath = os.path.join(*(
+        [ibid.options['base']] + path.split('.') + [filename]
+    ))
+    if os.path.exists(fspath):
+        return fspath
+    if not resource_exists(path, filename):
+        return None
+    return resource_filename(path, filename)
 
 # vi: set et sta sw=4 ts=4:
