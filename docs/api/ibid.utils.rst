@@ -10,7 +10,7 @@ This module contains common functions that many Ibid plugins can use.
 String Functions
 ----------------
 
-.. function:: ago(delta, units=None)
+.. function:: ago(delta, [units])
 
    Return a string representation of *delta*, a
    :class:`datetime.timedelta`.
@@ -25,7 +25,7 @@ String Functions
       >>> ago(datetime.utcnow() - datetime(1970, 1, 1), 2)
       '39 years and 6 months'
 
-.. function:: format_date(timestamp, length='datetime')
+.. function:: format_date(timestamp, [length='datetime', tolocaltime=True])
 
    Convert :class:`datetime.datetime` *timestamp* to the local timezone
    (*timestamp* is assumed to be UTC if it has no *tzinfo*) and return a
@@ -33,6 +33,9 @@ String Functions
 
    *length* can be one of ``'datetime'``, ``'date'`` and ``'time'``,
    specifying what to include in the output.
+
+   If *tolocaltime* is ``False``, the time will left in the original
+   time zone.
 
    The format is specified in the ``plugins.length`` configuration
    subtree, as three values: ``datetime_format``, ``date_format`` and
@@ -43,7 +46,7 @@ String Functions
       >>> format_date(datetime.utcnow())
       u'2009-12-14 12:41:55 SAST'
 
-.. function:: human_join(items, separator=u',', conjunction=u'and')
+.. function:: human_join(items, [separator=u',', conjunction=u'and'])
 
    Turn iterable *items* into a unicode list in the format ``a, b, c
    and d``.
@@ -60,6 +63,9 @@ String Functions
 
    If *count* is 1, return *singular*, otherwise *plural*.
 
+   It's recommended to use complete words for *singular* and *plural*
+   rather than suffixes.
+
 .. function:: decode_htmlentities(text)
 
    Return *text* with all HTML entities removed, both numeric and
@@ -72,7 +78,7 @@ String Functions
 
    Similar to ``which`` on the command line.
 
-.. function:: unicode_output(output, errors='strict')
+.. function:: unicode_output(output, [errors='strict'])
 
    Decodes *output* a string, to unicode, using the character set
    specified in the ``LANG`` environment variable.
@@ -85,10 +91,19 @@ String Functions
    Return the current Ibid version or ``None`` if no version can be
    determined.
 
+.. function:: locate_resource(path, filename)
+
+   Locate a resource shipped with Ibid.
+   *path* is specified as a python package (e.g. ``'ibid'``).
+   *filename* is the relative path within the package (e.g.
+   ``'data/something.txt'``)
+
+   Returns the filename to the resource.
+
 Web Service Functions
 ---------------------
 
-.. function:: cacheable_download(url, cachefile, headers={})
+.. function:: cacheable_download(url, cachefile, [headers, timeout=60])
 
    Useful for data files that you don't want to keep re-downloading, but
    do occasionally change.
@@ -109,9 +124,9 @@ Web Service Functions
          'http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm',
          'lookup/iso-3166-1_decoding_table.htm')
 
-.. function:: json_webservice(url, params={}, headers={})
+.. function:: json_webservice(url, [params, headers])
 
-   Request *url*, with optional parameters *params* and headers
+   Request *url*, with optional dicts of parameters *params* and headers
    *headers*, and parse as JSON.
 
    :exc:`JSONException` will be raised if the returned data isn't valid
@@ -121,6 +136,11 @@ Web Service Functions
 
    Raised by :func:`json_webservice` if invalid JSON is returned.
 
+.. function:: url_to_bytestring(url)
+
+   Convert a unicode *url* to punycode host and UTF-8 path.
+   This allows IDN URLs to be opened with :mod:`urllib`.
+
 :mod:`ibid.utils.html` -- HTML Parsing
 --------------------------------------
 
@@ -128,7 +148,7 @@ Web Service Functions
    :synopsis: HTML Parsing helper functions for plugins
 .. moduleauthor:: Ibid Core Developers
 
-.. function:: get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup)
+.. function:: get_html_parse_tree(url, [data, headers, treetype='beautifulsoup])
 
    Request *url*, and return a parse-tree of type *treetype*.
    *data* and *headers* are optionally used in the request.
