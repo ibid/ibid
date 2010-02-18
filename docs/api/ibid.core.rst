@@ -78,12 +78,12 @@ Reloader
 
       Reload the Ibid dispatcher.
 
-   .. method:: load_source(name, service=None)
+   .. method:: load_source(name, [service])
 
       Load source of name *name*, setting the service parent to
       *service*.
 
-   .. method:: load_sources(service=None)
+   .. method:: load_sources([service])
 
       Load all enabled sources, setting the service parents to
       *service*.
@@ -99,17 +99,19 @@ Reloader
 
       Re-load source of name *name*.
 
-   .. method:: load_processors()
+   .. method:: load_processors([load, noload, autoload])
 
       Load all enabled processors, according to the rules in
       :meth:`load_processor`.
 
-      Configuration keys ``plugins.load``, ``plugins.noload`` and
-      ``plugins.autoload`` specify which plugins to force loading, to
-      skip, and whether to load everything by default.
+      *load* specifies the plugins to force loading, *noload* plugins to
+      skip loading, and *autoload* whether to load everything by
+      default.
+      If these parameters are not supplied or are ``None``, they will be
+      looked up as configuration keys in the ``plugins`` block.
 
-   .. method:: load_processor(name, noload=[], load=[], load_all=False,
-      noload_all=False)
+   .. method:: load_processor(name, [noload, load, load_all=False,
+      noload_all=False])
 
       Load the plugin of name *name*.
       Individual Processors can be disabled by listing them in *noload*.
