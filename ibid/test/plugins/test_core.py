@@ -46,14 +46,15 @@ class TestAddressed(unittest.TestCase):
             self.assertEqual(event.message['deaddressed'], u'bot: foo')
 
     happy_prefixes = [
-        (u'bot', u':  '),
-        (u'ant', u', '),
-        (u'test_ibid', u' '),
+        (u'bot', u'%s:  '),
+        (u'bot', u' %s:  '),
+        (u'ant', u'%s, '),
+        (u'test_ibid', u'%s '),
         ]
 
     def test_happy_prefix_names(self):
         for prefix in self.happy_prefixes:
-            event = self.create_event(u'%s%sfoo' % prefix)
+            event = self.create_event((prefix[1] % prefix[0]) + u'foo')
             self.processor.process(event)
             self.assert_addressed(event, prefix[0], u'foo')
 
