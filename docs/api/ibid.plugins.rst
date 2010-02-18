@@ -94,6 +94,8 @@ To do anything, the plugin must contain classes extending
       Runs once on startup and on every configuration reload.
       Use it for setting up your Processor.
 
+      If you implement it, call :func:`super`.
+
    .. method:: shutdown(self)
 
       Runs once on shutdown.
@@ -184,10 +186,12 @@ Decorators
       def method(self, event):
          event.addresponse(u'Yes sir, you are awesome!')
 
-.. function:: run_every(interval=0, config_key=None)
+.. function:: periodic([interval=0, config_key=None, initial_delay=60])
 
    Decorator that runs the method every *interval* seconds, from timer
    events.
+   The method won't be called until *initial_delay* seconds have passed
+   since startup.
 
    If *config_key* is set to a string, the :class:`IntOption
    <ibid.config.IntOption>` of that name will be used to set
