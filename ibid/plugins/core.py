@@ -23,7 +23,7 @@ class Addressed(Processor):
         names = '|'.join(re.escape(x) for x in self.names)
         verbs = '|'.join(re.escape(x) for x in self.verbs)
         self.patterns = [
-            re.compile(r'^(?P<nick>%s)' % names
+            re.compile(r'^\s*(?P<nick>%s)' % names
                        + r'(?:\s*[:;.?>!,-]+\s+|\s+|\s*[,:]\s*)(?P<body>.*)',
                        re.I | re.DOTALL),
             # "hello there, bot"-style addressing. But we want to be sure that
