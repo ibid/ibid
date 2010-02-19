@@ -12,12 +12,12 @@ from ibid.config import IntOption, BoolOption, FloatOption, ListOption, DictOpti
 from ibid.plugins import Processor, match, handler
 from ibid.utils import format_date, human_join, plural
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.games')
 
 duels = {}
 
-help['duel'] = u"Duel at dawn, between channel members"
+features['duel'] = u'Duel at dawn, between channel members'
 class DuelInitiate(Processor):
     u"""
     I challenge <user> to a duel [over <something>]
@@ -445,7 +445,7 @@ class DuelFlee(Processor):
 
 werewolf_games = []
 
-help['werewolf'] = (u'Play the werewolf game. '
+features['werewolf'] = (u'Play the werewolf game. '
     u'Channel becomes a village containing a werewolf, seer and villagers. '
     u'Every night, the werewolf can kill a villager, and the seer can test '
     u'a villager for werewolf symptoms. '

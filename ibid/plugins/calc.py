@@ -28,10 +28,10 @@ except ImportError:
     class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
         futures = ('division',)
 
-help = {}
+features = {}
 log = logging.getLogger('calc')
 
-help['bc'] = u'Calculate mathematical expressions using bc'
+features['bc'] = u'Calculate mathematical expressions using bc'
 class BC(Processor):
     u"""bc <expression>"""
 
@@ -79,7 +79,7 @@ class BC(Processor):
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
-help['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
+features['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
 class LimitException(Exception):
     pass
 
@@ -193,7 +193,7 @@ class Calc(Processor):
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
 
-help['random'] = u'Generates random numbers.'
+features['random'] = u'Generates random numbers.'
 class Random(Processor):
     u"""random [ <max> | <min> <max> ]"""
     feature = 'random'

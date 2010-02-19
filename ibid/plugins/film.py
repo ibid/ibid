@@ -17,9 +17,9 @@ from ibid.config import Option, BoolOption
 
 log = logging.getLogger('plugins.film')
 
-help = {}
+features = {}
 
-help['tvshow'] = u'Retrieves TV show information from tvrage.com.'
+features['tvshow'] = u'Retrieves TV show information from tvrage.com.'
 class TVShow(Processor):
     u"""tvshow <show>"""
 
@@ -79,7 +79,7 @@ class TVShow(Processor):
 # This isn't strictly legal: http://www.imdb.com/help/show_leaf?usedatasoftware
 #
 # Note that it will return porn movies by default.
-help['imdb'] = u'Looks up movies on IMDB.com.'
+features['imdb'] = u'Looks up movies on IMDB.com.'
 class IMDB(Processor):
     u"imdb [search] [character|company|episode|movie|person] <terms> [#<index>]"
     feature = 'imdb'

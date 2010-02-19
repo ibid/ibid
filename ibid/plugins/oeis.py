@@ -11,9 +11,9 @@ from ibid.utils import plural
 
 log = logging.getLogger('plugins.oeis')
 
-help = {}
+features = {}
 
-help['oeis'] = 'Query the Online Encyclopedia of Integer Sequences'
+features['oeis'] = 'Query the Online Encyclopedia of Integer Sequences'
 class OEIS(Processor):
     u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
     oeis <term>[, ...]"""

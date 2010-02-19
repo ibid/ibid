@@ -27,8 +27,9 @@ Dependencies:
   * pyfiglet (http://sourceforge.net/projects/pyfiglet/)
 """
 
-help = { 'draw'  : u'Retrieve images from the web and render them in ascii-art.',
-         'figlet': u'Render text in ascii-art using figlet.' }
+features = {}
+
+features['draw'] = u'Retrieve images from the web and render them in ascii-art.'
 class DrawImage(Processor):
     u"""draw <url> [in colour] [width <width>] [height <height>]"""
     feature = 'draw'
@@ -142,6 +143,7 @@ class DrawImage(Processor):
         else:
             event.addresponse(u"Sorry, that doesn't look like an image")
 
+features['figlet'] = u'Render text in ascii-art using figlet.'
 class WriteFiglet(Processor):
     u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""

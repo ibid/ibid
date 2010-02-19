@@ -16,7 +16,7 @@ from ibid.plugins import Processor, match, authorise, periodic
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
-help = {'feeds': u'Displays articles from RSS and Atom feeds'}
+features = {'feeds': u'Displays articles from RSS and Atom feeds'}
 
 log = logging.getLogger('plugins.feeds')
 

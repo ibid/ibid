@@ -8,9 +8,9 @@ import logging
 from ibid.plugins import Processor, match
 
 log = logging.getLogger('plugins.lotto')
-help = {}
+features = {}
 
-help['lotto'] = u"Gets the latest lotto results from the South African National Lottery."
+features['lotto'] = u'Gets the latest lotto results from the South African National Lottery.'
 class Lotto(Processor):
     u"""lotto"""
 

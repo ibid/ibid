@@ -12,9 +12,9 @@ from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join
 
-help = {}
+features = {}
 
-help['nickometer'] = u'Calculates how lame a nick is.'
+features['nickometer'] = u'Calculates how lame a nick is.'
 class Nickometer(Processor):
     u"""nickometer [<nick>] [with reasons]"""
     feature = 'nickometer'
@@ -36,7 +36,7 @@ class Nickometer(Processor):
                 reasons = ((u'A good, traditional nick', 0),)
             event.addresponse(u'Because: %s', u', '.join(['%s (%s)' % reason for reason in reasons]))
 
-help['choose'] = u'Choose one of the given options.'
+features['choose'] = u'Choose one of the given options.'
 class Choose(Processor):
     u"""choose <choice> or <choice>..."""
     feature = 'choose'
@@ -47,7 +47,7 @@ class Choose(Processor):
     def choose(self, event, choices):
         event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
 
-help['coffee'] = u"Times coffee brewing and reserves cups for people"
+features['coffee'] = u'Times coffee brewing and reserves cups for people'
 class Coffee(Processor):
     u"""coffee (on|please)"""
     feature = 'coffee'
@@ -98,7 +98,7 @@ class Coffee(Processor):
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
 
-help['insult'] = u"Slings verbal abuse at someone"
+features['insult'] = u'Slings verbal abuse at someone'
 class Insult(Processor):
     u"""
     (flame | insult) <person>

@@ -9,7 +9,7 @@ from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
 from ibid.utils import cacheable_download
 
-help = {"rfc": u"Looks up RFCs by number or title."}
+features = {'rfc': u'Looks up RFCs by number or title.'}
 
 cachetime = 60*60
 log = logging.getLogger("plugin.rfc")
@@ -18,7 +18,7 @@ class RFCLookup(Processor):
     u"""rfc <number>
     rfc [for] <search terms>
     rfc [for] /regex/"""
-    feature = "rfc"
+    feature = 'rfc'
 
     indexurl = Option('index_url', "A HTTP url for the RFC Index file", "http://www.rfc-editor.org/rfc/rfc-index.txt")
     cachetime = IntOption("cachetime", "Time to cache RFC index for", cachetime)

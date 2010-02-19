@@ -40,7 +40,7 @@ from ibid.plugins import Processor, match, RPC, authorise
 from ibid.config import DictOption, FloatOption, Option, BoolOption
 from ibid.utils import ago, format_date, human_join
 
-help = {'svn': u'Retrieves commit logs from a Subversion repository.'}
+features = {'svn': u'Retrieves commit logs from a Subversion repository.'}
 
 HEAD_REVISION = object()
 

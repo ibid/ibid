@@ -19,12 +19,12 @@ from ibid.plugins import Processor, match, authorise
 from ibid.source.http import templates
 from ibid.utils import format_date, plural
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.meetings')
 
 meetings = {}
 
-help['meeting'] = u'Take minutes of an IRC Meeting'
+features['meeting'] = u'Take minutes of an IRC Meeting'
 class Meeting(Processor):
     u"""
     (start | end) meeting [about <title>]
@@ -270,7 +270,7 @@ class MeetingLogger(Processor):
                     'time': event.time,
                 })
 
-help['poll'] = u'Does a quick poll of channel members'
+features['poll'] = u'Does a quick poll of channel members'
 class Poll(Processor):
     u"""
     [secret] poll on <topic> [until <time>] vote <option> [or <option>]...

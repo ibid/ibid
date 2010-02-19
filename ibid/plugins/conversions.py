@@ -13,10 +13,10 @@ from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output, human_join
 from ibid.utils.html import get_country_codes, get_html_parse_tree
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.conversions')
 
-help['base'] = u'Convert numbers between bases (radixes)'
+features['base'] = u'Convert numbers between bases (radixes)'
 class BaseConvert(Processor):
     u"""[convert] <number> [from base <number>] to base <number>
     [convert] ascii <text> to base <number>
@@ -212,7 +212,7 @@ class BaseConvert(Processor):
         if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
-help['units'] = 'Converts values between various units.'
+features['units'] = 'Converts values between various units.'
 class Units(Processor):
     u"""convert [<value>] <unit> to <unit>"""
     feature = 'units'
@@ -288,7 +288,7 @@ class Units(Processor):
             else:
                 event.addresponse(u"I can't do that: %s", result)
 
-help['currency'] = u'Converts amounts between currencies.'
+features['currency'] = u'Converts amounts between currencies.'
 class Currency(Processor):
     u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
@@ -415,7 +415,7 @@ class Currency(Processor):
 
 class UnassignedCharacter(Exception): pass
 
-help['unicode'] = """Look up characters in the Unicode database."""
+features['unicode'] = u'Look up characters in the Unicode database.'
 class UnicodeData(Processor):
     """U+<hex code>
     unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""

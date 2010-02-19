@@ -18,7 +18,7 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
 
-help = {'factoid': u'Factoids are arbitrary pieces of information stored by a key. '
+features = {'factoid': u'Factoids are arbitrary pieces of information stored by a key. '
                     u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
                     u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
 

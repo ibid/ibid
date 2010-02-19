@@ -19,9 +19,9 @@ from ibid.utils import file_in_path, unicode_output
 
 log = logging.getLogger('plugins.quotes')
 
-help = {}
+features = {}
 
-help['fortune'] = u'Returns a random fortune.'
+features['fortune'] = u'Returns a random fortune.'
 class Fortune(Processor, RPC):
     u"""fortune"""
     feature = 'fortune'
@@ -56,7 +56,7 @@ class Fortune(Processor, RPC):
         else:
             return None
 
-help['bash'] = u'Retrieve quotes from bash.org.'
+features['bash'] = u'Retrieve quotes from bash.org.'
 class Bash(Processor):
     u"bash[.org] [(random|<number>)]"
 
@@ -87,7 +87,7 @@ class Bash(Processor):
                     output.append(line)
             event.addresponse(u'\n'.join(output), conflate=False)
 
-help['fml'] = u'Retrieves quotes from fmylife.com.'
+features['fml'] = u'Retrieves quotes from fmylife.com.'
 class FMLException(Exception):
     pass
 
@@ -156,7 +156,7 @@ class FMyLife(Processor):
         else:
             event.addresponse(u'Sorry, not in public. PM me')
 
-help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
+features['tfln'] = u'Looks up quotes from textsfromlastnight.com'
 class TextsFromLastNight(Processor):
     u"""tfln [(random|<number>)]
     tfln (worst|best) [(today|this week|this month)]"""
@@ -226,7 +226,7 @@ class TextsFromLastNight(Processor):
     def tfln_url(self, event, id):
         self.tfln(event, id)
 
-help["mlia"] = u"Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com"
+features['mlia'] = u'Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com'
 class MyLifeIsAverage(Processor):
     u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
     mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
@@ -338,7 +338,7 @@ class MyLifeIsAverage(Processor):
     def mlia_url(self, event, site, id):
         self.mlia(event, 'mli' + site[0].lower(), id)
 
-help['bible'] = u'Retrieves Bible verses'
+features['bible'] = u'Retrieves Bible verses'
 class Bible(Processor):
     u"""bible <passages> [in <version>]
     <book> <verses> [in <version>]"""

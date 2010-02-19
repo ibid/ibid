@@ -9,8 +9,8 @@ from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import human_join
 
-help = {}
-help['gameservers'] = u'Lists the users on Game servers'
+features = {}
+features['gameservers'] = u'Lists the users on Game servers'
 
 class Bnet(Processor):
     u'dota players | who is playing dota'

@@ -16,11 +16,11 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
 from ibid.utils import locate_resource
 from ibid.utils.html import get_html_parse_tree
 
-help = {}
+features = {}
 
 log = logging.getLogger('plugins.urlgrab')
 
-help['url'] = u'Captures URLs seen in channel to database and/or to ' \
+features['url'] = u'Captures URLs seen in channel to database and/or to ' \
               u'delicious/faves'
 
 class URL(Base):

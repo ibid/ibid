@@ -14,7 +14,7 @@ from ibid.plugins import Processor, match, RPC, handler, periodic
 from ibid.config import DictOption, IntOption
 from ibid.utils import ago, format_date, human_join
 
-help = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
+features = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
 
 class LogFormatter(log.LogFormatter):
 

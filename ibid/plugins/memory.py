@@ -14,9 +14,9 @@ from ibid.compat import json
 from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
 
-help = {}
+features = {}
 
-help['memory'] = u'Debugging module that keeps track of memory usage'
+features['memory'] = u'Debugging module that keeps track of memory usage'
 
 def get_memusage():
     status = file('/proc/%i/status' % os.getpid(), 'r').readlines()

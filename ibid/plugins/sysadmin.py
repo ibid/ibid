@@ -9,9 +9,9 @@ from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output, human_join, cacheable_download
 
-help = {}
+features = {}
 
-help['aptitude'] = u'Searches for packages'
+features['aptitude'] = u'Searches for packages'
 class Aptitude(Processor):
     u"""apt (search|show) <term>"""
     feature = 'aptitude'
@@ -106,7 +106,7 @@ class Aptitude(Processor):
                 error = error[3:]
             event.addresponse(u"Couldn't find package: %s", error)
 
-help['apt-file'] = u'Searches for packages containing the specified file'
+features['apt-file'] = u'Searches for packages containing the specified file'
 class AptFile(Processor):
     u"""apt-file [search] <term>"""
     feature = 'apt-file'
@@ -142,7 +142,7 @@ class AptFile(Processor):
                 event.addresponse(u'Search error')
             raise Exception("apt-file: %s" % error)
 
-help['man'] = u'Retrieves information from manpages.'
+features['man'] = u'Retrieves information from manpages.'
 class Man(Processor):
     u"""man [<section>] <page>"""
     feature = 'man'
@@ -182,7 +182,7 @@ class Man(Processor):
             if index:
                 event.addresponse(output[index+1].strip())
 
-help ['mac'] = u'Finds the organization owning the specific MAC address.'
+features['mac'] = u'Finds the organization owning the specific MAC address.'
 class Mac(Processor):
     u"""mac <address>"""
     feature = 'mac'

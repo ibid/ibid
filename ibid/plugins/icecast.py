@@ -11,7 +11,7 @@ from ibid.utils.html import get_html_parse_tree
 
 log = logging.getLogger('plugins.icecast')
 
-help = {'icecast': u'Follows an ICECast stream'}
+features = {'icecast': u'Follows an ICECast stream'}
 class ICECast(Processor):
     u"""
     what's playing [on <stream>]?

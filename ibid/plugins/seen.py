@@ -13,7 +13,7 @@ from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')
 
-help = {'seen': u'Records when people were last seen.'}
+features = {'seen': u'Records when people were last seen.'}
 
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,

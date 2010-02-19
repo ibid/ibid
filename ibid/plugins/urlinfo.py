@@ -16,7 +16,7 @@ from ibid.config import ListOption
 default_user_agent = 'Mozilla/5.0'
 default_referer = "http://ibid.omnia.za.net/"
 
-help = {}
+features = {}
 
 log = logging.getLogger('plugins.url')
 
@@ -70,7 +70,7 @@ class Lengthen(Processor):
 
         event.addresponse(u"No redirect")
 
-help['youtube'] = u'Determine the title and a download URL for a Youtube Video'
+features['youtube'] = u'Determine the title and a download URL for a Youtube Video'
 class Youtube(Processor):
     u'<Youtube URL>'
 

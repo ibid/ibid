@@ -13,7 +13,7 @@ except ImportError:
 
 from ibid.plugins import Processor, match, authorise
 
-help = {'eval': u'Evaluates Python, Perl and Lua code.'}
+features = {'eval': u'Evaluates Python, Perl and Lua code.'}
 
 class Python(Processor):
     u"""py <code>"""

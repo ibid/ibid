@@ -11,10 +11,10 @@ from ibid.plugins import Processor, match, authorise, handler
 
 log = logging.getLogger('plugins.sources')
 
-help = {}
+features = {}
 
 
-help["actions"] = u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"
+features['actions'] = u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"
 
 class Actions(Processor):
     u"""(join|part|leave) [<channel> [on <source>]]
@@ -98,7 +98,7 @@ class NickServ(Processor):
         if self.is_nickserv(event):
             log.info(u'Authenticated with NickServ')
 
-help['saydo'] = u'Says or does stuff in a channel.'
+features['saydo'] = u'Says or does stuff in a channel.'
 class SayDo(Processor):
     u"""(say|do) in <channel> [on <source>] <text>"""
     feature = 'saydo'
@@ -111,7 +111,7 @@ class SayDo(Processor):
         event.addresponse(what, address=False, target=channel, source=source or event.source,
                 action=(action.lower() == u"do"))
 
-help['redirect'] = u'Redirects the response to a command to a different channel.'
+features['redirect'] = u'Redirects the response to a command to a different channel.'
 class RedirectCommand(Processor):
     u"""redirect [to] <channel> [on <source>] <command>"""
     feature = 'redirect'

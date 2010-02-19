@@ -15,7 +15,7 @@ from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.utils import ago, format_date
 
-help = {'memo': u'Keeps messages for people.'}
+features = {'memo': u'Keeps messages for people.'}
 
 nomemos_cache = set()
 notified_overlimit_cache = set()

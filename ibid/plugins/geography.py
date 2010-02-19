@@ -24,9 +24,9 @@ from ibid.compat import defaultdict
 
 log = logging.getLogger('plugins.geography')
 
-help = {}
+features = {}
 
-help['distance'] = u"Returns the distance between two places"
+features['distance'] = u'Returns the distance between two places'
 class Distance(Processor):
     u"""distance [in <unit>] between <source> and <destination>
     place search for <placename>"""
@@ -108,7 +108,7 @@ class Distance(Processor):
                 conjunction=u'or'),
         })
 
-help['weather'] = u'Retrieves current weather and forecasts for cities.'
+features['weather'] = u'Retrieves current weather and forecasts for cities.'
 class Weather(Processor):
     u"""weather in <city>
     forecast for <city>"""
@@ -224,7 +224,7 @@ CUSTOM_ZONES = {
     'EST': 'US/Eastern',
 }
 
-help['timezone'] = "Converts times between timezones."
+features['timezone'] = 'Converts times between timezones.'
 class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
     time in <place|timezone>"""
@@ -356,7 +356,7 @@ class TimeZone(Processor):
     def time(self, event, place):
         self.convert(event, None, None, place)
 
-help['flight'] = u'Search for flights on travelocity'
+features['flight'] = u'Search for flights on travelocity'
 class Flight:
     def __init__(self):
         self.flight, self.depart_time, self.depart_ap, self.arrive_time, \

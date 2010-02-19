@@ -13,9 +13,9 @@ from ibid.utils import ibid_version
 
 log = logging.getLogger('plugins.admin')
 
-help = {}
+features = {}
 
-help['plugins'] = u'Lists, loads and unloads plugins.'
+features['plugins'] = u'Lists, loads and unloads plugins.'
 class ListPLugins(Processor):
     u"""list plugins"""
     feature = 'plugins'
@@ -29,7 +29,7 @@ class ListPLugins(Processor):
 
         event.addresponse(u'Plugins: %s', human_join(sorted(plugins)) or u'none')
 
-help['core'] = u'Reloads core modules.'
+features['core'] = u'Reloads core modules.'
 class ReloadCoreModules(Processor):
     u"""reload (reloader|dispatcher|databases|auth)"""
     feature = 'core'
@@ -67,7 +67,7 @@ class LoadModules(Processor):
         result = ibid.reloader.unload_processor(plugin)
         event.addresponse(result and u'%s unloaded' or u"Couldn't unload %s", plugin)
 
-help['die'] = u'Terminates the bot'
+features['die'] = u'Terminates the bot'
 class Die(Processor):
     u"""die"""
     feature = 'die'
@@ -79,7 +79,7 @@ class Die(Processor):
     def die(self, event):
         reactor.stop()
 
-help['sources'] = u'Controls and lists the configured sources.'
+features['sources'] = u'Controls and lists the configured sources.'
 class Admin(Processor):
     u"""(connect|disconnect) (to|from) <source>
     load <source> source"""
@@ -131,7 +131,7 @@ class Info(Processor):
     def listall(self, event):
         event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
 
-help['version'] = u"Show the Ibid version currently running"
+features['version'] = u'Show the Ibid version currently running'
 class Version(Processor):
     u"""version"""
     feature = 'version'
@@ -143,7 +143,7 @@ class Version(Processor):
         else:
             event.addresponse(u"I don't know what version I am :-(")
 
-help['config'] = u'Gets and sets configuration settings, and rereads the configuration file.'
+features['config'] = u'Gets and sets configuration settings, and rereads the configuration file.'
 class Config(Processor):
     u"""reread config
     set config <name> to <value>

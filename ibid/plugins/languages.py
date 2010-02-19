@@ -10,9 +10,9 @@ from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, json_webservice, human_join
 
-help = {}
+features = {}
 
-help['dict'] = u'Defines words and checks spellings.'
+features['dict'] = u'Defines words and checks spellings.'
 class Dict(Processor):
     u"""spell <word> [using <strategy>]
     define <word> [using <dictionary>]
@@ -127,7 +127,7 @@ default_referer = "http://ibid.omnia.za.net/"
 class UnknownLanguageException (Exception): pass
 class TranslationException (Exception): pass
 
-help['translate'] = u'''Translates a phrase using Google Translate.'''
+features['translate'] = u'Translates a phrase using Google Translate.'
 class Translate(Processor):
     u"""translate <phrase> [from <language>] [to <language>]
         translation chain <phrase> [from <language>] [to <language>]"""

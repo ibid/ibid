@@ -8,7 +8,7 @@ import ibid
 from ibid.plugins import Processor, match
 from ibid.utils import human_join
 
-help = {'help': u'Provides help and usage information about plugins.'}
+features = {'help': u'Provides help and usage information about plugins.'}
 
 class Help(Processor):
     u"""features [for <word>]
@@ -27,10 +27,9 @@ class Help(Processor):
 
         for processor in ibid.processors:
             module = eval(processor.__module__)
-            if hasattr(module, 'help'):
-                for feature in module.help.keys():
-                    if feature not in features:
-                        features.append(feature)
+            for feature in getattr(module, 'features', {}).keys():
+                if feature not in features:
+                    features.append(feature)
 
         event.addresponse(u'Features: %s', human_join(sorted(features)) or u'none')
 
@@ -40,8 +39,8 @@ class Help(Processor):
 
         for processor in ibid.processors:
             module = eval(processor.__module__)
-            if hasattr(module, 'help') and feature in module.help:
-                event.addresponse(module.help[feature])
+            if feature in getattr(module, 'features', []):
+                event.addresponse(module.features[feature])
                 return
 
         event.addresponse(u"I can't help you with %s", feature)
@@ -93,10 +92,9 @@ class Help(Processor):
             processor_modules.add(sys.modules[processor.__module__])
 
         for module in processor_modules:
-            if hasattr(module, 'help'):
-                for feature, help in module.help.iteritems():
-                    if phrase in feature or phrase in help.lower():
-                        matches.add(feature)
+            for feature, help in getattr(module, 'features', {}).iteritems():
+                if phrase in feature or phrase in help.lower():
+                    matches.add(feature)
 
         return matches
 

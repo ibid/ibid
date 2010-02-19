@@ -14,12 +14,12 @@ from ibid.plugins import Processor, match, handler, auth_responses, authorise
 from ibid.utils import human_join
 from ibid.auth import hash
 
-help = {}
+features = {}
 identify_cache = {}
 
 log = logging.getLogger('plugins.identity')
 
-help['accounts'] = u'An account represents a person. ' \
+features['accounts'] = u'An account represents a person. ' \
         'An account has one or more identities, which is a user on a specific source.'
 class Accounts(Processor):
     u"""create account [<name>]
@@ -374,7 +374,7 @@ class Describe(Processor):
             'identities': human_join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
 
-help['summon'] = u"Get the attention of a person via different source"
+features['summon'] = u'Get the attention of a person via different source'
 class Summon(Processor):
     u"summon <person> [via <source>]"
     feature = 'summon'
@@ -495,7 +495,7 @@ def identify(session, source, id):
 
 actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
 
-help['auth'] = u'Adds and removes authentication credentials and permissions'
+features['auth'] = u'Adds and removes authentication credentials and permissions'
 class AddAuth(Processor):
     u"""authenticate <account> [on source] using <method> [<credential>]"""
     feature = 'auth'

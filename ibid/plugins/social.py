@@ -15,9 +15,9 @@ from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, json_webservice
 
 log = logging.getLogger('plugins.social')
-help = {}
+features = {}
 
-help['lastfm'] = u'Lists the tracks last listened to by the specified user.'
+features['lastfm'] = u'Lists the tracks last listened to by the specified user.'
 class LastFm(Processor):
     u"last.fm for <username>"
 
@@ -34,7 +34,7 @@ class LastFm(Processor):
                     ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
                 ) for e in songs['entries']))
 
-help["microblog"] = u"Looks up messages on microblogging services like twitter and identica."
+features['microblog'] = u'Looks up messages on microblogging services like twitter and identica.'
 class Twitter(Processor):
     u"""latest (tweet|identica) from <name>
     (tweet|identica) <number>"""

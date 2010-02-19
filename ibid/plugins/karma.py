@@ -10,7 +10,7 @@ from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
                     VersionedSchema
 from ibid.plugins import Processor, match, handler, authorise
 
-help = {'karma': u'Keeps track of karma for people and things.'}
+features = {'karma': u'Keeps track of karma for people and things.'}
 
 log = logging.getLogger('plugins.karma')
 

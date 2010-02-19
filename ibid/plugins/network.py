@@ -24,9 +24,9 @@ from ibid.utils import file_in_path, unicode_output, human_join, \
                        url_to_bytestring
 from ibid.utils.html import get_country_codes
 
-help = {}
+features = {}
 
-help['dns'] = u'Performs DNS lookups'
+features['dns'] = u'Performs DNS lookups'
 class DNS(Processor):
     u"""dns [<record type>] [for] <host> [from <nameserver>]"""
 
@@ -73,7 +73,7 @@ class DNS(Processor):
 
         event.addresponse(u'Records: %s', human_join(responses))
 
-help['ping'] = u'ICMP pings the specified host.'
+features['ping'] = u'ICMP pings the specified host.'
 class Ping(Processor):
     u"""ping <host>"""
     feature = 'ping'
@@ -103,7 +103,7 @@ class Ping(Processor):
                                          .replace(u'ping:', u'', 1).strip()
             event.addresponse(u'Error: %s', error)
 
-help['tracepath'] = u'Traces the path to the given host.'
+features['tracepath'] = u'Traces the path to the given host.'
 class Tracepath(Processor):
     u"""tracepath <host>"""
     feature = 'tracepath'
@@ -128,7 +128,7 @@ class Tracepath(Processor):
             error = unicode_output(error.strip())
             event.addresponse(u'Error: %s', error.replace(u'\n', u' '))
 
-help['ipcalc'] = u'IP address calculator'
+features['ipcalc'] = u'IP address calculator'
 class IPCalc(Processor):
     u"""ipcalc <network>/<subnet>
     ipcalc <address> - <address>"""
@@ -201,7 +201,7 @@ class IPCalc(Processor):
 class HTTPException(Exception):
     pass
 
-help['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
+features['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
 class HTTP(Processor):
     u"""(get|head) <url>
     is <domain> (up|down)
@@ -395,7 +395,7 @@ class HTTP(Processor):
         return response.status, response.reason, data.decode(charset), \
                response.getheaders()
 
-help['tld'] = u"Resolve country TLDs (ISO 3166)"
+features['tld'] = u'Resolve country TLDs (ISO 3166)'
 class TLD(Processor):
     u""".<tld>
     tld for <country>"""
@@ -433,7 +433,7 @@ class TLD(Processor):
 
         event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
-help['ports'] = u'Looks up port numbers for protocols'
+features['ports'] = u'Looks up port numbers for protocols'
 class Ports(Processor):
     u"""port for <protocol>
     (tcp|udp) port <number>"""

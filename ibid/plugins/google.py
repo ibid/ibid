@@ -11,9 +11,9 @@ from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import decode_htmlentities, json_webservice
 
-help = {}
+features = {}
 
-help['google'] = u'Retrieves results from Google and Google Calculator.'
+features['google'] = u'Retrieves results from Google and Google Calculator.'
 
 default_user_agent = 'Mozilla/5.0'
 default_referer = "http://ibid.omnia.za.net/"

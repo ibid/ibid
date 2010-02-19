@@ -13,7 +13,7 @@ from ibid.plugins import Processor, match, RPC
 from ibid.config import Option, BoolOption
 from ibid.utils import ago
 
-help = {'trac': u'Retrieves tickets from a Trac database.'}
+features = {'trac': u'Retrieves tickets from a Trac database.'}
 
 class Ticket(object):
     pass

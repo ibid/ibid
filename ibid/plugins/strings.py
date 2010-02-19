@@ -9,9 +9,9 @@ import re
 from ibid.compat import hashlib
 from ibid.plugins import Processor, match
 
-help = {}
+features = {}
 
-help['hash'] = u'Calculates numerous cryptographic hash functions.'
+features['hash'] = u'Calculates numerous cryptographic hash functions.'
 class Hash(Processor):
     u"""(md5|sha1|sha224|sha256|sha384|sha512) <string>
     crypt <string> <salt>"""
@@ -26,7 +26,7 @@ class Hash(Processor):
     def handle_crypt(self, event, string, salt):
         event.addresponse(unicode(crypt(string.encode('utf-8'), salt.encode('utf-8'))))
 
-help['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
+features['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
 class Base64(Processor):
     u"""base(16|32|64) (encode|decode) <string>"""
     feature = 'base64'
@@ -47,7 +47,7 @@ class Base64(Processor):
         else:
             event.addresponse(unicode(func(string.encode('utf-8'))))
 
-help['rot13'] = u'Transforms a string with ROT13.'
+features['rot13'] = u'Transforms a string with ROT13.'
 class Rot13(Processor):
     u"""rot13 <string>"""
     feature = 'rot13'
@@ -57,7 +57,7 @@ class Rot13(Processor):
         repl = lambda x: x.group(0).encode('rot13')
         event.addresponse(re.sub('[a-zA-Z]+', repl, string))
 
-help['dvorak'] = u"Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa"
+features['dvorak'] = u'Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa'
 class Dvorak(Processor):
     u"""(aoeu|asdf) <text>"""
     feature = 'dvorak'
@@ -79,7 +79,7 @@ class Dvorak(Processor):
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
 
-help['retest'] = u'Checks whether a regular expression matches a given string.'
+features['retest'] = u'Checks whether a regular expression matches a given string.'
 class ReTest(Processor):
     u"""does <pattern> match <string>"""
     feature = 'retest'
@@ -88,7 +88,7 @@ class ReTest(Processor):
     def retest(self, event, regex, string):
         event.addresponse(re.search(regex, string) and u'Yes' or u'No')
 
-help["morse"] = u"Translates messages into and out of morse code."
+features['morse'] = u'Translates messages into and out of morse code.'
 class Morse(Processor):
     u"""morse (text|morsecode)"""
     feature = 'morse'
