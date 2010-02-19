@@ -50,11 +50,11 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     if treetype == "beautifulsoup":
         return BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     elif treetype == "etree":
-        treebuilder = treebuilders.getTreeBuilder("etree", ElementTree)
+        parser = HTMLParser(
+                tree=treebuilders.getTreeBuilder("etree", ElementTree),
+                namespaceHTMLElements=False)
     else:
-        treebuilder = treebuilders.getTreeBuilder(treetype)
-
-    parser = HTMLParser(tree=treebuilder)
+        parser = HTMLParser(tree=treebuilders.getTreeBuilder(treetype))
 
     return parser.parse(data, encoding = encoding)
 
