@@ -21,8 +21,9 @@ Install the Python packages you'll need::
 
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
         python-twisted python-beautifulsoup python-celementtree \
-        python-html5lib python-pysqlite2 python-simplejson \
-        python-soappy python-jinja python-dateutil
+        python-html5lib python-pysqlite2 python-setuptools \
+        python-simplejson python-soappy python-jinja \
+        python-dateutil
 
 Install an Ibid from the current development trunk.
 We'll use the default shortcut developer configuration, which uses a

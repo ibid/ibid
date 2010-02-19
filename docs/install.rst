@@ -52,6 +52,7 @@ Python Libraries:
 * `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ >= 4.7.0
 * `python-dateutil <http://labix.org/python-dateutil>`_
 * `SOAPpy <http://pywebsvcs.sourceforge.net/>`_ [#soappy-install]_
+* `Setuptools <http://peak.telecommunity.com/DevCenter/setuptools>`_
 
 Many core plugins require the following Web scraping & parsing libraries:
 
@@ -257,9 +258,9 @@ dependencies installed in a virtualenv, you can skip this step::
 
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
-     python-html5lib python-pysqlite2 python-simplejson \
-     python-soappy python-jinja python-dateutil \
-     python-virtualenv
+     python-html5lib python-pysqlite2 python-setuptools \
+     python-simplejson python-soappy python-jinja \
+     python-dateutil python-virtualenv
 
 Create a user to run your bot as::
 
