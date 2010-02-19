@@ -27,6 +27,11 @@ from ibid.compat import json
 
 __path__ = pluginPackagePaths(__name__) + __path__
 
+ibid.categories.update({
+    u'lookup': u'Look things up',
+    u'calculation': u'Perform calculations',
+})
+
 class Processor(object):
     """Base class for Ibid plugins.
     Processors receive events and (optionally) do things with them.
