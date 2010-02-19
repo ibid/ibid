@@ -12,38 +12,8 @@ Install an Ibid
 
 .. highlight:: text
 
-Before we can write a plugin, we need a working base Ibid install.
-There are :ref:`better instructions <installation>` for a more permanent
-installation, but here's how you get a quick install for some
-development.
-
-Install the Python packages you'll need::
-
-   user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
-        python-twisted python-beautifulsoup python-celementtree \
-        python-html5lib python-pysqlite2 python-setuptools \
-        python-simplejson python-soappy python-jinja \
-        python-dateutil
-
-Install an Ibid from the current development trunk.
-We'll use the default shortcut developer configuration, which uses a
-SQLite database called ``ibid.db`` in your current directory::
-
-   user@box ~ $ bzr branch lp:ibid
-   user@box ~ $ cd ibid
-   user@box ~/ibid $ scripts/ibid-setup
-   ... Messages about setting up tables
-   Database tables created
-   Please enter the details for your account. This account will be given
-   full admin permissions.
-   Nick/JID: ^D
-
-You can abort it at that point with a :kbd:`Control-D`, because we'll
-only be debugging locally.
-It'll be set up with a basic configuration for joining the current Ibid
-developer IRC channel (#ibid on irc.atrum.org), as well as a SILC
-network and Jabber, but we don't need that yet.
-We'll be doing everything locally, without running the full-blown bot.
+Before we can write a plugin, we need a :ref:`working base Ibid install
+<installation>`.
 
 The Testing Environment
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -54,7 +24,7 @@ fast, testing environment.
 
 It looks like this::
 
-   user@box ~/ibid $ scripts/ibid-plugin
+   user@box ~/botdir $ ibid-plugin
    ... Messages about loading plugins
    Query: hello
    Response: Huh?
@@ -72,7 +42,7 @@ If you want to load the *factoid* module, you can either say "load
 factoid" or you can tell ``ibid-plugin`` to load it on startup, by
 adding it as a parameter::
 
-   user@box ~/ibid $ scripts/ibid-plugin factoid
+   user@box ~/botdir $ ibid-plugin factoid
    ... Messages about loading plugins
    Query: hi
    Response: good morning
@@ -82,12 +52,12 @@ This makes sense for a real chat channel, but not debugging.
 You can tell the *ignorer* not to load by adding it as a parameter
 followed by ``-``::
 
-   user@box ~/ibid $ scripts/ibid-plugin factoid core.Ignore-
+   user@box ~/botdir $ ibid-plugin factoid core.Ignore-
 
 If you want all the normal modules loaded, you can add the ``-c``
 option, but it'll take quite a bit longer to start up::
 
-   user@box ~/ibid $ scripts/ibid-plugin -c
+   user@box ~/botdir $ ibid-plugin -c
    ... Screenfulls of messages
    Query: hello
    Response: sup
@@ -134,8 +104,9 @@ Processors and Handlers
 
 Let's see what that looks like in practice.
 Here's a simple hello world plugin.
-Create a file called ``tutorial.py`` in the ``ibid/plugins`` directory,
-with the following contents::
+Create a directory called ``ibid/plugins`` in the botdir.
+In that directory, create a file called ``tutorial.py`` with the
+following contents::
 
    from ibid.plugins import Processor, handler
 
@@ -165,7 +136,7 @@ response:
 
 .. code-block:: text
 
-   user@box ~/ibid $ scripts/ibid-plugin tutorial
+   user@box ~/botdir $ ibid-plugin tutorial
    ... Messages about loading plugins
    Query: hello
    Response: Hello World!
