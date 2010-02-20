@@ -501,4 +501,29 @@ class Ports(Processor):
         else:
             event.addresponse(u"I don't know about any protocols using that port")
 
+class Nmap(Processor):
+
+    @match(r'^nmap\s+([0-9a-z.-]+)$')
+    def host_scan(self, event, ip):
+        nmap = Popen(['nmap', '--open', '-n', ip], stdout=PIPE, stderr=PIPE)
+        output, error = nmap.communicate()
+        code = nmap.wait()
+
+        ports = []
+        gotports = False
+        for line in output.splitlines():
+            if gotports:
+                if not line.split():
+                    break
+                port, state, service = line.split()
+                ports.append('%s (%s)' % (port, service))
+            else:
+                if line.startswith('PORT'):
+                    gotports = True
+
+        if ports:
+            event.addresponse(human_join(ports))
+        else:
+            event.addresponse(u'No open ports detected')
+
 # vi: set et sta sw=4 ts=4:
