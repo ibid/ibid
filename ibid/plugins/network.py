@@ -509,7 +509,7 @@ class Nmap(Processor):
         if not file_in_path('nmap'):
             raise Exception("Cannot locate nmap executable")
 
-    @match(r'^nmap\s+([0-9a-z.-]+)$')
+    @match(r'^(?:port\s+scan|nmap)\s+([0-9a-z.-]+)$')
     def host_scan(self, event, ip):
         output, error, code = get_process_output(['nmap', '--open', '-n', ip])
 
@@ -533,7 +533,7 @@ class Nmap(Processor):
         else:
             event.addresponse(u'No open ports detected')
 
-    @match(r'^nmap\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
+    @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
     def net_scan(self, event, network, mask):
         if int(mask) < self.min_mask:
             event.addresponse(u"Sorry, I can't scan networks with a mask less than %s", self.min_mask)
