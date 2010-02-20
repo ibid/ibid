@@ -64,6 +64,12 @@ development process as the Ibid developers:
 #. Find the branch `on Launchpad <https://code.launchpad.net/ibid>`_ and
    propose it for merging into the Ibid trunk.
 
+#. Proposals require approvals by a member of `ibid-core
+   <https://launchpad.net/~ibid-core>`_ and two members of `ibid-dev
+   <https://launchpad.net/~ibid-dev>`_ (or simply two members of
+   ibid-core).
+
+   Please join ibid-dev and help out with review.
 
 .. _style-guidelines:
 
