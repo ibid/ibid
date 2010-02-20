@@ -14,17 +14,53 @@ features = {'help': {
 }}
 
 class Help(Processor):
-    u"""features [for <word>]
-    help [<feature>]
-    usage <feature>"""
+    u"""what can you do|help
+    what can you <verb>|help <category>
+    (how do I use|help|usage) <feature>
+    features [for <word>]
+    """
     feature = ('help',)
 
-    @match(r'^help$')
+    def _get_features(self):
+        """Walk the loaded processors and build dicts of categories and
+        features in use. Dicts are cross-referenced by string.
+        """
+        processor_modules = set()
+        categories = dict((k, {'description': v, 'features': set()})
+                          for k, v in ibid.categories.iteritems())
+        features = {}
+
+        for processor in ibid.processors:
+            for feature in getattr(processor, 'feature', []):
+                if feature not in features:
+                    features[feature] = {
+                            'description': None,
+                            'categories': set(),
+                            'processors': set(),
+                    }
+                features[feature]['processors'].add(processor)
+            processor_modules.add(sys.modules[processor.__module__])
+
+        for module in processor_modules:
+            for feature, meta in getattr(module, 'features', {}).iteritems():
+                if feature not in features:
+                    continue
+                if meta.get('description'):
+                    features[feature]['description'] = meta['description']
+                for category in meta.get('categories', []):
+                    features[feature]['categories'].add(category)
+                    categories[category]['features'].add(feature)
+
+        categories = dict((k, v) for k, v in categories.iteritems()
+                                 if v['features'])
+        return categories, features
+
+    @match(r'^(?:help|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
-        event.addresponse(u'Use "features" to get a list of available features.'
-                          u' "help <feature>" will give a description of the '
-                          u'feature, and "usage <feature>" will describe how '
-                          u'to use it.')
+        categories, features = self._get_features()
+        event.addresponse(u'I can: %s',
+                          human_join(c['description'].lower()
+                          for c in categories.itervalues()))
 
     @match(r'^features$')
     def features(self, event):
