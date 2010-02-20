@@ -290,10 +290,6 @@ class CommandLineBranch(Branch):
             raise TimeoutException()
 
         output = svnlog.stdout.read()
-        error = svnlog.stderr.read()
-
-        code = svnlog.wait()
-
         return self._xml_to_log_message(output)
 
     def _xmldate_to_timestamp(self, xmldate):
