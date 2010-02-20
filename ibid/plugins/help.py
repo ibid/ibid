@@ -1,6 +1,7 @@
 # Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+from copy import copy
 import inspect
 import sys
 
@@ -25,14 +26,14 @@ class Help(Processor):
         """Walk the loaded processors and build dicts of categories and
         features in use. Dicts are cross-referenced by string.
         """
-        processor_modules = set()
-        categories = dict((k, {
-            'description': v,
-            'features': set(),
-            'hidden': k in ibid.hidden_categories,
-        }) for k, v in ibid.categories.iteritems())
-        features = {}
+        categories = {}
+        for k, v in ibid.categories.iteritems():
+            v = copy(v)
+            v.update({'features': set(),})
+            categories[k] = v
 
+        features = {}
+        processor_modules = set()
         for processor in ibid.processors:
             for feature in getattr(processor, 'feature', []):
                 if feature not in features:
@@ -61,10 +62,12 @@ class Help(Processor):
     @match(r'^(?:help|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
         categories, features = self._get_features()
+        categories = filter(lambda c: c['weight'] is not None,
+                            categories.itervalues())
+        categories = sorted(categories, key=lambda c: c['weight'])
         event.addresponse(u'I can: %s',
                           human_join(c['description'].lower()
-                          for c in categories.itervalues()
-                          if not c['hidden']))
+                          for c in categories))
 
     @match(r'^features$')
     def features(self, event):

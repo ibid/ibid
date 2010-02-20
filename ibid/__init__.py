@@ -84,7 +84,6 @@ config = {}
 dispatcher = None
 processors = []
 categories = {}
-hidden_categories = set()
 reloader = None
 databases = {}
 auth = None

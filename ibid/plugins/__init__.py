@@ -27,29 +27,29 @@ from ibid.compat import json
 
 __path__ = pluginPackagePaths(__name__) + __path__
 
-ibid.categories.update({
-    'account': u'Manage bot accounts and permissions',
-    'admin': u'Have adminstrative functions',
-    'calculate': u'Perform calculations',
-    'convert': u'Perform conversions',
-    'debug': u'Help you debug me',
-    'decide': u'Make decisions',
-    'development': u'Monitor software develpment',
-    'fun': u'Do silly fun stuff',
-    'game': u'Play games',
-    'lookup': u'Look things up',
-    'monitor': u'Keep an eye on things',
-    'remember': u'Remember things',
-    'web': u'Browse the Internet',
-    'message': u'Deliver messages',
-    'south africa': u'Do South African stuff',
-    'sysadmin': u'Help you with System Administration',
-})
-ibid.hidden_categories.update((
-    'account',
-    'admin',
-    'debug',
-))
+for cat, desc, weight in (
+            ('account', u'Manage bot accounts and permissions', None),
+            ('admin', u'Have adminstrative functions', None),
+            ('calculate', u'Perform calculations', 0),
+            ('convert', u'Perform conversions', 0),
+            ('debug', u'Help you debug me', None),
+            ('decide', u'Make decisions', -2),
+            ('development', u'Monitor software develpment', 10),
+            ('fun', u'Do silly fun stuff', 0),
+            ('game', u'Play games', -2),
+            ('lookup', u'Look things up', -10),
+            ('monitor', u'Keep an eye on things', -2),
+            ('remember', u'Remember things', -5),
+            ('web', u'Browse the Internet', 0),
+            ('message', u'Deliver messages', -5),
+            ('south africa', u'Do South African stuff', 10),
+            ('sysadmin', u'Help you with System Administration', 5),
+        ):
+    if cat not in ibid.categories:
+        ibid.categories[cat] = {
+            'description': desc,
+            'weight': weight,
+        }
 
 class Processor(object):
     """Base class for Ibid plugins.
