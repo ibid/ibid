@@ -524,6 +524,9 @@ class Nmap(Processor):
                 port, state, service = line.split()
                 ports.append('%s (%s)' % (port, service))
             else:
+                if line.startswith('Note: Host seems down.'):
+                    event.addresponse(u'That host seems to be down')
+                    return
                 if line.startswith('PORT'):
                     gotports = True
 
