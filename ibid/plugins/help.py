@@ -84,27 +84,29 @@ class Help(Processor):
                 return
         event.addresponse(u"I'm afraid I don't know what you are asking about")
 
-    @match(r'^(?:usage|how\s+do\s+I\s+use)\s+(.+)$')
+    @match(r'^(?:usage|how\s+do\s+I(?:\s+use)?)\s+(.+)$')
     def usage(self, event, feature):
+        categories, features = self._get_features()
+
         feature = feature.lower()
 
         output = []
-        for processor in ibid.processors:
-            for name, klass in inspect.getmembers(processor, inspect.isclass):
-                if (hasattr(klass, 'feature')
-                        and feature in klass.feature
-                        and klass.__doc__):
-                    for line in klass.__doc__.strip().splitlines():
-                        output.append(line.strip())
+        if feature in features:
+            desc = features[feature]['description']
+            if desc is None:
+                output.append(u'Usage:')
+            elif desc.endswith('.'):
+                output.append(desc + u' Usage:')
+            else:
+                output.append(desc + u'. Usage:')
+            for processor in features[feature]['processors']:
+                if processor.__doc__:
+                    output.extend(line.strip() for line
+                                  in processor.__doc__.split('\n')
+                                  if line.strip())
 
-        if len(output) == 1:
-            event.addresponse(u'Usage: %s', output[0])
-        elif len(output) > 1:
-            event.addresponse(
-                u"You can use %(feature)s in the following ways:\n%(usage)s", {
-                    'feature': feature,
-                    'usage': u'\n'.join(output)
-                }, conflate=False)
+        if output:
+            event.addresponse(u'\n'.join(output), conflate=False)
         else:
             event.addresponse(u"I don't know how to use %s either", feature)
 
