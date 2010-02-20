@@ -20,7 +20,7 @@ features['plugins'] = {
     'categories': ('admin',),
 }
 class ListPLugins(Processor):
-    u"""list plugins"""
+    usage = u'list plugins'
     feature = ('plugins',)
 
     @match(r'^lsmod|list\s+plugins$')
@@ -37,7 +37,7 @@ features['core'] = {
     'categories': ('admin',),
 }
 class ReloadCoreModules(Processor):
-    u"""reload (reloader|dispatcher|databases|auth)"""
+    usage = u'reload (reloader|dispatcher|databases|auth)'
     feature = ('core',)
 
     priority = -5
@@ -55,7 +55,7 @@ class ReloadCoreModules(Processor):
         event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", module)
 
 class LoadModules(Processor):
-    u"""(load|unload|reload) <plugin|processor>"""
+    usage = u'(load|unload|reload) <plugin|processor>'
     feature = ('plugins',)
 
     permission = u'plugins'
@@ -78,7 +78,7 @@ features['die'] = {
     'categories': ('admin',),
 }
 class Die(Processor):
-    u"""die"""
+    usage = u'die'
     feature = ('die',)
 
     permission = u'admin'
@@ -93,7 +93,7 @@ features['sources'] = {
     'categories': ('admin',),
 }
 class Admin(Processor):
-    u"""(connect|disconnect) (to|from) <source>
+    usage = u"""(connect|disconnect) (to|from) <source>
     load <source> source"""
     feature = ('sources',)
 
@@ -128,7 +128,7 @@ class Admin(Processor):
             event.addresponse(u"Couldn't load %s source", source)
 
 class Info(Processor):
-    u"""(sources|list configured sources)"""
+    usage = u'(sources|list configured sources)'
     feature = ('sources',)
 
     @match(r'^sources$')
@@ -148,7 +148,7 @@ features['version'] = {
     'categories': ('admin',),
 }
 class Version(Processor):
-    u"""version"""
+    usage = u'version'
     feature = ('version',)
 
     @match(r'^version$')
@@ -164,7 +164,7 @@ features['config'] = {
     'categories': ('admin',),
 }
 class Config(Processor):
-    u"""reread config
+    usage = u"""reread config
     set config <name> to <value>
     get config <name>"""
     feature = ('config',)

@@ -31,7 +31,7 @@ features['distance'] = {
     'categories': ('lookup', 'calculate',),
 }
 class Distance(Processor):
-    u"""distance [in <unit>] between <source> and <destination>
+    usage = u"""distance [in <unit>] between <source> and <destination>
     place search for <placename>"""
 
     # For Mathematics, see:
@@ -116,7 +116,7 @@ features['weather'] = {
     'categories': ('lookup', 'web',),
 }
 class Weather(Processor):
-    u"""weather in <city>
+    usage = u"""weather in <city>
     forecast for <city>"""
 
     feature = ('weather',)
@@ -235,7 +235,7 @@ features['timezone'] = {
     'categories': ('convert',),
 }
 class TimeZone(Processor):
-    u"""when is <time> <place|timezone> in <place|timezone>
+    usage = u"""when is <time> <place|timezone> in <place|timezone>
     time in <place|timezone>"""
     feature = ('timezone',)
 
@@ -400,7 +400,7 @@ class FlightException(Exception):
     pass
 
 class FlightSearch(Processor):
-    """airport [in] <name|location|code>
+    usage = u"""airport [in] <name|location|code>
     [<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
     feature = ('flight',)

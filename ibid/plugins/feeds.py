@@ -96,7 +96,7 @@ class Feed(Base):
             return self.name
 
 class Manage(Processor):
-    u"""
+    usage = u"""
     add feed <url> as <name>
     remove <name> feed
     list feeds
@@ -206,7 +206,7 @@ class Manage(Processor):
             event.addresponse(True)
 
 class Retrieve(Processor):
-    u"""latest [ <count> ] articles from <name> [ starting at <number> ]
+    usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
     feature = ('feeds',)
 

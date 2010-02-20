@@ -16,7 +16,7 @@ features = {'oeis': {
     'categories': ('lookup', 'web', 'calculate',),
 }}
 class OEIS(Processor):
-    u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
+    usage = u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
     oeis <term>[, ...]"""
 
     feature = ('oeis',)

@@ -12,7 +12,7 @@ features = {'test': {
 }}
 
 class Tests(Processor):
-    u"""delay <seconds>
+    usage = u"""delay <seconds>
     authorise <permission>
     email <address>
     raise exception

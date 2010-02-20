@@ -36,7 +36,7 @@ features['bc'] = {
     'categories': ('calculate',),
 }
 class BC(Processor):
-    u"""bc <expression>"""
+    usage = u'bc <expression>'
 
     feature = ('bc',)
 
@@ -141,7 +141,7 @@ class PowSubstitutionWalker(object):
         raise AccessException
 
 class Calc(Processor):
-    u"""[calc] <expression>"""
+    usage = u'[calc] <expression>'
     feature = ('calc',)
 
     priority = 500
@@ -205,7 +205,7 @@ features['random'] = {
     'categories': ('calculate', 'fun',),
 }
 class Random(Processor):
-    u"""random [ <max> | <min> <max> ]"""
+    usage = u'random [ <max> | <min> <max> ]'
     feature = ('random',)
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')

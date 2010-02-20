@@ -31,7 +31,7 @@ class UsacoException(Exception):
         return unicode(self.msg)
 
 class Usaco(Processor):
-    """usaco <section|division> for <user>
+    usage = u"""usaco <section|division> for <user>
     usaco <contest> results [for <name|user>]
     (i am|<user> is) <usaco_username> on usaco [password <usaco_password>]"""
 

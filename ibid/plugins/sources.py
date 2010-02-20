@@ -20,7 +20,7 @@ features['actions'] = {
 }
 
 class Actions(Processor):
-    u"""(join|part|leave) [<channel> [on <source>]]
+    usage = u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
     feature = ('actions',)
 
@@ -106,7 +106,7 @@ features['saydo'] = {
     'categories': ('admin', 'fun',),
 }
 class SayDo(Processor):
-    u"""(say|do) in <channel> [on <source>] <text>"""
+    usage = u'(say|do) in <channel> [on <source>] <text>'
     feature = ('saydo',)
 
     permission = u'saydo'
@@ -123,7 +123,7 @@ features['redirect'] = {
     'categories': ('admin', 'fun',),
 }
 class RedirectCommand(Processor):
-    u"""redirect [to] <channel> [on <source>] <command>"""
+    usage = u'redirect [to] <channel> [on <source>] <command>'
     feature = ('redirect',)
 
     priority = -1200

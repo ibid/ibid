@@ -19,7 +19,7 @@ features['nickometer'] = {
     'categories': ('fun', 'calculate',),
 }
 class Nickometer(Processor):
-    u"""nickometer [<nick>] [with reasons]"""
+    usage = u'nickometer [<nick>] [with reasons]'
     feature = ('nickometer',)
 
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
@@ -44,7 +44,7 @@ features['choose'] = {
     'categories': ('fun', 'decide',),
 }
 class Choose(Processor):
-    u"""choose <choice> or <choice>..."""
+    usage = u'choose <choice> or <choice>...'
     feature = ('choose',)
 
     choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
@@ -58,7 +58,7 @@ features['coffee'] = {
     'categories': ('fun', 'monitor',),
 }
 class Coffee(Processor):
-    u"""coffee (on|please)"""
+    usage = u'coffee (on|please)'
     feature = ('coffee',)
 
     pots = {}
@@ -112,10 +112,8 @@ features['insult'] = {
     'categories': ('fun',),
 }
 class Insult(Processor):
-    u"""
-    (flame | insult) <person>
-    (swear | cuss | explete) [at <person>]
-    """
+    usage = u"""(flame | insult) <person>
+    (swear | cuss | explete) [at <person>]"""
     feature = ('insult',)
 
     adjectives = ListOption('adjectives', 'List of adjectives', (

@@ -25,7 +25,7 @@ features['tinyurl'] = {
     'categories': ('lookup', 'web',),
 }
 class Shorten(Processor):
-    u"""shorten <url>"""
+    usage = u'shorten <url>'
     feature = ('tinyurl',)
 
     @match(r'^shorten\s+(\S+\.\S+)$')
@@ -42,7 +42,7 @@ class NullRedirect(HTTPRedirectHandler):
         return None
 
 class Lengthen(Processor):
-    u"""<url>
+    usage = u"""<url>
     expand <url>"""
     feature = ('tinyurl',)
 
@@ -79,7 +79,7 @@ features['youtube'] = {
     'categories': ('lookup', 'web',),
 }
 class Youtube(Processor):
-    u'<Youtube URL>'
+    usage = u'<Youtube URL>'
 
     feature = ('youtube',)
 

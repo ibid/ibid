@@ -31,7 +31,7 @@ features['dns'] = {
     'categories': ('lookup', 'sysadmin',),
 }
 class DNS(Processor):
-    u"""dns [<record type>] [for] <host> [from <nameserver>]"""
+    usage = u'dns [<record type>] [for] <host> [from <nameserver>]'
 
     feature = ('dns',)
 
@@ -81,7 +81,7 @@ features['ping'] = {
     'categories': ('sysadmin', 'monitor',),
 }
 class Ping(Processor):
-    u"""ping <host>"""
+    usage = u'ping <host>'
     feature = ('ping',)
 
     ping = Option('ping', 'Path to ping executable', 'ping')
@@ -114,7 +114,7 @@ features['tracepath'] = {
     'categories': ('sysadmin',),
 }
 class Tracepath(Processor):
-    u"""tracepath <host>"""
+    usage = u'tracepath <host>'
     feature = ('tracepath',)
 
     tracepath = Option('tracepath', 'Path to tracepath executable', 'tracepath')
@@ -142,7 +142,7 @@ features['ipcalc'] = {
     'categories': ('sysadmin', 'calculate',),
 }
 class IPCalc(Processor):
-    u"""ipcalc <network>/<subnet>
+    usage = u"""ipcalc <network>/<subnet>
     ipcalc <address> - <address>"""
     feature = ('ipcalc',)
 
@@ -218,7 +218,7 @@ features['http'] = {
     'categories': ('monitor', 'sysadmin',),
 }
 class HTTP(Processor):
-    u"""(get|head) <url>
+    usage = u"""(get|head) <url>
     is <domain> (up|down)
     tell me when <domain|url> is up"""
     feature = ('http',)
@@ -415,7 +415,7 @@ features['tld'] = {
     'categories': ('lookup', 'sysadmin',),
 }
 class TLD(Processor):
-    u""".<tld>
+    usage = u""".<tld>
     tld for <country>"""
     feature = ('tld',)
 
@@ -456,7 +456,7 @@ features['ports'] = {
     'categories': ('lookup', 'sysadmin',),
 }
 class Ports(Processor):
-    u"""port for <protocol>
+    usage = u"""port for <protocol>
     (tcp|udp) port <number>"""
     feature = ('ports',)
     priority = 10

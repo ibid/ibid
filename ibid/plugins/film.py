@@ -24,7 +24,7 @@ features['tvshow'] = {
     'categories': ('lookup', 'web',),
 }
 class TVShow(Processor):
-    u"""tvshow <show>"""
+    usage = u'tvshow <show>'
 
     feature = ('tvshow',)
 
@@ -87,7 +87,7 @@ features['imdb'] = {
     'categories': ('lookup', 'web',),
 }
 class IMDB(Processor):
-    u"imdb [search] [character|company|episode|movie|person] <terms> [#<index>]"
+    usage = u'imdb [search] [character|company|episode|movie|person] <terms> [#<index>]'
     feature = ('imdb',)
 
     access_system = Option("accesssystem", "Method of querying IMDB", "http")

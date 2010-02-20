@@ -15,7 +15,7 @@ features = {'help': {
 }}
 
 class Help(Processor):
-    u"""what can you do|help
+    usage = u"""what can you do|help
     what can you <verb>|help <category>
     (how do I use|usage) <feature>
     features [for <word>]
@@ -103,9 +103,9 @@ class Help(Processor):
             else:
                 output.append(desc + u'. Usage:')
             for processor in features[feature]['processors']:
-                if processor.__doc__:
+                if hasattr(processor, 'usage'):
                     output.extend(line.strip() for line
-                                  in processor.__doc__.split('\n')
+                                  in processor.usage.split('\n')
                                   if line.strip())
 
         if output:
@@ -133,8 +133,8 @@ class Help(Processor):
         processor_modules = set()
         for processor in ibid.processors:
             if (hasattr(processor, 'feature')
-                    and processor.__doc__
-                    and phrase in processor.__doc__.lower()):
+                    and hasattr(processor, 'usage')
+                    and phrase in processor.usage.lower()):
                 matches.update(processor.feature)
             processor_modules.add(sys.modules[processor.__module__])
 

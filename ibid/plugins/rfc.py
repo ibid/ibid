@@ -18,7 +18,7 @@ cachetime = 60*60
 log = logging.getLogger("plugin.rfc")
 
 class RFCLookup(Processor):
-    u"""rfc <number>
+    usage = u"""rfc <number>
     rfc [for] <search terms>
     rfc [for] /regex/"""
     feature = ('rfc',)

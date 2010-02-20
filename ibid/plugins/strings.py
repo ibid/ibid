@@ -16,7 +16,7 @@ features['hash'] = {
     'categories': ('calculate',),
 }
 class Hash(Processor):
-    u"""(md5|sha1|sha224|sha256|sha384|sha512) <string>
+    usage = u"""(md5|sha1|sha224|sha256|sha384|sha512) <string>
     crypt <string> <salt>"""
     feature = ('hash',)
 
@@ -34,7 +34,7 @@ features['base64'] = {
     'categories': ('calculate', 'convert', 'development',),
 }
 class Base64(Processor):
-    u"""base(16|32|64) (encode|decode) <string>"""
+    usage = u'base(16|32|64) (encode|decode) <string>'
     feature = ('base64',)
 
     @match(r'^b(?:ase)?(16|32|64)\s*(enc|dec)(?:ode)?\s+(.+?)$')
@@ -58,7 +58,7 @@ features['rot13'] = {
     'categories': ('convert', 'fun',),
 }
 class Rot13(Processor):
-    u"""rot13 <string>"""
+    usage = u'rot13 <string>'
     feature = ('rot13',)
 
     @match(r'^rot13\s+(.+)$')
@@ -71,7 +71,7 @@ features['dvorak'] = {
     'categories': ('convert', 'fun',),
 }
 class Dvorak(Processor):
-    u"""(aoeu|asdf) <text>"""
+    usage = u"""(aoeu|asdf) <text>"""
     feature = ('dvorak',)
 
     # List of characters on each keyboard layout
@@ -97,7 +97,7 @@ features['retest'] = {
     'categories': ('development',),
 }
 class ReTest(Processor):
-    u"""does <pattern> match <string>"""
+    usage = u'does <pattern> match <string>'
     feature = ('retest',)
 
     @match('^does\s+(.+?)\s+match\s+(.+?)$')
@@ -109,7 +109,7 @@ features['morse'] = {
     'categories': ('convert', 'fun',),
 }
 class Morse(Processor):
-    u"""morse (text|morsecode)"""
+    usage = u'morse (text|morsecode)'
     feature = ('morse',)
 
     _table = {

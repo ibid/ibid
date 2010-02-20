@@ -15,7 +15,7 @@ features = {'lotto': {
     'categories': ('lookup', 'south africa', 'web',),
 }}
 class Lotto(Processor):
-    u"""lotto"""
+    usage = u'lotto'
 
     feature = ('lotto',)
 

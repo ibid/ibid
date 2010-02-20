@@ -21,7 +21,7 @@ features['base'] = {
     'categories': ('calculate', 'convert',),
 }
 class BaseConvert(Processor):
-    u"""[convert] <number> [from base <number>] to base <number>
+    usage = u"""[convert] <number> [from base <number>] to base <number>
     [convert] ascii <text> to base <number>
     [convert] <sequence> from base <number> to ascii"""
 
@@ -220,7 +220,7 @@ features['units'] = {
     'categories': ('convert',),
 }
 class Units(Processor):
-    u"""convert [<value>] <unit> to <unit>"""
+    usage = u'convert [<value>] <unit> to <unit>'
     feature = ('units',)
     priority = 10
 
@@ -299,7 +299,7 @@ features['currency'] = {
     'categories': ('convert',),
 }
 class Currency(Processor):
-    u"""exchange <amount> <currency> for <currency>
+    usage = u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
 
     feature = ('currency',)
@@ -429,7 +429,7 @@ features['unicode'] = {
     'categories': ('lookup', 'convert',),
 }
 class UnicodeData(Processor):
-    """U+<hex code>
+    usage = u"""U+<hex code>
     unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""
 
     feature = ('unicode',)

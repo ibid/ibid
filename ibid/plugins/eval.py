@@ -19,7 +19,7 @@ features = {'eval': {
 }}
 
 class Python(Processor):
-    u"""py <code>"""
+    usage = u'py <code>'
     feature = ('eval',)
 
     permission = u'eval'
@@ -39,7 +39,7 @@ class Python(Processor):
         event.addresponse(repr(result))
 
 class Perl(Processor):
-    u"""pl <code>"""
+    usage = u'pl <code>'
     feature = ('eval',)
 
     permission = u'eval'
@@ -55,7 +55,7 @@ class Perl(Processor):
         event.addresponse(repr(result))
 
 class Lua(Processor):
-    u"""lua <code>"""
+    usage = u'lua <code>'
     feature = ('eval',)
 
     permission = u'eval'

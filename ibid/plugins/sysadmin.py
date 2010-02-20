@@ -16,7 +16,7 @@ features['aptitude'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class Aptitude(Processor):
-    u"""apt (search|show) <term>"""
+    usage = u'apt (search|show) <term>'
     feature = ('aptitude',)
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
@@ -114,7 +114,7 @@ features['apt-file'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class AptFile(Processor):
-    u"""apt-file [search] <term>"""
+    usage = u'apt-file [search] <term>'
     feature = ('apt-file',)
 
     aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
@@ -153,7 +153,7 @@ features['man'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class Man(Processor):
-    u"""man [<section>] <page>"""
+    usage = u'man [<section>] <page>'
     feature = ('man',)
 
     man = Option('man', 'Path of the man executable', 'man')
@@ -196,7 +196,7 @@ features['mac'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class Mac(Processor):
-    u"""mac <address>"""
+    usage = u'mac <address>'
     feature = ('mac',)
 
     @match(r'^((?:mac|oui|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}(?(1)[:-]?|:))){2,5}[0-9a-f]{2})$')

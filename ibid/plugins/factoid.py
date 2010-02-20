@@ -264,7 +264,7 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
             return factoid
 
 class Utils(Processor):
-    u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
+    usage = u'literal <name> [( #<from number> | /<pattern>/[r] )]'
     feature = ('factoid',)
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
@@ -278,7 +278,7 @@ class Utils(Processor):
                   for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
-    u"""forget <name> [( #<number> | /<pattern>/[r] )]
+    usage = u"""forget <name> [( #<number> | /<pattern>/[r] )]
     <name> is the same as <other name>"""
     feature = ('factoid',)
 
@@ -375,7 +375,7 @@ class Forget(Processor):
             event.addresponse(u"I don't know about %s", source)
 
 class Search(Processor):
-    u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
+    usage = u'search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]'
     feature = ('factoid',)
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
@@ -450,7 +450,7 @@ def _interpolate(message, event):
     return message
 
 class Get(Processor, RPC):
-    u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
+    usage = u'<factoid> [( #<number> | /<pattern>/[r] )]'
     feature = ('factoid',)
 
     priority = 200
@@ -501,10 +501,8 @@ class Get(Processor, RPC):
             return reply
 
 class Set(Processor):
-    u"""
-    <name> (<verb>|=<verb>=) [also] <value>
-    last set factoid
-    """
+    usage = u"""<name> (<verb>|=<verb>=) [also] <value>
+    last set factoid"""
     feature = ('factoid',)
 
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
@@ -581,7 +579,7 @@ class Set(Processor):
             event.addresponse(u'It was: %s', self.last_set_factoid)
 
 class Modify(Processor):
-    u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
+    usage = u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
     <name> [( #<number> | /<pattern>/[r] )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
     feature = ('factoid',)
 

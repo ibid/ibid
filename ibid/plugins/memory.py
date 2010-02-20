@@ -98,7 +98,7 @@ class MemoryLog(Processor):
         self.obj_file.flush()
 
 class MemoryInfo(Processor):
-    u"memory usage"
+    usage = u'memory usage'
 
     feature = ('memory',)
 

@@ -22,7 +22,7 @@ features['duel'] = {
     'categories': ('fun', 'game',),
 }
 class DuelInitiate(Processor):
-    u"""
+    usage = u"""
     I challenge <user> to a duel [over <something>]
     I demand satisfaction from <user> [over <something>]
     I throw the gauntlet down at <user>'s feet [over <something>]
@@ -216,10 +216,8 @@ class DuelInitiate(Processor):
         }, address=False)
 
 class DuelDraw(Processor):
-    u"""
-    draw [my <weapon>]
-    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch
-    """
+    usage = u"""draw [my <weapon>]
+    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
 
     feature = ('duel',)
 
@@ -457,13 +455,12 @@ features['werewolf'] = {
     'categories': ('fun', 'game',),
 }
 class WerewolfGame(Processor):
-    u"""
+    usage = u"""
     start a game of werewolf
     join
     ( kill | see | eat ) <villager>
     vote for <villager>
     """
-
     feature = ('werewolf',)
     state = None
 

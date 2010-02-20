@@ -97,7 +97,7 @@ class See(Processor):
                     event.sender['id'], event.source)
 
 class Seen(Processor):
-    u"""seen <who>"""
+    usage = u'seen <who>'
     feature = ('seen',)
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')

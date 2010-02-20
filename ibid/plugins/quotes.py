@@ -26,7 +26,7 @@ features['fortune'] = {
     'categories': ('fun', 'lookup',),
 }
 class Fortune(Processor, RPC):
-    u"""fortune"""
+    usage = u'fortune'
     feature = ('fortune',)
 
     fortune = Option('fortune', 'Path of the fortune executable', 'fortune')
@@ -64,7 +64,7 @@ features['bash'] = {
     'categories': ('fun', 'lookup', 'web',),
 }
 class Bash(Processor):
-    u"bash[.org] [(random|<number>)]"
+    usage = u'bash[.org] [(random|<number>)]'
 
     feature = ('bash',)
 
@@ -101,7 +101,7 @@ class FMLException(Exception):
     pass
 
 class FMyLife(Processor):
-    u"""fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )"""
+    usage = u'fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )'
 
     feature = ('fml',)
 
@@ -170,7 +170,7 @@ features['tfln'] = {
     'ategories': ('fun', 'lookup', 'web',),
 }
 class TextsFromLastNight(Processor):
-    u"""tfln [(random|<number>)]
+    usage = u"""tfln [(random|<number>)]
     tfln (worst|best) [(today|this week|this month)]"""
 
     feature = ('tfln',)
@@ -243,7 +243,7 @@ features['mlia'] = {
     'categories': ('fun', 'lookup', 'web',),
 }
 class MyLifeIsAverage(Processor):
-    u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
+    usage = u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
     mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
 
     feature = ('mlia',)
@@ -358,7 +358,7 @@ features['bible'] = {
     'categories': ('lookup', 'web',),
 }
 class Bible(Processor):
-    u"""bible <passages> [in <version>]
+    usage = u"""bible <passages> [in <version>]
     <book> <verses> [in <version>]"""
 
     feature = ('bible',)

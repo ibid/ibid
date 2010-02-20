@@ -17,7 +17,7 @@ features['dict'] = {
     'categories': ('lookup',),
 }
 class Dict(Processor):
-    u"""spell <word> [using <strategy>]
+    usage = u"""spell <word> [using <strategy>]
     define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
@@ -135,8 +135,8 @@ features['translate'] = {
     'categories': ('lookup', 'convert', 'web',),
 }
 class Translate(Processor):
-    u"""translate <phrase> [from <language>] [to <language>]
-        translation chain <phrase> [from <language>] [to <language>]"""
+    usage = u"""translate <phrase> [from <language>] [to <language>]
+    translation chain <phrase> [from <language>] [to <language>]"""
 
     feature = ('translate',)
 

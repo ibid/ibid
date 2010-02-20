@@ -34,7 +34,7 @@ features['draw-aa'] = {
     'categories': ('fun', 'web',),
 }
 class DrawImage(Processor):
-    u"""draw <url> [in colour] [width <width>] [height <height>]"""
+    usage = u'draw <url> [in colour] [width <width>] [height <height>]'
     feature = ('draw-aa',)
 
     max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
@@ -151,7 +151,7 @@ features['figlet'] = {
     'categories': ('fun',),
 }
 class WriteFiglet(Processor):
-    u"""figlet <text> [in <font>]
+    usage = u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
     feature = ('figlet',)
 

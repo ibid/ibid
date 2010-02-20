@@ -50,7 +50,7 @@ class Karma(Base):
         self.time = datetime.utcnow()
 
 class Set(Processor):
-    u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
+    usage = u'<subject> (++|--|==|ftw|ftl) [[reason]]'
     feature = ('karma',)
 
     # Clashes with morse & math
@@ -124,7 +124,7 @@ class Set(Processor):
             event.processed = True
 
 class Get(Processor):
-    u"""karma for <subject>
+    usage = u"""karma for <subject>
     [reverse] karmaladder"""
     feature = ('karma',)
 
@@ -152,7 +152,7 @@ class Get(Processor):
             event.addresponse(u"I don't really care about anything")
 
 class Forget(Processor):
-    u"""forget karma for <subject> [[reason]]"""
+    usage = u'forget karma for <subject> [[reason]]'
     feature = ('karma',)
 
     # Clashes with factoid

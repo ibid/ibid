@@ -28,7 +28,7 @@ if 'trac' in ibid.databases:
     mapper(Ticket, ticket_table)
 
 class Tickets(Processor, RPC):
-    u"""ticket <number>
+    usage = u"""ticket <number>
     (open|my|<who>'s) tickets"""
     feature = ('trac',)
     autoload = 'trac' in ibid.databases

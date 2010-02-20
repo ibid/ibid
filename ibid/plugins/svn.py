@@ -394,7 +394,7 @@ class CancelAfterTimeout(object):
         pass
 
 class Subversion(Processor, RPC):
-    u"""(last commit|commit <revno>) [to <repo>] [full]
+    usage = u"""(last commit|commit <revno>) [to <repo>] [full]
     (svnrepos|svnrepositories)
     """
     feature = ('svn',)

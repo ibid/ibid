@@ -22,7 +22,7 @@ features['lastfm'] = {
     'categories': ('lookup', 'web',),
 }
 class LastFm(Processor):
-    u"last.fm for <username>"
+    usage = u'last.fm for <username>'
 
     feature = ('lastfm',)
 
@@ -43,7 +43,7 @@ features['microblog'] = {
     'categories': ('lookup', 'web',),
 }
 class Twitter(Processor):
-    u"""latest (tweet|identica) from <name>
+    usage = u"""latest (tweet|identica) from <name>
     (tweet|identica) <number>"""
 
     feature = ('microblog',)

@@ -26,7 +26,7 @@ features['accounts'] = {
     'categories': ('admin', 'account',),
 }
 class Accounts(Processor):
-    u"""create account [<name>]
+    usage = u"""create account [<name>]
     delete (my account|account <name>)
     rename (my account|account <name>) to <name>"""
     feature = ('accounts',)
@@ -144,7 +144,7 @@ class Accounts(Processor):
 chars = [x for x in string.letters + string.digits if x not in '01lOIB86G']
 
 class Identities(Processor):
-    u"""(I am|<username> is) <identity> on <source>
+    usage = u"""(I am|<username> is) <identity> on <source>
     remove identity <identity> on <source> [from <username>]"""
     feature = ('accounts',)
     priority = -10
@@ -318,7 +318,7 @@ class Identities(Processor):
                     account.username, event.account, event.identity, event.sender['connection'])
 
 class Attributes(Processor):
-    u"""set (my|<account>) <name> to <value>"""
+    usage = u'set (my|<account>) <name> to <value>'
     feature = ('accounts',)
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
@@ -352,7 +352,7 @@ class Attributes(Processor):
                 event.identity, event.sender['connection'])
 
 class Describe(Processor):
-    u"""who (am I|is <username>)"""
+    usage = u'who (am I|is <username>)'
     feature = ('accounts',)
 
     @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
@@ -383,7 +383,7 @@ features['summon'] = {
     'categories': ('message',),
 }
 class Summon(Processor):
-    u"summon <person> [via <source>]"
+    usage = u'summon <person> [via <source>]'
     feature = ('summon',)
     permission = u'summon'
 
@@ -508,7 +508,7 @@ features['auth'] = {
     'categories': ('admin', 'account',),
 }
 class AddAuth(Processor):
-    u"""authenticate <account> [on source] using <method> [<credential>]"""
+    usage = u'authenticate <account> [on source] using <method> [<credential>]'
     feature = ('auth',)
 
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
@@ -554,7 +554,7 @@ class AddAuth(Processor):
 
 permission_values = {'no': '-', 'yes': '+', 'auth': ''}
 class Permissions(Processor):
-    u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
+    usage = u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
     permissions [for <username>]
     list permissions"""
     feature = ('auth',)
@@ -642,7 +642,7 @@ class Permissions(Processor):
         event.addresponse(u'Permissions: %s', human_join(sorted(permissions)) or u'none')
 
 class Auth(Processor):
-    u"""auth <credential>"""
+    usage = u'auth <credential>'
     feature = ('auth',)
 
     @match(r'^auth(?:\s+(.+))?$')

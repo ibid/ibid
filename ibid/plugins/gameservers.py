@@ -15,7 +15,7 @@ features = {'gameservers': {
 }}
 
 class Bnet(Processor):
-    u'dota players | who is playing dota'
+    usage = u'dota players | who is playing dota'
     feature = ('gameservers',)
     autoload = False
 
@@ -57,7 +57,7 @@ class Bnet(Processor):
             event.addresponse(u'Nobody. Everyone must have a lives...')
 
 class CounterStrike(Processor):
-    u'cs players | who is playing cs'
+    usage = u'cs players | who is playing cs'
     feature = ('gameservers',)
     autoload = False
 

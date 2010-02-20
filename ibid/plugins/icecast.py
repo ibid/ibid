@@ -16,9 +16,7 @@ features = {'icecast': {
     'categories': ('monitor',),
 }}
 class ICECast(Processor):
-    u"""
-    what's playing [on <stream>]?
-    """
+    usage = u"what's playing [on <stream>]?"
     feature = ('icecast',)
 
     interval = IntOption('interval',

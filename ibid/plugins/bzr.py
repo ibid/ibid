@@ -60,7 +60,7 @@ class LogFormatter(log.LogFormatter):
         self.to_file.write(commit)
 
 class Bazaar(Processor, RPC):
-    u"""(last commit|commit <revno>) [to <repo>] [full]
+    usage = u"""(last commit|commit <revno>) [to <repo>] [full]
     repositories"""
     feature = ('bzr',)
     autoload = False

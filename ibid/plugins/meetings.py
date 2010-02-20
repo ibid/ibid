@@ -29,7 +29,7 @@ features['meeting'] = {
     'categories': ('remember', 'monitor',),
 }
 class Meeting(Processor):
-    u"""
+    usage = u"""
     (start | end) meeting [about <title>]
     I am <True Name>
     topic <topic>
@@ -278,7 +278,7 @@ features['poll'] = {
     'categories': ('decide',),
 }
 class Poll(Processor):
-    u"""
+    usage = u"""
     [secret] poll on <topic> [until <time>] vote <option> [or <option>]...
     vote (<id> | <option>) [on <topic>]
     end poll

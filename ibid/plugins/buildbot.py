@@ -14,7 +14,7 @@ features = {'buildbot': {
     'categories': ('development',),
 }}
 class BuildBot(Processor, RPC):
-    u"""rebuild <branch> [ (revision|r) <number> ]"""
+    usage = u'rebuild <branch> [ (revision|r) <number> ]'
     feature = ('buildbot',)
     autoload = False
 

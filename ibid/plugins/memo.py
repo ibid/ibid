@@ -63,7 +63,7 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id,
                                 backref='recipient')
 
 class Tell(Processor):
-    u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
+    usage = u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
     feature = ('memo',)
 
@@ -322,7 +322,7 @@ class Notify(Processor):
             nomemos_cache.add(event.identity)
 
 class Messages(Processor):
-    u"""my messages
+    usage = u"""my messages
     message <number>
     my messages for <person> [on <source>]"""
     feature = ('memo',)
