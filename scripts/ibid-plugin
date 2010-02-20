@@ -155,11 +155,11 @@ while True:
         if isinstance(response, basestring):
             print 'Response: %s' % response
         elif response.get('action', False):
-            print 'Action: %s' % response['reply']
+            print 'Action: %s' % response.get('reply')
         elif response.get('notice', False):
-            print 'Notice: %s' % response['reply']
+            print 'Notice: %s' % response.get('reply')
         else:
-            print 'Response: %s' % response['reply']
+            print 'Response: %s' % response.get('reply')
 
     event.session.close()
 
