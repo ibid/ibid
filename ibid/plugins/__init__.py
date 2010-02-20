@@ -42,10 +42,11 @@ ibid.categories.update({
     'remember': u'Remember things',
     'web': u'Browse the Internet',
     'message': u'Deliver messages',
-    'south africa': u'South African',
+    'south africa': u'Do South African stuff',
     'sysadmin': u'Help you with System Administration',
 })
 ibid.hidden_categories.update((
+    'account',
     'admin',
     'debug',
 ))

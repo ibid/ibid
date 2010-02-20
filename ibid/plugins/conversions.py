@@ -426,7 +426,7 @@ class UnassignedCharacter(Exception): pass
 
 features['unicode'] = {
     'description': u'Look up characters in the Unicode database.',
-    'categories': ('lookup', 'conversion',),
+    'categories': ('lookup', 'convert',),
 }
 class UnicodeData(Processor):
     """U+<hex code>
