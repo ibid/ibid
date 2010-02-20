@@ -503,6 +503,8 @@ class Ports(Processor):
 
 class Nmap(Processor):
 
+    min_mask = IntOption('min_mask', 'Minimum network mask that may be scanned', 24)
+
     @match(r'^nmap\s+([0-9a-z.-]+)$')
     def host_scan(self, event, ip):
         nmap = Popen(['nmap', '--open', '-n', ip], stdout=PIPE, stderr=PIPE)
@@ -525,5 +527,25 @@ class Nmap(Processor):
             event.addresponse(human_join(ports))
         else:
             event.addresponse(u'No open ports detected')
+
+    @match(r'^nmap\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
+    def net_scan(self, event, network, mask):
+        if int(mask) < self.min_mask:
+            event.addresponse(u"Sorry, I can't scan networks with a mask less than %s", self.min_mask)
+            return
+
+        nmap = Popen(['nmap', '-sP', '-n', '%s/%s' % (network, mask)], stdout=PIPE, stderr=PIPE)
+        output, error = nmap.communicate()
+        code = nmap.wait()
+
+        hosts = []
+        for line in output.splitlines():
+            if line.startswith('Host '):
+                hosts.append(line.split()[1])
+
+        if hosts:
+            event.addresponse(human_join(hosts))
+        else:
+            event.addresponse(u'No hosts responded to pings')
 
 # vi: set et sta sw=4 ts=4:
