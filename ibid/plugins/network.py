@@ -505,6 +505,10 @@ class Nmap(Processor):
 
     min_mask = IntOption('min_mask', 'Minimum network mask that may be scanned', 24)
 
+    def setup(self):
+        if not file_in_path('nmap'):
+            raise Exception("Cannot locate nmap executable")
+
     @match(r'^nmap\s+([0-9a-z.-]+)$')
     def host_scan(self, event, ip):
         nmap = Popen(['nmap', '--open', '-n', ip], stdout=PIPE, stderr=PIPE)
