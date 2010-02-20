@@ -17,7 +17,7 @@ features = {'help': {
 class Help(Processor):
     u"""what can you do|help
     what can you <verb>|help <category>
-    (how do I use|help|usage) <feature>
+    (how do I use|usage) <feature>
     features [for <word>]
     """
     feature = ('help',)
@@ -59,7 +59,7 @@ class Help(Processor):
                                  if v['features'])
         return categories, features
 
-    @match(r'^(?:help|what\s+(?:can|do)\s+you\s+do)$')
+    @match(r'^(?:help|features|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
         categories, features = self._get_features()
         categories = filter(lambda c: c['weight'] is not None,
@@ -69,32 +69,20 @@ class Help(Processor):
                           human_join(c['description'].lower()
                           for c in categories))
 
-    @match(r'^features$')
-    def features(self, event):
-        features = []
-
-        for processor in ibid.processors:
-            module = eval(processor.__module__)
-            for feature in getattr(module, 'features', {}).keys():
-                if feature not in features:
-                    features.append(feature)
-
-        event.addresponse(u'Features: %s',
-                          human_join(sorted(features)) or u'none')
-
-    @match(r'^help\s+(.+)$')
-    def help(self, event, feature):
-        feature = feature.lower()
-
-        for processor in ibid.processors:
-            module = eval(processor.__module__)
-            if feature in getattr(module, 'features', []):
-                desc = module.features[feature].get('description')
-                if desc:
-                    event.addresponse(desc)
-                    return
-
-        event.addresponse(u"I can't help you with %s", feature)
+    @match(r'^(?:help|what\s+can\s+you)\s+(.+)$')
+    def features(self, event, category):
+        categories, features = self._get_features()
+        if category in categories:
+            event.addresponse(u'I can: %s',
+                              human_join(categories[category]['features']))
+            return
+        terms = set(category.lower().split())
+        for cat, meta in categories.iteritems():
+            if terms.issubset(set(meta['description'].lower().split())):
+                event.addresponse(u'I can: %s',
+                                  human_join(categories[cat]['features']))
+                return
+        event.addresponse(u"I'm afraid I don't know what you are asking about")
 
     @match(r'^(?:usage|how\s+do\s+I\s+use)\s+(.+)$')
     def usage(self, event, feature):
