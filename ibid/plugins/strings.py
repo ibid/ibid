@@ -11,11 +11,14 @@ from ibid.plugins import Processor, match
 
 features = {}
 
-features['hash'] = u'Calculates numerous cryptographic hash functions.'
+features['hash'] = {
+    'description': u'Calculates numerous cryptographic hash functions.',
+    'categories': ('calculate',),
+}
 class Hash(Processor):
     u"""(md5|sha1|sha224|sha256|sha384|sha512) <string>
     crypt <string> <salt>"""
-    feature = 'hash'
+    feature = ('hash',)
 
     @match(r'^(md5|sha1|sha224|sha256|sha384|sha512)(?:sum)?\s+(.+?)$')
     def hash(self, event, hash, string):
@@ -26,10 +29,13 @@ class Hash(Processor):
     def handle_crypt(self, event, string, salt):
         event.addresponse(unicode(crypt(string.encode('utf-8'), salt.encode('utf-8'))))
 
-features['base64'] = u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.'
+features['base64'] = {
+    'description': u'Encodes and decodes base 16, 32 and 64. Assumes UTF-8.',
+    'categories': ('calculate', 'convert', 'development',),
+}
 class Base64(Processor):
     u"""base(16|32|64) (encode|decode) <string>"""
-    feature = 'base64'
+    feature = ('base64',)
 
     @match(r'^b(?:ase)?(16|32|64)\s*(enc|dec)(?:ode)?\s+(.+?)$')
     def base64(self, event, base, operation, string):
@@ -47,20 +53,26 @@ class Base64(Processor):
         else:
             event.addresponse(unicode(func(string.encode('utf-8'))))
 
-features['rot13'] = u'Transforms a string with ROT13.'
+features['rot13'] = {
+    'description': u'Transforms a string with ROT13.',
+    'categories': ('convert', 'fun',),
+}
 class Rot13(Processor):
     u"""rot13 <string>"""
-    feature = 'rot13'
+    feature = ('rot13',)
 
     @match(r'^rot13\s+(.+)$')
     def rot13(self, event, string):
         repl = lambda x: x.group(0).encode('rot13')
         event.addresponse(re.sub('[a-zA-Z]+', repl, string))
 
-features['dvorak'] = u'Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa'
+features['dvorak'] = {
+    'description': u'Makes text typed on a QWERTY keyboard as if it was Dvorak work, and vice-versa',
+    'categories': ('convert', 'fun',),
+}
 class Dvorak(Processor):
     u"""(aoeu|asdf) <text>"""
-    feature = 'dvorak'
+    feature = ('dvorak',)
 
     # List of characters on each keyboard layout
     dvormap = u"""',.pyfgcrl/=aoeuidhtns-;qjkxbmwvz"<>PYFGCRL?+AOEUIDHTNS_:QJKXBMWVZ[]{}|"""
@@ -79,19 +91,26 @@ class Dvorak(Processor):
     def convert_from_dvorak(self, event, text):
         event.addresponse(text.translate(self.typed_on_dvorak))
 
-features['retest'] = u'Checks whether a regular expression matches a given string.'
+features['retest'] = {
+    'description': u'Checks whether a regular expression matches a given '
+                   u'string.',
+    'categories': ('development',),
+}
 class ReTest(Processor):
     u"""does <pattern> match <string>"""
-    feature = 'retest'
+    feature = ('retest',)
 
     @match('^does\s+(.+?)\s+match\s+(.+?)$')
     def retest(self, event, regex, string):
         event.addresponse(re.search(regex, string) and u'Yes' or u'No')
 
-features['morse'] = u'Translates messages into and out of morse code.'
+features['morse'] = {
+    'description': u'Translates messages into and out of morse code.',
+    'categories': ('convert', 'fun',),
+}
 class Morse(Processor):
     u"""morse (text|morsecode)"""
-    feature = 'morse'
+    feature = ('morse',)
 
     _table = {
         'A': ".-",

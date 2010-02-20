@@ -9,11 +9,13 @@ import ibid
 from ibid.plugins import Processor, match, RPC
 from ibid.config import Option, IntOption
 
-features = {'buildbot': u'Displays buildbot build results and triggers builds.'}
-
+features = {'buildbot': {
+    'description': u'Displays buildbot build results and triggers builds.',
+    'categories': ('development',),
+}}
 class BuildBot(Processor, RPC):
     u"""rebuild <branch> [ (revision|r) <number> ]"""
-    feature = 'buildbot'
+    feature = ('buildbot',)
     autoload = False
 
     server = Option('server', 'Buildbot server hostname', 'localhost')

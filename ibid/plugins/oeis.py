@@ -11,14 +11,15 @@ from ibid.utils import plural
 
 log = logging.getLogger('plugins.oeis')
 
-features = {}
-
-features['oeis'] = 'Query the Online Encyclopedia of Integer Sequences'
+features = {'oeis': {
+    'description': 'Query the Online Encyclopedia of Integer Sequences',
+    'categories': ('lookup', 'web', 'calculate',),
+}}
 class OEIS(Processor):
     u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
     oeis <term>[, ...]"""
 
-    feature = 'oeis'
+    feature = ('oeis',)
 
     @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
     def oeis (self, event, query):

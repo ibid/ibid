@@ -28,8 +28,22 @@ from ibid.compat import json
 __path__ = pluginPackagePaths(__name__) + __path__
 
 ibid.categories.update({
-    u'lookup': u'Look things up',
-    u'calculation': u'Perform calculations',
+    'account': u'Manage bot accounts and permissions',
+    'admin': u'Have adminstrative functions',
+    'calculate': u'Perform calculations',
+    'convert': u'Perform conversions',
+    'debug': u'Help you debug me',
+    'decide': u'Make decisions',
+    'development': u'Monitor software develpment',
+    'fun': u'Do silly fun stuff',
+    'game': u'Play games',
+    'lookup': u'Look things up',
+    'monitor': u'Keep an eye on things',
+    'remember': u'Remember things',
+    'web': u'Browse the Internet',
+    'message': u'Deliver messages',
+    'south africa': u'South African',
+    'sysadmin': u'Help you with System Administration',
 })
 
 class Processor(object):

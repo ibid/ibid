@@ -26,11 +26,14 @@ from ibid.utils.html import get_country_codes
 
 features = {}
 
-features['dns'] = u'Performs DNS lookups'
+features['dns'] = {
+    'description': u'Performs DNS lookups',
+    'categories': ('lookup', 'sysadmin',),
+}
 class DNS(Processor):
     u"""dns [<record type>] [for] <host> [from <nameserver>]"""
 
-    feature = 'dns'
+    feature = ('dns',)
 
     def setup(self):
         if Resolver is None:
@@ -73,10 +76,13 @@ class DNS(Processor):
 
         event.addresponse(u'Records: %s', human_join(responses))
 
-features['ping'] = u'ICMP pings the specified host.'
+features['ping'] = {
+    'description': u'ICMP pings the specified host.',
+    'categories': ('sysadmin', 'monitor',),
+}
 class Ping(Processor):
     u"""ping <host>"""
-    feature = 'ping'
+    feature = ('ping',)
 
     ping = Option('ping', 'Path to ping executable', 'ping')
 
@@ -103,10 +109,13 @@ class Ping(Processor):
                                          .replace(u'ping:', u'', 1).strip()
             event.addresponse(u'Error: %s', error)
 
-features['tracepath'] = u'Traces the path to the given host.'
+features['tracepath'] = {
+    'description': u'Traces the path to the given host.',
+    'categories': ('sysadmin',),
+}
 class Tracepath(Processor):
     u"""tracepath <host>"""
-    feature = 'tracepath'
+    feature = ('tracepath',)
 
     tracepath = Option('tracepath', 'Path to tracepath executable', 'tracepath')
 
@@ -128,11 +137,14 @@ class Tracepath(Processor):
             error = unicode_output(error.strip())
             event.addresponse(u'Error: %s', error.replace(u'\n', u' '))
 
-features['ipcalc'] = u'IP address calculator'
+features['ipcalc'] = {
+    'description': u'IP address calculator',
+    'categories': ('sysadmin', 'calculate',),
+}
 class IPCalc(Processor):
     u"""ipcalc <network>/<subnet>
     ipcalc <address> - <address>"""
-    feature = 'ipcalc'
+    feature = ('ipcalc',)
 
     ipcalc = Option('ipcalc', 'Path to ipcalc executable', 'ipcalc')
 
@@ -201,12 +213,15 @@ class IPCalc(Processor):
 class HTTPException(Exception):
     pass
 
-features['http'] = u'Tests if an HTTP site is up and retrieves HTTP URLs.'
+features['http'] = {
+    'description': u'Tests if an HTTP site is up and retrieves HTTP URLs.',
+    'categories': ('monitor', 'sysadmin',),
+}
 class HTTP(Processor):
     u"""(get|head) <url>
     is <domain> (up|down)
     tell me when <domain|url> is up"""
-    feature = 'http'
+    feature = ('http',)
     priority = -10
 
     max_size = IntOption('max_size', u'Only request this many bytes', 500)
@@ -395,11 +410,14 @@ class HTTP(Processor):
         return response.status, response.reason, data.decode(charset), \
                response.getheaders()
 
-features['tld'] = u'Resolve country TLDs (ISO 3166)'
+features['tld'] = {
+    'description': u'Resolve country TLDs (ISO 3166)',
+    'categories': ('lookup', 'sysadmin',),
+}
 class TLD(Processor):
     u""".<tld>
     tld for <country>"""
-    feature = 'tld'
+    feature = ('tld',)
 
     country_codes = {}
 
@@ -433,11 +451,14 @@ class TLD(Processor):
 
         event.addresponse(u"ISO doesn't know about any TLD for %s", location)
 
-features['ports'] = u'Looks up port numbers for protocols'
+features['ports'] = {
+    'description': u'Looks up port numbers for protocols',
+    'categories': ('lookup', 'sysadmin',),
+}
 class Ports(Processor):
     u"""port for <protocol>
     (tcp|udp) port <number>"""
-    feature = 'ports'
+    feature = ('ports',)
     priority = 10
 
     services = Option('services', 'Path to services file', '/etc/services')

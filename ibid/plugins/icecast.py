@@ -11,12 +11,15 @@ from ibid.utils.html import get_html_parse_tree
 
 log = logging.getLogger('plugins.icecast')
 
-features = {'icecast': u'Follows an ICECast stream'}
+features = {'icecast': {
+    'description': u'Follows an ICECast stream',
+    'categories': ('monitor',),
+}}
 class ICECast(Processor):
     u"""
     what's playing [on <stream>]?
     """
-    feature = 'icecast'
+    feature = ('icecast',)
 
     interval = IntOption('interval',
             'Interval between checking for song changes', 60)

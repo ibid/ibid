@@ -20,9 +20,13 @@ features = {}
 
 log = logging.getLogger('plugins.url')
 
+features['tinyurl'] = {
+    'description': u'Shorten and lengthen URLs',
+    'categories': ('lookup', 'web',),
+}
 class Shorten(Processor):
     u"""shorten <url>"""
-    feature = 'url'
+    feature = ('tinyurl',)
 
     @match(r'^shorten\s+(\S+\.\S+)$')
     def shorten(self, event, url):
@@ -40,7 +44,7 @@ class NullRedirect(HTTPRedirectHandler):
 class Lengthen(Processor):
     u"""<url>
     expand <url>"""
-    feature = 'url'
+    feature = ('tinyurl',)
 
     services = ListOption('services', 'List of URL prefixes of URL shortening services', (
         'http://is.gd/', 'http://tinyurl.com/', 'http://ff.im/',
@@ -70,11 +74,14 @@ class Lengthen(Processor):
 
         event.addresponse(u"No redirect")
 
-features['youtube'] = u'Determine the title and a download URL for a Youtube Video'
+features['youtube'] = {
+    'description': u'Determine the title and a download URL for a Youtube Video',
+    'categories': ('lookup', 'web',),
+}
 class Youtube(Processor):
     u'<Youtube URL>'
 
-    feature = 'youtube'
+    feature = ('youtube',)
 
     @match(r'^(?:youtube(?:\.com)?\s+)?'
         r'(?:http://)?(?:\w+\.)?youtube\.com/'

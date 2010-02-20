@@ -17,11 +17,14 @@ from ibid.utils import ago, decode_htmlentities, json_webservice
 log = logging.getLogger('plugins.social')
 features = {}
 
-features['lastfm'] = u'Lists the tracks last listened to by the specified user.'
+features['lastfm'] = {
+    'description': u'Lists the tracks last listened to by the specified user.',
+    'categories': ('lookup', 'web',),
+}
 class LastFm(Processor):
     u"last.fm for <username>"
 
-    feature = "lastfm"
+    feature = ('lastfm',)
 
     @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
     def listsongs(self, event, username):
@@ -34,12 +37,16 @@ class LastFm(Processor):
                     ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
                 ) for e in songs['entries']))
 
-features['microblog'] = u'Looks up messages on microblogging services like twitter and identica.'
+features['microblog'] = {
+    'description': u'Looks up messages on microblogging services like twitter '
+                   u'and identica.',
+    'categories': ('lookup', 'web',),
+}
 class Twitter(Processor):
     u"""latest (tweet|identica) from <name>
     (tweet|identica) <number>"""
 
-    feature = "microblog"
+    feature = ('microblog',)
 
     default = {
         'twitter':   {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},

@@ -12,13 +12,16 @@ from ibid.utils import decode_htmlentities, json_webservice, human_join
 
 features = {}
 
-features['dict'] = u'Defines words and checks spellings.'
+features['dict'] = {
+    'description': u'Defines words and checks spellings.',
+    'categories': ('lookup',),
+}
 class Dict(Processor):
     u"""spell <word> [using <strategy>]
     define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
-    feature = 'dict'
+    feature = ('dict',)
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
@@ -127,12 +130,15 @@ default_referer = "http://ibid.omnia.za.net/"
 class UnknownLanguageException (Exception): pass
 class TranslationException (Exception): pass
 
-features['translate'] = u'Translates a phrase using Google Translate.'
+features['translate'] = {
+    'description': u'Translates a phrase using Google Translate.',
+    'categories': ('lookup', 'convert', 'web',),
+}
 class Translate(Processor):
     u"""translate <phrase> [from <language>] [to <language>]
         translation chain <phrase> [from <language>] [to <language>]"""
 
-    feature = 'translate'
+    feature = ('translate',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)

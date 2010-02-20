@@ -15,7 +15,10 @@ from ibid.auth import permission
 from ibid.plugins.identity import get_identities
 from ibid.utils import ago, format_date
 
-features = {'memo': u'Keeps messages for people.'}
+features = {'memo': {
+    'description': u'Keeps messages for people.',
+    'categories': ('remember', 'message',),
+}}
 
 nomemos_cache = set()
 notified_overlimit_cache = set()
@@ -62,7 +65,7 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id,
 class Tell(Processor):
     u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
-    feature = 'memo'
+    feature = ('memo',)
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
@@ -225,7 +228,7 @@ def get_memos(event, delivered=False):
             .order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
-    feature = 'memo'
+    feature = ('memo',)
 
     addressed = False
     processed = True
@@ -286,7 +289,7 @@ class Deliver(Processor):
             nomemos_cache.add(event.identity)
 
 class Notify(Processor):
-    feature = 'memo'
+    feature = ('memo',)
 
     event_types = (u'state',)
     addressed = False
@@ -322,7 +325,7 @@ class Messages(Processor):
     u"""my messages
     message <number>
     my messages for <person> [on <source>]"""
-    feature = 'memo'
+    feature = ('memo',)
 
     @match(r'^my\s+messages$')
     def messages(self, event):

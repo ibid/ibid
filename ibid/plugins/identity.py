@@ -19,13 +19,17 @@ identify_cache = {}
 
 log = logging.getLogger('plugins.identity')
 
-features['accounts'] = u'An account represents a person. ' \
-        'An account has one or more identities, which is a user on a specific source.'
+features['accounts'] = {
+    'description': u'Manage users accounts with the bot. An account represents '
+                   u'a person. An account has one or more identities, which is '
+                   u'a user on a specific source.',
+    'categories': ('admin', 'account',),
+}
 class Accounts(Processor):
     u"""create account [<name>]
     delete (my account|account <name>)
     rename (my account|account <name>) to <name>"""
-    feature = 'accounts'
+    feature = ('accounts',)
 
     @match(r'^create\s+account(?:\s+(.+))?$')
     def new_account(self, event, username):
@@ -142,7 +146,7 @@ chars = [x for x in string.letters + string.digits if x not in '01lOIB86G']
 class Identities(Processor):
     u"""(I am|<username> is) <identity> on <source>
     remove identity <identity> on <source> [from <username>]"""
-    feature = 'accounts'
+    feature = ('accounts',)
     priority = -10
 
     def __init__(self, name):
@@ -315,7 +319,7 @@ class Identities(Processor):
 
 class Attributes(Processor):
     u"""set (my|<account>) <name> to <value>"""
-    feature = 'accounts'
+    feature = ('accounts',)
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
     def attribute(self, event, username, name, value):
@@ -349,7 +353,7 @@ class Attributes(Processor):
 
 class Describe(Processor):
     u"""who (am I|is <username>)"""
-    feature = "accounts"
+    feature = ('accounts',)
 
     @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
     def describe(self, event, username):
@@ -374,10 +378,13 @@ class Describe(Processor):
             'identities': human_join(u'%s on %s' % (identity.identity, identity.source) for identity in account.identities),
         })
 
-features['summon'] = u'Get the attention of a person via different source'
+features['summon'] = {
+    'description': u'Get the attention of a person via different source',
+    'categories': ('message',),
+}
 class Summon(Processor):
     u"summon <person> [via <source>]"
-    feature = 'summon'
+    feature = ('summon',)
     permission = u'summon'
 
     default_source = Option('default_source',
@@ -495,10 +502,14 @@ def identify(session, source, id):
 
 actions = {'revoke': 'Revoked', 'grant': 'Granted', 'remove': 'Removed'}
 
-features['auth'] = u'Adds and removes authentication credentials and permissions'
+features['auth'] = {
+    'description': u'Adds and removes authentication credentials and '
+                   u'permissions',
+    'categories': ('admin', 'account',),
+}
 class AddAuth(Processor):
     u"""authenticate <account> [on source] using <method> [<credential>]"""
-    feature = 'auth'
+    feature = ('auth',)
 
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
     def handler(self, event, user, source, method, credential):
@@ -546,7 +557,7 @@ class Permissions(Processor):
     u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
     permissions [for <username>]
     list permissions"""
-    feature = 'auth'
+    feature = ('auth',)
 
     permission = u'admin'
 
@@ -632,7 +643,7 @@ class Permissions(Processor):
 
 class Auth(Processor):
     u"""auth <credential>"""
-    feature = 'auth'
+    feature = ('auth',)
 
     @match(r'^auth(?:\s+(.+))?$')
     def handler(self, event, password):

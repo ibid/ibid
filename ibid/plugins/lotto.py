@@ -8,13 +8,16 @@ import logging
 from ibid.plugins import Processor, match
 
 log = logging.getLogger('plugins.lotto')
-features = {}
 
-features['lotto'] = u'Gets the latest lotto results from the South African National Lottery.'
+features = {'lotto': {
+    'description': u'Gets the latest lotto results from the South African '
+                   u'National Lottery.',
+    'categories': ('lookup', 'south africa', 'web',),
+}}
 class Lotto(Processor):
     u"""lotto"""
 
-    feature = 'lotto'
+    feature = ('lotto',)
 
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif')

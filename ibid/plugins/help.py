@@ -8,18 +8,23 @@ import ibid
 from ibid.plugins import Processor, match
 from ibid.utils import human_join
 
-features = {'help': u'Provides help and usage information about plugins.'}
+features = {'help': {
+    'description': u'Provides help and usage information about plugins.',
+    'categories': ('admin', 'lookup',),
+}}
 
 class Help(Processor):
     u"""features [for <word>]
     help [<feature>]
     usage <feature>"""
-    feature = 'help'
+    feature = ('help',)
 
     @match(r'^help$')
     def intro(self, event):
-        event.addresponse(u'Use "features" to get a list of available features. '
-            u'"help <feature>" will give a description of the feature, and "usage <feature>" will describe how to use it.')
+        event.addresponse(u'Use "features" to get a list of available features.'
+                          u' "help <feature>" will give a description of the '
+                          u'feature, and "usage <feature>" will describe how '
+                          u'to use it.')
 
     @match(r'^features$')
     def features(self, event):
@@ -31,7 +36,8 @@ class Help(Processor):
                 if feature not in features:
                     features.append(feature)
 
-        event.addresponse(u'Features: %s', human_join(sorted(features)) or u'none')
+        event.addresponse(u'Features: %s',
+                          human_join(sorted(features)) or u'none')
 
     @match(r'^help\s+(.+)$')
     def help(self, event, feature):
@@ -40,8 +46,10 @@ class Help(Processor):
         for processor in ibid.processors:
             module = eval(processor.__module__)
             if feature in getattr(module, 'features', []):
-                event.addresponse(module.features[feature])
-                return
+                desc = module.features[feature].get('description')
+                if desc:
+                    event.addresponse(desc)
+                    return
 
         event.addresponse(u"I can't help you with %s", feature)
 
@@ -52,7 +60,9 @@ class Help(Processor):
         output = []
         for processor in ibid.processors:
             for name, klass in inspect.getmembers(processor, inspect.isclass):
-                if hasattr(klass, 'feature') and klass.feature == feature and klass.__doc__:
+                if (hasattr(klass, 'feature')
+                        and feature in klass.feature
+                        and klass.__doc__):
                     for line in klass.__doc__.strip().splitlines():
                         output.append(line.strip())
 
@@ -86,14 +96,16 @@ class Help(Processor):
         matches = set()
         processor_modules = set()
         for processor in ibid.processors:
-            if (hasattr(processor, 'feature') and processor.__doc__ and
-                phrase in processor.__doc__.lower()):
-                matches.add(processor.feature)
+            if (hasattr(processor, 'feature')
+                    and processor.__doc__
+                    and phrase in processor.__doc__.lower()):
+                matches.update(processor.feature)
             processor_modules.add(sys.modules[processor.__module__])
 
         for module in processor_modules:
-            for feature, help in getattr(module, 'features', {}).iteritems():
-                if phrase in feature or phrase in help.lower():
+            for feature, meta in getattr(module, 'features', {}).iteritems():
+                if (phrase in feature
+                        or phrase in meta.get('description', '').lower()):
                     matches.add(feature)
 
         return matches

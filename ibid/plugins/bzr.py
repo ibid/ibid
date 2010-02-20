@@ -14,7 +14,10 @@ from ibid.plugins import Processor, match, RPC, handler, periodic
 from ibid.config import DictOption, IntOption
 from ibid.utils import ago, format_date, human_join
 
-features = {'bzr': u'Retrieves commit logs from a Bazaar repository.'}
+features = {'bzr': {
+    'description': u'Retrieves commit logs from a Bazaar repository.',
+    'categories': ('development',),
+}}
 
 class LogFormatter(log.LogFormatter):
 
@@ -59,7 +62,7 @@ class LogFormatter(log.LogFormatter):
 class Bazaar(Processor, RPC):
     u"""(last commit|commit <revno>) [to <repo>] [full]
     repositories"""
-    feature = 'bzr'
+    feature = ('bzr',)
     autoload = False
 
     repositories = DictOption('repositories', 'Dict of repositories names and URLs')

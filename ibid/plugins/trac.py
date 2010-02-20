@@ -13,7 +13,10 @@ from ibid.plugins import Processor, match, RPC
 from ibid.config import Option, BoolOption
 from ibid.utils import ago
 
-features = {'trac': u'Retrieves tickets from a Trac database.'}
+features = {'trac': {
+    'description': u'Retrieves tickets from a Trac database.',
+    'categories': ('development', 'lookup',),
+}}
 
 class Ticket(object):
     pass
@@ -27,7 +30,7 @@ if 'trac' in ibid.databases:
 class Tickets(Processor, RPC):
     u"""ticket <number>
     (open|my|<who>'s) tickets"""
-    feature = 'trac'
+    feature = ('trac',)
     autoload = 'trac' in ibid.databases
 
     url = Option('url', 'URL of Trac instance')

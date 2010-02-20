@@ -26,7 +26,10 @@ log = logging.getLogger('plugins.geography')
 
 features = {}
 
-features['distance'] = u'Returns the distance between two places'
+features['distance'] = {
+    'description': u'Returns the distance between two places',
+    'categories': ('lookup', 'calculate',),
+}
 class Distance(Processor):
     u"""distance [in <unit>] between <source> and <destination>
     place search for <placename>"""
@@ -35,7 +38,7 @@ class Distance(Processor):
     # http://www.mathforum.com/library/drmath/view/51711.html
     # http://mathworld.wolfram.com/GreatCircle.html
 
-    feature = 'distance'
+    feature = ('distance',)
 
     default_unit_names = {
             'km': "kilometres",
@@ -108,12 +111,15 @@ class Distance(Processor):
                 conjunction=u'or'),
         })
 
-features['weather'] = u'Retrieves current weather and forecasts for cities.'
+features['weather'] = {
+    'description': u'Retrieves current weather and forecasts for cities.',
+    'categories': ('lookup', 'web',),
+}
 class Weather(Processor):
     u"""weather in <city>
     forecast for <city>"""
 
-    feature = "weather"
+    feature = ('weather',)
 
     defaults = {    'ct': 'Cape Town, South Africa',
                     'jhb': 'Johannesburg, South Africa',
@@ -224,11 +230,14 @@ CUSTOM_ZONES = {
     'EST': 'US/Eastern',
 }
 
-features['timezone'] = 'Converts times between timezones.'
+features['timezone'] = {
+    'description': 'Converts times between timezones.',
+    'categories': ('convert',),
+}
 class TimeZone(Processor):
     u"""when is <time> <place|timezone> in <place|timezone>
     time in <place|timezone>"""
-    feature = 'timezone'
+    feature = ('timezone',)
 
     zoneinfo = Option('zoneinfo', 'Timezone info directory', '/usr/share/zoneinfo')
     custom_zones = DictOption('timezones', 'Custom timezone names', CUSTOM_ZONES)
@@ -356,7 +365,10 @@ class TimeZone(Processor):
     def time(self, event, place):
         self.convert(event, None, None, place)
 
-features['flight'] = u'Search for flights on travelocity'
+features['flight'] = {
+    'description': u'Search for flights on travelocity',
+    'categories': ('lookup', 'web',),
+}
 class Flight:
     def __init__(self):
         self.flight, self.depart_time, self.depart_ap, self.arrive_time, \
@@ -391,7 +403,7 @@ class FlightSearch(Processor):
     """airport [in] <name|location|code>
     [<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
-    feature = 'flight'
+    feature = ('flight',)
 
     airports_url = u'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)

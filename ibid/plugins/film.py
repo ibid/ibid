@@ -19,11 +19,14 @@ log = logging.getLogger('plugins.film')
 
 features = {}
 
-features['tvshow'] = u'Retrieves TV show information from tvrage.com.'
+features['tvshow'] = {
+    'description': u'Retrieves TV show information from tvrage.com.',
+    'categories': ('lookup', 'web',),
+}
 class TVShow(Processor):
     u"""tvshow <show>"""
 
-    feature = 'tvshow'
+    feature = ('tvshow',)
 
     def remote_tvrage(self, show):
         info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
@@ -79,10 +82,13 @@ class TVShow(Processor):
 # This isn't strictly legal: http://www.imdb.com/help/show_leaf?usedatasoftware
 #
 # Note that it will return porn movies by default.
-features['imdb'] = u'Looks up movies on IMDB.com.'
+features['imdb'] = {
+    'description': u'Looks up movies on IMDB.com.',
+    'categories': ('lookup', 'web',),
+}
 class IMDB(Processor):
     u"imdb [search] [character|company|episode|movie|person] <terms> [#<index>]"
-    feature = 'imdb'
+    feature = ('imdb',)
 
     access_system = Option("accesssystem", "Method of querying IMDB", "http")
     adult_search = BoolOption("adultsearch", "Include adult films in search results", True)

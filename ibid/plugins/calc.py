@@ -31,11 +31,14 @@ except ImportError:
 features = {}
 log = logging.getLogger('calc')
 
-features['bc'] = u'Calculate mathematical expressions using bc'
+features['bc'] = {
+    'description': u'Calculate mathematical expressions using bc',
+    'categories': ('calculate',),
+}
 class BC(Processor):
     u"""bc <expression>"""
 
-    feature = 'bc'
+    feature = ('bc',)
 
     bc = Option('bc', 'Path to bc executable', 'bc')
     bc_timeout = FloatOption('bc_timeout', 'Maximum BC execution time (sec)', 2.0)
@@ -79,7 +82,11 @@ class BC(Processor):
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
-features['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
+features['calc'] = {
+    'description': u'Returns the anwser to mathematical expressions. '
+                   u'Uses Python syntax and semantics (i.e. radians)',
+    'categories': ('calculate',),
+}
 class LimitException(Exception):
     pass
 
@@ -135,7 +142,7 @@ class PowSubstitutionWalker(object):
 
 class Calc(Processor):
     u"""[calc] <expression>"""
-    feature = 'calc'
+    feature = ('calc',)
 
     priority = 500
 
@@ -193,10 +200,13 @@ class Calc(Processor):
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
 
-features['random'] = u'Generates random numbers.'
+features['random'] = {
+    'description': u'Generates random numbers.',
+    'categories': ('calculate', 'fun',),
+}
 class Random(Processor):
     u"""random [ <max> | <min> <max> ]"""
-    feature = 'random'
+    feature = ('random',)
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):
