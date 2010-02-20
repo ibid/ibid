@@ -145,6 +145,10 @@ class Complain(Processor):
             u"I'm not feeling too well", u"That didn't go down very well. Burp.",
             u"That didn't seem to agree with me",
         ),
+        'network': (
+            u'The tubes are clogged!', u"I can't reach that site",
+            u"That site seems to be down",
+        ),
     })
 
     @handler

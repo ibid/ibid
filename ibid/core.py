@@ -5,7 +5,9 @@ from cgi import parse_qs
 import inspect
 import re
 import logging
+import socket
 from os.path import join, expanduser
+from urllib2 import HTTPError
 
 from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
@@ -28,14 +30,14 @@ class Dispatcher(object):
         for processor in ibid.processors:
             try:
                 processor.process(event)
-            except:
+            except Exception, e:
                 self.log.exception(
                         u'Exception occured in %s processor of %s plugin.\n'
                         u'Event: %s',
                         processor.__class__.__name__,
                         processor.name,
                         event)
-                event.complain = u'exception'
+                event.complain = isinstance(e, (IOError, socket.error, HTTPError)) and u'network' or u'exception'
                 event.processed = True
                 if 'session' in event:
                     event.session.rollback()
