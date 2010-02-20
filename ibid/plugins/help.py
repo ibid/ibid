@@ -26,8 +26,11 @@ class Help(Processor):
         features in use. Dicts are cross-referenced by string.
         """
         processor_modules = set()
-        categories = dict((k, {'description': v, 'features': set()})
-                          for k, v in ibid.categories.iteritems())
+        categories = dict((k, {
+            'description': v,
+            'features': set(),
+            'hidden': k in ibid.hidden_categories,
+        }) for k, v in ibid.categories.iteritems())
         features = {}
 
         for processor in ibid.processors:
@@ -60,7 +63,8 @@ class Help(Processor):
         categories, features = self._get_features()
         event.addresponse(u'I can: %s',
                           human_join(c['description'].lower()
-                          for c in categories.itervalues()))
+                          for c in categories.itervalues()
+                          if not c['hidden']))
 
     @match(r'^features$')
     def features(self, event):

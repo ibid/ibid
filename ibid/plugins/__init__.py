@@ -45,6 +45,10 @@ ibid.categories.update({
     'south africa': u'South African',
     'sysadmin': u'Help you with System Administration',
 })
+ibid.hidden_categories.update((
+    'admin',
+    'debug',
+))
 
 class Processor(object):
     """Base class for Ibid plugins.
