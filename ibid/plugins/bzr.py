@@ -2,7 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from cStringIO import StringIO
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 from bzrlib.branch import Branch
