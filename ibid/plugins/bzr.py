@@ -77,7 +77,7 @@ class Bazaar(Processor, RPC):
         for name, repository in self.repositories.items():
             try:
                 self.branches[name.lower()] = Branch.open(repository['url'])
-            except NotBranchError, e:
+            except NotBranchError:
                 self.log.error(u'%s is not a branch', repository)
                 continue
             if repository.get('poll', 'False').lower() in ('yes', 'true'):
