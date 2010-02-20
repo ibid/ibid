@@ -255,6 +255,7 @@ class TimeZone(Processor):
                         zone, comment = zone.split('\t')
                     self.timezones[code].append(zone)
 
+        self.lowerzones = {}
         for path, directories, filenames in walk(self.zoneinfo):
             if path.replace(self.zoneinfo, '').lstrip('/').split('/')[0] not in ('posix', 'right'):
                 for filename in filenames:
