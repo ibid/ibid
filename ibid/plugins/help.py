@@ -95,6 +95,9 @@ class Help(Processor):
             desc = features[feature]['description']
             if desc is None:
                 output.append(u'Usage:')
+            elif len(desc) > 100:
+                output.append(desc)
+                output.append(u'Usage:')
             elif desc.endswith('.'):
                 output.append(desc + u' Usage:')
             else:
