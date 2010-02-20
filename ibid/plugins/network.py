@@ -21,7 +21,7 @@ import ibid
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, \
-                       url_to_bytestring
+                       url_to_bytestring, get_process_output
 from ibid.utils.html import get_country_codes
 
 help = {}
@@ -511,9 +511,7 @@ class Nmap(Processor):
 
     @match(r'^nmap\s+([0-9a-z.-]+)$')
     def host_scan(self, event, ip):
-        nmap = Popen(['nmap', '--open', '-n', ip], stdout=PIPE, stderr=PIPE)
-        output, error = nmap.communicate()
-        code = nmap.wait()
+        output, error, code = get_process_output(['nmap', '--open', '-n', ip])
 
         ports = []
         gotports = False
@@ -541,9 +539,7 @@ class Nmap(Processor):
             event.addresponse(u"Sorry, I can't scan networks with a mask less than %s", self.min_mask)
             return
 
-        nmap = Popen(['nmap', '-sP', '-n', '%s/%s' % (network, mask)], stdout=PIPE, stderr=PIPE)
-        output, error = nmap.communicate()
-        code = nmap.wait()
+        output, error, code = get_process_output(['nmap', '-sP', '-n', '%s/%s' % (network, mask)])
 
         hosts = []
         for line in output.splitlines():
