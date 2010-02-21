@@ -2,7 +2,6 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from copy import copy
-import inspect
 import sys
 
 import ibid
