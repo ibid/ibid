@@ -2,7 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from cStringIO import StringIO
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 from bzrlib.branch import Branch
@@ -80,7 +80,7 @@ class Bazaar(Processor, RPC):
         for name, repository in self.repositories.items():
             try:
                 self.branches[name.lower()] = Branch.open(repository['url'])
-            except NotBranchError, e:
+            except NotBranchError:
                 self.log.error(u'%s is not a branch', repository)
                 continue
             if repository.get('poll', 'False').lower() in ('yes', 'true'):
