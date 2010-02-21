@@ -187,4 +187,10 @@ class Help(Processor):
         else:
             self._usage_search(event, frozenset(feature.split()), features)
 
+    @match(r'\s*(?:what\s+can\s+you|how\s+do\s+I(?:\s+use)?)\s+\.\.\.\s*',
+           version='deaddressed')
+    def silly_people(self, event):
+        event.addresponse(
+                u'You must replace the ellipses with the thing you are after')
+
 # vi: set et sta sw=4 ts=4:
