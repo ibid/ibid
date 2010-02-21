@@ -6,6 +6,7 @@ from random import random, randint
 
 import logging
 from os import kill
+import re
 from signal import SIGTERM
 from subprocess import Popen, PIPE
 from time import time, sleep
@@ -151,7 +152,7 @@ class Calc(Processor):
     safe['pow'] = limited_pow
     safe['factorial'] = limited_factorial
 
-    @match(r'^(?:calc\s+)?(.+?)$')
+    @match(r'^(.+?)$')
     def calculate(self, event, expression):
         for term in self.banned:
             if term in expression:
@@ -192,6 +193,15 @@ class Calc(Processor):
 
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
+
+
+class ExplicitCalc(Calc):
+    priority = 0
+
+    def setup(self):
+        self.calculate.im_func.pattern = re.compile(r'^calc(?:ulate)?\s+(.+?)$',
+                                                    re.I | re.DOTALL)
+
 
 help['random'] = u'Generates random numbers.'
 class Random(Processor):
