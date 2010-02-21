@@ -191,6 +191,6 @@ class Help(Processor):
            version='deaddressed')
     def silly_people(self, event):
         event.addresponse(
-                u'You must replace the ellipses with the thing you are after')
+                u'You must replace the ellipsis with the thing you are after')
 
 # vi: set et sta sw=4 ts=4:
