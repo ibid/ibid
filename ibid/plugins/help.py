@@ -14,11 +14,11 @@ features = {'help': {
 }}
 
 class Help(Processor):
-    usage = u"""what can you do|help
+    usage = u"""
+    what can you do|help
     what can you <verb>
     how do I use <feature>
     help <(category|feature)>
-    features [for <word>]
     """
     feature = ('help',)
 
