@@ -15,8 +15,9 @@ features = {'help': {
 
 class Help(Processor):
     usage = u"""what can you do|help
-    what can you <verb>|help <category>
-    (how do I use|usage) <feature>
+    what can you <verb>
+    how do I use <feature>
+    help <(category|feature)>
     features [for <word>]
     """
     feature = ('help',)
@@ -40,8 +41,13 @@ class Help(Processor):
                             'description': None,
                             'categories': set(),
                             'processors': set(),
+                            'usage': [],
                     }
                 features[feature]['processors'].add(processor)
+                if hasattr(processor, 'usage'):
+                    features[feature]['usage'] += [line.strip()
+                            for line in processor.usage.split('\n')
+                            if line.strip()]
             processor_modules.add(sys.modules[processor.__module__])
 
         for module in processor_modules:
@@ -58,91 +64,127 @@ class Help(Processor):
                                  if v['features'])
         return categories, features
 
+    def _describe_category(self, event, category):
+        """Respond with the help information for a category"""
+        event.addresponse(u'I can %(description)s with: %(features)s\n'
+                          u'Ask me "how do I use ..." for more details.',
+            {
+                'description': category['description'].lower(),
+                'features': human_join(category['features']),
+            }, conflate=False)
+
+    def _describe_feature(self, event, feature):
+        """Respond with the help information for a feature"""
+        output = []
+        desc = feature['description']
+        if desc is None:
+            output.append(u'Usage:')
+        elif len(desc) > 100:
+            output.append(desc)
+            output.append(u'Usage:')
+        elif desc.endswith('.'):
+            output.append(desc + u' Usage:')
+        else:
+            output.append(desc + u'. Usage:')
+
+        output += feature['usage']
+
+        event.addresponse(u'\n'.join(output), conflate=False)
+
+    def _usage_search(self, event, terms, features):
+        results = []
+        for k, v in features.iteritems():
+            for line in v['usage']:
+                if terms.issubset(frozenset(line.split())):
+                    results.append(k)
+        if len(results) == 1:
+            self._describe_feature(event, features[results[0]])
+        elif len(results) > 1:
+            event.addresponse(
+                u"Please be more specific. I don't know if you mean %s",
+                human_join(results, conjunction=u'or'))
+        else:
+            event.addresponse(
+                u"I'm afraid I don't know what you are asking about. "
+                u'Ask "what can you do" to browse my features')
+
     @match(r'^(?:help|features|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
         categories, features = self._get_features()
         categories = filter(lambda c: c['weight'] is not None,
                             categories.itervalues())
         categories = sorted(categories, key=lambda c: c['weight'])
-        event.addresponse(u'I can: %s',
-                          human_join(c['description'].lower()
-                          for c in categories))
+        event.addresponse(
+            u'I can: %s\nAsk me "what can you ..." for more details',
+            human_join(c['description'].lower() for c in categories),
+            conflate=False)
 
-    @match(r'^(?:help|what\s+can\s+you)\s+(.+)$')
-    def features(self, event, category):
-        categories, features = self._get_features()
-        if category in categories:
-            event.addresponse(u'I can: %s',
-                              human_join(categories[category]['features']))
+    @match(r'^what\s+(.+\s+)?can\s+you\s+(.+)$')
+    def describe_category(self, event, terms1, terms2):
+        # Don't stomp on intro
+        if terms2.lower() == u'do':
             return
-        terms = set(category.lower().split())
-        for cat, meta in categories.iteritems():
-            if terms.issubset(set(meta['description'].lower().split())):
-                event.addresponse(u'I can: %s',
-                                  human_join(categories[cat]['features']))
+
+        categories, features = self._get_features()
+        if terms1 is None:
+            terms1 = u''
+        terms = frozenset(terms1.lower().split() + terms2.lower().split())
+
+        if len(terms) == 1:
+            term = list(terms)[0]
+            if term in categories:
+                self._describe_category(event, categories[term])
                 return
+
+        results = []
+        for cat, meta in categories.iteritems():
+            if terms.issubset(frozenset(meta['description'].lower().split())):
+                results.append(cat)
+
+        if len(results) == 0:
+            for cat, meta in categories.iteritems():
+                if (terms1.lower() in meta['description'].lower()
+                        and terms2.lower() in meta['description'].lower()):
+                    results.append(cat)
+
+        results.sort()
+        if len(results) == 1:
+            self._describe_category(event, categories[results[0]])
+            return
+        elif len(results) > 1:
+            event.addresponse(
+                    u"Please be more specific, I don't know if you mean %s.",
+                    human_join(('%s (%s)'
+                                % (categories[r]['description'].lower(), r)
+                                for r in results),
+                               conjunction=u'or'))
+            return
+
         event.addresponse(u"I'm afraid I don't know what you are asking about")
 
-    @match(r'^(?:usage|how\s+do\s+I(?:\s+use)?)\s+(.+)$')
-    def usage(self, event, feature):
+    @match(r'^(?:help|usage|modinfo)\s+(.+)$')
+    def quick_help(self, event, terms):
+        categories, features = self._get_features()
+        terms = frozenset(terms.lower().split())
+        if len(terms) == 1:
+            term = list(terms)[0]
+            if term in categories:
+                self._describe_category(event, categories[term])
+                return
+            if term in features:
+                self._describe_feature(event, features[term])
+                return
+
+        self._usage_search(event, terms, features)
+
+    @match(r'^how\s+do\s+I(?:\s+use)?\s+(.+)$')
+    def describe_feature(self, event, feature):
         categories, features = self._get_features()
 
         feature = feature.lower()
-
-        output = []
         if feature in features:
-            desc = features[feature]['description']
-            if desc is None:
-                output.append(u'Usage:')
-            elif len(desc) > 100:
-                output.append(desc)
-                output.append(u'Usage:')
-            elif desc.endswith('.'):
-                output.append(desc + u' Usage:')
-            else:
-                output.append(desc + u'. Usage:')
-            for processor in features[feature]['processors']:
-                if hasattr(processor, 'usage'):
-                    output.extend(line.strip() for line
-                                  in processor.usage.split('\n')
-                                  if line.strip())
-
-        if output:
-            event.addresponse(u'\n'.join(output), conflate=False)
+            self._describe_feature(event, features[feature])
         else:
-            event.addresponse(u"I don't know how to use %s either", feature)
-
-    @match(r'^features\s+(?:for|with)\s+(.*)$')
-    def search (self, event, phrase):
-        features = map(unicode, self._search(phrase))
-        features.sort()
-        if len(features) == 0:
-            event.addresponse(u"I couldn't find that feature.")
-        elif len(features) == 1:
-            event.addresponse(
-                u'The "%s" feature might be what you\'re looking for.',
-                features[0])
-        else:
-            event.addresponse(u"Are you looking for %s?",
-                            human_join(features, conjunction='or'))
-
-    def _search (self, phrase):
-        phrase = phrase.lower()
-        matches = set()
-        processor_modules = set()
-        for processor in ibid.processors:
-            if (hasattr(processor, 'feature')
-                    and hasattr(processor, 'usage')
-                    and phrase in processor.usage.lower()):
-                matches.update(processor.feature)
-            processor_modules.add(sys.modules[processor.__module__])
-
-        for module in processor_modules:
-            for feature, meta in getattr(module, 'features', {}).iteritems():
-                if (phrase in feature
-                        or phrase in meta.get('description', '').lower()):
-                    matches.add(feature)
-
-        return matches
+            self._usage_search(event, frozenset(feature.split()), features)
 
 # vi: set et sta sw=4 ts=4:
