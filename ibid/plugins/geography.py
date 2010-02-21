@@ -9,12 +9,11 @@ import logging
 from os.path import exists, join
 from datetime import datetime
 from os import walk
-from dateutil.parser import parse
-from dateutil.tz import gettz, tzlocal, tzoffset
 import csv
 from sys import maxint
 
 from dateutil.parser import parse
+from dateutil.tz import gettz, tzlocal, tzoffset
 
 from ibid.plugins import Processor, match
 from ibid.utils import json_webservice, human_join, format_date, cacheable_download
@@ -256,7 +255,7 @@ class TimeZone(Processor):
                         zone, comment = zone.split('\t')
                     self.timezones[code].append(zone)
 
-        lowerzones = {}
+        self.lowerzones = {}
         for path, directories, filenames in walk(self.zoneinfo):
             if path.replace(self.zoneinfo, '').lstrip('/').split('/')[0] not in ('posix', 'right'):
                 for filename in filenames:

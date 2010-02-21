@@ -89,7 +89,6 @@ class MemoryLog(Processor):
         self.mem_file.flush()
 
     def obj_log(self):
-        stats = objgraph.typestats()
         self.obj_file.write('%s %s\n' % (
             datetime.utcnow().isoformat(),
             json.dumps(objgraph.typestats())

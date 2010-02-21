@@ -23,7 +23,7 @@ class Lotto(Processor):
     def za(self, event, za):
         try:
             f = urlopen(self.za_url)
-        except Exception, e:
+        except Exception:
             event.addresponse(u'Something went wrong getting to the Lotto site')
             return
 
