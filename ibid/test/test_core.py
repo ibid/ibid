@@ -11,7 +11,7 @@ from ibid import core, event
 
 def _defer_cb(dfr, *args, **kw):
     "Call in the future to allow thread stuff to happen."
-    reactor.callLater(0, dfr.callback, *args, **kw)
+    reactor.callLater(0.01, dfr.callback, *args, **kw)
 
 
 class TestProcessor(object):
