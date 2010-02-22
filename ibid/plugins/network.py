@@ -516,8 +516,12 @@ class Nmap(Processor):
 
     @match(r'^(?:port\s+scan|nmap)\s+([0-9a-z.-]+)$')
     @authorise()
-    def host_scan(self, event, ip):
-        output, error, code = get_process_output(['nmap', '--open', '-n', ip])
+    def host_scan(self, event, host):
+        if host.startswith('127.0.0.') or host.lower().startswith('localhost'):
+            event.addresponse(u"I'm not allowed to inspect my host's internal interface.")
+            return
+
+        output, error, code = get_process_output(['nmap', '--open', '-n', host])
 
         ports = []
         gotports = False
