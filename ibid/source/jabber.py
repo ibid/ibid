@@ -4,13 +4,12 @@
 import logging
 
 from wokkel import client, xmppim, subprotocols
-from twisted.internet import reactor, ssl
+from twisted.internet import protocol, reactor, ssl
 from twisted.words.protocols.jabber.jid import JID
 from twisted.words.xish import domish
-from twisted.application import internet
 
 import ibid
-from ibid.config import Option, IntOption, BoolOption, ListOption
+from ibid.config import Option, BoolOption, IntOption, ListOption
 from ibid.source import IbidSourceFactory
 from ibid.event import Event
 
@@ -22,6 +21,7 @@ class Message(domish.Element):
         self['from'] = frm
         self['type'] = 'chat'
         self.addElement('body', content=body)
+
 
 class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.RosterClientProtocol):
 
@@ -35,7 +35,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         xmppim.PresenceClientProtocol.connectionInitialized(self)
         xmppim.RosterClientProtocol.connectionInitialized(self)
         self.xmlstream.send(xmppim.AvailablePresence())
-        self.roster = self.getRoster() #See section 7.3 of http://www.ietf.org/rfc/rfc3921.txt 
+        self.roster = self.getRoster() #See section 7.3 of http://www.ietf.org/rfc/rfc3921.txt
         self.name = self.parent.name
         self.parent.send = self.send
         self.parent.proto = self
@@ -158,15 +158,51 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         self.xmlstream.send(presence)
         self.rooms.remove(room.lower())
 
-class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
 
+class IbidXMPPClientConnector(client.XMPPClientConnector):
+    def __init__(self, reactor, domain, factory, server, port, ssl):
+        client.XMPPClientConnector.__init__(self, reactor, domain, factory)
+        self.overridden_server = server
+        self.overridden_port = port
+        self.overridden_ssl = ssl
+
+    def pickServer(self):
+        srvhost, srvport = client.XMPPClientConnector.pickServer(self)
+        host, port = self.overridden_server, self.overridden_port
+        if host is None:
+            host = srvhost
+        if self.overridden_ssl:
+            if port is None:
+                port = 5223
+            self.connectFuncName = 'connectSSL'
+            self.connectFuncArgs = [ssl.ClientContextFactory()]
+        if port is None:
+            port = srvport
+        self.factory.log.info(u'Connecting to: %s:%s%s', host, port,
+                              self.overridden_ssl and ' using SSL' or '')
+        return host, port
+
+    def connectionFailed(self, reason):
+        self.factory.log.error(u'Connection failed: %s', reason)
+        self.factory.clientConnectionFailed(self, reason)
+
+    def connectionLost(self, reason):
+        self.factory.log.error(u'Connection lost: %s', reason)
+        self.factory.clientConnectionLost(self, reason)
+
+
+class SourceFactory(client.DeferredClientFactory,
+                    protocol.ReconnectingClientFactory,
+                    IbidSourceFactory):
     auth = ('implicit',)
     supports = ('multiline',)
 
-    port = IntOption('port', 'Server port number')
-    ssl = BoolOption('ssl', 'Usel SSL', False)
-    server = Option('server', 'Server hostname')
     jid_str = Option('jid', 'Jabber ID')
+    server = Option('server', 'Server hostname (defaults to SRV lookup, '
+                              'falling back to JID domain)')
+    port = IntOption('port', 'Server port number (defaults to SRV lookup, '
+                             'falling back to 5222/5223')
+    ssl = BoolOption('ssl', 'Use SSL instead of automatic TLS')
     password = Option('password', 'Jabber password')
     nick = Option('nick', 'Nick for chatrooms', ibid.config['botname'])
     rooms = ListOption('rooms', 'Chatrooms to autojoin', [])
@@ -178,30 +214,22 @@ class SourceFactory(client.DeferredClientFactory, IbidSourceFactory):
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self.log = logging.getLogger('source.%s' % name)
-        client.DeferredClientFactory.__init__(self, JID(self.jid_str), self.password)
+        client.DeferredClientFactory.__init__(self, JID(self.jid_str),
+                                              self.password)
         bot = JabberBot()
         self.addHandler(bot)
         bot.setHandlerParent(self)
 
     def setServiceParent(self, service):
-        if self.ssl:
-            sslctx = ssl.ClientContextFactory()
-            port = self.port or 5223
-            if service:
-                internet.SSLClient(self.server, port, self, sslctx).setServiceParent(service)
-            else:
-                reactor.connectSSL(self.server, port, self, sslctx)
-        else:
-            port = self.port or 5222
-            if service:
-                internet.TCPClient(self.server, port, self).setServiceParent(service)
-            else:
-                reactor.connectTCP(self.server, port, self)
+        c = IbidXMPPClientConnector(reactor, self.authenticator.jid.host, self,
+                                    self.server, self.port, self.ssl)
+        c.connect()
 
     def connect(self):
         return self.setServiceParent(None)
 
     def disconnect(self):
+        self.stopTrying()
         self.stopFactory()
         self.proto.xmlstream.transport.loseConnection()
         return True

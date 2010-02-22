@@ -20,19 +20,23 @@ from sqlalchemy.exceptions import IntegrityError
 sys.path.insert(0, '.')
 
 import ibid
-import ibid.plugins
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
-plugins is the list of plugins to load. A plugin name followed by a - will be disabled rather than loaded.""")
-parser.add_option("-o", "--only", dest="load_base", action="store_false", default=True,
-        help="Only load the specified plugins, not the common base plugins")
-parser.add_option("-c", "--configured", dest="load_configured", action="store_true",
-        help="Load all all configured plugins")
-parser.add_option("-p", "--public", dest="public", action="store_true", default=False,
+plugins is the list of plugins to load.
+A plugin name followed by a - will be disabled rather than loaded.""")
+parser.add_option('-o', '--only', dest='load_base', action='store_false',
+        default=True,
+        help='Only load the specified plugins, not the common base plugins')
+parser.add_option('-c', '--configured', dest='load_configured',
+        action='store_true', default=False,
+        help='Load all all configured plugins')
+parser.add_option('-p', '--public', action='store_true', default=False,
         help="Make testchan public, it's private by default")
+parser.add_option('-v', '--verbose', action='store_true', default=False,
+        help="Output final event objects")
 
 (options, args) = parser.parse_args()
 
@@ -40,19 +44,11 @@ if options.load_configured and not options.load_base:
     parser.error("Incompatible combination: --configured and --only")
 
 # Setup Ibid core:
-
-def auth_responses(event, permission):
-    return True
-
 class FakeAuth(object):
     def authorise(self, event, permission):
         return True
 
 ibid.auth = FakeAuth()
-
-#ibid.plugins.auth_responses = auth_responses
-ibid.options = {'base': '.'}
-
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
@@ -60,15 +56,21 @@ ibid.reload_reloader()
 ibid.reloader.reload_databases()
 ibid.reloader.reload_dispatcher()
 
-class TestSource(dict):
+class TestSource(object):
     type = 'test'
     permissions = []
     supports = ('action', 'multiline', 'notice')
+
+    def setup(self):
+        pass
 
     def logging_name(self, name):
         return name
 
     def truncation_point(self, response, event=None):
+        return None
+
+    def url(self):
         return None
 
 ibid.sources[u'test_source'] = TestSource()
@@ -79,21 +81,11 @@ noload = [plugin[:-1] for plugin in args if plugin.endswith("-")]
 if options.load_base:
     load.extend(("admin", "core", "help", "test"))
 
-if load:
-    if 'load' in ibid.config.plugins:
-        load.extend(ibid.config.plugins['load'])
-    ibid.config.plugins['load'] = load
+load.extend(ibid.config.plugins.get('load', []))
+noload.extend(ibid.config.plugins.get('noload', []))
+autoload = options.load_configured
 
-if noload:
-    if 'noload' in ibid.config.plugins:
-        ibid.config.plugins['noload'].extend(noload)
-    else:
-        ibid.config.plugins['noload'] = noload
-
-if not options.load_configured:
-    ibid.config.plugins['autoload'] = False
-
-ibid.reloader.load_processors()
+ibid.reloader.load_processors(load, noload, autoload)
 
 username = unicode(getenv('USER'))
 if not username:
@@ -123,7 +115,7 @@ while True:
     event.sender['id'] = event.sender['connection'] = event.sender['nick'] = username
     event.identity = identity_id
     event.account =  None
-    event.addressed = True
+    event.addressed = not options.public
     event.public = options.public
     event.channel = u"testchan"
 
@@ -155,6 +147,9 @@ while True:
                 event.session.rollback()
                 event.session.close()
                 del event['session']
+
+    if options.verbose:
+        print "Event: %s" % repr(event)
 
     for response in event.responses:
         if isinstance(response, basestring):

@@ -1,0 +1,32 @@
+.\" Copyright (c) 2010, Stefano Rivera
+.\" Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+.TH IBID "1" "January 2010" "Ibid 0.0" "Ibid - Multi-protocol Bot"
+.SH NAME
+ibid \- Run an Ibid bot
+.SH SYNOPSIS
+.B ibid
+.RI [ config-file ]
+.SH DESCRIPTION
+This runs an Ibid bot in the foreground.
+.P
+There should there be an existing \fBibid.ini\fR (created by
+.BR ibid-setup (1))
+in the current directory or one should be provided on the command line.
+.P
+Where possible, you should run \fBtwistd \-n ibid\fR instead of this
+program, as otherwise some classes of errors go unreported.
+.RB "See " BUGS .
+.SH BUGS
+Exceptions in twisted callbacks can go unnoticed in this program.
+That has no harmful effects, but the developers may miss out on some
+good bug reports.
+.SH FILES
+.TP
+.I ibid.ini
+The Ibid bot's configuration file, will be created if it doesn't exist.
+.SH SEE ALSO
+.BR ibid.ini (5),
+.BR ibid-setup (1),
+.BR twistd (1),
+.UR http://ibid.omnia.za.net/
+.BR http://ibid.omnia.za.net/

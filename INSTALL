@@ -17,12 +17,12 @@ Add the Ibid PPA to your APT sources:
 # aptitude update
 
 Install required modules:
-# aptitude install python-beautifulsoup python-celementtree \
-	python-configobj python-dateutil python-dnspython \
-	python-feedparser python-html5lib python-imdbpy \
-	python-jinja python-pysilc python-pysqlite2 \
-	python-simplejson python-soappy python-sqlalchemy \
-	python-twisted python-wokkel
+# aptitude install python-beautifulsoup \
+	python-dateutil python-dnspython python-feedparser \
+	python-html2text python-html5lib python-imdbpy \
+	python-jinja python-silc python-pysqlite2 \
+	python-setuptools python-simplejson python-soappy \
+	python-sqlalchemy python-twisted python-wokkel
 
 Install into a virtualenv or your system:
 $ ./setup.py install --no-dependencies
@@ -49,3 +49,5 @@ Other things we recommend:
 * Install tracepath ("iputils-tracepath")
 * Install fortune ("fortunes-min")
 * Install man ("man-db")
+* Install aalib and caca for ASCII Art Image rendering ("python-aalib", "caca-utils")
+* Install pyfiglet for ASCII Art text ("python-pyfiglet")

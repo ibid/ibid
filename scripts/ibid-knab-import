@@ -2,7 +2,8 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sys import argv, exit, stderr, stdout
+from os.path import dirname
+from sys import argv, path, exit, stderr, stdout
 
 from chardet import detect
 from dateutil.tz import tzlocal, tzutc
@@ -10,6 +11,9 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+path.insert(0, '.')
+
+import ibid
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.plugins.seen import Sighting
@@ -270,7 +274,7 @@ def import_urls(knab, ibid, source):
 
 if __name__ == '__main__':
     if len(argv) < 3:
-        print u'Usage: %s <knab database> <source> [<ibid config>]' % argv[:1]
+        print u'Usage: %s <knab database> <source> [<ibid config>]' % argv[0]
         exit(1)
 
     knabengine = create_engine(argv[1])
@@ -280,6 +284,7 @@ if __name__ == '__main__':
     source = unicode(argv[2])
 
     if len(argv) > 3:
+        ibid.options['base'] = dirname(argv[3])
         config = FileConfig(argv[3])
     else:
         config = FileConfig('ibid.ini')

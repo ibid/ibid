@@ -26,6 +26,7 @@ class Ircbot(irc.IRCClient):
 
     def connectionMade(self):
         self.nickname = self.factory.nick.encode('utf-8')
+        self.realname = self.factory.realname.encode('utf-8')
 
         irc.IRCClient.connectionMade(self)
 
@@ -231,6 +232,8 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == '320' and len(params) == 3 and params[2] == 'is identified to services ':
             self.do_auth_callback(params[1], True)
+        elif command == '330' and len(params) == 4 and params[3] == 'is logged in as':
+            self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
             self.do_auth_callback(params[1], False)
 
@@ -282,6 +285,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     ssl = BoolOption('ssl', 'Use SSL', False)
     server = Option('server', 'Server hostname')
     nick = Option('nick', 'IRC nick', ibid.config['botname'])
+    realname = Option('realname', 'Full Name', ibid.config['botname'])
     modes = Option('modes', 'User modes to set')
     channels = ListOption('channels', 'Channels to autojoin', [])
     ping_interval = FloatOption('ping_interval', 'Seconds idle before sending a PING', 60)

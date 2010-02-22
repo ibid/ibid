@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Neil Blakey-Milner
+# Copyright (c) 2009-2010, Neil Blakey-Milner, Adrianna Pinska
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 """
@@ -25,6 +25,7 @@ import os.path
 from os import kill
 from signal import SIGTERM
 import textwrap
+import ibid
 from ibid.compat import ElementTree as ET, dt_strptime
 from subprocess import Popen, PIPE
 from time import time, sleep, mktime
@@ -289,10 +290,6 @@ class CommandLineBranch(Branch):
             raise TimeoutException()
 
         output = svnlog.stdout.read()
-        error = svnlog.stderr.read()
-
-        code = svnlog.wait()
-
         return self._xml_to_log_message(output)
 
     def _xmldate_to_timestamp(self, xmldate):
@@ -385,7 +382,7 @@ class CancelAfterTimeout(object):
 
     def __call__(self):
         return datetime.now() > self.cancel_at
-    
+
     def done(self):
         pass
 
@@ -426,6 +423,17 @@ class Subversion(Processor, RPC):
             event.addresponse(u'I know about: %s', human_join(sorted(repositories)))
         else:
             event.addresponse(u"I don't know about any repositories")
+
+    def remote_committed(self, repository, start, end=None):
+        commits = self.get_commits(repository, start, end)
+        repo = self.repositories[repository]
+        for commit in commits:
+            ibid.dispatcher.send({'reply': commit.strip(),
+                'source': repo['source'],
+                'target': repo['channel'],
+            })
+
+        return True
 
     @match(r'^(?:last\s+)?commit(?:\s+(\d+))?(?:(?:\s+to)?\s+(\S+?))?(\s+full)?$')
     @authorise()

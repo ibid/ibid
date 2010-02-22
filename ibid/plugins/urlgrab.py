@@ -4,25 +4,24 @@
 from datetime import datetime
 from httplib import BadStatusLine
 from urllib import urlencode
-from urllib2 import urlopen, build_opener, HTTPError, HTTPBasicAuthHandler, \
-        install_opener
+from urllib2 import build_opener, HTTPError, HTTPBasicAuthHandler
 import logging
 import re
-
-from pkg_resources import resource_exists, resource_stream
 
 import ibid
 from ibid.plugins import Processor, handler
 from ibid.config import Option
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
+from ibid.utils import locate_resource
 from ibid.utils.html import get_html_parse_tree
 
 help = {}
 
 log = logging.getLogger('plugins.urlgrab')
 
-help['url'] = u'Captures URLs seen in channel to database and/or to delicious, and shortens and lengthens URLs'
+help['url'] = u'Captures URLs seen in channel to database and/or to ' \
+              u'delicious/faves'
 
 class URL(Base):
     __table__ = Table('urls', Base.metadata,
@@ -51,8 +50,48 @@ class URL(Base):
         self.identity_id = identity_id
         self.time = datetime.utcnow()
 
-class Delicious(object):
-    def add_post(self, username, password, event, url=None):
+class Grab(Processor):
+    addressed = False
+    processed = True
+
+    username  = Option('username', 'Account name for URL posting')
+    password  = Option('password', 'Password for URL Posting')
+    service   = Option('service', 'URL Posting Service (delicious/faves)',
+                       'delicious')
+
+    def setup(self):
+        tldfile = locate_resource('ibid', 'data/tlds-alpha-by-domain.txt')
+        if tldfile:
+            f = file(tldfile, 'r')
+            tlds = [tld.strip().lower() for tld in f.readlines()
+                    if not tld.startswith('#')]
+            f.close()
+        else:
+            log.warning(u"Couldn't open TLD list, falling back to minimal default")
+            tlds = 'com.org.net.za'.split('.')
+
+        self.grab.im_func.pattern = re.compile((
+            r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundary, but not on an e-mail address
+            r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
+            r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
+            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End boundary
+        ) % '|'.join(tlds), re.I | re.DOTALL)
+
+    @handler
+    def grab(self, event, url):
+        if url.find('://') == -1:
+            if url.lower().startswith('ftp'):
+                url = 'ftp://%s' % url
+            else:
+                url = 'http://%s' % url
+
+        u = URL(url, event.channel, event.identity)
+        event.session.save_or_update(u)
+
+        if self.service and self.username:
+            self._post_url(event, url)
+
+    def _post_url(self, event, url=None):
         "Posts a URL to delicious.com"
 
         date = datetime.utcnow()
@@ -78,7 +117,8 @@ class Delicious(object):
             obfusc_conn = at_re.sub('^', connection_body[1])
             obfusc_chan = at_re.sub('^', event.channel)
 
-        tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan, event.source))
+        tags = u' '.join((event.sender['nick'], obfusc_conn, obfusc_chan,
+                          event.source))
 
         data = {
             'url' : url.encode('utf-8'),
@@ -89,18 +129,38 @@ class Delicious(object):
             'extended' : event.message['raw'].encode('utf-8'),
             }
 
-        self._set_auth(username, password)
-        posturl = 'https://api.del.icio.us/v1/posts/add?' + urlencode(data)
+        if self.service.lower() == 'delicious':
+            service = ('del.icio.us API', 'https://api.del.icio.us')
+        elif self.service.lower() == 'faves':
+            service = ('Faves', 'https://secure.faves.com')
+        else:
+            log.error(u'Unknown social bookmarking service: %s', self.service)
+            return
+        auth_handler = HTTPBasicAuthHandler()
+        auth_handler.add_password(service[0], service[1],
+                                  self.username, self.password)
+        opener = build_opener(auth_handler)
+
+        posturl = service[1] + '/v1/posts/add?' + urlencode(data)
 
         try:
-            resp = urlopen(posturl).read()
+            resp = opener.open(posturl).read()
             if 'done' in resp:
-                log.debug(u"Posted url '%s' to delicious, posted in %s on %s by %s/%i (%s)",
-                         url, event.channel, event.source, event.account, event.identity, event.sender['connection'])
+                log.debug(u"Posted url '%s' to %s, posted in %s on %s "
+                          u"by %s/%i (%s)",
+                          url, self.service, event.channel, event.source,
+                          event.account, event.identity,
+                          event.sender['connection'])
             else:
-                log.error(u"Error posting url '%s' to delicious: %s", url, resp)
+                log.error(u"Error posting url '%s' to %s: %s",
+                          url, self.service, resp)
+        except HTTPError, e:
+            if e.code == 401:
+                log.error(u"Incorrect password for %s, couldn't post",
+                          self.service)
         except BadStatusLine, e:
-            log.error(u"Error posting url '%s' to delicious: %s", url, unicode(e))
+            log.error(u"Error posting url '%s' to %s: %s",
+                      url, self.service, unicode(e))
 
     def _get_title(self, url):
         "Gets the title of a page"
@@ -114,54 +174,5 @@ class Delicious(object):
         except Exception, e:
             log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
-
-    def _set_auth(self, username, password):
-        "Provides HTTP authentication on username and password"
-        auth_handler = HTTPBasicAuthHandler()
-        auth_handler.add_password('del.icio.us API', 'https://api.del.icio.us', username, password)
-        opener = build_opener(auth_handler)
-        install_opener(opener)
-
-class Grab(Processor):
-    addressed = False
-    processed = True
-
-    username  = Option('delicious_username', 'delicious account name')
-    password  = Option('delicious_password', 'delicious account password')
-    delicious = Delicious()
-
-    def setup(self):
-        if resource_exists(__name__, '../data/tlds-alpha-by-domain.txt'):
-            tlds = [tld.strip().lower() for tld
-                    in resource_stream(__name__, '../data/tlds-alpha-by-domain.txt')
-                        .readlines()
-                    if not tld.startswith('#')
-            ]
-
-        else:
-            log.warning(u"Couldn't open TLD list, falling back to minimal default")
-            tlds = 'com.org.net.za'.split('.')
-
-        self.grab.im_func.pattern = re.compile((
-            r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundary, but not on an e-mail address
-            r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
-            r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
-            r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End boundary
-        ) % '|'.join(tlds), re.I | re.DOTALL)
-
-    @handler
-    def grab(self, event, url):
-        if url.find('://') == -1:
-            if url.lower().startswith('ftp'):
-                url = 'ftp://%s' % url
-            else:
-                url = 'http://%s' % url
-
-        u = URL(url, event.channel, event.identity)
-        event.session.save_or_update(u)
-
-        if self.username != None:
-            self.delicious.add_post(self.username, self.password, event, url)
-
 
 # vi: set et sta sw=4 ts=4:

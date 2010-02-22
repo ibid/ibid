@@ -6,15 +6,18 @@ from htmlentitydefs import name2codepoint
 import os
 import os.path
 import re
+import socket
 from StringIO import StringIO
+from sys import version_info
 from threading import Lock
 import time
-from urllib import urlencode
+from urllib import urlencode, quote
 import urllib2
 from urlparse import urlparse, urlunparse
 import zlib
 
 from dateutil.tz import tzlocal, tzutc
+from pkg_resources import resource_exists, resource_filename
 
 import ibid
 from ibid.compat import defaultdict, json
@@ -44,24 +47,24 @@ def decode_htmlentities(text):
     return text
 
 downloads_in_progress = defaultdict(Lock)
-def cacheable_download(url, cachefile, headers={}):
+def cacheable_download(url, cachefile, headers={}, timeout=60):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
     Returns complete path to downloaded file."""
 
     downloads_in_progress[cachefile].acquire()
     try:
-        f = _cacheable_download(url, cachefile, headers)
+        f = _cacheable_download(url, cachefile, headers, timeout)
     finally:
         downloads_in_progress[cachefile].release()
 
     return f
 
-def _cacheable_download(url, cachefile, headers={}):
+def _cacheable_download(url, cachefile, headers={}, timeout=60):
     # We do allow absolute paths, for people who know what they are doing,
     # but the common use case should be pluginname/cachefile.
     if cachefile[0] not in (os.sep, os.altsep):
-        cachedir = ibid.config.plugins['cachedir']
+        cachedir = ibid.config.plugins.get('cachedir', None)
         if not cachedir:
             cachedir = os.path.join(ibid.options['base'], 'cache')
         elif cachedir[0] == "~":
@@ -83,17 +86,31 @@ def _cacheable_download(url, cachefile, headers={}):
         req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
 
     if exists:
-        modified = os.path.getmtime(cachefile)
-        modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
-        req.add_header("If-Modified-Since", modified)
-
-    try:
-        connection = urllib2.urlopen(req)
-    except urllib2.HTTPError, e:
-        if e.code == 304 and exists:
-            return cachefile
+        if os.path.isfile(cachefile + '.etag'):
+            f = file(cachefile + '.etag', 'r')
+            req.add_header("If-None-Match", f.readline().strip())
+            f.close()
         else:
-            raise
+            modified = os.path.getmtime(cachefile)
+            modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(modified))
+            req.add_header("If-Modified-Since", modified)
+
+    kwargs = {}
+    if version_info[1] >= 6:
+        kwargs['timeout'] = timeout
+    else:
+        socket.setdefaulttimeout(timeout)
+    try:
+        try:
+            connection = urllib2.urlopen(req, **kwargs)
+        except urllib2.HTTPError, e:
+            if e.code == 304 and exists:
+                return cachefile
+            else:
+                raise
+    finally:
+        if version_info[1] < 6:
+            socket.setdefaulttimeout(None)
 
     data = connection.read()
 
@@ -108,6 +125,12 @@ def _cacheable_download(url, cachefile, headers={}):
             compressedstream = StringIO(data)
             gzipper = GzipFile(fileobj=compressedstream)
             data = gzipper.read()
+
+    etag = connection.headers.get('etag')
+    if etag:
+        f = file(cachefile + '.etag', 'w')
+        f.write(etag + '\n')
+        f.close()
 
     outfile = file(cachefile, 'wb')
     outfile.write(data)
@@ -168,6 +191,7 @@ def url_to_bytestring(url):
     host = parts[1].split(':')
     host[0] = host[0].encode('idna')
     parts[1] = ':'.join(host)
+    parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
 def json_webservice(url, params={}, headers={}):
@@ -204,5 +228,16 @@ def plural(count, singular, plural):
     if count == 1:
         return singular
     return plural
+
+def locate_resource(path, filename):
+    "Locate a resource either within the botdir or the source tree"
+    fspath = os.path.join(*(
+        [ibid.options['base']] + path.split('.') + [filename]
+    ))
+    if os.path.exists(fspath):
+        return fspath
+    if not resource_exists(path, filename):
+        return None
+    return resource_filename(path, filename)
 
 # vi: set et sta sw=4 ts=4:

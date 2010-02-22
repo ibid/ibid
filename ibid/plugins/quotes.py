@@ -389,7 +389,7 @@ class Bible(Processor):
             event.addresponse('There were errors: %s.', '. '.join(err.text for err in errors))
         elif not message:
             event.addresponse("I couldn't find that passage.")
-   
+
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
     # by book names, chapters and verses.
@@ -413,7 +413,7 @@ class Bible(Processor):
             message.append(text)
 
         return u' '.join(message)
-    
+
     def verseInfo(self, xml):
         book, chapter, verse, text = map(xml.findtext,
                                         ('bookname', 'chapter', 'verse', 'text'))

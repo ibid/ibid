@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2008-2010 Michael Gorven
+# Copyright (c) 2008-2010, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from sys import version_info, argv
@@ -7,18 +7,20 @@ from sys import version_info, argv
 from setuptools import setup
 
 install_requires=[
+    'BeautifulSoup',
+    'configobj>=4.7.0',
     'dnspython',
     'feedparser',
-    'wokkel==0.4',
-    'SOAPpy',
+    'html2text',
+    'html5lib',
+    'jinja',
     'pyopenssl',
     'pysqlite',
     'python-dateutil',
-    'jinja',
-    'html5lib',
-    'BeautifulSoup',
+    'SOAPpy',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
     'Twisted',
+    'wokkel>=0.6.3',
 ]
 
 if version_info[0] == 2 and version_info[1] < 6:
@@ -43,6 +45,8 @@ setup(
     install_requires=install_requires,
     extras_require = {
         'imdb': ['imdbpy'],
+        'memory': ['objgraph'],
+        'asciiart': ['python-aalib'],
     },
     dependency_links=[
         'http://ibid.omnia.za.net/eggs/',
@@ -55,11 +59,13 @@ setup(
     scripts=[
         'scripts/ibid',
         'scripts/ibid-db',
+        'scripts/ibid-factpack',
+        'scripts/ibid-knab-import',
+        'scripts/ibid-memgraph',
+        'scripts/ibid-objgraph',
+        'scripts/ibid-pb-client',
         'scripts/ibid-plugin',
         'scripts/ibid-setup',
-        'scripts/ibid-factpack',
-        'scripts/ibid_pb',
-        'scripts/ibid_import',
         'scripts/ibid.tac',
     ],
 

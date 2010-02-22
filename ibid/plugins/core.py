@@ -23,10 +23,13 @@ class Addressed(Processor):
         names = '|'.join(re.escape(x) for x in self.names)
         verbs = '|'.join(re.escape(x) for x in self.verbs)
         self.patterns = [
-            re.compile(r'^(%s)(?:[:;.?>!,-]|\s)+' % names, re.I | re.DOTALL),
+            re.compile(r'^\s*(?P<nick>%s)' % names
+                       + r'(?:\s*[:;.?>!,-]+\s+|\s+|\s*[,:]\s*)(?P<body>.*)',
+                       re.I | re.DOTALL),
             # "hello there, bot"-style addressing. But we want to be sure that
             # there wasn't normal addressing too:
-            re.compile(r'^(?:\S+:.*|.*,\s*(%s))\s*$' % names, re.I | re.DOTALL)
+            re.compile(r'^(?:\S+:.*|(?P<body>.*),\s*(?P<nick>%s))\s*$' % names,
+                       re.I | re.DOTALL)
         ]
         self.verb_pattern = re.compile(r'^(?:%s)\s+(?:%s)\s+' % (names, verbs),
                                        re.I | re.DOTALL)
@@ -41,11 +44,12 @@ class Addressed(Processor):
 
         for pattern in self.patterns:
             matches = pattern.search(event.message['stripped'])
-            if matches and matches.group(1):
-                new_message = pattern.sub('', event.message['stripped'])
-                event.addressed = matches.group(1)
+            if matches and matches.group('nick'):
+                new_message = matches.group('body')
+                event.addressed = matches.group('nick')
                 event.message['clean'] = new_message
-                event.message['deaddressed'] = pattern.sub('', event.message['raw'])
+                event.message['deaddressed'] = \
+                        pattern.search(event.message['raw']).group('body')
 
 class Strip(Processor):
 

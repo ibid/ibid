@@ -1,4 +1,7 @@
 #!/bin/sh -e
+# Copyright (c) 2009, Michael Gorven
+# Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+
 KNABDIR="$1"
 ./knab.py "$KNABDIR/handey.knb" "jack handey" "be jack handey" > handey.json
 ./knab.py "$KNABDIR/zippy.knb" "be zippy" "be ed" > zippy.json

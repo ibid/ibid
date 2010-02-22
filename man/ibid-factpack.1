@@ -1,0 +1,65 @@
+.\" Copyright (c) 2010, Stefano Rivera
+.\" Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+.TH IBID-FACTPACK "1" "January 2010" "Ibid 0.0" "Ibid - Multi-protocol Bot"
+.SH NAME
+ibid-factpack \- Factoid-package management utility for Ibid
+.SH SYNOPSIS
+.B ibid-factpack
+.RB [ -s ]
+.I factpack-file
+.br
+.B ibid-factpack -r
+.RB [ -f ]
+.I factpack-name
+.br
+.B ibid-factpack -h
+.SH DESCRIPTION
+This utility is for adding and removing sets of packaged factoids, known as
+factpacks, from your Ibid's factoid database.
+.P
+The default mode is factpack loading.
+The \fIfactpack-file\fR specified is loaded into the bot's database.
+Should the pack contain any facts with the same name as an existing fact in the
+bot's database, loading will be aborted, unless the \fB-s\fR option is
+supplied.
+.P
+Factpacks can be gzipped if the filename ends with \fB\.gz\fR.
+.P
+When invoked with the \fB-r\fR option, the named factpack (original import
+filename minus the extension) will be removed from the bot.
+If any of the facts contained in that pack were modified while loaded in the
+bot, unloading will be aborted, unless the \fB-f\fR option is supplied.
+.SH OPTIONS
+.TP
+\fB\-r\fR, \fB\-\-remove\fR
+Remove the named factpack, rather than importing.
+.TP
+\fB\-f\fR, \fB\-\-force\fR
+Force removal, if facts in the factpack were modified by users.
+.TP
+\fB\-s\fR, \fB\-\-skip\fR
+Skip facts that clash with existing factoids, during import.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show a help message and exit.
+.SH FACTPACKS
+Factpacks are JSON-encoded text files containing a list of facts.
+Each fact is a tuple of two lists: fact-names, fact-values.
+The same substitutions are available as in normal online Factoids.
+.SS Example:
+.nf
+[
+ [["Hello", "Hi"], ["<reply> Hi There", "<action> waves"]],
+ [["Bye"], ["<reply> kbye $who", "<reply> Cheers"]]
+]
+.fi
+.SH FILES
+.TP
+.I ibid.ini
+Locates the database to act upon by looking for the \fB[databases].ibid\fR value
+in the bot configuration file in the current directory.
+.SH SEE ALSO
+.BR ibid (1),
+.BR ibid.ini (5),
+.UR http://ibid.omnia.za.net/
+.BR http://ibid.omnia.za.net/

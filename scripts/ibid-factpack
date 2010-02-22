@@ -2,9 +2,13 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sys import exit, stderr
-from os.path import basename, exists
+import gzip
 from optparse import OptionParser
+from os.path import basename, exists
+import re
+from sys import exit, stderr, path
+
+path.insert(0, '.')
 
 import ibid
 from ibid.compat import json
@@ -12,7 +16,8 @@ from ibid.config import FileConfig
 from ibid.plugins.factoid import Factoid, FactoidName, FactoidValue, Factpack, \
                                  escape_name
 
-parser = OptionParser(usage=u'%prog <factpack>')
+parser = OptionParser(usage=u"""%prog <factpack>
+factpack is a JSON-formatted set of factoids (possibly gzipped)""")
 parser.add_option('-r', '--remove', action='store_true', help='Remove the named factpack from the database')
 parser.add_option('-f', '--force', action='store_true', help='Remove factoids which have been modified')
 parser.add_option('-s', '--skip', action='store_true', help='Skip factoids which already exist in the database')
@@ -23,7 +28,6 @@ if len(args) != 1:
 
 filename = unicode(args[0])
 
-ibid.options = {'base': '.'}
 ibid.config = FileConfig("ibid.ini")
 ibid.config.merge(FileConfig("local.ini"))
 ibid.reload_reloader()
@@ -63,13 +67,18 @@ if not exists(filename):
     print >> stderr, u"File doesn't exist"
     exit(3)
 
+if filename.endswith('.gz'):
+    f = gzip.GzipFile(filename, 'r')
+else:
+    f = file(filename, 'r')
 try:
-    facts = json.loads(open(filename).read())
+    facts = json.loads(f.read())
 except ValueError, e:
     print >> stderr, u"Invalid factpack"
     exit(4)
+f.close()
 
-name = unicode(basename(filename).replace('.json', ''))
+name = unicode(re.sub(r'\.json(?:\.gz)?$', '', basename(filename)))
 factpack = session.query(Factpack).filter_by(name=name).first()
 if factpack:
     print >> stderr, u'Factpack is already imported'

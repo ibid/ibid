@@ -124,7 +124,7 @@ class SourceFactory(IbidSourceFactory, smtp.SMTPFactory):
                     response['References'] = '%(in-reply-to)s %(message-id)s' % event.headers
                 else:
                     response['References'] = '%(message-id)s' % event.headers
-                    
+
             self.send(message)
 
     def send(self, response):
