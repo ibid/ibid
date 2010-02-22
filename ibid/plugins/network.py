@@ -508,7 +508,7 @@ class Nmap(Processor):
 
     feature = 'nmap'
     permission = 'nmap'
-    min_mask = IntOption('min_mask', 'Minimum network mask that may be scanned', 24)
+    min_prefix = IntOption('min_prefix', 'Minimum network prefix that may be scanned', 24)
 
     def setup(self):
         if not file_in_path('nmap'):
@@ -541,12 +541,12 @@ class Nmap(Processor):
 
     @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
     @authorise()
-    def net_scan(self, event, network, mask):
-        if int(mask) < self.min_mask:
-            event.addresponse(u"Sorry, I can't scan networks with a mask less than %s", self.min_mask)
+    def net_scan(self, event, network, prefix):
+        if int(prefix) < self.min_prefix:
+            event.addresponse(u"Sorry, I can't scan networks with a prefix less than %s", self.min_prefix)
             return
 
-        output, error, code = get_process_output(['nmap', '-sP', '-n', '%s/%s' % (network, mask)])
+        output, error, code = get_process_output(['nmap', '-sP', '-n', '%s/%s' % (network, prefix)])
 
         hosts = []
         for line in output.splitlines():
