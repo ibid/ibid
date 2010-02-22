@@ -6,6 +6,7 @@ import socket
 from ibid.compat import defaultdict
 from httplib import HTTPConnection, HTTPSConnection
 from os.path import exists
+from socket import gethostbyname, gaierror
 from subprocess import Popen, PIPE
 from sys import version_info
 from urllib import getproxies_environment
@@ -517,7 +518,13 @@ class Nmap(Processor):
     @match(r'^(?:port\s+scan|nmap)\s+([0-9a-z.-]+)$')
     @authorise()
     def host_scan(self, event, host):
-        if host.startswith('127.') or host.lower().startswith('localhost'):
+        try:
+            ip = gethostbyname(host)
+        except gaierror, e:
+            event.addresponse(unicode(e.args[1]))
+            return
+
+        if ip.startswith('127.'):
             event.addresponse(u"I'm not allowed to inspect my host's internal interface.")
             return
 
