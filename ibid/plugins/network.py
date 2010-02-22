@@ -18,7 +18,7 @@ except ImportError:
     Resolver = None
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, \
                        url_to_bytestring, get_process_output
@@ -503,6 +503,7 @@ class Ports(Processor):
 
 class Nmap(Processor):
 
+    permission = 'nmap'
     min_mask = IntOption('min_mask', 'Minimum network mask that may be scanned', 24)
 
     def setup(self):
@@ -510,6 +511,7 @@ class Nmap(Processor):
             raise Exception("Cannot locate nmap executable")
 
     @match(r'^(?:port\s+scan|nmap)\s+([0-9a-z.-]+)$')
+    @authorise()
     def host_scan(self, event, ip):
         output, error, code = get_process_output(['nmap', '--open', '-n', ip])
 
@@ -534,6 +536,7 @@ class Nmap(Processor):
             event.addresponse(u'No open ports detected')
 
     @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
+    @authorise()
     def net_scan(self, event, network, mask):
         if int(mask) < self.min_mask:
             event.addresponse(u"Sorry, I can't scan networks with a mask less than %s", self.min_mask)
