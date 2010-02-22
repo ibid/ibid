@@ -501,8 +501,12 @@ class Ports(Processor):
         else:
             event.addresponse(u"I don't know about any protocols using that port")
 
+help['nmap'] = u'Finds open network ports on a host or scans a subnet for active hosts.'
 class Nmap(Processor):
+    """port scan <hostname>
+    net scan <network>/<prefix>"""
 
+    feature = 'nmap'
     permission = 'nmap'
     min_mask = IntOption('min_mask', 'Minimum network mask that may be scanned', 24)
 
