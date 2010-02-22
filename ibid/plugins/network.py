@@ -543,7 +543,7 @@ class Nmap(Processor):
         else:
             event.addresponse(u'No open ports detected')
 
-    @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,2}\.){3}[0-9]{1,2})/([0-9]{1,2})$')
+    @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,3}\.){3}[0-9]{1,3})/([0-9]{1,2})$')
     @authorise()
     def net_scan(self, event, network, prefix):
         if int(prefix) < self.min_prefix:
