@@ -195,10 +195,9 @@ class Calc(Processor):
 
 class ExplicitCalc(Calc):
     priority = 0
-    _event_handlers = ['explicit_calculate',]
 
     @match(r'^calc(?:ulate)?\s+(.+)$')
-    def explicit_calculate(self, event, expression):
+    def calculate(self, event, expression):
         super(ExplicitCalc, self).calculate(event, expression)
 
 help['random'] = u'Generates random numbers.'
