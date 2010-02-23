@@ -163,8 +163,8 @@ Debian:
      <http://pgp.surfnet.nl:11371/pks/lookup?search=0x6EC0C1E39DEDE92FC8910161450ED9D55EB879CE&op=index>`_
 
 Ubuntu:
-   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu jaunty main``  
-   | If you are using a different release to ``jaunty``, substitute its name.
+   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu karmic main``  
+   | If you are using a different release to ``karmic``, substitute its name.
    | GPG Key: `0xFD1C44BA
      <http://keyserver.ubuntu.com:11371/pks/lookup?search=0xC2D0F8531BBA37930C0D85E3D59F9E8DFD1C44BA&op=index>`_
 
