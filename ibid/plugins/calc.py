@@ -2,11 +2,9 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from __future__ import division
-from random import random, randint
-
 import logging
 from os import kill
-import re
+from random import random, randint
 from signal import SIGTERM
 from subprocess import Popen, PIPE
 from time import time, sleep
@@ -152,7 +150,7 @@ class Calc(Processor):
     safe['pow'] = limited_pow
     safe['factorial'] = limited_factorial
 
-    @match(r'^(.+?)$')
+    @match(r'^(.+)$')
     def calculate(self, event, expression):
         for term in self.banned:
             if term in expression:
@@ -197,11 +195,11 @@ class Calc(Processor):
 
 class ExplicitCalc(Calc):
     priority = 0
+    _event_handlers = ['explicit_calculate',]
 
-    def setup(self):
-        self.calculate.im_func.pattern = re.compile(r'^calc(?:ulate)?\s+(.+?)$',
-                                                    re.I | re.DOTALL)
-
+    @match(r'^calc(?:ulate)?\s+(.+)$')
+    def explicit_calculate(self, event, expression):
+        super(ExplicitCalc, self).calculate(event, expression)
 
 help['random'] = u'Generates random numbers.'
 class Random(Processor):
