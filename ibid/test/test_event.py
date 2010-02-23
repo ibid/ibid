@@ -12,6 +12,8 @@ class TestEvent(unittest.TestCase):
 
     def assertByteStringWarning(self, count=1):
         "Check that addresponse raised an error about using bytestrings"
+        if not hasattr(self, 'flushWarnings'):
+            return
         caller = getattr(self, stack()[1][3])
         warnings = self.flushWarnings(offendingFunctions=[caller])
         self.assertEqual(len(warnings), count)
@@ -21,6 +23,8 @@ class TestEvent(unittest.TestCase):
 
     def assertListSubstitutionWarning(self, count=1):
         "Check that addresponse raised an error about substituting lists"
+        if not hasattr(self, 'flushWarnings'):
+            return
         caller = getattr(self, stack()[1][3])
         warnings = self.flushWarnings(offendingFunctions=[caller])
         self.assertEqual(len(warnings), count)
