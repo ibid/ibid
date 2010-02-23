@@ -1,7 +1,19 @@
 # Copyright (c) 2009, Jeremy Thurgood
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+import logging
+
+from twisted.python import log
 
 import ibid
+
+
+# Trial collects log output, so we feed ours logs into it.
+class TwistedLogHandler(logging.Handler):
+    def emit(self, record):
+        log.msg(self.format(record))
+
+logging.getLogger().addHandler(TwistedLogHandler())
+
 
 class FakeConfig(dict):
     def __init__(self, basedict=None):
