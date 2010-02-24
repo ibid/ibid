@@ -2,6 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import cgi
+import inspect
 import zlib
 import urllib2
 from gzip import GzipFile
@@ -50,11 +51,14 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
     if treetype == "beautifulsoup":
         return BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     elif treetype == "etree":
-        treebuilder = treebuilders.getTreeBuilder("etree", ElementTree)
+        kwargs = {'tree': treebuilders.getTreeBuilder('etree', ElementTree)}
+        # http://code.google.com/p/html5lib/issues/detail?id=138
+        if ('namespaceHTMLElements'
+                in inspect.getargspec(HTMLParser.__init__)[0]):
+            kwargs['namespaceHTMLElements'] = False
+        parser = HTMLParser(**kwargs)
     else:
-        treebuilder = treebuilders.getTreeBuilder(treetype)
-
-    parser = HTMLParser(tree=treebuilder)
+        parser = HTMLParser(tree=treebuilders.getTreeBuilder(treetype))
 
     return parser.parse(data, encoding = encoding)
 
