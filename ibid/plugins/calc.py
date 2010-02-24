@@ -2,10 +2,9 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from __future__ import division
-from random import random, randint
-
 import logging
 from os import kill
+from random import random, randint
 from signal import SIGTERM
 from subprocess import Popen, PIPE
 from time import time, sleep
@@ -141,7 +140,7 @@ class PowSubstitutionWalker(object):
         raise AccessException
 
 class Calc(Processor):
-    usage = u'[calc] <expression>'
+    usage = u'<expression>'
     feature = ('calc',)
 
     priority = 500
@@ -158,7 +157,7 @@ class Calc(Processor):
     safe['pow'] = limited_pow
     safe['factorial'] = limited_factorial
 
-    @match(r'^(?:calc\s+)?(.+?)$')
+    @match(r'^(.+)$')
     def calculate(self, event, expression):
         for term in self.banned:
             if term in expression:
@@ -196,6 +195,16 @@ class Calc(Processor):
 
         if isinstance(result, (int, long, float, complex)):
             event.addresponse(unicode(result))
+
+
+class ExplicitCalc(Calc):
+    usage = u'calc <expression>'
+    priority = 0
+
+    @match(r'^calc(?:ulate)?\s+(.+)$')
+    def calculate(self, event, expression):
+        super(ExplicitCalc, self).calculate(event, expression)
+
 
 features['random'] = {
     'description': u'Generates random numbers.',

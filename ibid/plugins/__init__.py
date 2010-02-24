@@ -86,16 +86,17 @@ class Processor(object):
             new.default = getattr(cls, name)
             setattr(cls, name, new)
 
-        if getattr(cls, '_event_handlers', None) is None:
-            cls._event_handlers = []
+        for attr, listname in (
+                ('handler', 'event'),
+                ('periodic', 'periodic')):
+            listname = '_Processor__%s_handlers' % listname
+            if not hasattr(cls, listname):
+                setattr(cls, listname, [])
+            handlers = getattr(cls, listname)
+
             for name, item in cls.__dict__.iteritems():
-                if getattr(item, 'handler', False):
-                    cls._event_handlers.append(name)
-        if getattr(cls, '_periodic_handlers', None) is None:
-            cls._periodic_handlers = []
-            for name, item in cls.__dict__.iteritems():
-                if getattr(item, 'periodic', False):
-                    cls._periodic_handlers.append(name)
+                if getattr(item, attr, False) and name not in handlers:
+                    handlers.append(name)
 
         return super(Processor, cls).__new__(cls)
 
@@ -151,12 +152,12 @@ class Processor(object):
 
     def _get_event_handlers(self):
         "Find all the handlers (regex matching and blind)"
-        for handler in self._event_handlers:
+        for handler in self._event_handlers or self.__event_handlers:
             yield getattr(self, handler)
 
     def _get_periodic_handlers(self):
         "Find all the periodic handlers"
-        for handler in self._periodic_handlers:
+        for handler in self._periodic_handlers or self.__periodic_handlers:
             yield getattr(self, handler)
 
     def _run_periodic_handler(self, method, event):
