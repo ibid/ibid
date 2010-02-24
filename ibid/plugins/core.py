@@ -23,7 +23,7 @@ class Addressed(Processor):
         names = '|'.join(re.escape(x) for x in self.names)
         verbs = '|'.join(re.escape(x) for x in self.verbs)
         self.patterns = [
-            re.compile(r'^(?P<nick>%s)' % names
+            re.compile(r'^\s*(?P<nick>%s)' % names
                        + r'(?:\s*[:;.?>!,-]+\s+|\s+|\s*[,:]\s*)(?P<body>.*)',
                        re.I | re.DOTALL),
             # "hello there, bot"-style addressing. But we want to be sure that
@@ -144,6 +144,10 @@ class Complain(Processor):
         'exception': (
             u"I'm not feeling too well", u"That didn't go down very well. Burp.",
             u"That didn't seem to agree with me",
+        ),
+        'network': (
+            u'The tubes are clogged!', u"I can't reach that site",
+            u"That site seems to be down",
         ),
     })
 

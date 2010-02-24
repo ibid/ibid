@@ -262,6 +262,8 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
             factoid = factoid or query.order_by(func.random()).first()
         if factoid:
             return factoid
+        if all:
+            return []
 
 class Utils(Processor):
     usage = u'literal <name> [( #<from number> | /<pattern>/[r] )]'

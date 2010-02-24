@@ -191,9 +191,6 @@ class Calc(Processor):
         except LimitException, e:
             event.addresponse(u"I'm afraid I'm not allowed to play with big numbers")
             return
-        except AccessException, e:
-            event.addresponse(u"You're not allowed to do that")
-            return
         except Exception, e:
             return
 
