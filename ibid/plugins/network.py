@@ -6,6 +6,7 @@ import socket
 from ibid.compat import defaultdict
 from httplib import HTTPConnection, HTTPSConnection
 from os.path import exists
+from socket import gethostbyname, gaierror
 from subprocess import Popen, PIPE
 from sys import version_info
 from urllib import getproxies_environment
@@ -18,10 +19,10 @@ except ImportError:
     Resolver = None
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, unicode_output, human_join, \
-                       url_to_bytestring
+                       url_to_bytestring, get_process_output
 from ibid.utils.html import get_country_codes
 
 help = {}
@@ -500,5 +501,72 @@ class Ports(Processor):
             event.addresponse(human_join(results))
         else:
             event.addresponse(u"I don't know about any protocols using that port")
+
+help['nmap'] = u'Finds open network ports on a host or scans a subnet for active hosts.'
+class Nmap(Processor):
+    """port scan <hostname>
+    net scan <network>/<prefix>"""
+
+    feature = 'nmap'
+    permission = 'nmap'
+    min_prefix = IntOption('min_prefix', 'Minimum network prefix that may be scanned', 24)
+
+    def setup(self):
+        if not file_in_path('nmap'):
+            raise Exception("Cannot locate nmap executable")
+
+    @match(r'^(?:port\s+scan|nmap)\s+([0-9a-z.-]+)$')
+    @authorise()
+    def host_scan(self, event, host):
+        try:
+            ip = gethostbyname(host)
+        except gaierror, e:
+            event.addresponse(unicode(e.args[1]))
+            return
+
+        if ip.startswith('127.'):
+            event.addresponse(u"I'm not allowed to inspect my host's internal interface.")
+            return
+
+        output, error, code = get_process_output(['nmap', '--open', '-n', host])
+
+        ports = []
+        gotports = False
+        for line in output.splitlines():
+            if gotports:
+                if not line.split():
+                    break
+                port, state, service = line.split()
+                ports.append('%s (%s)' % (port, service))
+            else:
+                if line.startswith('Note: Host seems down.'):
+                    event.addresponse(u'That host seems to be down')
+                    return
+                if line.startswith('PORT'):
+                    gotports = True
+
+        if ports:
+            event.addresponse(human_join(ports))
+        else:
+            event.addresponse(u'No open ports detected')
+
+    @match(r'^(?:net(?:work)?\s+scan|nmap)\s+((?:[0-9]{1,3}\.){3}[0-9]{1,3})/([0-9]{1,2})$')
+    @authorise()
+    def net_scan(self, event, network, prefix):
+        if int(prefix) < self.min_prefix:
+            event.addresponse(u"Sorry, I can't scan networks with a prefix less than %s", self.min_prefix)
+            return
+
+        output, error, code = get_process_output(['nmap', '-sP', '-n', '%s/%s' % (network, prefix)])
+
+        hosts = []
+        for line in output.splitlines():
+            if line.startswith('Host '):
+                hosts.append(line.split()[1])
+
+        if hosts:
+            event.addresponse(human_join(hosts))
+        else:
+            event.addresponse(u'No hosts responded to pings')
 
 # vi: set et sta sw=4 ts=4:

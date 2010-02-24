@@ -15,6 +15,7 @@ from urllib import urlencode, quote
 import urllib2
 from urlparse import urlparse, urlunparse
 import zlib
+from subprocess import Popen, PIPE
 
 from dateutil.tz import tzlocal, tzutc
 from pkg_resources import resource_exists, resource_filename
@@ -239,5 +240,11 @@ def locate_resource(path, filename):
     if not resource_exists(path, filename):
         return None
     return resource_filename(path, filename)
+
+def get_process_output(command, input=None):
+    process = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, error = process.communicate(input)
+    code = process.wait()
+    return output, error, code
 
 # vi: set et sta sw=4 ts=4:
