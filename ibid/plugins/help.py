@@ -70,7 +70,7 @@ class Help(Processor):
                           u'Ask me "how do I use ..." for more details.',
             {
                 'description': category['description'].lower(),
-                'features': human_join(category['features']),
+                'features': human_join(sorted(category['features'])),
             }, conflate=False)
 
     def _describe_feature(self, event, feature):
