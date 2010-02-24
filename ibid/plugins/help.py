@@ -116,7 +116,7 @@ class Help(Processor):
                             categories.itervalues())
         categories = sorted(categories, key=lambda c: c['weight'])
         event.addresponse(
-            u'I can: %s\nAsk me "what can you ..." for more details',
+            u'I can: %s\nAsk me "what ... can you ..." for more details',
             human_join(c['description'].lower() for c in categories),
             conflate=False)
 
