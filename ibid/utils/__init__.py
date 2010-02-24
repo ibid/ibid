@@ -194,6 +194,9 @@ def url_to_bytestring(url):
     parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
+def is_url(url):
+    return (' ' not in url and '.' in url)
+
 def json_webservice(url, params={}, headers={}):
     "Request data from a JSON webservice, and deserialise"
 
