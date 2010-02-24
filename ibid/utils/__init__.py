@@ -3,6 +3,7 @@
 
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
+import logging
 import os
 import os.path
 import re
@@ -21,6 +22,8 @@ from pkg_resources import resource_exists, resource_filename
 
 import ibid
 from ibid.compat import defaultdict, json
+
+log = logging.getLogger('utils')
 
 def ago(delta, units=None):
     parts = []
@@ -200,7 +203,7 @@ def url_regex ():
     global _url_regex
     if _url_regex is not None:
         return _url_regex
-    
+
     tldfile = locate_resource('ibid', 'data/tlds-alpha-by-domain.txt')
     if tldfile:
         f = file(tldfile, 'r')
@@ -215,7 +218,7 @@ def url_regex ():
         r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
         r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
     ) % '|'.join(tlds)
-    
+
     return _url_regex
 
 def is_url(url):

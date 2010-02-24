@@ -3,6 +3,7 @@
 
 from random import choice
 import re
+from urllib import urlencode
 from urlparse import urlparse
 
 from dictclient import Connection
@@ -184,12 +185,9 @@ class Translate(Processor):
 
         if is_url(text):
             if urlparse(text).scheme in ('', 'http'):
-                event.addresponse(u'http://translate.google.com/'
-                                  u'translate?sl=%(src_lang)s'
-                                  u'&tl=%(dest_lang)s&u=%(url)s',
-                                  {'src_lang': src_lang,
-                                   'dest_lang': dest_lang,
-                                   'url': text})
+                query = {'sl': src_lang, 'tl': dest_lang, 'u': text}
+                event.addresponse(u'http://translate.google.com/translate?' +
+                                    urlencode(query))
             else:
                 event.addresponse(u'I can only translate HTTP pages')
             return

@@ -13,7 +13,7 @@ from ibid.plugins import Processor, handler
 from ibid.config import Option
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
-from ibid.utils import locate_resource, url_regex
+from ibid.utils import url_regex
 from ibid.utils.html import get_html_parse_tree
 
 help = {}
