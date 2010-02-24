@@ -92,11 +92,12 @@ class Help(Processor):
         event.addresponse(u'\n'.join(output), conflate=False)
 
     def _usage_search(self, event, terms, features):
-        results = []
+        results = set()
         for k, v in features.iteritems():
             for line in v['usage']:
                 if terms.issubset(frozenset(line.split())):
-                    results.append(k)
+                    results.add(k)
+        results = sorted(results)
         if len(results) == 1:
             self._describe_feature(event, features[results[0]])
         elif len(results) > 1:
