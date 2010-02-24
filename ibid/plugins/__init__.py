@@ -34,7 +34,7 @@ for cat, desc, weight in (
             ('convert', u'Perform conversions', 0),
             ('debug', u'Help you debug me', None),
             ('decide', u'Make decisions', -2),
-            ('development', u'Monitor software develpment', 10),
+            ('development', u'Monitor software development', 10),
             ('fun', u'Do silly fun stuff', 0),
             ('game', u'Play games', -2),
             ('lookup', u'Look things up', -10),
