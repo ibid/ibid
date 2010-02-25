@@ -143,10 +143,17 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender['connection'] = message['from']
 
         if message['type'] == 'groupchat':
-            event.sender['id'] = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
+            if message['from'] in self.room_users:
+                event.sender['connection'] = self.room_users[message['from']]
+                event.sender['id'] = event.sender['connection'].split('/')[0]
+            else:
+                event.sender['id'] = message['from']
             if event.sender['id'] == self.parent.nick:
                 return
-            event.sender['nick'] = event.sender['id']
+            if '/' in message['from']:
+                event.sender['nick'] = message['from'].split('/')[1]
+            else:
+                event.sender['nick'] = message['from']
             event.channel = message['from'].split('/')[0]
             event.public = True
         else:
