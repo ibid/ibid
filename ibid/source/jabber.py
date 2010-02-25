@@ -77,6 +77,22 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             event.public = False
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
+    def _onPresenceAvailable(self, presence):
+        entity = JID(presence["from"])
+
+        show = unicode(presence.show or '')
+        if show not in ['away', 'xa', 'chat', 'dnd']:
+            show = None
+
+        statuses = self._getStatuses(presence)
+
+        try:
+            priority = int(unicode(presence.priority or '')) or 0
+        except ValueError:
+            priority = 0
+
+        self.availableReceived(entity, show, statuses, priority)
+
     def availableReceived(self, entity, show=None, statuses=None, priority=0):
         self.parent.log.debug(u"Received available presence from %s (%s)", entity.full(), show)
         self._state_event(entity, u'online')
