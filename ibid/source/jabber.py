@@ -91,10 +91,14 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         except ValueError:
             priority = 0
 
-        self.availableReceived(entity, show, statuses, priority)
+        realjid = None
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user':
+            realjid = JID(presence.x.item["jid"])
 
-    def availableReceived(self, entity, show=None, statuses=None, priority=0):
-        self.parent.log.debug(u"Received available presence from %s (%s)", entity.full(), show)
+        self.availableReceived(entity, show, statuses, priority, realjid)
+
+    def availableReceived(self, entity, show=None, statuses=None, priority=0, realjid=None):
+        self.parent.log.debug(u"Received available presence from %s (actually %s) (%s)", entity.full(), realjid and realjid.full() or None, show)
         self._state_event(entity, u'online')
 
     def unavailableReceived(self, entity, statuses):
