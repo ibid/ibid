@@ -28,6 +28,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
     def __init__(self):
         xmppim.MessageProtocol.__init__(self)
         self.rooms = []
+        self.room_users = {}
 
     def connectionInitialized(self):
         self.parent.log.info(u"Connected")
@@ -55,7 +56,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
         subprotocols.XMPPHandler.connectionLost(self, reason)
 
-    def _state_event(self, entity, state):
+    def _state_event(self, entity, state, realjid=None):
         event = Event(self.name, u'state')
         event.state = state
         if entity.userhost().lower() in self.rooms:
@@ -65,8 +66,17 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
                 event.type = u'connection'
                 event.status = state == u'online' and u'joined' or u'left'
             else:
-                event.sender['connection'] = entity.full()
-                event.sender['id'] = event.sender['connection']
+                if realjid:
+                    if state == u'online':
+                        self.room_users[entity.full()] = realjid.full()
+                    elif state == u'offline':
+                        if entity.full() in self.room_users:
+                            del self.room_users[entity.full()]
+                    event.sender['id'] = realjid.userhost()
+                    event.sender['connection'] = realjid.full()
+                else:
+                    event.sender['connection'] = entity.full()
+                    event.sender['id'] = event.sender['connection']
                 event.sender['nick'] = nick
                 event.public = True
         else:
@@ -99,7 +109,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0, realjid=None):
         self.parent.log.debug(u"Received available presence from %s (actually %s) (%s)", entity.full(), realjid and realjid.full() or None, show)
-        self._state_event(entity, u'online')
+        self._state_event(entity, u'online', realjid)
 
     def unavailableReceived(self, entity, statuses):
         self.parent.log.debug(u"Received unavailable presence from %s", entity.full())
