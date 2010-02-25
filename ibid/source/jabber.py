@@ -112,15 +112,19 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
         statuses = self._getStatuses(presence)
 
-        self.unavailableReceived(entity, statuses)
+        realjid = None
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user':
+            realjid = JID(presence.x.item["jid"])
+
+        self.unavailableReceived(entity, statuses, realjid)
 
     def availableReceived(self, entity, show=None, statuses=None, priority=0, realjid=None):
         self.parent.log.debug(u"Received available presence from %s (actually %s) (%s)", entity.full(), realjid and realjid.full() or None, show)
         self._state_event(entity, u'online', realjid)
 
-    def unavailableReceived(self, entity, statuses):
+    def unavailableReceived(self, entity, statuses, realjid=None):
         self.parent.log.debug(u"Received unavailable presence from %s", entity.full())
-        self._state_event(entity, u'offline')
+        self._state_event(entity, u'offline', realjid)
 
     def subscribeReceived(self, entity):
         response = xmppim.Presence(to=entity, type='subscribed')
