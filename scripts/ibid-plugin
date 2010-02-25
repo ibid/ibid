@@ -7,6 +7,7 @@ from optparse import OptionParser
 from os import getenv
 from os.path import exists
 import sys
+import socket
 
 try:
     import readline
@@ -23,6 +24,7 @@ import ibid
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
+from ibid.utils import JSONException
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
 plugins is the list of plugins to load.
@@ -127,10 +129,10 @@ while True:
     for processor in ibid.processors:
         try:
             processor.process(event)
-        except Exception:
+        except Exception, e:
             log.exception(u"Exception occured in %s processor of %s plugin",
                     processor.__class__.__name__, processor.name)
-            event.complain = 'exception'
+            event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
             event.processed = True
             if 'session' in event:
                 event.session.rollback()

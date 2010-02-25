@@ -5,6 +5,7 @@ from cgi import parse_qs
 import inspect
 import re
 import logging
+import socket
 from os.path import join, expanduser
 
 from twisted.internet import reactor, threads
@@ -16,6 +17,7 @@ from sqlalchemy.exceptions import IntegrityError
 import ibid
 from ibid.event import Event
 from ibid.db import SchemaVersionException, schema_version_check
+from ibid.utils import JSONException
 
 import auth
 
@@ -28,14 +30,14 @@ class Dispatcher(object):
         for processor in ibid.processors:
             try:
                 processor.process(event)
-            except:
+            except Exception, e:
                 self.log.exception(
                         u'Exception occured in %s processor of %s plugin.\n'
                         u'Event: %s',
                         processor.__class__.__name__,
                         processor.name,
                         event)
-                event.complain = u'exception'
+                event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
                 event.processed = True
                 if 'session' in event:
                     event.session.rollback()
