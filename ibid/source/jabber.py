@@ -72,8 +72,8 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
                     elif state == u'offline':
                         if entity.full() in self.room_users:
                             del self.room_users[entity.full()]
-                    event.sender['id'] = realjid.userhost()
                     event.sender['connection'] = realjid.full()
+                    event.sender['id'] = realjid.userhost()
                 else:
                     event.sender['connection'] = entity.full()
                     event.sender['id'] = event.sender['connection']
