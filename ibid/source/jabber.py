@@ -102,7 +102,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             priority = 0
 
         realjid = None
-        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user':
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user' and presence.x.item.hasAttribute('jid'):
             realjid = JID(presence.x.item["jid"])
 
         self.availableReceived(entity, show, statuses, priority, realjid)
@@ -113,7 +113,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         statuses = self._getStatuses(presence)
 
         realjid = None
-        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user':
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user' and presence.x.item.hasAttribute('jid'):
             realjid = JID(presence.x.item["jid"])
 
         self.unavailableReceived(entity, statuses, realjid)
