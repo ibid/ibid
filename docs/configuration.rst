@@ -252,14 +252,6 @@ joining/parting channels) is handled by the ``irc`` plugin.
 Jabber Source
 """""""""""""
 
-.. describe:: server:
-
-   **Required**
-   String: The hostname of the server to connect to.
-   Ibid `currently does not support
-   <https://bugs.edge.launchpad.net/ibid/+bug/506889>`_ automatically
-   determining this from the JID.
-
 .. describe:: jid:
 
    **Required**
@@ -270,13 +262,6 @@ Jabber Source
 
    **Required**
    String: The password for the supplied JID.
-
-.. describe:: nick:
-
-   String: The nickname for the bot to use on this server when in MUC
-   chatrooms.
-
-   Default: The :obj:`botname`
 
 .. describe:: rooms:
 
@@ -290,6 +275,32 @@ Jabber Source
    If this isn't set, it'll accept messages from anyone.
 
    Default: Nothing (i.e. no restriction)
+
+.. describe:: server:
+
+   String: The hostname of the server to connect to.
+
+   Default: Determined automatically from the jabber ID.
+
+.. describe:: port:
+
+   Number: The port to connect to.
+
+   Default: ``5222`` or ``5223`` if :obj:`ssl` is ``True``
+
+.. describe:: ssl:
+
+   Boolean: Use old port 5223-style SSL connection instead of
+   opportunistic TLS on port 5222.
+
+   Default: ``False``
+
+.. describe:: nick:
+
+   String: The nickname for the bot to use on this server when in MUC
+   chatrooms.
+
+   Default: The :obj:`botname`
 
 .. describe:: max_public_message_length:
 
