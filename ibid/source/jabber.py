@@ -28,6 +28,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
     def __init__(self):
         xmppim.MessageProtocol.__init__(self)
         self.rooms = []
+        self.room_users = {}
 
     def connectionInitialized(self):
         self.parent.log.info(u"Connected")
@@ -55,7 +56,7 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
 
         subprotocols.XMPPHandler.connectionLost(self, reason)
 
-    def _state_event(self, entity, state):
+    def _state_event(self, entity, state, realjid=None):
         event = Event(self.name, u'state')
         event.state = state
         if entity.userhost().lower() in self.rooms:
@@ -65,8 +66,17 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
                 event.type = u'connection'
                 event.status = state == u'online' and u'joined' or u'left'
             else:
-                event.sender['connection'] = entity.full()
-                event.sender['id'] = event.sender['connection']
+                if realjid:
+                    if state == u'online':
+                        self.room_users[entity.full()] = realjid.full()
+                    elif state == u'offline':
+                        if entity.full() in self.room_users:
+                            del self.room_users[entity.full()]
+                    event.sender['connection'] = realjid.full()
+                    event.sender['id'] = realjid.userhost()
+                else:
+                    event.sender['connection'] = entity.full()
+                    event.sender['id'] = event.sender['connection']
                 event.sender['nick'] = nick
                 event.public = True
         else:
@@ -77,13 +87,44 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             event.public = False
         ibid.dispatcher.dispatch(event).addCallback(self.respond)
 
-    def availableReceived(self, entity, show=None, statuses=None, priority=0):
-        self.parent.log.debug(u"Received available presence from %s (%s)", entity.full(), show)
-        self._state_event(entity, u'online')
+    def _onPresenceAvailable(self, presence):
+        entity = JID(presence["from"])
 
-    def unavailableReceived(self, entity, statuses):
+        show = unicode(presence.show or '')
+        if show not in ['away', 'xa', 'chat', 'dnd']:
+            show = None
+
+        statuses = self._getStatuses(presence)
+
+        try:
+            priority = int(unicode(presence.priority or '')) or 0
+        except ValueError:
+            priority = 0
+
+        realjid = None
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user' and presence.x.item.hasAttribute('jid'):
+            realjid = JID(presence.x.item["jid"])
+
+        self.availableReceived(entity, show, statuses, priority, realjid)
+
+    def _onPresenceUnavailable(self, presence):
+        entity = JID(presence["from"])
+
+        statuses = self._getStatuses(presence)
+
+        realjid = None
+        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user' and presence.x.item.hasAttribute('jid'):
+            realjid = JID(presence.x.item["jid"])
+
+        self.unavailableReceived(entity, statuses, realjid)
+
+    def availableReceived(self, entity, show=None, statuses=None, priority=0, realjid=None):
+        self.parent.log.debug(u"Received available presence from %s (actually %s) (%s)", entity.full(), realjid and realjid.full() or None, show)
+        self._state_event(entity, u'online', realjid)
+
+    def unavailableReceived(self, entity, statuses, realjid=None):
         self.parent.log.debug(u"Received unavailable presence from %s", entity.full())
-        self._state_event(entity, u'offline')
+        self._state_event(entity, u'offline', realjid)
 
     def subscribeReceived(self, entity):
         response = xmppim.Presence(to=entity, type='subscribed')
@@ -113,10 +154,17 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
         event.sender['connection'] = message['from']
 
         if message['type'] == 'groupchat':
-            event.sender['id'] = message['from'].find('/') != -1 and message['from'].split('/')[1] or message['from']
+            if message['from'] in self.room_users:
+                event.sender['connection'] = self.room_users[message['from']]
+                event.sender['id'] = event.sender['connection'].split('/')[0]
+            else:
+                event.sender['id'] = message['from']
             if event.sender['id'] == self.parent.nick:
                 return
-            event.sender['nick'] = event.sender['id']
+            if '/' in message['from']:
+                event.sender['nick'] = message['from'].split('/')[1]
+            else:
+                event.sender['nick'] = message['from']
             event.channel = message['from'].split('/')[0]
             event.public = True
         else:
