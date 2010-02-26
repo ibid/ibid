@@ -78,6 +78,16 @@ String Functions
 
    Similar to ``which`` on the command line.
 
+.. function:: get_process_output(command, input=None)
+
+   Runs *command*, a list of arguments where the first argument is the
+   process to run (as in :class:`subprocess.Popen`).
+   The command will be fed *input* on standard input, and
+   :func:`get_process_output` will block until the command exits.
+
+   Returns a tuple of (*output*, *error*, *code*): standard output,
+   standard error, and exit code.
+
 .. function:: unicode_output(output, [errors='strict'])
 
    Decodes *output* a string, to unicode, using the character set
