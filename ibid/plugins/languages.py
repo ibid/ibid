@@ -10,8 +10,8 @@ from dictclient import Connection
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import (decode_htmlentities, json_webservice, human_join,
-                        is_url)
+from ibid.utils import decode_htmlentities, json_webservice, human_join, \
+                        is_url, url_to_bytestring
 
 help = {}
 
@@ -185,7 +185,8 @@ class Translate(Processor):
 
         if is_url(text):
             if urlparse(text).scheme in ('', 'http'):
-                query = {'sl': src_lang, 'tl': dest_lang, 'u': text}
+                url = url_to_bytestring(text)
+                query = {'sl': src_lang, 'tl': dest_lang, 'u': url}
                 event.addresponse(u'http://translate.google.com/translate?' +
                                     urlencode(query))
             else:
