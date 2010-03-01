@@ -4,6 +4,16 @@
 from copy import copy
 import sys
 
+try:
+    from Stemmer import Stemmer
+except ImportError:
+    from stemmer import PorterStemmer
+    class Stemmer(PorterStemmer):
+        def __init__(self, language):
+            PorterStemmer.__init__(self)
+        def stemWord(self, word):
+            return PorterStemmer.stem(self, word, 0, len(word) - 1)
+
 import ibid
 from ibid.plugins import Processor, match
 from ibid.utils import human_join
@@ -21,6 +31,7 @@ class Help(Processor):
     help <(category|feature)>
     """
     feature = ('help',)
+    stemmer = Stemmer('english')
 
     def _get_features(self):
         """Walk the loaded processors and build dicts of categories and
@@ -62,6 +73,24 @@ class Help(Processor):
 
         categories = dict((k, v) for k, v in categories.iteritems()
                                  if v['features'])
+
+        for name, feat in features.iteritems():
+            feat['usage_keywords'] = frozenset(self.stemmer.stemWord(word)
+                    for word in u' '.join(feat['usage']).split())
+        for name, cat in categories.iteritems():
+            cat['description_keywords'] = frozenset(self.stemmer.stemWord(word)
+                    for word in cat['description'].lower().split())
+        for name in features.keys():
+            st_name = self.stemmer.stemWord(name)
+            features[st_name] = features[name]
+            if st_name != name:
+                del features[name]
+        for name in categories.keys():
+            st_name = self.stemmer.stemWord(name)
+            categories[st_name] = categories[name]
+            if st_name != name:
+                del categories[name]
+
         return categories, features
 
     def _describe_category(self, event, category):
@@ -92,11 +121,11 @@ class Help(Processor):
         event.addresponse(u'\n'.join(output), conflate=False)
 
     def _usage_search(self, event, terms, features):
+        terms = frozenset(self.stemmer.stemWord(term) for term in terms)
         results = set()
-        for k, v in features.iteritems():
-            for line in v['usage']:
-                if terms.issubset(frozenset(line.split())):
-                    results.add(k)
+        for name, feat in features.iteritems():
+            if terms.issubset(feat['usage_keywords']):
+                results.add(name)
         results = sorted(results)
         if len(results) == 1:
             self._describe_feature(event, features[results[0]])
@@ -123,13 +152,14 @@ class Help(Processor):
     @match(r'^what\s+(.+\s+)?can\s+you\s+(.+)$')
     def describe_category(self, event, terms1, terms2):
         # Don't stomp on intro
-        if terms2.lower() == u'do':
+        if terms1 is None and terms2.lower() == u'do':
             return
 
         categories, features = self._get_features()
         if terms1 is None:
             terms1 = u''
-        terms = frozenset(terms1.lower().split() + terms2.lower().split())
+        terms = frozenset(self.stemmer.stemWord(term)
+                for term in terms1.lower().split() + terms2.lower().split())
 
         if len(terms) == 1:
             term = list(terms)[0]
@@ -138,15 +168,15 @@ class Help(Processor):
                 return
 
         results = []
-        for cat, meta in categories.iteritems():
-            if terms.issubset(frozenset(meta['description'].lower().split())):
-                results.append(cat)
+        for name, cat in categories.iteritems():
+            if terms.issubset(cat['description_keywords']):
+                results.append(name)
 
         if len(results) == 0:
-            for cat, meta in categories.iteritems():
-                if (terms1.lower() in meta['description'].lower()
-                        and terms2.lower() in meta['description'].lower()):
-                    results.append(cat)
+            for name, cat in categories.iteritems():
+                if (terms1.lower() in cat['description'].lower()
+                        and terms2.lower() in cat['description'].lower()):
+                    results.append(name)
 
         results.sort()
         if len(results) == 1:
