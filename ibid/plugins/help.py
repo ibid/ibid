@@ -107,16 +107,17 @@ class Help(Processor):
         output = []
         desc = feature['description']
         if desc is None:
-            output.append(u'Usage:')
+            output.append(u'You can use it like this:')
         elif len(desc) > 100:
             output.append(desc)
-            output.append(u'Usage:')
+            output.append(u'You can use it like this:')
         elif desc.endswith('.'):
-            output.append(desc + u' Usage:')
+            output.append(desc + u' You can use it like this:')
         else:
-            output.append(desc + u'. Usage:')
+            output.append(desc + u'. You can use it like this:')
 
-        output += feature['usage']
+        for line in feature['usage']:
+            output.append(u'  ' + line)
 
         event.addresponse(u'\n'.join(output), conflate=False)
 
