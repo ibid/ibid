@@ -3,12 +3,15 @@
 
 from random import choice
 import re
+from urllib import urlencode
+from urlparse import urlparse
 
 from dictclient import Connection
 
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
-from ibid.utils import decode_htmlentities, json_webservice, human_join
+from ibid.utils import decode_htmlentities, json_webservice, human_join, \
+                        is_url, url_to_bytestring
 
 features = {}
 
@@ -135,7 +138,7 @@ features['translate'] = {
     'categories': ('lookup', 'convert', 'web',),
 }
 class Translate(Processor):
-    usage = u"""translate <phrase> [from <language>] [to <language>]
+    usage = u"""translate (<phrase>|<url>) [from <language>] [to <language>]
     translation chain <phrase> [from <language>] [to <language>]"""
 
     feature = ('translate',)
@@ -185,6 +188,16 @@ class Translate(Processor):
     def translate (self, event, text, src_lang, dest_lang):
         dest_lang = self.language_code(dest_lang or self.dest_lang)
         src_lang = self.language_code(src_lang or '')
+
+        if is_url(text):
+            if urlparse(text).scheme in ('', 'http'):
+                url = url_to_bytestring(text)
+                query = {'sl': src_lang, 'tl': dest_lang, 'u': url}
+                event.addresponse(u'http://translate.google.com/translate?' +
+                                    urlencode(query))
+            else:
+                event.addresponse(u'I can only translate HTTP pages')
+            return
 
         try:
             translated = self._translate(event, text, src_lang, dest_lang)[0]

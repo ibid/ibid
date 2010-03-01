@@ -101,7 +101,7 @@ class Twitter(Processor):
                 event.addresponse(u'That %s is private', service['name'])
             elif e.code == 404:
                 event.addresponse(u'No such %s', service['name'])
-            else:
+            elif e.code == 500:
                 event.addresponse(u'I can only see the Fail Whale')
 
     @handler

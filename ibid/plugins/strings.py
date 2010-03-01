@@ -7,7 +7,7 @@ import base64
 import re
 
 from ibid.compat import hashlib
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, authorise
 
 features = {}
 
@@ -99,8 +99,10 @@ features['retest'] = {
 class ReTest(Processor):
     usage = u'does <pattern> match <string>'
     feature = ('retest',)
+    permission = 'regex'
 
     @match('^does\s+(.+?)\s+match\s+(.+?)$')
+    @authorise(fallthrough=False)
     def retest(self, event, regex, string):
         event.addresponse(re.search(regex, string) and u'Yes' or u'No')
 

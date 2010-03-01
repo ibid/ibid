@@ -46,11 +46,7 @@ class Bnet(Processor):
 
     @match(r'^(?:dota\s+players|who(?:\'s|\s+is)\s+(?:playing\s+dota|on\s+bnet))$')
     def dota_players(self, event):
-        try:
-            users = self.bnet_players('W3XP')
-        except socket.error:
-            event.addresponse(u"Sorry, I couldn't contact the server. Maybe it's down")
-            return
+        users = self.bnet_players('W3XP')
         if users:
             event.addresponse(u'The battlefield contains %s', human_join(users))
         else:
@@ -66,49 +62,45 @@ class CounterStrike(Processor):
 
     @match(r'^(?:(?:cs|counter[\s-]*strike)\s+players|who(?:\'s|\s+is)\s+(?:playing|on)\s+(?:cs|counter[\s-]*strike))$')
     def cs_players(self, event):
-        try:
-            server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-            server.sendto('\xFF\xFF\xFF\xFFdetails', (self.cs_host, self.cs_port))
-            server.settimeout(5)
-            data = server.recv(16384)
+        server.sendto('\xFF\xFF\xFF\xFFdetails', (self.cs_host, self.cs_port))
+        server.settimeout(5)
+        data = server.recv(16384)
 
-            assert data.startswith('\xFF\xFF\xFF\xFFm')
-            data = data[5:]
+        assert data.startswith('\xFF\xFF\xFF\xFFm')
+        data = data[5:]
 
-            address, hostname, map, mod, modname, details = data.split('\x00', 5)
+        address, hostname, map, mod, modname, details = data.split('\x00', 5)
 
-            details = details[:5] # We don't care about the rest
-            clientcount, clientmax, protocol, type, os = struct.unpack('<3Bcc', details)
+        details = details[:5] # We don't care about the rest
+        clientcount, clientmax, protocol, type, os = struct.unpack('<3Bcc', details)
 
-            if clientcount == 0:
-                event.addresponse(u'Nobody. Everyone must have lives...')
-                return
+        if clientcount == 0:
+            event.addresponse(u'Nobody. Everyone must have lives...')
+            return
 
-            server.sendto('\xFF\xFF\xFF\xFFplayers', (self.cs_host, self.cs_port))
-            data = server.recv(16384)
+        server.sendto('\xFF\xFF\xFF\xFFplayers', (self.cs_host, self.cs_port))
+        data = server.recv(16384)
 
-            assert data.startswith('\xFF\xFF\xFF\xFF')
-            data = data[6:]
+        assert data.startswith('\xFF\xFF\xFF\xFF')
+        data = data[6:]
 
-            players = []
-            while data:
-                player = {}
-                data = data[1:]
-                player['nickname'], data = data.split('\x00', 1)
-                player['fragtotal'] = struct.unpack('<i', data[:4])[0]
-                data = data[8:]
-                players.append(player)
+        players = []
+        while data:
+            player = {}
+            data = data[1:]
+            player['nickname'], data = data.split('\x00', 1)
+            player['fragtotal'] = struct.unpack('<i', data[:4])[0]
+            data = data[8:]
+            players.append(player)
 
-            players.sort(key=lambda x: x['fragtotal'], reverse=True)
-            event.addresponse(u'There are %(clients)i/%(clientmax)s players playing %(map)s: %(players)s', {
-                'clients': clientcount,
-                'clientmax': clientmax,
-                'map': map,
-                'players': human_join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
-            })
-
-        except socket.error:
-            event.addresponse(u"Sorry, I couldn't contact the server. Maybe it's down")
+        players.sort(key=lambda x: x['fragtotal'], reverse=True)
+        event.addresponse(u'There are %(clients)i/%(clientmax)s players playing %(map)s: %(players)s', {
+            'clients': clientcount,
+            'clientmax': clientmax,
+            'map': map,
+            'players': human_join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
+        })
 
 # vi: set et sta sw=4 ts=4:
