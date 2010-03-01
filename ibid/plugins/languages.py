@@ -160,7 +160,7 @@ class Translate(Processor):
                   'slovenian':'sl', 'spanish':'es', 'swahili':'sw',
                   'swedish':'sv', 'thai':'th', 'turkish':'tr', 'ukrainian':'uk',
                   'uzbek': 'uz', 'vietnamese':'vi', 'welsh':'cy',
-                  'yiddish':'yi'}
+                  'yiddish': 'yi', 'haitian creole': 'ht'}
 
     alt_lang_names = {'simplified':'zh-CN', 'simplified chinese':'zh-CN',
                    'traditional':'zh-TW', 'traditional chinese':'zh-TW',
@@ -168,7 +168,8 @@ class Translate(Processor):
                    u'bokm\N{LATIN SMALL LETTER A WITH RING ABOVE}l':'no',
                    u'norwegian bokm\N{LATIN SMALL LETTER A WITH RING ABOVE}l':
                         'no',
-                   'farsi':'fa'}
+                   'farsi': 'fa',
+                   'haitian': 'ht', 'kreyol': 'ht'}
 
     LANG_REGEX = '|'.join(lang_names.keys() + lang_names.values() +
                             alt_lang_names.keys())
