@@ -13,7 +13,7 @@ from ibid.plugins import Processor, handler
 from ibid.config import Option
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
-from ibid.utils import locate_resource
+from ibid.utils import url_regex
 from ibid.utils.html import get_html_parse_tree
 
 help = {}
@@ -60,22 +60,11 @@ class Grab(Processor):
                        'delicious')
 
     def setup(self):
-        tldfile = locate_resource('ibid', 'data/tlds-alpha-by-domain.txt')
-        if tldfile:
-            f = file(tldfile, 'r')
-            tlds = [tld.strip().lower() for tld in f.readlines()
-                    if not tld.startswith('#')]
-            f.close()
-        else:
-            log.warning(u"Couldn't open TLD list, falling back to minimal default")
-            tlds = 'com.org.net.za'.split('.')
-
         self.grab.im_func.pattern = re.compile((
             r'(?:[^@./]\b(?!\.)|\A)('       # Match a boundary, but not on an e-mail address
-            r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
-            r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
+            + url_regex() +
             r')[\[>)\]"\'.,;:]*(?:\s|\Z)'   # End boundary
-        ) % '|'.join(tlds), re.I | re.DOTALL)
+        ), re.I | re.DOTALL)
 
     @handler
     def grab(self, event, url):
