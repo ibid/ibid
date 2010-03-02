@@ -2,6 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from copy import copy
+import re
 import sys
 
 try:
@@ -74,9 +75,12 @@ class Help(Processor):
         categories = dict((k, v) for k, v in categories.iteritems()
                                  if v['features'])
 
+        usere = re.compile(r'[\s()[\]<>|]+')
         for name, feat in features.iteritems():
-            feat['usage_keywords'] = frozenset(self.stemmer.stemWord(word)
-                    for word in u' '.join(feat['usage']).split())
+            feat['usage_keywords'] = frozenset(
+                    self.stemmer.stemWord(word.strip())
+                    for word in usere.split(u' '.join(feat['usage']))
+                    if word.strip())
         for name, cat in categories.iteritems():
             cat['description_keywords'] = frozenset(self.stemmer.stemWord(word)
                     for word in cat['description'].lower().split())
