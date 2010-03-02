@@ -10,7 +10,10 @@ from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
                     VersionedSchema
 from ibid.plugins import Processor, match, handler, authorise
 
-help = {'karma': u'Keeps track of karma for people and things.'}
+features = {'karma': {
+    'description': u'Keeps track of karma for people and things.',
+    'categories': ('remember',),
+}}
 
 log = logging.getLogger('plugins.karma')
 
@@ -47,8 +50,8 @@ class Karma(Base):
         self.time = datetime.utcnow()
 
 class Set(Processor):
-    u"""<subject> (++|--|==|ftw|ftl) [[reason]]"""
-    feature = 'karma'
+    usage = u'<subject> (++|--|==|ftw|ftl) [[reason]]'
+    feature = ('karma',)
 
     # Clashes with morse & math
     priority = 510
@@ -121,9 +124,9 @@ class Set(Processor):
             event.processed = True
 
 class Get(Processor):
-    u"""karma for <subject>
+    usage = u"""karma for <subject>
     [reverse] karmaladder"""
-    feature = 'karma'
+    feature = ('karma',)
 
     @match(r'^karma\s+(?:for\s+)?(.+)$')
     def handle_karma(self, event, subject):
@@ -149,8 +152,8 @@ class Get(Processor):
             event.addresponse(u"I don't really care about anything")
 
 class Forget(Processor):
-    u"""forget karma for <subject> [[reason]]"""
-    feature = 'karma'
+    usage = u'forget karma for <subject> [[reason]]'
+    feature = ('karma',)
 
     # Clashes with factoid
     priority = -10

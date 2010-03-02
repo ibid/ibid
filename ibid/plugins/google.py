@@ -11,18 +11,19 @@ from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import decode_htmlentities, json_webservice
 
-help = {}
-
-help['google'] = u'Retrieves results from Google and Google Calculator.'
+features = {'google': {
+    'description': u'Retrieves results from Google and Google Calculator.',
+    'categories': ('lookup', 'web',),
+}}
 
 default_user_agent = 'Mozilla/5.0'
 default_referer = "http://ibid.omnia.za.net/"
 
 class GoogleAPISearch(Processor):
-    u"""google [for] <term>
+    usage = u"""google [for] <term>
     googlefight [for] <term> and <term>"""
 
-    feature = 'google'
+    feature = ('google',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
@@ -85,11 +86,11 @@ class GoogleAPISearch(Processor):
 # features.
 # Dear Google: We promise we don't bite.
 class GoogleScrapeSearch(Processor):
-    u"""gcalc <expression>
+    usage = u"""gcalc <expression>
     gdefine <term>
     google.<TLD> [for] <terms>"""
 
-    feature = 'google'
+    feature = ('google',)
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', default_user_agent)
     google_scrape_url = "http://www.google.com/search?q=%s"

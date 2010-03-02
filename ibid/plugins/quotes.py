@@ -19,12 +19,15 @@ from ibid.utils import file_in_path, unicode_output
 
 log = logging.getLogger('plugins.quotes')
 
-help = {}
+features = {}
 
-help['fortune'] = u'Returns a random fortune.'
+features['fortune'] = {
+    'description': u'Returns a random fortune.',
+    'categories': ('fun', 'lookup',),
+}
 class Fortune(Processor, RPC):
-    u"""fortune"""
-    feature = 'fortune'
+    usage = u'fortune'
+    feature = ('fortune',)
 
     fortune = Option('fortune', 'Path of the fortune executable', 'fortune')
 
@@ -56,11 +59,14 @@ class Fortune(Processor, RPC):
         else:
             return None
 
-help['bash'] = u'Retrieve quotes from bash.org.'
+features['bash'] = {
+    'description': u'Retrieve quotes from bash.org.',
+    'categories': ('fun', 'lookup', 'web',),
+}
 class Bash(Processor):
-    u"bash[.org] [(random|<number>)]"
+    usage = u'bash[.org] [(random|<number>)]'
 
-    feature = 'bash'
+    feature = ('bash',)
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
@@ -87,14 +93,17 @@ class Bash(Processor):
                     output.append(line)
             event.addresponse(u'\n'.join(output), conflate=False)
 
-help['fml'] = u'Retrieves quotes from fmylife.com.'
+features['fml'] = {
+    'description': u'Retrieves quotes from fmylife.com.',
+    'categories': ('fun', 'lookup', 'web',),
+}
 class FMLException(Exception):
     pass
 
 class FMyLife(Processor):
-    u"""fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )"""
+    usage = u'fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )'
 
-    feature = "fml"
+    feature = ('fml',)
 
     api_url = Option('fml_api_url', 'FML API URL base', 'http://api.betacie.com/')
     # The Ibid API Key, registered by Stefano Rivera:
@@ -156,12 +165,15 @@ class FMyLife(Processor):
         else:
             event.addresponse(u'Sorry, not in public. PM me')
 
-help["tfln"] = u"Looks up quotes from textsfromlastnight.com"
+features['tfln'] = {
+    'description': u'Looks up quotes from textsfromlastnight.com',
+    'categories': ('fun', 'lookup', 'web',),
+}
 class TextsFromLastNight(Processor):
-    u"""tfln [(random|<number>)]
+    usage = u"""tfln [(random|<number>)]
     tfln (worst|best) [(today|this week|this month)]"""
 
-    feature = 'tfln'
+    feature = ('tfln',)
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
@@ -226,12 +238,15 @@ class TextsFromLastNight(Processor):
     def tfln_url(self, event, id):
         self.tfln(event, id)
 
-help["mlia"] = u"Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com"
+features['mlia'] = {
+    'description': u'Looks up quotes from MyLifeIsAverage.com and MyLifeIsG.com',
+    'categories': ('fun', 'lookup', 'web',),
+}
 class MyLifeIsAverage(Processor):
-    u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
+    usage = u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
     mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
 
-    feature = 'mlia'
+    feature = ('mlia',)
 
     public_browse = BoolOption('public_browse',
                                'Allow random quotes in public', True)
@@ -338,12 +353,15 @@ class MyLifeIsAverage(Processor):
     def mlia_url(self, event, site, id):
         self.mlia(event, 'mli' + site[0].lower(), id)
 
-help['bible'] = u'Retrieves Bible verses'
+features['bible'] = {
+    'description': u'Retrieves Bible verses',
+    'categories': ('lookup', 'web',),
+}
 class Bible(Processor):
-    u"""bible <passages> [in <version>]
+    usage = u"""bible <passages> [in <version>]
     <book> <verses> [in <version>]"""
 
-    feature = 'bible'
+    feature = ('bible',)
     # http://labs.bible.org/api/ is an alternative
     # Their feature set is a little different, but they should be fairly
     # compatible

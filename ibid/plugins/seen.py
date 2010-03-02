@@ -13,7 +13,10 @@ from ibid.utils import ago, format_date
 
 log = logging.getLogger('plugins.seen')
 
-help = {'seen': u'Records when people were last seen.'}
+features = {'seen': {
+    'description': u'Records when people were last seen.',
+    'categories': ('remember', 'lookup',),
+}}
 
 class Sighting(Base):
     __table__ = Table('seen', Base.metadata,
@@ -60,7 +63,7 @@ class Sighting(Base):
                self.type, self.identity_id, self.channel, self.time, self.value)
 
 class See(Processor):
-    feature = 'seen'
+    feature = ('seen',)
 
     priority = 1500
     event_types = (u'message', u'state')
@@ -94,8 +97,8 @@ class See(Processor):
                     event.sender['id'], event.source)
 
 class Seen(Processor):
-    u"""seen <who>"""
-    feature = 'seen'
+    usage = u'seen <who>'
+    feature = ('seen',)
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):

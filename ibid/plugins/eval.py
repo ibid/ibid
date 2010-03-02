@@ -13,11 +13,14 @@ except ImportError:
 
 from ibid.plugins import Processor, match, authorise
 
-help = {'eval': u'Evaluates Python, Perl and Lua code.'}
+features = {'eval': {
+    'description': u'Evaluates Python, Perl and Lua code.',
+    'categories': ('debug',),
+}}
 
 class Python(Processor):
-    u"""py <code>"""
-    feature = 'eval'
+    usage = u'py <code>'
+    feature = ('eval',)
 
     permission = u'eval'
 
@@ -36,8 +39,8 @@ class Python(Processor):
         event.addresponse(repr(result))
 
 class Perl(Processor):
-    u"""pl <code>"""
-    feature = 'eval'
+    usage = u'pl <code>'
+    feature = ('eval',)
 
     permission = u'eval'
 
@@ -52,8 +55,8 @@ class Perl(Processor):
         event.addresponse(repr(result))
 
 class Lua(Processor):
-    u"""lua <code>"""
-    feature = 'eval'
+    usage = u'lua <code>'
+    feature = ('eval',)
 
     permission = u'eval'
 

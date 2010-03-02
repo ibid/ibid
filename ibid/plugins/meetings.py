@@ -19,14 +19,17 @@ from ibid.plugins import Processor, match, authorise
 from ibid.source.http import templates
 from ibid.utils import format_date, plural
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.meetings')
 
 meetings = {}
 
-help['meeting'] = u'Take minutes of an IRC Meeting'
+features['meeting'] = {
+    'description': u'Take minutes of an IRC Meeting',
+    'categories': ('remember', 'monitor',),
+}
 class Meeting(Processor):
-    u"""
+    usage = u"""
     (start | end) meeting [about <title>]
     I am <True Name>
     topic <topic>
@@ -34,7 +37,7 @@ class Meeting(Processor):
     minutes so far
     meeting title is <title>
     """
-    feature = 'meeting'
+    feature = ('meeting',)
     permission = u'chairmeeting'
 
     formats = Option('formats', u'Formats to log to. '
@@ -241,7 +244,7 @@ class MeetingLogger(Processor):
     addressed = False
     processed = True
     priority = 1900
-    feature = 'meeting'
+    feature = ('meeting',)
 
     def process(self, event):
         if 'channel' in event and 'source' in event \
@@ -270,14 +273,17 @@ class MeetingLogger(Processor):
                     'time': event.time,
                 })
 
-help['poll'] = u'Does a quick poll of channel members'
+features['poll'] = {
+    'description': u'Does a quick poll of channel members',
+    'categories': ('decide',),
+}
 class Poll(Processor):
-    u"""
+    usage = u"""
     [secret] poll on <topic> [until <time>] vote <option> [or <option>]...
     vote (<id> | <option>) [on <topic>]
     end poll
     """
-    feature = 'poll'
+    feature = ('poll',)
     permission = u'chairmeeting'
 
     polls = {}

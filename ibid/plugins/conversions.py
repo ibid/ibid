@@ -13,16 +13,19 @@ from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output, human_join
 from ibid.utils.html import get_country_codes, get_html_parse_tree
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.conversions')
 
-help['base'] = u'Convert numbers between bases (radixes)'
+features['base'] = {
+    'description': u'Convert numbers between bases (radixes)',
+    'categories': ('calculate', 'convert',),
+}
 class BaseConvert(Processor):
-    u"""[convert] <number> [from base <number>] to base <number>
+    usage = u"""[convert] <number> [from base <number>] to base <number>
     [convert] ascii <text> to base <number>
     [convert] <sequence> from base <number> to ascii"""
 
-    feature = "base"
+    feature = ('base',)
 
     abbr_named_bases = {
             "hex": 16,
@@ -212,10 +215,13 @@ class BaseConvert(Processor):
         if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
-help['units'] = 'Converts values between various units.'
+features['units'] = {
+    'description': 'Converts values between various units.',
+    'categories': ('convert',),
+}
 class Units(Processor):
-    u"""convert [<value>] <unit> to <unit>"""
-    feature = 'units'
+    usage = u'convert [<value>] <unit> to <unit>'
+    feature = ('units',)
     priority = 10
 
     units = Option('units', 'Path to units executable', 'units')
@@ -288,12 +294,15 @@ class Units(Processor):
             else:
                 event.addresponse(u"I can't do that: %s", result)
 
-help['currency'] = u'Converts amounts between currencies.'
+features['currency'] = {
+    'description': u'Converts amounts between currencies.',
+    'categories': ('convert',),
+}
 class Currency(Processor):
-    u"""exchange <amount> <currency> for <currency>
+    usage = u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
 
-    feature = "currency"
+    feature = ('currency',)
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
@@ -415,12 +424,15 @@ class Currency(Processor):
 
 class UnassignedCharacter(Exception): pass
 
-help['unicode'] = """Look up characters in the Unicode database."""
+features['unicode'] = {
+    'description': u'Look up characters in the Unicode database.',
+    'categories': ('lookup', 'convert',),
+}
 class UnicodeData(Processor):
-    """U+<hex code>
+    usage = u"""U+<hex code>
     unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""
 
-    feature = 'unicode'
+    feature = ('unicode',)
 
     bidis = {'AL': u'right-to-left Arabic', 'AN': u'Arabic number',
              'B': u'paragraph separator', 'BN': u'boundary neutral',

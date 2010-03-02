@@ -16,6 +16,7 @@ install_requires=[
     'jinja',
     'pyopenssl',
     'pysqlite',
+    'PyStemmer',
     'python-dateutil',
     'SOAPpy',
     'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X

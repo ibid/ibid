@@ -11,15 +11,18 @@ from ibid.plugins import Processor, match, authorise, handler
 
 log = logging.getLogger('plugins.sources')
 
-help = {}
+features = {}
 
-
-help["actions"] = u"Provides commands for joining/parting channels on IRC and Jabber, and changing the bot's nick"
+features['actions'] = {
+    'description': u"Provides commands for joining/parting channels on IRC and "
+                   u"Jabber, and changing the bot's nick",
+    'categories': ('admin',),
+}
 
 class Actions(Processor):
-    u"""(join|part|leave) [<channel> [on <source>]]
+    usage = u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
-    feature = 'actions'
+    feature = ('actions',)
 
     permission = 'sources'
 
@@ -98,10 +101,13 @@ class NickServ(Processor):
         if self.is_nickserv(event):
             log.info(u'Authenticated with NickServ')
 
-help['saydo'] = u'Says or does stuff in a channel.'
+features['saydo'] = {
+    'description': u'Says or does stuff in a channel.',
+    'categories': ('admin', 'fun',),
+}
 class SayDo(Processor):
-    u"""(say|do) in <channel> [on <source>] <text>"""
-    feature = 'saydo'
+    usage = u'(say|do) in <channel> [on <source>] <text>'
+    feature = ('saydo',)
 
     permission = u'saydo'
 
@@ -111,10 +117,14 @@ class SayDo(Processor):
         event.addresponse(what, address=False, target=channel, source=source or event.source,
                 action=(action.lower() == u"do"))
 
-help['redirect'] = u'Redirects the response to a command to a different channel.'
+features['redirect'] = {
+    'description': u'Redirects the response to a command to a different '
+                   u'channel.',
+    'categories': ('admin', 'fun',),
+}
 class RedirectCommand(Processor):
-    u"""redirect [to] <channel> [on <source>] <command>"""
-    feature = 'redirect'
+    usage = u'redirect [to] <channel> [on <source>] <command>'
+    feature = ('redirect',)
 
     priority = -1200
     permission = u'saydo'
@@ -131,7 +141,7 @@ class RedirectCommand(Processor):
         event.message['clean'] = command
 
 class Redirect(Processor):
-    feature = 'redirect'
+    feature = ('redirect',)
 
     processed = True
     priority = 940

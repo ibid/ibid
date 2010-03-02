@@ -13,12 +13,15 @@ from ibid.utils import ibid_version
 
 log = logging.getLogger('plugins.admin')
 
-help = {}
+features = {}
 
-help['plugins'] = u'Lists, loads and unloads plugins.'
+features['plugins'] = {
+    'description': u'Lists, loads and unloads plugins.',
+    'categories': ('admin',),
+}
 class ListPLugins(Processor):
-    u"""list plugins"""
-    feature = 'plugins'
+    usage = u'list plugins'
+    feature = ('plugins',)
 
     @match(r'^lsmod|list\s+plugins$')
     def handler(self, event):
@@ -29,10 +32,13 @@ class ListPLugins(Processor):
 
         event.addresponse(u'Plugins: %s', human_join(sorted(plugins)) or u'none')
 
-help['core'] = u'Reloads core modules.'
+features['core'] = {
+    'description': u'Reloads core modules.',
+    'categories': ('admin',),
+}
 class ReloadCoreModules(Processor):
-    u"""reload (reloader|dispatcher|databases|auth)"""
-    feature = 'core'
+    usage = u'reload (reloader|dispatcher|databases|auth)'
+    feature = ('core',)
 
     priority = -5
     permission = u'core'
@@ -49,8 +55,8 @@ class ReloadCoreModules(Processor):
         event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", module)
 
 class LoadModules(Processor):
-    u"""(load|unload|reload) <plugin|processor>"""
-    feature = 'plugins'
+    usage = u'(load|unload|reload) <plugin|processor>'
+    feature = ('plugins',)
 
     permission = u'plugins'
 
@@ -67,10 +73,13 @@ class LoadModules(Processor):
         result = ibid.reloader.unload_processor(plugin)
         event.addresponse(result and u'%s unloaded' or u"Couldn't unload %s", plugin)
 
-help['die'] = u'Terminates the bot'
+features['die'] = {
+    'description': u'Terminates the bot',
+    'categories': ('admin',),
+}
 class Die(Processor):
-    u"""die"""
-    feature = 'die'
+    usage = u'die'
+    feature = ('die',)
 
     permission = u'admin'
 
@@ -79,11 +88,14 @@ class Die(Processor):
     def die(self, event):
         reactor.stop()
 
-help['sources'] = u'Controls and lists the configured sources.'
+features['sources'] = {
+    'description': u'Controls and lists the configured sources.',
+    'categories': ('admin',),
+}
 class Admin(Processor):
-    u"""(connect|disconnect) (to|from) <source>
+    usage = u"""(connect|disconnect) (to|from) <source>
     load <source> source"""
-    feature = 'sources'
+    feature = ('sources',)
 
     permission = u'sources'
 
@@ -116,8 +128,8 @@ class Admin(Processor):
             event.addresponse(u"Couldn't load %s source", source)
 
 class Info(Processor):
-    u"""(sources|list configured sources)"""
-    feature = 'sources'
+    usage = u'(sources|list configured sources)'
+    feature = ('sources',)
 
     @match(r'^sources$')
     def list(self, event):
@@ -131,10 +143,13 @@ class Info(Processor):
     def listall(self, event):
         event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
 
-help['version'] = u"Show the Ibid version currently running"
+features['version'] = {
+    'description': u'Show the Ibid version currently running',
+    'categories': ('admin',),
+}
 class Version(Processor):
-    u"""version"""
-    feature = 'version'
+    usage = u'version'
+    feature = ('version',)
 
     @match(r'^version$')
     def show_version(self, event):
@@ -143,12 +158,16 @@ class Version(Processor):
         else:
             event.addresponse(u"I don't know what version I am :-(")
 
-help['config'] = u'Gets and sets configuration settings, and rereads the configuration file.'
+features['config'] = {
+    'description': u'Gets and sets configuration settings, and rereads the '
+                   u'configuration file.',
+    'categories': ('admin',),
+}
 class Config(Processor):
-    u"""reread config
+    usage = u"""reread config
     set config <name> to <value>
     get config <name>"""
-    feature = 'config'
+    feature = ('config',)
 
     priority = -10
     permission = u'config'

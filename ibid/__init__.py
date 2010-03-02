@@ -83,6 +83,7 @@ sources = InsensitiveDict()
 config = {}
 dispatcher = None
 processors = []
+categories = {}
 reloader = None
 databases = {}
 auth = None

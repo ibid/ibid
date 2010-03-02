@@ -13,15 +13,18 @@ from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, json_webservice, human_join, \
                         is_url, url_to_bytestring
 
-help = {}
+features = {}
 
-help['dict'] = u'Defines words and checks spellings.'
+features['dict'] = {
+    'description': u'Defines words and checks spellings.',
+    'categories': ('lookup',),
+}
 class Dict(Processor):
-    u"""spell <word> [using <strategy>]
+    usage = u"""spell <word> [using <strategy>]
     define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
-    feature = 'dict'
+    feature = ('dict',)
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
@@ -130,12 +133,15 @@ default_referer = "http://ibid.omnia.za.net/"
 class UnknownLanguageException (Exception): pass
 class TranslationException (Exception): pass
 
-help['translate'] = u'''Translates a phrase using Google Translate.'''
+features['translate'] = {
+    'description': u'Translates a phrase using Google Translate.',
+    'categories': ('lookup', 'convert', 'web',),
+}
 class Translate(Processor):
-    u"""translate (<phrase>|<url>) [from <language>] [to <language>]
-        translation chain <phrase> [from <language>] [to <language>]"""
+    usage = u"""translate (<phrase>|<url>) [from <language>] [to <language>]
+    translation chain <phrase> [from <language>] [to <language>]"""
 
-    feature = 'translate'
+    feature = ('translate',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)

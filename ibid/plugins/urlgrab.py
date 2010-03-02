@@ -16,12 +16,13 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
 from ibid.utils import url_regex
 from ibid.utils.html import get_html_parse_tree
 
-help = {}
-
 log = logging.getLogger('plugins.urlgrab')
 
-help['url'] = u'Captures URLs seen in channel to database and/or to ' \
-              u'delicious/faves'
+features = {'urlgrab': {
+    'description': u'Captures URLs seen in channel to database and/or to '
+                   u'delicious/faves',
+    'categories': ('remember', 'web',),
+}}
 
 class URL(Base):
     __table__ = Table('urls', Base.metadata,

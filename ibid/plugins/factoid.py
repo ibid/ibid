@@ -18,9 +18,14 @@ from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
 
-help = {'factoid': u'Factoids are arbitrary pieces of information stored by a key. '
-                    u'Factoids beginning with a command such as "<action>" or "<reply>" will supress the "name verb value" output. '
-                    u"Search and replace functions won't use real regexs unless appended with the 'r' flag."}
+features = {'factoid': {
+    'description': u'Factoids are arbitrary pieces of information stored by a '
+                   u'key. Factoids beginning with a command such as "<action>" '
+                   u'or "<reply>" will supress the "name verb value" output. '
+                   u"Search and replace functions won't use real regexs unless "
+                   u"appended with the 'r' flag.",
+    'categories': ('lookup', 'remember',),
+}}
 
 log = logging.getLogger('plugins.factoid')
 
@@ -261,8 +266,8 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
             return []
 
 class Utils(Processor):
-    u"""literal <name> [( #<from number> | /<pattern>/[r] )]"""
-    feature = 'factoid'
+    usage = u'literal <name> [( #<from number> | /<pattern>/[r] )]'
+    feature = ('factoid',)
 
     @match(r'^literal\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     def literal(self, event, name, number, pattern, is_regex):
@@ -275,9 +280,9 @@ class Utils(Processor):
                   for index, (factoid, name, value) in enumerate(factoids)))
 
 class Forget(Processor):
-    u"""forget <name> [( #<number> | /<pattern>/[r] )]
+    usage = u"""forget <name> [( #<number> | /<pattern>/[r] )]
     <name> is the same as <other name>"""
-    feature = 'factoid'
+    feature = ('factoid',)
 
     priority = 10
     permission = u'factoid'
@@ -372,8 +377,8 @@ class Forget(Processor):
             event.addresponse(u"I don't know about %s", source)
 
 class Search(Processor):
-    u"""search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]"""
-    feature = 'factoid'
+    usage = u'search [for] [<limit>] [(facts|values) [containing]] (<pattern>|/<pattern>/[r]) [from <start>]'
+    feature = ('factoid',)
 
     limit = IntOption('search_limit', u'Maximum number of results to return', 30)
     default = IntOption('search_default', u'Default number of results to return', 10)
@@ -447,8 +452,8 @@ def _interpolate(message, event):
     return message
 
 class Get(Processor, RPC):
-    u"""<factoid> [( #<number> | /<pattern>/[r] )]"""
-    feature = 'factoid'
+    usage = u'<factoid> [( #<number> | /<pattern>/[r] )]'
+    feature = ('factoid',)
 
     priority = 200
 
@@ -498,11 +503,9 @@ class Get(Processor, RPC):
             return reply
 
 class Set(Processor):
-    u"""
-    <name> (<verb>|=<verb>=) [also] <value>
-    last set factoid
-    """
-    feature = 'factoid'
+    usage = u"""<name> (<verb>|=<verb>=) [also] <value>
+    last set factoid"""
+    feature = ('factoid',)
 
     interrogatives = ListOption('interrogatives', 'Question words to strip', default_interrogatives)
     verbs = ListOption('verbs', 'Verbs that split name from value', default_verbs)
@@ -578,9 +581,9 @@ class Set(Processor):
             event.addresponse(u'It was: %s', self.last_set_factoid)
 
 class Modify(Processor):
-    u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
+    usage = u"""<name> [( #<number> | /<pattern>/[r] )] += <suffix>
     <name> [( #<number> | /<pattern>/[r] )] ~= ( s/<regex>/<replacement>/[g][i][r] | y/<source>/<dest>/ )"""
-    feature = 'factoid'
+    feature = ('factoid',)
 
     permission = u'factoid'
     permissions = (u'factoidadmin',)

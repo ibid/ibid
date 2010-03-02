@@ -12,12 +12,15 @@ from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join
 
-help = {}
+features = {}
 
-help['nickometer'] = u'Calculates how lame a nick is.'
+features['nickometer'] = {
+    'description': u'Calculates how lame a nick is.',
+    'categories': ('fun', 'calculate',),
+}
 class Nickometer(Processor):
-    u"""nickometer [<nick>] [with reasons]"""
-    feature = 'nickometer'
+    usage = u'nickometer [<nick>] [with reasons]'
+    feature = ('nickometer',)
 
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
     def handle_nickometer(self, event, nick, wreasons):
@@ -36,10 +39,13 @@ class Nickometer(Processor):
                 reasons = ((u'A good, traditional nick', 0),)
             event.addresponse(u'Because: %s', u', '.join(['%s (%s)' % reason for reason in reasons]))
 
-help['choose'] = u'Choose one of the given options.'
+features['choose'] = {
+    'description': u'Choose one of the given options.',
+    'categories': ('fun', 'decide',),
+}
 class Choose(Processor):
-    u"""choose <choice> or <choice>..."""
-    feature = 'choose'
+    usage = u'choose <choice> or <choice>...'
+    feature = ('choose',)
 
     choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
 
@@ -47,10 +53,13 @@ class Choose(Processor):
     def choose(self, event, choices):
         event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
 
-help['coffee'] = u"Times coffee brewing and reserves cups for people"
+features['coffee'] = {
+    'description': u'Times coffee brewing and reserves cups for people',
+    'categories': ('fun', 'monitor',),
+}
 class Coffee(Processor):
-    u"""coffee (on|please)"""
-    feature = 'coffee'
+    usage = u'coffee (on|please)'
+    feature = ('coffee',)
 
     pots = {}
 
@@ -98,13 +107,14 @@ class Coffee(Processor):
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
 
-help['insult'] = u"Slings verbal abuse at someone"
+features['insult'] = {
+    'description': u'Slings verbal abuse at someone',
+    'categories': ('fun',),
+}
 class Insult(Processor):
-    u"""
-    (flame | insult) <person>
-    (swear | cuss | explete) [at <person>]
-    """
-    feature = 'insult'
+    usage = u"""(flame | insult) <person>
+    (swear | cuss | explete) [at <person>]"""
+    feature = ('insult',)
 
     adjectives = ListOption('adjectives', 'List of adjectives', (
         u'acidic', u'antique', u'artless', u'base-court', u'bat-fowling',

@@ -14,9 +14,10 @@ from ibid.compat import json
 from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
 
-help = {}
-
-help['memory'] = u'Debugging module that keeps track of memory usage'
+features = {'memory': {
+    'description': u'Debugging module that keeps track of memory usage',
+    'categories': ('debug',),
+}}
 
 def get_memusage():
     status = file('/proc/%i/status' % os.getpid(), 'r').readlines()
@@ -25,7 +26,7 @@ def get_memusage():
 
 class MemoryLog(Processor):
 
-    feature = 'memory'
+    feature = ('memory',)
     autoload = False
 
     mem_filename = Option('mem_filename', 'Memory log filename', 'logs/memory.log')
@@ -96,9 +97,9 @@ class MemoryLog(Processor):
         self.obj_file.flush()
 
 class MemoryInfo(Processor):
-    u"memory usage"
+    usage = u'memory usage'
 
-    feature = 'memory'
+    feature = ('memory',)
 
     @match('^memory\s+usage$')
     def memory_usage(self, event):

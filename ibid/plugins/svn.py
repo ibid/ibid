@@ -40,7 +40,10 @@ from ibid.plugins import Processor, match, RPC, authorise
 from ibid.config import DictOption, FloatOption, Option, BoolOption
 from ibid.utils import ago, format_date, human_join
 
-help = {'svn': u'Retrieves commit logs from a Subversion repository.'}
+features = {'svn': {
+    'description': u'Retrieves commit logs from a Subversion repository.',
+    'categories': ('development', 'lookup',),
+}}
 
 HEAD_REVISION = object()
 
@@ -387,10 +390,10 @@ class CancelAfterTimeout(object):
         pass
 
 class Subversion(Processor, RPC):
-    u"""(last commit|commit <revno>) [to <repo>] [full]
+    usage = u"""(last commit|commit <revno>) [to <repo>] [full]
     (svnrepos|svnrepositories)
     """
-    feature = 'svn'
+    feature = ('svn',)
     autoload = False
 
     permission = u'svn'

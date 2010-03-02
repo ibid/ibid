@@ -27,11 +27,15 @@ Dependencies:
   * pyfiglet (http://sourceforge.net/projects/pyfiglet/)
 """
 
-help = { 'draw'  : u'Retrieve images from the web and render them in ascii-art.',
-         'figlet': u'Render text in ascii-art using figlet.' }
+features = {}
+
+features['draw-aa'] = {
+    'description': u'Retrieve images from the web and render them in ASCII-art.',
+    'categories': ('fun', 'web',),
+}
 class DrawImage(Processor):
-    u"""draw <url> [in colour] [width <width>] [height <height>]"""
-    feature = 'draw'
+    usage = u'draw <url> [in colour] [width <width>] [height <height>]'
+    feature = ('draw-aa',)
 
     max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
     def_height = IntOption('def_height', 'Default height for libaa output', 10)
@@ -142,10 +146,14 @@ class DrawImage(Processor):
         else:
             event.addresponse(u"Sorry, that doesn't look like an image")
 
+features['figlet'] = {
+    'description': u'Render text in ASCII-art using figlet.',
+    'categories': ('fun',),
+}
 class WriteFiglet(Processor):
-    u"""figlet <text> [in <font>]
+    usage = u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
-    feature = 'figlet'
+    feature = ('figlet',)
 
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
     fonts_ = Option('fonts', 'Directory or Zip file containing figlet fonts',

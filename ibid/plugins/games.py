@@ -12,20 +12,23 @@ from ibid.config import IntOption, BoolOption, FloatOption, ListOption, DictOpti
 from ibid.plugins import Processor, match, handler
 from ibid.utils import format_date, human_join, plural
 
-help = {}
+features = {}
 log = logging.getLogger('plugins.games')
 
 duels = {}
 
-help['duel'] = u"Duel at dawn, between channel members"
+features['duel'] = {
+    'description': u'Duel at dawn, between channel members',
+    'categories': ('fun', 'game',),
+}
 class DuelInitiate(Processor):
-    u"""
+    usage = u"""
     I challenge <user> to a duel [over <something>]
     I demand satisfaction from <user> [over <something>]
     I throw the gauntlet down at <user>'s feet [over <something>]
     """
 
-    feature = 'duel'
+    feature = ('duel',)
 
     accept_timeout = FloatOption('accept_timeout', 'How long do we wait for acceptance?', 60.0)
     start_delay = IntOption('start_delay', 'Time between acceptance and start of duel (rounded down to the highest minute)', 30)
@@ -213,12 +216,10 @@ class DuelInitiate(Processor):
         }, address=False)
 
 class DuelDraw(Processor):
-    u"""
-    draw [my <weapon>]
-    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch
-    """
+    usage = u"""draw [my <weapon>]
+    bam|pew|bang|kapow|pewpew|holyhandgrenadeofantioch"""
 
-    feature = 'duel'
+    feature = ('duel',)
 
     # Parameters for Processor:
     event_types = (u'message', u'action')
@@ -401,7 +402,7 @@ class DuelDraw(Processor):
             )), duel.names[shooter], address=False)
 
 class DuelFlee(Processor):
-    feature = 'duel'
+    feature = ('duel',)
     addressed = False
     event_types = (u'state',)
 
@@ -445,20 +446,22 @@ class DuelFlee(Processor):
 
 werewolf_games = []
 
-help['werewolf'] = (u'Play the werewolf game. '
-    u'Channel becomes a village containing a werewolf, seer and villagers. '
-    u'Every night, the werewolf can kill a villager, and the seer can test '
-    u'a villager for werewolf symptoms. '
-    u'Villagers then vote to lynch a wolf during the day.')
+features['werewolf'] = {
+    'description': u'Play the werewolf game. Channel becomes a village '
+                   u'containing a werewolf, seer and villagers. Every night, '
+                   u'the werewolf can kill a villager, and the seer can test '
+                   u'a villager for werewolf symptoms. Villagers then vote to '
+                   u'lynch a wolf during the day.',
+    'categories': ('fun', 'game',),
+}
 class WerewolfGame(Processor):
-    u"""
+    usage = u"""
     start a game of werewolf
     join
     ( kill | see | eat ) <villager>
     vote for <villager>
     """
-
-    feature = 'werewolf'
+    feature = ('werewolf',)
     state = None
 
     player_limit = IntOption('min_players', 'The minimum number of players', 5)
@@ -845,7 +848,7 @@ class WerewolfGame(Processor):
         return self.state.__name__
 
 class WerewolfState(Processor):
-    feature = 'werewolf'
+    feature = ('werewolf',)
     event_types = (u'state',)
 
     @handler

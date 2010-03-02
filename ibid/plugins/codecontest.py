@@ -13,7 +13,15 @@ from ibid.plugins import Processor, match, auth_responses
 from ibid.utils import cacheable_download
 from ibid.utils.html import get_html_parse_tree
 
-help = {u'usaco': u'Query USACO sections, divisions and more. Since this info is private, users are required to provide their USACO password when linking their USACO account to their ibid account and only linked accounts can be queried. Your password is used only to confirm that the account is yours and is discarded immediately.'}
+features = {'usaco': {
+    'description': u'Query USACO sections, divisions and more. Since this info '
+                   u'is private, users are required to provide their USACO '
+                   u'password when linking their USACO account to their ibid '
+                   u'account and only linked accounts can be queried. Your '
+                   u'password is used only to confirm that the account is '
+                   u'yours and is discarded immediately.',
+    'categories': ('monitor',),
+}}
 
 class UsacoException(Exception):
     def __init__(self, msg):
@@ -23,14 +31,14 @@ class UsacoException(Exception):
         return unicode(self.msg)
 
 class Usaco(Processor):
-    """usaco <section|division> for <user>
+    usage = u"""usaco <section|division> for <user>
     usaco <contest> results [for <name|user>]
     (i am|<user> is) <usaco_username> on usaco [password <usaco_password>]"""
 
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
-    feature = 'usaco'
+    feature = ('usaco',)
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20

@@ -16,7 +16,10 @@ from ibid.plugins import Processor, match, authorise, periodic
 from ibid.utils import cacheable_download, human_join
 from ibid.utils.html import get_html_parse_tree
 
-help = {'feeds': u'Displays articles from RSS and Atom feeds'}
+features = {'feeds': {
+    'description': u'Displays articles from RSS and Atom feeds',
+    'categories': ('lookup', 'web',),
+}}
 
 log = logging.getLogger('plugins.feeds')
 
@@ -93,14 +96,14 @@ class Feed(Base):
             return self.name
 
 class Manage(Processor):
-    u"""
+    usage = u"""
     add feed <url> as <name>
     remove <name> feed
     list feeds
     poll <name> feed notify <channel> on <source>
     stop polling <name> feed
     """
-    feature = 'feeds'
+    feature = ('feeds',)
 
     permission = u'feeds'
 
@@ -203,9 +206,9 @@ class Manage(Processor):
             event.addresponse(True)
 
 class Retrieve(Processor):
-    u"""latest [ <count> ] articles from <name> [ starting at <number> ]
+    usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
-    feature = 'feeds'
+    feature = ('feeds',)
 
     interval = IntOption('interval', 'Feed Poll interval (in seconds)', 300)
 

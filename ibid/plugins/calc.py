@@ -27,14 +27,17 @@ except ImportError:
     class FD_ExpressionCodeGenerator(pycodegen.ExpressionCodeGenerator):
         futures = ('division',)
 
-help = {}
+features = {}
 log = logging.getLogger('calc')
 
-help['bc'] = u'Calculate mathematical expressions using bc'
+features['bc'] = {
+    'description': u'Calculate mathematical expressions using bc',
+    'categories': ('calculate',),
+}
 class BC(Processor):
-    u"""bc <expression>"""
+    usage = u'bc <expression>'
 
-    feature = 'bc'
+    feature = ('bc',)
 
     bc = Option('bc', 'Path to bc executable', 'bc')
     bc_timeout = FloatOption('bc_timeout', 'Maximum BC execution time (sec)', 2.0)
@@ -78,7 +81,11 @@ class BC(Processor):
             error = unicode_output(error.strip())
             raise Exception("BC Error: %s" % error)
 
-help['calc'] = u'Returns the anwser to mathematical expressions. Uses Python syntax and semantics (i.e. radians)'
+features['calc'] = {
+    'description': u'Returns the anwser to mathematical expressions. '
+                   u'Uses Python syntax and semantics (i.e. radians)',
+    'categories': ('calculate',),
+}
 class LimitException(Exception):
     pass
 
@@ -133,8 +140,8 @@ class PowSubstitutionWalker(object):
         raise AccessException
 
 class Calc(Processor):
-    u"""[calc] <expression>"""
-    feature = 'calc'
+    usage = u'<expression>'
+    feature = ('calc',)
 
     priority = 500
 
@@ -191,16 +198,21 @@ class Calc(Processor):
 
 
 class ExplicitCalc(Calc):
+    usage = u'calc <expression>'
     priority = 0
 
     @match(r'^calc(?:ulate)?\s+(.+)$')
     def calculate(self, event, expression):
         super(ExplicitCalc, self).calculate(event, expression)
 
-help['random'] = u'Generates random numbers.'
+
+features['random'] = {
+    'description': u'Generates random numbers.',
+    'categories': ('calculate', 'fun',),
+}
 class Random(Processor):
-    u"""random [ <max> | <min> <max> ]"""
-    feature = 'random'
+    usage = u'random [ <max> | <min> <max> ]'
+    feature = ('random',)
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):

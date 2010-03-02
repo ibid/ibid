@@ -9,12 +9,14 @@ from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import human_join
 
-help = {}
-help['gameservers'] = u'Lists the users on Game servers'
+features = {'gameservers': {
+    'description': u'Lists the users on Game servers',
+    'categories': ('lookup',),
+}}
 
 class Bnet(Processor):
-    u'dota players | who is playing dota'
-    feature = 'gameservers'
+    usage = u'dota players | who is playing dota'
+    feature = ('gameservers',)
     autoload = False
 
     bnet_host = Option('bnet_host', 'Bnet server hostname / IP', '127.0.0.1')
@@ -51,8 +53,8 @@ class Bnet(Processor):
             event.addresponse(u'Nobody. Everyone must have a lives...')
 
 class CounterStrike(Processor):
-    u'cs players | who is playing cs'
-    feature = 'gameservers'
+    usage = u'cs players | who is playing cs'
+    feature = ('gameservers',)
     autoload = False
 
     cs_host = Option('cs_host', 'CS server hostname / IP', '127.0.0.1')

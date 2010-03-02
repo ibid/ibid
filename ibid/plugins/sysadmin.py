@@ -9,12 +9,15 @@ from ibid.plugins import Processor, match
 from ibid.config import Option
 from ibid.utils import file_in_path, unicode_output, human_join, cacheable_download
 
-help = {}
+features = {}
 
-help['aptitude'] = u'Searches for packages'
+features['aptitude'] = {
+    'description': u'Searches for packages',
+    'categories': ('sysadmin', 'lookup',),
+}
 class Aptitude(Processor):
-    u"""apt (search|show) <term>"""
-    feature = 'aptitude'
+    usage = u'apt (search|show) <term>'
+    feature = ('aptitude',)
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
 
@@ -106,10 +109,13 @@ class Aptitude(Processor):
                 error = error[3:]
             event.addresponse(u"Couldn't find package: %s", error)
 
-help['apt-file'] = u'Searches for packages containing the specified file'
+features['apt-file'] = {
+    'description': u'Searches for packages containing the specified file',
+    'categories': ('sysadmin', 'lookup',),
+}
 class AptFile(Processor):
-    u"""apt-file [search] <term>"""
-    feature = 'apt-file'
+    usage = u'apt-file [search] <term>'
+    feature = ('apt-file',)
 
     aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
 
@@ -142,10 +148,13 @@ class AptFile(Processor):
                 event.addresponse(u'Search error')
             raise Exception("apt-file: %s" % error)
 
-help['man'] = u'Retrieves information from manpages.'
+features['man'] = {
+    'description': u'Retrieves information from manpages.',
+    'categories': ('sysadmin', 'lookup',),
+}
 class Man(Processor):
-    u"""man [<section>] <page>"""
-    feature = 'man'
+    usage = u'man [<section>] <page>'
+    feature = ('man',)
 
     man = Option('man', 'Path of the man executable', 'man')
 
@@ -182,10 +191,13 @@ class Man(Processor):
             if index:
                 event.addresponse(output[index+1].strip())
 
-help ['mac'] = u'Finds the organization owning the specific MAC address.'
+features['mac'] = {
+    'description': u'Finds the organization owning the specific MAC address.',
+    'categories': ('sysadmin', 'lookup',),
+}
 class Mac(Processor):
-    u"""mac <address>"""
-    feature = 'mac'
+    usage = u'mac <address>'
+    feature = ('mac',)
 
     @match(r'^((?:mac|oui|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}(?(1)[:-]?|:))){2,5}[0-9a-f]{2})$')
     def lookup_mac(self, event, _, mac):
