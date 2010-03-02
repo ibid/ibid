@@ -98,6 +98,7 @@
          Can either be a single unicode string or a dict of named
          substitutions.
       :param processed: Set :attr:`processed` ``True`` if ``True``.
+         Default: ``True``.
       :param source: The source name to direct this reply to.
          Default: :attr:`source`.
       :param target: The user to direct this reply to.
