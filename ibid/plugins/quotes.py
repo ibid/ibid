@@ -167,7 +167,7 @@ class FMyLife(Processor):
 
 features['tfln'] = {
     'description': u'Looks up quotes from textsfromlastnight.com',
-    'ategories': ('fun', 'lookup', 'web',),
+    'categories': ('fun', 'lookup', 'web',),
 }
 class TextsFromLastNight(Processor):
     usage = u"""tfln [(random|<number>)]

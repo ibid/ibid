@@ -29,7 +29,7 @@ __path__ = pluginPackagePaths(__name__) + __path__
 
 for cat, desc, weight in (
             ('account', u'bot accounts and permissions', None),
-            ('admin', u'adminstrative functions', None),
+            ('admin', u'administrative functions', None),
             ('calculate', u'calculations', 0),
             ('convert', u'conversions', 0),
             ('debug', u'debugging me', None),
