@@ -35,7 +35,7 @@ if argv[1:] == ['install', '--no-dependencies']:
 
 setup(
     name='Ibid',
-    version='0.0',
+    version='0.1',
     description='Multi-protocol general purpose chat bot',
     url='http://ibid.omnia.za.net/',
     keywords='chat bot irc jabber twisted messaging',
