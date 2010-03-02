@@ -22,18 +22,24 @@ To do anything, the plugin must contain classes extending
    The Processor doesn't need to be instantiated, Ibid discovers all
    Processors defined in a plugin at load time.
 
-   The doc-string of the Processor is the usage documentation for the
-   Processor.
+   .. attribute:: usage
+
+      String: each line should be a BNF description of a function in the
+      Processor.
+      Leading and trailing whitespace in each line is ignored, as are
+      empty lines.
+
+      Default: ``None``
 
    .. attribute:: feature
 
-      String: The name of the feature that this Processor is part of.
+      List: Strings naming each feature that this Processor is part of.
       Used in locating "usage" strings for on-line documentation.
 
-      The "help" string is located inside a module-level `help` dict
-      mapping feature names to help strings.
+      The "description" string located inside a module-level `features`
+      dict maps feature names to help strings.
 
-      Default: ``None``
+      Default: empty
 
    .. attribute:: permission
 
