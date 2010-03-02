@@ -41,7 +41,10 @@ class Help(Processor):
         categories = {}
         for k, v in ibid.categories.iteritems():
             v = copy(v)
-            v.update({'features': set(),})
+            v.update({
+                'name': k,
+                'features': set(),
+            })
             categories[k] = v
 
         features = {}
@@ -50,6 +53,7 @@ class Help(Processor):
             for feature in getattr(processor, 'feature', []):
                 if feature not in features:
                     features[feature] = {
+                            'name': feature,
                             'description': None,
                             'categories': set(),
                             'processors': set(),
@@ -138,7 +142,8 @@ class Help(Processor):
         elif len(results) > 1:
             event.addresponse(
                 u"Please be more specific. I don't know if you mean %s",
-                human_join(results, conjunction=u'or'))
+                human_join((features[result]['name'] for result in results),
+                           conjunction=u'or'))
         else:
             event.addresponse(
                 u"I'm afraid I don't know what you are asking about. "
@@ -163,8 +168,9 @@ class Help(Processor):
 
         if len(termset) == 1:
             term = list(termset)[0]
-            if term in categories:
-                self._describe_category(event, categories[term])
+            exact = [c for c in categories.itervalues() if c['name'] == term]
+            if exact:
+                self._describe_category(event, exact[0])
                 return
 
         results = []
@@ -190,7 +196,8 @@ class Help(Processor):
                                conjunction=u'or'))
             return
 
-        event.addresponse(u"I'm afraid I don't know what you are asking about")
+        event.addresponse(u"I'm afraid I don't know what you are asking about"
+                          u'Ask "what can you do" to browse my features')
 
     @match(r'^(?:help|usage|modinfo)\s+(\S+)$')
     def quick_help(self, event, terms):
@@ -198,11 +205,13 @@ class Help(Processor):
         terms = frozenset(terms.lower().split())
         if len(terms) == 1:
             term = list(terms)[0]
-            if term in categories:
-                self._describe_category(event, categories[term])
+            exact = [c for c in categories.itervalues() if c['name'] == term]
+            if exact:
+                self._describe_category(event, exact[0])
                 return
-            if term in features:
-                self._describe_feature(event, features[term])
+            exact = [f for f in features.itervalues() if f['name'] == term]
+            if exact:
+                self._describe_feature(event, exact[0])
                 return
 
         self._usage_search(event, terms, features)
@@ -212,8 +221,9 @@ class Help(Processor):
         categories, features = self._get_features()
 
         feature = feature.lower()
-        if feature in features:
-            self._describe_feature(event, features[feature])
+        exact = [f for f in features.itervalues() if f['name'] == feature]
+        if exact:
+            self._describe_feature(event, exact[0])
         else:
             self._usage_search(event, frozenset(feature.split()), features)
 
