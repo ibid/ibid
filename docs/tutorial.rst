@@ -29,23 +29,50 @@ It looks like this::
    Query: hello
    Response: Huh?
    Query: help
-   Response: Use "features" to get a list of available features. "help <feature>" will give a description of the feature, and "usage <feature>" will describe how to use it.
-   Query: features
-   Response: Features: config, core, die, help and plugins
+   Response: I can help you with: looking things up.
+   Ask me "help me with ..." for more details.
+   Query: help me with looking things up
+   Response: I use the following features for looking things up: help
+   Ask me "how do I use ..." for more details.
 
 To exit, press :kbd:`Control-C` or :kbd:`Control-D`.
 
 As you can see, there is almost nothing loaded.
 It can't even respond to "hello", the code for that is in the
 *factoid* module.
-If you want to load the *factoid* module, you can either say "load
-factoid" or you can tell ``ibid-plugin`` to load it on startup, by
+If you want to load the *factoid* module, 
+you can tell ``ibid-plugin`` to load it on startup, by
 adding it as a parameter::
 
    user@box ~/botdir $ ibid-plugin factoid
    ... Messages about loading plugins
    Query: hi
    Response: good morning
+
+Well, actually there are some administrative functions, which don't show
+up in the overall help.
+You could have asked the bot to "load factoid"::
+
+   Query: help admin
+   Response: I use the following features for administrative functions:
+   config, core, die, help, plugins, sources and version
+   Ask me "how do I use ..." for more details.
+   Query: how do I use plugins
+   Response: Lists, loads and unloads plugins. You can use it like this:
+     list plugins
+     (load|unload|reload) <plugin|processor>
+   Query: load factoid
+   DEBUG:core.reloader:Loading Processor: factoid.Forget
+   DEBUG:core.reloader:Loading Processor: factoid.Get
+   DEBUG:core.reloader:Loading Processor: factoid.Modify
+   DEBUG:core.reloader:Loading Processor: factoid.Search
+   DEBUG:core.reloader:Loading Processor: factoid.Set
+   DEBUG:core.reloader:Loading Processor: factoid.StaticFactoid
+   DEBUG:core.reloader:Loading Processor: factoid.Utils
+   DEBUG:core.reloader:Loaded factoid plugin
+   Response: factoid reloaded
+   Query: hi
+   Response: howsit
 
 Try talking to it too fast, it'll start ignoring you.
 This makes sense for a real chat channel, but not debugging.
@@ -201,22 +228,26 @@ items, use the dict syntax::
 Documentation
 ^^^^^^^^^^^^^
 
-At the moment you'll see that your plugin doesn't appear in *features*,
-you can fix that with a little more code::
+At the moment you'll see that your plugin doesn't appear in the help
+system.
+You can fix that with a little more code::
 
    from random import randint
 
    from ibid.plugins import Processor, match
    from ibid.utils import human_join
 
-   help = {}
+   features = {}
 
-   help['dice'] = u'Throws multiple dice'
+   features['dice'] = {
+       'description': u'Throws multiple dice',
+       'categories': ('fun',),
+   }
 
    class Dice(Processor):
-       u'roll <number> dice'
+       usage = u'roll <number> dice'
 
-       feature = 'dice'
+       feature = ('dice',)
 
        @match(r'^roll\s+(\d+)\s+dic?e$')
        def multithrow(self, event, number):
@@ -224,10 +255,18 @@ you can fix that with a little more code::
            throws = [unicode(randint(1, 6)) for i in range(number)]
            event.addresponse(u'I threw %s', human_join(throws))
 
-The module-level ``help`` dict specifies descriptions for features
-(*help* command) and the doc-string of the processor gives the
-*usage*.
-"reload tutorial" and you should see "dice" appear in *features*.
+The module-level ``features`` dict specifies descriptions for features
+(given with the usage description) and categories to place the feature
+in.
+You can find a list of available categories in :attr:`ibid.categories`
+and if necessary add a category to it from your module.
+
+The Processor can be linked to a feature by specifying it in the
+`feature` attribute.
+Usage for the Processor's functions (in BNF) goes in a `usage`
+attribute.
+"reload tutorial" and you should see "dice" appear in the features for
+"fun stuff".
 
 Configuration
 -------------
