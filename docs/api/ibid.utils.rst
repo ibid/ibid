@@ -110,6 +110,23 @@ String Functions
 
    Returns the filename to the resource.
 
+URL Functions
+-------------
+
+.. function:: url_regex()
+
+   Returns a regular expression string (not a :class:`re.RegexObject`)
+   for matching a URL.
+
+.. function:: is_url(url)
+
+   Is *url* a valid URL? (according to :func:`url_regex`)
+
+.. function:: url_to_bytestring(url)
+
+   Convert a unicode *url* to punycode host and UTF-8 path.
+   This allows IDN URLs to be opened with :mod:`urllib`.
+
 Web Service Functions
 ---------------------
 
@@ -145,11 +162,6 @@ Web Service Functions
 .. exception:: JSONException(Exception)
 
    Raised by :func:`json_webservice` if invalid JSON is returned.
-
-.. function:: url_to_bytestring(url)
-
-   Convert a unicode *url* to punycode host and UTF-8 path.
-   This allows IDN URLs to be opened with :mod:`urllib`.
 
 :mod:`ibid.utils.html` -- HTML Parsing
 --------------------------------------
