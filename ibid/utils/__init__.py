@@ -200,7 +200,7 @@ def url_to_bytestring(url):
 
 _url_regex = None
 
-def url_regex ():
+def url_regex():
     global _url_regex
     if _url_regex is not None:
         return _url_regex
@@ -223,7 +223,7 @@ def url_regex ():
     return _url_regex
 
 def is_url(url):
-    return re.match('^' + url_regex() + '$', url, re.I)
+    return re.match('^' + url_regex() + '$', url, re.I) is not None
 
 def json_webservice(url, params={}, headers={}):
     "Request data from a JSON webservice, and deserialise"
