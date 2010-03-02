@@ -26,7 +26,7 @@ features = {'help': {
 class Help(Processor):
     usage = u"""
     what can you do|help
-    what can you <verb>
+    help me with <category>
     how do I use <feature>
     help <(category|feature)>
     """
@@ -95,7 +95,8 @@ class Help(Processor):
 
     def _describe_category(self, event, category):
         """Respond with the help information for a category"""
-        event.addresponse(u'I can %(description)s with: %(features)s\n'
+        event.addresponse(u'I use the following features for %(description)s: '
+                          u'%(features)s\n'
                           u'Ask me "how do I use ..." for more details.',
             {
                 'description': category['description'].lower(),
@@ -145,38 +146,31 @@ class Help(Processor):
         categories = filter(lambda c: c['weight'] is not None,
                             categories.itervalues())
         categories = sorted(categories, key=lambda c: c['weight'])
-        event.addresponse(
-            u'I can: %s\nAsk me "what ... can you ..." for more details',
+        event.addresponse(u'I can help you with: %s.\n'
+                          u'Ask me "help me with ..." for more details.',
             human_join(c['description'].lower() for c in categories),
             conflate=False)
 
-    @match(r'^what\s+(.+\s+)?can\s+you\s+(.+)$')
-    def describe_category(self, event, terms1, terms2):
-        # Don't stomp on intro
-        if terms1 is None and terms2.lower() == u'do':
-            return
-
+    @match(r'^help\s+(?:me\s+)?with\s+(.+)$')
+    def describe_category(self, event, terms):
         categories, features = self._get_features()
-        if terms1 is None:
-            terms1 = u''
-        terms = frozenset(self.stemmer.stemWord(term)
-                for term in terms1.lower().split() + terms2.lower().split())
+        termset = frozenset(self.stemmer.stemWord(term)
+                            for term in terms.lower().split())
 
-        if len(terms) == 1:
-            term = list(terms)[0]
+        if len(termset) == 1:
+            term = list(termset)[0]
             if term in categories:
                 self._describe_category(event, categories[term])
                 return
 
         results = []
         for name, cat in categories.iteritems():
-            if terms.issubset(cat['description_keywords']):
+            if termset.issubset(cat['description_keywords']):
                 results.append(name)
 
         if len(results) == 0:
             for name, cat in categories.iteritems():
-                if (terms1.lower() in cat['description'].lower()
-                        and terms2.lower() in cat['description'].lower()):
+                if terms.lower() in cat['description'].lower():
                     results.append(name)
 
         results.sort()
@@ -194,7 +188,7 @@ class Help(Processor):
 
         event.addresponse(u"I'm afraid I don't know what you are asking about")
 
-    @match(r'^(?:help|usage|modinfo)\s+(.+)$')
+    @match(r'^(?:help|usage|modinfo)\s+(\S+)$')
     def quick_help(self, event, terms):
         categories, features = self._get_features()
         terms = frozenset(terms.lower().split())

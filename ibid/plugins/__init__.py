@@ -28,22 +28,22 @@ from ibid.compat import json
 __path__ = pluginPackagePaths(__name__) + __path__
 
 for cat, desc, weight in (
-            ('account', u'Manage bot accounts and permissions', None),
-            ('admin', u'Have adminstrative functions', None),
-            ('calculate', u'Perform calculations', 0),
-            ('convert', u'Perform conversions', 0),
-            ('debug', u'Help you debug me', None),
-            ('decide', u'Make decisions', -2),
-            ('development', u'Monitor software development', 10),
-            ('fun', u'Do silly fun stuff', 0),
-            ('game', u'Play games', -2),
-            ('lookup', u'Look things up', -10),
-            ('monitor', u'Keep an eye on things', -2),
-            ('remember', u'Remember things', -5),
-            ('web', u'Browse the Internet', 0),
-            ('message', u'Deliver messages', -5),
-            ('south africa', u'Do South African stuff', 10),
-            ('sysadmin', u'Help you with System Administration', 5),
+            ('account', u'bot accounts and permissions', None),
+            ('admin', u'adminstrative functions', None),
+            ('calculate', u'calculations', 0),
+            ('convert', u'conversions', 0),
+            ('debug', u'debugging me', None),
+            ('decide', u'decisions', -2),
+            ('development', u'software development', 10),
+            ('fun', u'silly fun stuff', 0),
+            ('game', u'games', -2),
+            ('lookup', u'looking things up', -10),
+            ('monitor', u'monitoring things', -2),
+            ('remember', u'remembering things', -5),
+            ('web', u'browsing the Internet', 0),
+            ('message', u'delivering messages', -5),
+            ('south africa', u'South African stuff', 10),
+            ('sysadmin', u'System Administration', 5),
         ):
     if cat not in ibid.categories:
         ibid.categories[cat] = {
