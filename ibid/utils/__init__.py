@@ -277,4 +277,11 @@ def get_process_output(command, input=None):
     code = process.wait()
     return output, error, code
 
+def indefinite_article(noun_phrase):
+    if noun_phrase[0] in 'aeiou' or (noun_phrase[0] == 'y' 
+                                     and noun_phrase[1] not in 'aeiou'):
+        return 'an'
+    else:
+        return 'a'
+
 # vi: set et sta sw=4 ts=4:

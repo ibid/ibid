@@ -8,9 +8,9 @@ import re
 from nickometer import nickometer
 
 import ibid
-from ibid.plugins import Processor, match
+from ibid.plugins import Processor, match, handler
 from ibid.config import IntOption, ListOption
-from ibid.utils import human_join
+from ibid.utils import human_join, indefinite_article
 
 features = {}
 
@@ -246,5 +246,74 @@ class Insult(Processor):
             swearage.append(choice(self.swearnouns))
 
         event.addresponse(u' '.join(swearage) + u'!', address=False)
+
+features['exchange'] = {
+    'description': u'Exchanges objects with people',
+    'categories': ('fun',),
+}
+class Exchange(Processor):
+    usage = u"""have <object>
+    carrying|have"""
+    feature = ('exchange',)
+
+    addressed = False
+    event_types = (u'message', u'action')
+
+    def setup (self):
+        self.carrying = None
+
+    @match(r"^gives\s+(\S+)\s+(?:(his|her|my|\S+(?:'s|s')|the|a|an|this|these)\s+)?(.*)$")
+    def give(self, event, addressee, determiner, object):
+        if addressee in ibid.config.plugins['core']['names'] or event.type == 'message':
+            return self.exchange(event, determiner, object)
+
+    @match(r"^have\s+(?:(his|her|my|\S+(?:'s|s')|the|a|an|this|these)\s+)?(.*)$")
+    def have(self, event, determiner, object):
+        if event.type == 'action' or \
+            event.message['deaddressed'] == event.message['raw']:
+            return False
+        return self.exchange(event, determiner, object)
+
+    def exchange(self, event, determiner, object):
+        who = event.sender['nick']
+        if determiner is None:
+            determiner = ''
+
+        if determiner == 'the':
+            taken = u'the ' + object
+        elif "'" in determiner:
+            taken = determiner + ' ' + object
+        else:
+            taken = u"%(who)s's %(object)s" % {'who': who, 'object': object}
+
+        if self.carrying is None:
+            event.addresponse(u'takes %s but has nothing to give in exchange',
+                                taken, action=True)
+        else:
+            event.addresponse(u'hands %(who)s %(carrying)s '
+                                u'in exchange for %(taken)s',
+                                {'who': who,
+                                 'carrying': self.carrying,
+                                 'taken': taken},
+                                action=True)
+
+        if determiner == 'this':
+            determiner = indefinite_article(object)
+
+        if "'" in determiner or determiner in ('a', 'an', 'the'):
+            self.carrying = determiner + ' ' + object
+        else:
+            self.carrying = object
+
+    @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
+    def query_carrying(self, event):
+        if event.type == 'action' or \
+            event.message['deaddressed'] == event.message['raw']:
+            return False
+
+        if self.carrying is None:
+            event.addresponse(u"I'm not carrying anything")
+        else:
+            event.addresponse(u"I'm carrying %s", self.carrying)
 
 # vi: set et sta sw=4 ts=4:
