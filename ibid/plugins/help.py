@@ -147,7 +147,7 @@ class Help(Processor):
         else:
             event.addresponse(
                 u"I'm afraid I don't know what you are asking about. "
-                u'Ask "what can you do" to browse my features')
+                u'Ask "what can you do" to browse my features.')
 
     @match(r'^(?:help|features|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
@@ -196,8 +196,8 @@ class Help(Processor):
                                conjunction=u'or'))
             return
 
-        event.addresponse(u"I'm afraid I don't know what you are asking about"
-                          u'Ask "what can you do" to browse my features')
+        event.addresponse(u"I'm afraid I don't know what you are asking about. "
+                          u'Ask "what can you do" to browse my features.')
 
     @match(r'^(?:help|usage|modinfo)\s+(\S+)$')
     def quick_help(self, event, terms):
