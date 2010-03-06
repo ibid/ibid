@@ -251,6 +251,9 @@ class Insult(Processor):
 carrying = None
 carrying_lock = Lock()
 
+object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
+            r"the|a|an|this|these|that|those)\s+)?(.*)"
+
 features['exchange'] = {
     'description': u'Exchanges objects with people',
     'categories': ('fun',),
@@ -261,8 +264,7 @@ class ExchangeAction(Processor):
 
     addressed = False
 
-    @match(r"^gives\s+(\S+)\s+"
-            r"(?:(his|her|my|\S+(?:'s|s')|the|a|an|this|these)\s+)?(.*)$")
+    @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
     def give(self, event, addressee, determiner, object):
         if addressee in ibid.config.plugins['core']['names']:
             return exchange(event, determiner, object)
@@ -272,10 +274,13 @@ class ExchangeMessage(Processor):
     carrying|have"""
     feature = ('exchange',)
 
-    @match(r"^(?:have|take)\s+"
-            r"(?:(his|her|my|\S+(?:'s|s')|the|a|an|this|these)\s+)?(.*)$")
+    @match(r"^(?:have|take)\s+" + object_pat + "$")
     def have(self, event, determiner, object):
-        return exchange(event, determiner, object)
+        if determiner in ('his', 'her', 'their', 'its'):
+            event.addresponse("I don't know whose %s you're talking about",
+                                object)
+        else:
+            return exchange(event, determiner, object)
 
     @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
     def query_carrying(self, event):
@@ -292,15 +297,23 @@ def exchange(event, determiner, object):
     global carrying, carrying_lock
 
     who = event.sender['nick']
+
     if determiner is None:
         determiner = ''
 
+    # determine how to refer to the giver in the genitive case
+    if determiner in ('their', 'our') and who[-1] == 's':
+        # giver's name is a plural ending in 's'
+        genitive = who + "'"
+    elif determiner.endswith("s'") or determiner.endswith("'s"):
+        genitive = determiner
+    else:
+        genitive = who + "'s"
+
     if determiner == 'the':
         taken = u'the ' + object
-    elif "'" in determiner:
-        taken = determiner + ' ' + object
     else:
-        taken = u"%(who)s's %(object)s" % {'who': who, 'object': object}
+        taken = u"%(genitive)s %(object)s" % {'genitive': genitive, 'object': object}
 
     carrying_lock.acquire()
 
@@ -315,12 +328,18 @@ def exchange(event, determiner, object):
                              'taken': taken},
                             action=True)
 
-    if determiner == 'this':
+    # determine which determiner we will use when talking about this object in
+    # the future -- we only want to refer to it by the giver's name if the giver
+    # implied that it was theirs, and we don't want to use demonstratives
+    if determiner in ('this', 'that'):
+        # object is definitely singular
         determiner = indefinite_article(object)
-    elif determiner in ('my', 'his', 'her'):
-        determiner = who + "'s"
+    elif determiner in ('my', 'our', 'his', 'her', 'its', 'their'):
+        determiner = genitive
+    elif determiner in ('these', 'those'):
+        determiner = 'some'
 
-    if determiner not in ('this', 'these'):
+    if determiner:
         carrying = determiner + ' ' + object
     else:
         carrying = object
