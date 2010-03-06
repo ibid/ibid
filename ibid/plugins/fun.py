@@ -252,7 +252,7 @@ carrying = None
 carrying_lock = Lock()
 
 object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
-            r"the|a|an|this|these|that|those)\s+)?(.*)"
+            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
 
 features['exchange'] = {
     'description': u'Exchanges objects with people',
