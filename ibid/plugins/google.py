@@ -20,7 +20,7 @@ default_user_agent = 'Mozilla/5.0'
 default_referer = "http://ibid.omnia.za.net/"
 
 class GoogleAPISearch(Processor):
-    usage = u"""google [for] <term>
+    usage = u"""google[.<tld>] [for] <term>
     googlefight [for] <term> and <term>"""
 
     feature = ('google',)
@@ -87,8 +87,7 @@ class GoogleAPISearch(Processor):
 # Dear Google: We promise we don't bite.
 class GoogleScrapeSearch(Processor):
     usage = u"""gcalc <expression>
-    gdefine <term>
-    google.<TLD> [for] <terms>"""
+    gdefine <term>"""
 
     feature = ('google',)
 
