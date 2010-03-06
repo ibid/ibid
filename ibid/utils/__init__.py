@@ -278,10 +278,10 @@ def get_process_output(command, input=None):
     return output, error, code
 
 def indefinite_article(noun_phrase):
-    if noun_phrase[0] in 'aeiou' or (noun_phrase[0] == 'y' 
-                                     and noun_phrase[1] not in 'aeiou'):
-        return 'an'
+    if noun_phrase[0] in u'aeiou' or (noun_phrase[0] == u'y'
+                                     and noun_phrase[1] not in u'aeiou'):
+        return u'an'
     else:
-        return 'a'
+        return u'a'
 
 # vi: set et sta sw=4 ts=4:
