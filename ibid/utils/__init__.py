@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import codecs
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import logging
@@ -278,23 +279,33 @@ def get_process_output(command, input=None):
     return output, error, code
 
 def get_country_codes():
-    # The XML download doesn't include things like UK, so we consume this steaming pile of crud instead
-    filename = cacheable_download('http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm', 'lookup/iso-3166-1_decoding_table.htm')
-    etree = get_html_parse_tree('file://' + filename, treetype='etree')
-    table = [x for x in etree.getiterator('table')][2]
+    filename = cacheable_download(
+            'http://www.iso.org/iso/list-en1-semic-3.txt',
+            'lookup/iso-3166-1_list_en.txt')
 
-    countries = {}
-    for tr in table.getiterator('tr'):
-        abbr = [x.text for x in tr.getiterator('div')][0]
-        eng_name = [x.text for x in tr.getchildren()][1]
+    f = codecs.open(filename, 'r', 'ISO-8859-1')
+    countries = {
+        u'AC': u'Ascension Island',
+        u'UK': u'United Kingdom',
+        u'SU': u'Soviet Union',
+        u'EU': u'European Union',
+        u'TP': u'East Timor',
+        u'YU': u'Yugoslavia',
+    }
 
-        if eng_name and eng_name.strip():
-            # Cleanup:
-            if u',' in eng_name:
-                eng_name = u' '.join(reversed(eng_name.split(',', 1)))
-            eng_name = u' '.join(eng_name.split())
+    started = False
+    for line in f:
+        line = line.strip()
+        if started:
+            country, code = line.split(u';')
+            if u',' in country:
+                country = u' '.join(reversed(country.split(u',', 1)))
+            country = country.title()
+            countries[code] = country
+        elif line == u'':
+            started = True
 
-            countries[abbr.upper()] = eng_name.title()
+    f.close()
 
     return countries
 
