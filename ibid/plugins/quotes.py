@@ -180,17 +180,23 @@ class TextsFromLastNight(Processor):
     random_pool = []
 
     def get_tfln(self, section):
-        tree = get_html_parse_tree('http://textsfromlastnight.com/%s/' % section.lower())
-        for div in tree.findAll('div', attrs={'class': 'post_wrap'}):
-            id = int(div.get('id').split('_', 1)[1])
-            message = []
-            line = ''
-            for a in div.findAll('div', attrs={'class': 'post_content'})[0].findAll('a'):
-                if a['href'].startswith('/areacode/'):
-                    line = u'%s: ' % a.contents[0]
-                else:
-                    message.append(line + a.contents[0])
-            yield id, message
+        tree = get_html_parse_tree('http://textsfromlastnight.com/%s' % section,
+                                   treetype='etree')
+        ul = [x for x in tree.findall('.//ul')
+              if x.get('id') == 'texts-list'][0]
+        id_re = re.compile('^/Text-Replies-(\d+)\.html$')
+        for li in ul.findall('li'):
+            id = 0
+            message=''
+            div = [x for x in li.findall('div') if x.get('class') == 'text'][0]
+            for a in div.findall('.//a'):
+                href = a.get('href')
+                if href.startswith('/Texts-From-Areacode-'):
+                    message += u'\n' + a.text
+                elif href.startswith('/Text-Replies-'):
+                    id = int(id_re.match(href).group(1))
+                    message += a.text
+            yield id, message.strip()
 
     @match(r'^tfln'
             r'(?:\s+(random|worst|best|\d+))?'
@@ -204,15 +210,17 @@ class TextsFromLastNight(Processor):
             return
 
         if number in (u'worst', u'best'):
-            number += u'-nights'
-            if timeframe.lower() in (u'week', u'month'):
-                number += u'this-' + timeframe.lower()
+            number = u'Texts-From-%s-Nights' % number.title()
+            if timeframe:
+                number += u'-' + timeframe.title()
+            number += u'.html'
         elif number.isdigit():
-            number = 'view/%s' % number
+            number = 'Text-Replies-%s.html' % number
 
         if number == u'random':
             if not self.random_pool:
-                self.random_pool = [message for message in self.get_tfln(number)]
+                self.random_pool = [message for message
+                        in self.get_tfln(u'Random-Texts-From-Last-Night.html')]
                 shuffle(self.random_pool)
 
             message = self.random_pool.pop()
@@ -224,17 +232,15 @@ class TextsFromLastNight(Processor):
                 return
 
         id, body = message
-        if len(body) > 1:
-            for line in body:
-                event.addresponse(line)
-            event.addresponse(u'- http://textsfromlastnight.com/view/%i', id)
-        else:
-            event.addresponse(u'%(body)s\n- http://textsfromlastnight.com/view/%(id)i', {
+        event.addresponse(
+            u'%(body)s\n'
+            u'- http://textsfromlastnight.com/Text-Replies-%(id)i.html', {
                 'id': id,
-                'body': body[0],
-            })
+                'body': body,
+            }, conflate=False)
 
-    @match(r'^(?:http://)?(?:www\.)?textsfromlastnight\.com/view/(\d+)$')
+    @match(r'^(?:http://)?(?:www\.)?textsfromlastnight\.com/'
+           r'Text-Replies-(\d+).html$')
     def tfln_url(self, event, id):
         self.tfln(event, id)
 
