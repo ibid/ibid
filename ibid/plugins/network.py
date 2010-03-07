@@ -21,9 +21,8 @@ except ImportError:
 import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
-from ibid.utils import file_in_path, unicode_output, human_join, \
-                       url_to_bytestring, get_process_output
-from ibid.utils.html import get_country_codes
+from ibid.utils import file_in_path, get_country_codes, get_process_output, \
+                       human_join, unicode_output, url_to_bytestring
 
 features = {}
 

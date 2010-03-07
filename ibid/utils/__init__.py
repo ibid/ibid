@@ -277,4 +277,25 @@ def get_process_output(command, input=None):
     code = process.wait()
     return output, error, code
 
+def get_country_codes():
+    # The XML download doesn't include things like UK, so we consume this steaming pile of crud instead
+    filename = cacheable_download('http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm', 'lookup/iso-3166-1_decoding_table.htm')
+    etree = get_html_parse_tree('file://' + filename, treetype='etree')
+    table = [x for x in etree.getiterator('table')][2]
+
+    countries = {}
+    for tr in table.getiterator('tr'):
+        abbr = [x.text for x in tr.getiterator('div')][0]
+        eng_name = [x.text for x in tr.getchildren()][1]
+
+        if eng_name and eng_name.strip():
+            # Cleanup:
+            if u',' in eng_name:
+                eng_name = u' '.join(reversed(eng_name.split(',', 1)))
+            eng_name = u' '.join(eng_name.split())
+
+            countries[abbr.upper()] = eng_name.title()
+
+    return countries
+
 # vi: set et sta sw=4 ts=4:
