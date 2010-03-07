@@ -429,14 +429,14 @@ class TLD(Processor):
         tld = tld.upper()
 
         if tld in self.country_codes:
-            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+            event.addresponse(u'%(tld)s is the ccTLD for %(country)s', {
                 'tld': tld,
                 'country': self.country_codes[tld],
             })
         else:
-            event.addresponse(u"ISO doesn't know about any such TLD")
+            event.addresponse(u"ISO doesn't know about any such ccTLD")
 
-    @match(r'^tld\s+for\s+(.+)$')
+    @match(r'^(?:cc)?tld\s+for\s+(.+)$')
     def country_to_tld(self, event, location):
         if not self.country_codes:
             self.country_codes = get_country_codes()
@@ -444,7 +444,7 @@ class TLD(Processor):
         output = []
         for tld, country in self.country_codes.iteritems():
             if location.lower() in country.lower():
-                output.append(u'%(tld)s is the TLD for %(country)s' % {
+                output.append(u'%(tld)s is the ccTLD for %(country)s' % {
                     'tld': tld,
                     'country': country,
                 })
