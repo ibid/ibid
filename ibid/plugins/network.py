@@ -441,15 +441,18 @@ class TLD(Processor):
         if not self.country_codes:
             self.country_codes = get_country_codes()
 
+        output = []
         for tld, country in self.country_codes.iteritems():
             if location.lower() in country.lower():
-                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                output.append(u'%(tld)s is the TLD for %(country)s' % {
                     'tld': tld,
                     'country': country,
                 })
-                return
-
-        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
+        if output:
+            event.addresponse(human_join(output))
+        else:
+            event.addresponse(u"ISO doesn't know about any TLD for %s",
+                              location)
 
 features['ports'] = {
     'description': u'Looks up port numbers for protocols',
