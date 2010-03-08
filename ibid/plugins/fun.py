@@ -294,7 +294,7 @@ class ExchangeMessage(Processor):
         carrying_lock.release()
 
 def exchange(event, determiner, object):
-    global carrying, carrying_lock
+    global carrying
 
     who = event.sender['nick']
 
