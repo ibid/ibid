@@ -9,7 +9,7 @@ from threading import Lock
 from nickometer import nickometer
 
 import ibid
-from ibid.plugins import Processor, match, handler
+from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article
 
