@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import codecs
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import logging
@@ -276,5 +277,36 @@ def get_process_output(command, input=None):
     output, error = process.communicate(input)
     code = process.wait()
     return output, error, code
+
+def get_country_codes():
+    filename = cacheable_download(
+            'http://www.iso.org/iso/list-en1-semic-3.txt',
+            'lookup/iso-3166-1_list_en.txt')
+
+    f = codecs.open(filename, 'r', 'ISO-8859-1')
+    countries = {
+        u'AC': u'Ascension Island',
+        u'UK': u'United Kingdom',
+        u'SU': u'Soviet Union',
+        u'EU': u'European Union',
+        u'TP': u'East Timor',
+        u'YU': u'Yugoslavia',
+    }
+
+    started = False
+    for line in f:
+        line = line.strip()
+        if started:
+            country, code = line.split(u';')
+            if u',' in country:
+                country = u' '.join(reversed(country.split(u',', 1)))
+            country = country.title()
+            countries[code] = country
+        elif line == u'':
+            started = True
+
+    f.close()
+
+    return countries
 
 # vi: set et sta sw=4 ts=4:
