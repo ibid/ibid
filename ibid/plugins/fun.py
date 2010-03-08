@@ -313,7 +313,7 @@ def exchange(event, determiner, object):
     if determiner == 'the':
         taken = u'the ' + object
     else:
-        taken = u"%(genitive)s %(object)s" % {'genitive': genitive, 'object': object}
+        taken = genitive + u' ' + object
 
     carrying_lock.acquire()
 
@@ -337,10 +337,10 @@ def exchange(event, determiner, object):
     elif determiner in ('my', 'our', 'his', 'her', 'its', 'their'):
         determiner = genitive
     elif determiner in ('these', 'those'):
-        determiner = 'some'
+        determiner = u'some'
 
     if determiner:
-        carrying = determiner + ' ' + object
+        carrying = determiner + u' ' + object
     else:
         carrying = object
 
