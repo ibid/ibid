@@ -63,7 +63,7 @@ class TVShow(Processor):
 
         return show_dict
 
-    @match(r'^tv\s*show\s+(.+)$')
+    @match(r'^tv\s*(?:show|info|rage)\s+(.+)$')
     def tvshow(self, event, show):
         retr_info = self.remote_tvrage(show)
 
