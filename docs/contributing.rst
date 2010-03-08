@@ -90,6 +90,10 @@ base thus happy developers.
   Compatibility functions, imports, and libraries can be found in
   :mod:`ibid.compat`.
 
+* There is more on good style in `Code Like a Pythonista: Idiomatic
+  Python
+  <http://python.net/~goodger/projects/pycon/2007/idiomatic/handout.html>`_.
+
 Naming Conventions
 ^^^^^^^^^^^^^^^^^^
 
