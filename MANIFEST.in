@@ -5,9 +5,12 @@ recursive-include contrib *
 recursive-include ibid/lib *.py
 recursive-include ibid/data *
 recursive-include docs *
+recursive-include man *
 include factpacks/*.json
+include factpacks/README
 include ibid/*.ini
 include twisted/plugins/ibid_plugin.py
+include README
 include INSTALL
 include COPYING
-include README
+include AUTHORS
