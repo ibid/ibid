@@ -11,5 +11,6 @@ dictionary lookup, etc.
 
 .. toctree::
 
+   factoids
 
 .. vi: set et sta sw=3 ts=3:

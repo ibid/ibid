@@ -20,6 +20,8 @@ that caused the bug, and any logging information / exceptions from
 Submitting Patches
 ------------------
 
+.. highlight:: text
+
 Want to go one step further, and fix your bug or add a new feature.
 We welcome contributions from everyone.
 The best way to get a patch merged quickly is to follow the same
@@ -53,7 +55,7 @@ development process as the Ibid developers:
 
 #. Run the test-cases::
 
-      user@box $ PYTHONPATH=. trial ibid
+      user@box $ trial ibid
 
 #. Push the branch to Launchpad::
 
@@ -62,6 +64,12 @@ development process as the Ibid developers:
 #. Find the branch `on Launchpad <https://code.launchpad.net/ibid>`_ and
    propose it for merging into the Ibid trunk.
 
+#. Proposals require approvals by a member of `ibid-core
+   <https://launchpad.net/~ibid-core>`_ and two members of `ibid-dev
+   <https://launchpad.net/~ibid-dev>`_ (or simply two members of
+   ibid-core).
+
+   Please join ibid-dev and help out with review.
 
 .. _style-guidelines:
 
@@ -77,6 +85,22 @@ base thus happy developers.
 * 4 space indentation.
 
 * Single quotes are preferred to double, where sensible.
+
+* Almost all of Ibid should be compatible with Python 2.4+ (but not 3).
+  Compatibility functions, imports, and libraries can be found in
+  :mod:`ibid.compat`.
+
+* There is more on good style in `Code Like a Pythonista: Idiomatic
+  Python
+  <http://python.net/~goodger/projects/pycon/2007/idiomatic/handout.html>`_.
+
+Naming Conventions
+^^^^^^^^^^^^^^^^^^
+
+* Features should either go into an existing plugin, or if large enough
+  into a plugin of the same name as the feature (singular).
+
+* Database table names are plural.
 
 Sources
 ^^^^^^^
@@ -133,7 +157,9 @@ When you wish to create a new branch::
    ~/code/ibid $ bzr branch trunk feature-1234
 
 If you want to easily push this to Launchpad, create a
-``~/.bazaar/locations.conf`` with the following contents::
+``~/.bazaar/locations.conf`` with the following contents:
+
+.. code-block:: ini
 
    [/home/apewtey/code/ibid]
    pull_location = lp:~apewtey/ibid/
@@ -148,7 +174,7 @@ That will allow you to push your branch to
 
    ~/code/ibid/feature-1234 $ bzr push
 
-To delete a branch, you can simply ``rm -rf`` it.
+To delete a branch, you can simply ``rm -r`` it.
 
 See also:
 
@@ -179,7 +205,6 @@ Bazaar.
 
 Ibid can be simply run out of a checkout directory::
 
-   ~/code/ibid/feature-1234 $ export PYTHONPATH=.
    ~/code/ibid/feature-1234 $ scripts/ibid-setup
 
 If you won't need an administrative account, you can hit ``^D`` and

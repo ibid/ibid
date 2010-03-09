@@ -38,7 +38,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Ibid'
-copyright = u'2009, Jonathan Hitchcock, Michael Gorven, Stefano Rivera'
+copyright = u'2008-2010, The Ibid Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -173,7 +173,7 @@ htmlhelp_basename = 'Ibiddoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'Ibid.tex', u'Ibid Documentation',
-   u'Jonathan Hitchcock, Michael Gorven, Stefano Rivera', 'manual'),
+   u'The Ibid Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
