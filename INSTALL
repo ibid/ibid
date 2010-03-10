@@ -11,9 +11,14 @@ Supported releases:
 * but it should work on any unixy system where you can get the required Python
   modules.
 
-Add the Ibid PPA to your APT sources:
+Ubuntu: Add the Ibid PPA to your APT sources:
 # echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -cs` main > /etc/apt/sources.list.d/ibid.list
 # apt-key adv --recv-keys --keyserver keyserver.ubuntu.com c2d0f8531bba37930c0d85e3d59f9e8dfd1c44ba
+# aptitude update
+
+Debian: Add the Ibid repo to your APT sources:
+# echo deb http://ibid.omnia.za.net/debian lenny-backports main > /etc/apt/sources.list.d/ibid.list
+# apt-key adv --recv-keys --keyserver subkeys.pgp.net --recv-keys 5EB879CE
 # aptitude update
 
 Install required modules:

@@ -21,9 +21,8 @@ except ImportError:
 import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
-from ibid.utils import file_in_path, unicode_output, human_join, \
-                       url_to_bytestring, get_process_output
-from ibid.utils.html import get_country_codes
+from ibid.utils import file_in_path, get_country_codes, get_process_output, \
+                       human_join, unicode_output, url_to_bytestring
 
 features = {}
 
@@ -430,27 +429,30 @@ class TLD(Processor):
         tld = tld.upper()
 
         if tld in self.country_codes:
-            event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+            event.addresponse(u'%(tld)s is the ccTLD for %(country)s', {
                 'tld': tld,
                 'country': self.country_codes[tld],
             })
         else:
-            event.addresponse(u"ISO doesn't know about any such TLD")
+            event.addresponse(u"ISO doesn't know about any such ccTLD")
 
-    @match(r'^tld\s+for\s+(.+)$')
+    @match(r'^(?:cc)?tld\s+for\s+(.+)$')
     def country_to_tld(self, event, location):
         if not self.country_codes:
             self.country_codes = get_country_codes()
 
+        output = []
         for tld, country in self.country_codes.iteritems():
             if location.lower() in country.lower():
-                event.addresponse(u'%(tld)s is the TLD for %(country)s', {
+                output.append(u'%(tld)s is the ccTLD for %(country)s' % {
                     'tld': tld,
                     'country': country,
                 })
-                return
-
-        event.addresponse(u"ISO doesn't know about any TLD for %s", location)
+        if output:
+            event.addresponse(human_join(output))
+        else:
+            event.addresponse(u"ISO doesn't know about any TLD for %s",
+                              location)
 
 features['ports'] = {
     'description': u'Looks up port numbers for protocols',
