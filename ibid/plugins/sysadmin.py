@@ -86,12 +86,15 @@ class Aptitude(Processor):
             description = None
             provided = None
             output = unicode_output(output)
+            real = True
             for line in output.splitlines():
                 if not description:
                     if line.startswith(u'Description:'):
                         description = u'%s:' % line.split(None, 1)[1]
                     elif line.startswith(u'Provided by:'):
                         provided = line.split(None, 2)[2]
+                    elif line == u'State: not a real package':
+                        real = False
                 elif line != "":
                     description += u' ' + line.strip()
                 else:
@@ -101,6 +104,8 @@ class Aptitude(Processor):
                 event.addresponse(u'Virtual package provided by %s', provided)
             elif description:
                 event.addresponse(description)
+            elif not real:
+                event.addresponse(u'Virtual package, not provided by anything')
             else:
                 raise Exception("We couldn't successfully parse aptitude's output")
         else:

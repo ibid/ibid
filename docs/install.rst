@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ============
 
@@ -33,7 +35,7 @@ You'll need a sane `Python <http://python.org>`_ environment and a few Python
 We attempt to support all Python 2.x releases >= 2.4.
 However, we'd recommend the most recent stable 2.x release, as Python memory
 usage has improved and more recent Python releases have been better tested with
-ibid.
+Ibid.
 (We have to go out of our way to test with 2.4...)
 Python 3.x support is off the cards until our dependencies are 3.x capable.
 
@@ -47,8 +49,10 @@ Python Libraries:
 * Twisted Words (IRC, XMPP)
 * `Wokkel <http://wokkel.ik.nu/>`_. (XMPP)
 * `SQLAlchemy <http://www.sqlalchemy.org/>`_ 0.5 preferred, 0.4 compatible.
-* `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ (configuration)
+* `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ >= 4.7.0
 * `python-dateutil <http://labix.org/python-dateutil>`_
+* `SOAPpy <http://pywebsvcs.sourceforge.net/>`_ [#soappy-install]_
+* `Setuptools <http://peak.telecommunity.com/DevCenter/setuptools>`_
 
 Many core plugins require the following Web scraping & parsing libraries:
 
@@ -59,12 +63,10 @@ Many core plugins require the following Web scraping & parsing libraries:
 
 Web source and web services:
 
-* `SOAPpy <http://pywebsvcs.sourceforge.net/>`_
 * `Jinja <http://jinja.pocoo.org/>`_
 
 Other sources:
 
-* Campfire: `Pinder <http://dev.oluyede.org/pinder/>`_
 * SILC: `pysilc <http://www.liquidx.net/pysilc/>`_
 
 There are many non-essential plugins that require other libraries or programs,
@@ -95,6 +97,8 @@ running ``ibid-setup``.
 MySQL
 ^^^^^
 
+.. highlight:: text
+
 Install MySQL. On Debian/Ubuntu::
 
    user@box $ sudo aptitude install mysql-server python-mysqldb
@@ -124,9 +128,11 @@ and the password is ``mysecret``, so the DB URL will be::
 PostgreSQL
 ^^^^^^^^^^
 
-Install PostgreSQL. On Debian/Ubuntu::
+Install PostgreSQL.
+You'll also need the ``citext`` contributed module.
+On Debian/Ubuntu::
 
-   user@box $ sudo aptitude install postgresql python-psycopg2
+   user@box $ sudo aptitude install postgresql postgresql-contrib python-psycopg2
 
 Create a database for your bot::
 
@@ -135,6 +141,7 @@ Create a database for your bot::
    Enter password for new role:
    Enter it again:
    postgres@box $ createdb -O joebot joebot
+   postgres@box $ psql -f /usr/share/postgresql/8.4/contrib/citext.sql joebot
    postgres@box $ logout
 
 In this example, the database is called ``joebot`` and the user
@@ -156,8 +163,8 @@ Debian:
      <http://pgp.surfnet.nl:11371/pks/lookup?search=0x6EC0C1E39DEDE92FC8910161450ED9D55EB879CE&op=index>`_
 
 Ubuntu:
-   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu jaunty main``  
-   | If you are using a different release to ``jaunty``, substitute its name.
+   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu karmic main``  
+   | If you are using a different release to ``karmic``, substitute its name.
    | GPG Key: `0xFD1C44BA
      <http://keyserver.ubuntu.com:11371/pks/lookup?search=0xC2D0F8531BBA37930C0D85E3D59F9E8DFD1C44BA&op=index>`_
 
@@ -165,7 +172,7 @@ You can follow `these instructions
 <https://launchpad.net/+help/soyuz/ppa-sources-list.html>`_ or add it from a
 terminal like this::
 
-   user@box $ echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -c | cut -f2` main | sudo tee /etc/apt/sources.list.d/ibid.list
+   user@box $ echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -cs` main | sudo tee /etc/apt/sources.list.d/ibid.list
    user@box $ sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xFD1C44BA
    user@box $ sudo aptitude update
 
@@ -244,39 +251,60 @@ We recommend a recent release of Debian/Ubuntu Linux, and the instructions are
 tailored for such.
 If you use something else, you'll have to interpolate.
 
-Install the required python modules:
-(you can use another DB, but we default to SQLite)::
+Install the required python modules.
+You can use another DB, but we default to SQLite.
+If you are not using Debian/Ubuntu or would prefer to have these
+dependencies installed in a virtualenv, you can skip this step::
 
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
-     python-html5lib python-pysqlite2 python-simplejson \
-     python-soappy python-jinja python-dateutil
+     python-html5lib python-pysqlite2 python-setuptools \
+     python-simplejson python-soappy python-jinja \
+     python-dateutil python-virtualenv
 
 Create a user to run your bot as::
 
    user@box $ sudo adduser --disabled-login ibid
 
-Checkout the latest version of ibid (instead of this, you could extract a
+Create a virtualenv to install Ibid to::
+
+   user@box $ virtualenv ve
+
+.. note::
+
+   This isn't strictly necessary as Ibid can run out of a source
+   checkout for development.
+   But for long-term deployments it is sensible to separate the source
+   from the botdir.
+
+Checkout the latest version of Ibid (instead of this, you could extract a
 source tarball)::
 
    user@box $ sudo -u ibid -i
    ibid@box $ bzr branch lp:ibid
    ibid@box $ cd ibid
 
-Tell Python that it can find libraries under the current directory (you could
-also do virtualenv install)::
-   
-   ibid@box $ export PYTHONPATH=.
+Install Ibid::
 
-Either edit the bot's configuration file (``ibid.ini``) or delete it (the
-install process will create one for you).
+   user@box $ . ~/ve/bin/activate
+   user@box $ ./setup.py install --no-dependencies
+
+.. note::
+
+   If you didn't install the packages listed in the first step, you'll
+   have to remove ``--no-dependencies`` so setuptools can do its magic.
 
 If you are going to be using MySQL or PostgreSQL :ref:`set up your
 database now <db-setup>`.
 
+Then you'll need to create a directory for your bot to live in::
+
+   ibid@box $ mkdir ~/botdir
+   ibid@box $ cd ~/botdir
+
 Set up your bot::
 
-   ibid@box $ scripts/ibid-setup
+   ibid@box $ ibid-setup
 
 .. note::
    This will throw out some harmless errors (about plugins that you don't have
@@ -292,7 +320,7 @@ network's name, and a password (e.g. "joebloggs", "freenode", "s3cr3tpass").
 
 Load any factpacks you desire (in this case, common greetings)::
 
-   ibid@box $ scripts/ibid-factpack factpack/greetings.json
+   ibid@box $ ibid-factpack ~/ibid/factpack/greetings.json
 
 Runi your bot::
 
@@ -307,5 +335,8 @@ Runi your bot::
 .. [#db-required] If you don't need user-accounts (and many other features),
    the database code could be removed.
    It'd probably be quite a bit of work, though.
+
+.. [#soappy-install] SOAPpy can be hard to install, so we have debian
+   packages and eggs to help. ``setup.py`` knows where to look.
 
 .. vi: set et sta sw=3 ts=3:
