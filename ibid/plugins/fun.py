@@ -254,12 +254,12 @@ carrying_lock = Lock()
 object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
             r"the|a|an|this|these|that|those|some)\s+)?(.*)"
 
-features['exchange'] = {
+features['bucket'] = {
     'description': u'Exchanges objects with people',
     'categories': ('fun',),
 }
 class ExchangeAction(Processor):
-    feature = ('exchange',)
+    feature = ('bucket',)
     event_types = (u'action',)
 
     addressed = False
