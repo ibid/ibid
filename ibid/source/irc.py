@@ -168,6 +168,18 @@ class Ircbot(irc.IRCClient):
         message = unicode(message, 'utf-8', 'replace')
         self._state_event(kickee, channel, u'kicked', kicker, message)
 
+    def invited(self, user, channel):
+        user = unicode(user, 'utf-8', 'replace')
+        channel = unicode(channel, 'utf-8', 'replace')
+
+        event = self._create_event(u'invite', user, channel)
+        event.public = False
+        event.addressed = True
+        self.factory.log.debug(u'Invited into %s by %s',
+                                channel,
+                                event.sender['id'])
+        ibid.dispatcher.dispatch(event).addCallback(self.respond)
+
     def respond(self, event):
         for response in event.responses:
             self.send(response)
@@ -236,6 +248,8 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == "RPL_ENDOFWHOIS":
             self.do_auth_callback(params[1], False)
+        elif command == 'INVITE' and params[0].lower() == self.nickname.lower():
+            self.invited(prefix, params[1])
 
     def irc_RPL_BOUNCE(self, prefix, params):
         # Broken in IrcClient :/

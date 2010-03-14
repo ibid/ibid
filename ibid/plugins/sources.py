@@ -74,6 +74,19 @@ class Actions(Processor):
             source.change_nick(nick)
             event.addresponse(u'Changing nick to %s', nick)
 
+class Invited(Processor):
+    feature = ('actions',)
+
+    event_types = ('invite',)
+    permission = 'sources'
+
+    @handler
+    @authorise()
+    def invited(self, event):
+        event.addresponse(u'Joining %s', event.channel,
+                            target=event.sender['nick'])
+        ibid.sources[event.source].join(event.channel)
+
 class NickServ(Processor):
     event_types = (u'notice',)
 
