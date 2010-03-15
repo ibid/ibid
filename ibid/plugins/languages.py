@@ -11,7 +11,7 @@ from dictclient import Connection
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, json_webservice, human_join, \
-                        is_url, url_to_bytestring
+                        is_url, iri_to_uri
 
 features = {}
 
@@ -192,7 +192,7 @@ class Translate(Processor):
 
         if is_url(text):
             if urlparse(text).scheme in ('', 'http'):
-                url = url_to_bytestring(text)
+                url = iri_to_uri(text)
                 query = {'sl': src_lang, 'tl': dest_lang, 'u': url}
                 event.addresponse(u'http://translate.google.com/translate?' +
                                     urlencode(query))
