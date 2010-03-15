@@ -193,9 +193,22 @@ class JSONException(Exception):
 def iri_to_uri(url):
     "Expand an IDN hostname and UTF-8 encode the path of a unicode URL"
     parts = list(urlparse(url))
-    host = parts[1].split(':')
-    host[0] = host[0].encode('idna')
-    parts[1] = ':'.join(host)
+    username, passwd, host, port = re.match(
+        r'^(?:(.*)(?::(.*))?@)?(.*)(?::(.*))?$', parts[1]).groups()
+    parts[1] = ''
+    if username:
+        parts[1] = quote(username.encode('utf-8'))
+        if passwd:
+            parts[1] += ':' + quote(passwd.encode('utf-8'))
+        parts[1] += '@'
+    if host:
+        if parts[0].lower() in ('http', 'https', 'ftp'):
+            parts[1] += host.encode('idna')
+        else:
+            parts[1] += quote(host.encode('utf-8'))
+    if port:
+        parts[1] += ':' + quote(port.encode('utf-8'))
+
     parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
