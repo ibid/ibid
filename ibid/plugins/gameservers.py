@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2010, Ben Steenhuisen, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import re
