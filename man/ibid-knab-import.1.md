@@ -31,7 +31,7 @@ detection.
 	connected to.
 
 *config-file*
-:	If siupplied, this is configuration file is used for locating the Ibid's
+:	If supplied, this is configuration file is used for locating the Ibid's
 	database rather than **ibid.ini**.
 
 # FILES
