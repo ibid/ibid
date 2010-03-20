@@ -21,21 +21,21 @@ Matplotlib is required for graphing.
 
 # OPTIONS
 
-**-e** *TIME*, **--examine**=*TIME*
+**-e** *TIME*, **-\-examine**=*TIME*
 :	Examine the object usage at time *TIME*, and print a sorted list of type
 	statistics at that time.
 	This function can be useful in determining which types to graph, when
 	chasing down a detected leak.
 
-**-o** *FILE*, **--output**=*FILE*
+**-o** *FILE*, **-\-output**=*FILE*
 :	Output to *FILE* instead of displaying interactive graph GUI.
 	*FILE* can be any format supported by Matplotlib, detected by the file
 	extension.
 
-**-d** *DPI*, **--dpi**=*DPI*
+**-d** *DPI*, **-\-dpi**=*DPI*
 :	When outputting in raster formats, use *DPI* output DPI.
 
-**-h**, **--help**
+**-h**, **-\-help**
 	Show a help message and exit.
 
 # FILES

@@ -20,20 +20,20 @@ databases.
 
 # COMMANDS
 
-**-e** *FILE*, **--export**=*FILE*
+**-e** *FILE*, **-\-export**=*FILE*
 :	Export DB contents to *FILE*.
 	Export format is JSON.
 	*FILE* can be **-** for *stdout* or can end in **.gz** for automatic gzip
 	compression.
 
-**-i** *FILE*, **--import**=*FILE*
+**-i** *FILE*, **-\-import**=*FILE*
 :	Import DB contents from *FILE* as exported by this utility.
 	*FILE* can be **-** for *stdin* or can end in **.gz** for automatic gzip
 	compression.
 
 :	**Note:** The DB must be empty first.
 
-**-u**, **--upgrade**
+**-u**, **-\-upgrade**
 :	Upgrade DB schema to the latest version.
 	You need to run this after upgrading your bot.
 
@@ -41,13 +41,13 @@ databases.
 
 # OPTIONS
 
-**--version**
+**-\-version**
 :	Show the program's version and exit.
 
-**-h**, **--help**
+**-h**, **-\-help**
 :	Show a help message and exit.
 
-**-v**, **--verbose**
+**-v**, **-\-verbose**
 :	Turn on debugging output to stderr.
 
 # FILES

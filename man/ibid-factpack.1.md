@@ -31,16 +31,16 @@ bot, unloading will be aborted, unless the **-f** option is supplied.
 
 # OPTIONS
 
-**-r**, **--remove**
+**-r**, **-\-remove**
 :	Remove the named factpack, rather than importing.
 
-**-f**, **--force**
+**-f**, **-\-force**
 :	Force removal, if facts in the factpack were modified by users.
 
-**-s**, **--skip**
+**-s**, **-\-skip**
 :	Skip facts that clash with existing factoids, during import.
 
-**-h**, **--help**
+**-h**, **-\-help**
 :	Show a help message and exit.
 
 # FACTPACKS

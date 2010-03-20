@@ -25,26 +25,26 @@ loading it.
 
 # OPTIONS
 
-**-c**, **--configured**
+**-c**, **-\-configured**
 :	Load all configured plugins, instead of only the core and requested
 	plugins.
 
-**-o**, **--only**
+**-o**, **-\-only**
 :	Don't load the Ibid core plugins, only the plugins requested.
 	Note that without the **core** plugin to pre- and post-process events, most
 	other plugins won't function correctly.
 
-**-p**, **--public**
+**-p**, **-\-public**
 :	By default, **ibid-plugin** emulates a private conversation with the bot.
 	With this option, the conversation is considered to be public and the
 	bot will have to be addressed to provoke a response.
 
-**-v**, **--verbose**
+**-v**, **-\-verbose**
 :	Increase verbosity.
 	The final form of each *Event* object will be displayed before any
 	responses.
 
-**-h**, **--help**
+**-h**, **-\-help**
 Show a help message and exit.
 
 # FILES

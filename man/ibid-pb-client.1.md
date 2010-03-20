@@ -34,14 +34,14 @@ The output is a JSON-encoded response.
 
 # OPTIONS
 
-**-s** *SERVER*, **--server**=*SERVER*
+**-s** *SERVER*, **-\-server**=*SERVER*
 :	Connect to the Ibid running on *SERVER*, by default it connects to
 	*localhost*.
 
-**-p** *PORT*, **--port**=*PORT*
+**-p** *PORT*, **-\-port**=*PORT*
 :	Connect to the **pb** source running on port *PORT*, by default 8789.
 
-**-h**, **--help**
+**-h**, **-\-help**
 :	Show a help message and exit.
 
 # SEE ALSO
