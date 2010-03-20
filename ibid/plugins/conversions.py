@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+from collections import defaultdict
 from subprocess import Popen, PIPE
 from urllib import urlencode
 import logging
@@ -437,24 +438,24 @@ def fix_pinyin_tone (syllable):
         # mark goes on the A
         for v in 'AaEeOo':
             if v in syllable:
-                return syllable.replace(v, v+tone)
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
         # the mark goes on the second letter of UI and IU
         for v in ('UI', 'ui' 'IU', 'iu'):
             if v in syllable:
-                return syllable.replace(v, v+tone)
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
         # otherwise there was only a single vowel
         for v in u'IiUuVv' \
                  u'\N{Latin Capital Letter U With Diaeresis}' \
                  u'\N{Latin Small Letter U With Diaeresis}':
             if v in syllable:
-                return syllable.replace(v, v+tone)
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
     else:
         return syllable
 
 class Unihan(object):
     def __init__ (self, char):
         self.char = char
-        self._data = {}
+        self._data = defaultdict(unicode)
         self._read_data('Readings')
 
     def _read_data (self, table):
@@ -490,8 +491,8 @@ class Unihan(object):
         return self._data['kKorean'].lower().split()
 
     def korean (self):
-        return ('%s [%s]' % (h, y) for h, y in
-                                    zip(self.hangul(), self.korean_yale()))
+        return ['%s [%s]' % (h, y) for h, y in
+                                    zip(self.hangul(), self.korean_yale())]
 
     def japanese_on (self):
         return self._data['kJapaneseOn'].lower().split()
@@ -503,7 +504,9 @@ class Unihan(object):
         return self._data['kDefinition']
 
     def __unicode__ (self):
-        msg = u'It means %s' % self.definition()
+        msgs = []
+        if self.definition():
+            msgs = [u'it means %s' % self.definition()]
 
         prons = []
         for reading, lang in ((self.pinyin, 'pinyin'),
@@ -516,8 +519,12 @@ class Unihan(object):
                                 {'readings': human_join(readings, conjunction=u'or'), 'lang': lang})
 
         if prons:
-            msg += '; it is pronounced ' + human_join(prons, conjunction=u'or')
+            msgs.append('it is pronounced ' +
+                            human_join(prons, conjunction=u'or'))
 
+        msg =  '; '.join(msgs)
+        if msg:
+            msg = msg[0].upper() + msg[1:]
         return msg
 
 features['unicode'] = {
@@ -642,7 +649,9 @@ class UnicodeData(Processor):
         if 'CJK' in name and 'IDEOGRAPH' in name:
             unihan = Unihan(char)
             if unihan.in_unihan():
-                haninfo = u'. ' + unicode(unihan) + u'.'
+                haninfo = unicode(unihan)
+                if haninfo:
+                    haninfo = u'. ' + haninfo + u'.'
 
         return {'code': u'%04X' % ord(char),
                 'name': name.title().replace('Cjk', 'CJK'), 'char': char,
