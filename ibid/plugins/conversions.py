@@ -508,7 +508,7 @@ class UnicodeData(Processor):
     def fromname (self, event, name):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
-        except SyntaxError:
+        except (SyntaxError, UnicodeError):
             event.addresponse(u"I couldn't find a character with that name")
         else:
             info = self.info(char)
