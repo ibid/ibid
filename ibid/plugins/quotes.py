@@ -374,8 +374,6 @@ class Bible(Processor):
     api_url = Option('bible_api_url', 'Bible API URL base',
                     'http://api.preachingcentral.com/bible.php')
 
-    psalm_pat = re.compile(r'\bpsalm\b', re.IGNORECASE)
-
     # The API doesn't seem to work with the apocrypha, even when looking in
     # versions that include it
     books = '|'.join(['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
@@ -394,7 +392,8 @@ class Bible(Processor):
 
     @match(r'^bible\s+(.*?)(?:\s+(?:in|from)\s+(.*))?$')
     def bible(self, event, passage, version=None):
-        passage = self.psalm_pat.sub('psalms', passage)
+        psalm_pat = re.compile(r'\bpsalm\b', re.IGNORECASE)
+        passage = psalm_pat.sub('psalms', passage)
 
         params = {'passage': passage.encode('utf-8'),
                   'type': 'xml',

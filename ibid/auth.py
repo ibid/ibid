@@ -13,13 +13,11 @@ import ibid
 from ibid.compat import hashlib
 from ibid.db.models import Credential, Permission
 
-chars = string.letters + string.digits
-permission_re = re.compile('^([+-]?)(\S+)$')
-
 def hash(password, salt=None):
     if salt:
         salt = salt[:8]
     else:
+        chars = string.letters + string.digits
         salt = ''.join([choice(chars) for i in xrange(8)])
     return unicode(salt + hashlib.sha1(salt + password).hexdigest())
 
@@ -38,6 +36,7 @@ def permission(name, account, source, session):
         permissions.extend(ibid.config.auth['permissions'])
 
     for permission in permissions:
+        permission_re = re.compile('^([+-]?)(\S+)$')
         match = permission_re.match(permission)
         if match and match.group(2) == name :
             if match.group(1) == '+':

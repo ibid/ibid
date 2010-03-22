@@ -126,7 +126,6 @@ class Weather(Processor):
                }
     places = DictOption('places', 'Alternate names for places', defaults)
     labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
-    whitespace = re.compile('\s+')
 
     class WeatherException(Exception):
         pass
@@ -137,7 +136,7 @@ class Weather(Processor):
     def _text(self, string):
         if not isinstance(string, basestring):
             string = ''.join(string.findAll(text=True))
-        return self.whitespace.sub(' ', string).strip()
+        return re.sub('\s+', ' ', string).strip()
 
     def _get_page(self, place):
         if place.lower() in self.places:
