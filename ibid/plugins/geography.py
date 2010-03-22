@@ -319,12 +319,12 @@ class TimeZone(Processor):
         raise TimezoneException(u"I don't know about the %s timezone" % (string,))
 
     def _geonames_lookup(self, place):
-        search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1})
+        search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1, 'username': 'ibid'})
         if search['totalResultsCount'] == 0:
             return None
 
         city = search['geonames'][0]
-        timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng']})
+        timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng'], 'username': 'ibid'})
 
         if 'timezoneId' in timezone:
             return gettz(timezone['timezoneId'])
