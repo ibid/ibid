@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from collections import defaultdict
 from subprocess import Popen, PIPE
 from urllib import urlencode
 import logging
@@ -11,6 +10,7 @@ from zipfile import ZipFile
 
 import ibid
 from ibid.plugins import Processor, handler, match
+from ibid.compat import defaultdict
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
                        unicode_output, cacheable_download
@@ -427,7 +427,7 @@ class Currency(Processor):
 
 class UnassignedCharacter(Exception): pass
 
-def fix_pinyin_tone (syllable):
+def fix_pinyin_tone(syllable):
     """Change numeric tones to diacritics in pinyin."""
     tone = syllable[-1]
     if tone.isdigit():
@@ -491,7 +491,7 @@ class Unihan(object):
         return self._data['kKorean'].lower().split()
 
     def korean (self):
-        return ['%s [%s]' % (h, y) for h, y in
+        return [u'%s [%s]' % (h, y) for h, y in
                                     zip(self.hangul(), self.korean_yale())]
 
     def japanese_on (self):
@@ -519,10 +519,10 @@ class Unihan(object):
                                 {'readings': human_join(readings, conjunction=u'or'), 'lang': lang})
 
         if prons:
-            msgs.append('it is pronounced ' +
+            msgs.append(u'it is pronounced ' +
                             human_join(prons, conjunction=u'or'))
 
-        msg =  '; '.join(msgs)
+        msg =  u'; '.join(msgs)
         if msg:
             msg = msg[0].upper() + msg[1:]
         return msg
