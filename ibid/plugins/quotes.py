@@ -404,9 +404,9 @@ class Bible(Processor):
             event.addresponse(message)
         errors = list(tree.findall('.//error'))
         if errors:
-            event.addresponse('There were errors: %s.', '. '.join(err.text for err in errors))
+            event.addresponse(u'There were errors: %s.', '. '.join(err.text for err in errors))
         elif not message:
-            event.addresponse("I couldn't find that passage.")
+            event.addresponse(u"I couldn't find that passage.")
 
     # Allow queries which are quite definitely bible references to omit "bible".
     # Specifically, they must start with the name of a book and be followed only
