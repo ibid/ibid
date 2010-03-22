@@ -52,7 +52,7 @@ class Distance(Processor):
     radius_values = DictOption('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
 
     def get_place_data(self, place, num):
-        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
+        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num, 'username': 'ibid'})
 
     def get_place(self, place):
         js = self.get_place_data(place, 1)
