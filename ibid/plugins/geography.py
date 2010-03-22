@@ -50,7 +50,7 @@ class Distance(Processor):
     radius_values = DictOption('radius_values', 'Radius of the earth in the units in which to specify distances', default_radius_values)
 
     def get_place_data(self, place, num):
-        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num})
+        return json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': num, 'username': 'ibid'})
 
     def get_place(self, place):
         js = self.get_place_data(place, 1)
@@ -317,12 +317,12 @@ class TimeZone(Processor):
         raise TimezoneException(u"I don't know about the %s timezone" % (string,))
 
     def _geonames_lookup(self, place):
-        search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1})
+        search = json_webservice('http://ws.geonames.org/searchJSON', {'q': place, 'maxRows': 1, 'username': 'ibid'})
         if search['totalResultsCount'] == 0:
             return None
 
         city = search['geonames'][0]
-        timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng']})
+        timezone = json_webservice('http://ws.geonames.org/timezoneJSON', {'lat': city['lat'], 'lng': city['lng'], 'username': 'ibid'})
 
         if 'timezoneId' in timezone:
             return gettz(timezone['timezoneId'])
