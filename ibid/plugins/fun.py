@@ -272,7 +272,7 @@ class ExchangeAction(Processor):
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
     carrying|have"""
-    feature = ('exchange',)
+    feature = ('bucket',)
 
     @match(r"^(?:have|take)\s+" + object_pat + "$")
     def have(self, event, determiner, object):
