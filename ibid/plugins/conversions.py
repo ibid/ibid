@@ -6,14 +6,13 @@ from urllib import urlencode
 import logging
 import re
 import unicodedata
-from zipfile import ZipFile
 
 import ibid
 from ibid.plugins import Processor, handler, match
 from ibid.compat import defaultdict
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
-                       unicode_output, cacheable_download
+                       unicode_output
 from ibid.utils.html import get_html_parse_tree
 
 features = {}
@@ -455,53 +454,43 @@ def fix_pinyin_tone(syllable):
 class Unihan(object):
     def __init__ (self, char):
         self.char = char
-        self._data = defaultdict(unicode)
-        self._read_data('Readings')
-
-    def _read_data (self, table):
-        db = cacheable_download(
-            'http://www.unicode.org/Public/UNIDATA/Unihan.zip',
-            'conversions/Unihan.zip')
-        f = ZipFile(db, 'r').open('Unihan_%s.txt' % table)
-
-        found = False
-        myscalar = ord(self.char)
-        for line in f:
-            line = line.strip()
-            if line == '' or line[0] == '#':
-                continue
-            fields = line.split('\t')
-            scalar = int(fields[0][2:], 16)
-            if scalar == myscalar:
-                found = True
-                self._data[fields[1]] = fields[2].decode('utf-8')
-            elif found:
-                break
-
-    def in_unihan (self):
-        return bool(self._data)
+        url = 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?'
+        params = {'codepoint': self.char.encode('utf8'),
+                  'useuft8': 'true'}
+        self.soup = get_html_parse_tree(url + urlencode(params),
+                                            treetype='beautifulsoup')
+        self.phonetic = self.soup.find(text='Phonetic Data') \
+                            .findNext('table')('tr')[1]('td')
+        self.defn = self.soup.find(text='Other Dictionary Data') \
+                            .findNext('table')('tr')[1]('td')[0].string.strip()
+        self.other_data = defaultdict(unicode,
+                                ((row('td')[0].string.strip(),
+                                    row('td')[1].code.string.strip())
+                                 for row in
+                                    self.soup.find(text='Other Data')
+                                    .findNext('table')('tr')[1:]))
 
     def pinyin (self):
-        return map(fix_pinyin_tone, self._data['kMandarin'].lower().split())
+        return map(fix_pinyin_tone, self.phonetic[1].string.lower().split())
 
     def hangul (self):
-        return self._data['kHangul'].split()
+        return self.other_data['kHangul'].split()
 
     def korean_yale (self):
-        return self._data['kKorean'].lower().split()
+        return self.phonetic[5].string.lower().split()
 
     def korean (self):
         return [u'%s [%s]' % (h, y) for h, y in
                                     zip(self.hangul(), self.korean_yale())]
 
     def japanese_on (self):
-        return self._data['kJapaneseOn'].lower().split()
+        return self.phonetic[3].string.lower().split()
 
     def japanese_kun (self):
-        return self._data['kJapaneseKun'].lower().split()
+        return self.phonetic[4].string.lower().split()
 
     def definition (self):
-        return self._data['kDefinition']
+        return self.defn
 
     def __unicode__ (self):
         msgs = []
@@ -648,10 +637,9 @@ class UnicodeData(Processor):
         haninfo = u''
         if 'CJK' in name and 'IDEOGRAPH' in name:
             unihan = Unihan(char)
-            if unihan.in_unihan():
-                haninfo = unicode(unihan)
-                if haninfo:
-                    haninfo = u'. ' + haninfo + u'.'
+            haninfo = unicode(unihan)
+            if haninfo:
+                haninfo = u'. ' + haninfo + u'.'
 
         return {'code': u'%04X' % ord(char),
                 'name': name.title().replace('Cjk', 'CJK'), 'char': char,
