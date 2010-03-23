@@ -28,7 +28,7 @@ class Addressed(Processor):
                        re.I | re.DOTALL),
             # "hello there, bot"-style addressing. But we want to be sure that
             # there wasn't normal addressing too:
-            re.compile(r'^(?:\S+:.*|(?P<body>.*),\s*(?P<nick>%s))\s*$' % names,
+            re.compile(r'^(?:\S+:.*|(?P<body>.*),\s*(?P<nick>%s))[\s?!.]*$' % names,
                        re.I | re.DOTALL)
         ]
         self.verb_pattern = re.compile(r'^(?:%s)\s+(?:%s)\s+' % (names, verbs),
