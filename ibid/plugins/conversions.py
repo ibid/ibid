@@ -458,36 +458,37 @@ class Unihan(object):
         params = {'codepoint': self.char.encode('utf8'),
                   'useuft8': 'true'}
         self.soup = get_html_parse_tree(url + urlencode(params),
-                                            treetype='beautifulsoup')
+                                            treetype='html5lib-beautifulsoup')
         self.phonetic = self.soup.find(text='Phonetic Data') \
                             .findNext('table')('tr')[1]('td')
         self.defn = self.soup.find(text='Other Dictionary Data') \
-                            .findNext('table')('tr')[1]('td')[0].string.strip()
+                            .findNext('table')('tr')[1]('td')[0] \
+                            .contents[0].strip()
         self.other_data = defaultdict(unicode,
-                                ((row('td')[0].string.strip(),
-                                    row('td')[1].code.string.strip())
+                                ((row('td')[0].contents[0].strip(),
+                                    row('td')[1].code.contents[0].strip())
                                  for row in
                                     self.soup.find(text='Other Data')
                                     .findNext('table')('tr')[1:]))
 
     def pinyin (self):
-        return map(fix_pinyin_tone, self.phonetic[1].string.lower().split())
+        return map(fix_pinyin_tone, self.phonetic[1].contents[0].lower().split())
 
     def hangul (self):
         return self.other_data['kHangul'].split()
 
     def korean_yale (self):
-        return self.phonetic[5].string.lower().split()
+        return self.phonetic[5].contents[0].lower().split()
 
     def korean (self):
         return [u'%s [%s]' % (h, y) for h, y in
                                     zip(self.hangul(), self.korean_yale())]
 
     def japanese_on (self):
-        return self.phonetic[3].string.lower().split()
+        return self.phonetic[3].contents[0].lower().split()
 
     def japanese_kun (self):
-        return self.phonetic[4].string.lower().split()
+        return self.phonetic[4].contents[0].lower().split()
 
     def definition (self):
         return self.defn
