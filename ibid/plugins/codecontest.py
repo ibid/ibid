@@ -38,7 +38,7 @@ class Usaco(Processor):
     admin_user = Option('admin_user', 'Admin user on USACO', None)
     admin_password = Option('admin_password', 'Admin password on USACO', None)
 
-    feature = ('usaco',)
+    features = ('usaco',)
     # Clashes with identity, so lower our priority since if we match, then
     # this is the better match
     priority = -20

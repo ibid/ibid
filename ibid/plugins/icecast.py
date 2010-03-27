@@ -17,7 +17,7 @@ features = {'icecast': {
 }}
 class ICECast(Processor):
     usage = u"what's playing [on <stream>]?"
-    feature = ('icecast',)
+    features = ('icecast',)
 
     interval = IntOption('interval',
             'Interval between checking for song changes', 60)

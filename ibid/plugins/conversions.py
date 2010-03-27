@@ -26,7 +26,7 @@ class BaseConvert(Processor):
     [convert] ascii <text> to base <number>
     [convert] <sequence> from base <number> to ascii"""
 
-    feature = ('base',)
+    features = ('base',)
 
     abbr_named_bases = {
             "hex": 16,
@@ -222,7 +222,7 @@ features['units'] = {
 }
 class Units(Processor):
     usage = u'convert [<value>] <unit> to <unit>'
-    feature = ('units',)
+    features = ('units',)
     priority = 10
 
     units = Option('units', 'Path to units executable', 'units')
@@ -303,7 +303,7 @@ class Currency(Processor):
     usage = u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
 
-    feature = ('currency',)
+    features = ('currency',)
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
@@ -433,7 +433,7 @@ class UnicodeData(Processor):
     usage = u"""U+<hex code>
     unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""
 
-    feature = ('unicode',)
+    features = ('unicode',)
 
     bidis = {'AL': u'right-to-left Arabic', 'AN': u'Arabic number',
              'B': u'paragraph separator', 'BN': u'boundary neutral',

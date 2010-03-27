@@ -17,7 +17,7 @@ features['aptitude'] = {
 }
 class Aptitude(Processor):
     usage = u'apt (search|show) <term>'
-    feature = ('aptitude',)
+    features = ('aptitude',)
 
     aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
 
@@ -120,7 +120,7 @@ features['apt-file'] = {
 }
 class AptFile(Processor):
     usage = u'apt-file [search] <term>'
-    feature = ('apt-file',)
+    features = ('apt-file',)
 
     aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
 
@@ -159,7 +159,7 @@ features['man'] = {
 }
 class Man(Processor):
     usage = u'man [<section>] <page>'
-    feature = ('man',)
+    features = ('man',)
 
     man = Option('man', 'Path of the man executable', 'man')
 
@@ -202,7 +202,7 @@ features['mac'] = {
 }
 class Mac(Processor):
     usage = u'mac <address>'
-    feature = ('mac',)
+    features = ('mac',)
 
     @match(r'^((?:mac|oui|ether(?:net)?(?:\s*code)?)\s+)?((?:(?:[0-9a-f]{2}(?(1)[:-]?|:))){2,5}[0-9a-f]{2})$')
     def lookup_mac(self, event, _, mac):

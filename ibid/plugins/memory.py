@@ -26,7 +26,7 @@ def get_memusage():
 
 class MemoryLog(Processor):
 
-    feature = ('memory',)
+    features = ('memory',)
     autoload = False
 
     mem_filename = Option('mem_filename', 'Memory log filename', 'logs/memory.log')
@@ -99,7 +99,7 @@ class MemoryLog(Processor):
 class MemoryInfo(Processor):
     usage = u'memory usage'
 
-    feature = ('memory',)
+    features = ('memory',)
 
     @match('^memory\s+usage$')
     def memory_usage(self, event):

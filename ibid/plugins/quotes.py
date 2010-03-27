@@ -27,7 +27,7 @@ features['fortune'] = {
 }
 class Fortune(Processor, RPC):
     usage = u'fortune'
-    feature = ('fortune',)
+    features = ('fortune',)
 
     fortune = Option('fortune', 'Path of the fortune executable', 'fortune')
 
@@ -66,7 +66,7 @@ features['bash'] = {
 class Bash(Processor):
     usage = u'bash[.org] [(random|<number>)]'
 
-    feature = ('bash',)
+    features = ('bash',)
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
@@ -103,7 +103,7 @@ class FMLException(Exception):
 class FMyLife(Processor):
     usage = u'fml (<number> | [random] | flop | top | last | love | money | kids | work | health | sex | miscellaneous )'
 
-    feature = ('fml',)
+    features = ('fml',)
 
     api_url = Option('fml_api_url', 'FML API URL base', 'http://api.betacie.com/')
     # The Ibid API Key, registered by Stefano Rivera:
@@ -173,7 +173,7 @@ class TextsFromLastNight(Processor):
     usage = u"""tfln [(random|<number>)]
     tfln (worst|best) [(today|this week|this month)]"""
 
-    feature = ('tfln',)
+    features = ('tfln',)
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
@@ -252,7 +252,7 @@ class MyLifeIsAverage(Processor):
     usage = u"""mlia [(<number> | random | recent | today | yesterday | this week | this month | this year )]
     mlig [(<number> | random | recent | today | yesterday | this week | this month | this year )]"""
 
-    feature = ('mlia',)
+    features = ('mlia',)
 
     public_browse = BoolOption('public_browse',
                                'Allow random quotes in public', True)
@@ -367,7 +367,7 @@ class Bible(Processor):
     usage = u"""bible <passages> [in <version>]
     <book> <verses> [in <version>]"""
 
-    feature = ('bible',)
+    features = ('bible',)
     # http://labs.bible.org/api/ is an alternative
     # Their feature set is a little different, but they should be fairly
     # compatible

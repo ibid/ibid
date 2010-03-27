@@ -21,7 +21,7 @@ features['plugins'] = {
 }
 class ListPLugins(Processor):
     usage = u'list plugins'
-    feature = ('plugins',)
+    features = ('plugins',)
 
     @match(r'^lsmod|list\s+plugins$')
     def handler(self, event):
@@ -38,7 +38,7 @@ features['core'] = {
 }
 class ReloadCoreModules(Processor):
     usage = u'reload (reloader|dispatcher|databases|auth)'
-    feature = ('core',)
+    features = ('core',)
 
     priority = -5
     permission = u'core'
@@ -56,7 +56,7 @@ class ReloadCoreModules(Processor):
 
 class LoadModules(Processor):
     usage = u'(load|unload|reload) <plugin|processor>'
-    feature = ('plugins',)
+    features = ('plugins',)
 
     permission = u'plugins'
 
@@ -79,7 +79,7 @@ features['die'] = {
 }
 class Die(Processor):
     usage = u'die'
-    feature = ('die',)
+    features = ('die',)
 
     permission = u'admin'
 
@@ -95,7 +95,7 @@ features['sources'] = {
 class Admin(Processor):
     usage = u"""(connect|disconnect) (to|from) <source>
     load <source> source"""
-    feature = ('sources',)
+    features = ('sources',)
 
     permission = u'sources'
 
@@ -129,7 +129,7 @@ class Admin(Processor):
 
 class Info(Processor):
     usage = u'(sources|list configured sources)'
-    feature = ('sources',)
+    features = ('sources',)
 
     @match(r'^sources$')
     def list(self, event):
@@ -149,7 +149,7 @@ features['version'] = {
 }
 class Version(Processor):
     usage = u'version'
-    feature = ('version',)
+    features = ('version',)
 
     @match(r'^version$')
     def show_version(self, event):
@@ -167,7 +167,7 @@ class Config(Processor):
     usage = u"""reread config
     set config <name> to <value>
     get config <name>"""
-    feature = ('config',)
+    features = ('config',)
 
     priority = -10
     permission = u'config'

@@ -37,7 +37,7 @@ class Distance(Processor):
     # http://www.mathforum.com/library/drmath/view/51711.html
     # http://mathworld.wolfram.com/GreatCircle.html
 
-    feature = ('distance',)
+    features = ('distance',)
 
     default_unit_names = {
             'km': "kilometres",
@@ -118,7 +118,7 @@ class Weather(Processor):
     usage = u"""weather in <city>
     forecast for <city>"""
 
-    feature = ('weather',)
+    features = ('weather',)
 
     defaults = {    'ct': 'Cape Town, South Africa',
                     'jhb': 'Johannesburg, South Africa',
@@ -236,7 +236,7 @@ features['timezone'] = {
 class TimeZone(Processor):
     usage = u"""when is <time> <place|timezone> in <place|timezone>
     time in <place|timezone>"""
-    feature = ('timezone',)
+    features = ('timezone',)
 
     zoneinfo = Option('zoneinfo', 'Timezone info directory', '/usr/share/zoneinfo')
     custom_zones = DictOption('timezones', 'Custom timezone names', CUSTOM_ZONES)
@@ -402,7 +402,7 @@ class FlightSearch(Processor):
     usage = u"""airport [in] <name|location|code>
     [<cheapest|quickest>] flight from <departure> to <destination> from <depart_date> [anytime|morning|afternoon|evening|<time>] to <return_date> [anytime|morning|afternoon|evening|<time>]"""
 
-    feature = ('flight',)
+    features = ('flight',)
 
     airports_url = u'http://openflights.svn.sourceforge.net/viewvc/openflights/openflights/data/airports.dat'
     max_results = IntOption('max_results', 'Maximum number of results to list', 5)

@@ -37,7 +37,7 @@ class Meeting(Processor):
     minutes so far
     meeting title is <title>
     """
-    feature = ('meeting',)
+    features = ('meeting',)
     permission = u'chairmeeting'
 
     formats = Option('formats', u'Formats to log to. '
@@ -244,7 +244,7 @@ class MeetingLogger(Processor):
     addressed = False
     processed = True
     priority = 1900
-    feature = ('meeting',)
+    features = ('meeting',)
 
     def process(self, event):
         if 'channel' in event and 'source' in event \
@@ -283,7 +283,7 @@ class Poll(Processor):
     vote (<id> | <option>) [on <topic>]
     end poll
     """
-    feature = ('poll',)
+    features = ('poll',)
     permission = u'chairmeeting'
 
     polls = {}
