@@ -9,6 +9,7 @@ import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
+from ibid.compat import any
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
                        unicode_output
@@ -173,7 +174,8 @@ class BaseConvert(Processor):
             'base': self._base_name(base_to),
         })
 
-        if base_to == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+        if base_to == 64 and any(True for plugin in ibid.processors
+                if 'base64' in getattr(plugin, 'features', [])):
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
     @handler
@@ -213,7 +215,8 @@ class BaseConvert(Processor):
             return
 
         event.addresponse(u'That is "%s"', output)
-        if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+        if base_from == 64 and any(True for plugin in ibid.processors
+                if 'base64' in getattr(plugin, 'features', [])):
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
 features['units'] = {
