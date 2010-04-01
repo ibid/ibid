@@ -506,8 +506,8 @@ class UnicodeData(Processor):
     @match(r'^unicode\s+([a-z -]{2,})$')
     def fromname (self, event, name):
         try:
-            char = eval(ur'u"\N{%s}"' % name.upper())
-        except SyntaxError:
+            char = unicodedata.lookup(name.upper())
+        except KeyError:
             event.addresponse(u"I couldn't find a character with that name")
         else:
             info = self.info(char)
