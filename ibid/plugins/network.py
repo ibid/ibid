@@ -22,7 +22,7 @@ import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, get_country_codes, get_process_output, \
-                       human_join, unicode_output, url_to_bytestring
+                       human_join, unicode_output, iri_to_uri
 
 features = {}
 
@@ -391,7 +391,7 @@ class HTTP(Processor):
 
         try:
             try:
-                conn.request(method.upper(), url_to_bytestring(url),
+                conn.request(method.upper(), iri_to_uri(url),
                              headers=headers)
                 response = conn.getresponse()
                 data = response.read(self.max_size)
