@@ -12,4 +12,14 @@ plugins and extensions as easy as possible to write.
 Ibid is in constant development.
 The code is hosted `on Launchpad <https://launchpad.net/ibid/>`_.
 
+The most recent version of this documentation is available at
+`http://ibid.omnia.za.net/docs/ <http://ibid.omnia.za.net/docs/>`_.
+
+Getting Help with Ibid
+----------------------
+
+* The Ibid Developers can be found in ``#ibid`` on ``irc.atrum.org``.
+* Alternatively, file a `Question <https://answers.launchpad.net/ibid>`_
+  on Launchpad.
+
 .. vi: set et sta sw=3 ts=3:

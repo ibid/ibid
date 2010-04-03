@@ -10,8 +10,9 @@ import unicodedata
 import ibid
 from ibid.plugins import Processor, handler, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join
-from ibid.utils.html import get_country_codes, get_html_parse_tree
+from ibid.utils import file_in_path, get_country_codes, human_join, \
+                       unicode_output
+from ibid.utils.html import get_html_parse_tree
 
 features = {}
 log = logging.getLogger('plugins.conversions')

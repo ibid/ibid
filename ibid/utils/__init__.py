@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import codecs
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
 import logging
@@ -83,7 +84,7 @@ def _cacheable_download(url, cachefile, headers={}, timeout=60):
 
     exists = os.path.isfile(cachefile)
 
-    req = urllib2.Request(url_to_bytestring(url))
+    req = urllib2.Request(iri_to_uri(url))
     for name, value in headers.iteritems():
         req.add_header(name, value)
     if not req.has_header('user-agent'):
@@ -189,12 +190,25 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
 class JSONException(Exception):
     pass
 
-def url_to_bytestring(url):
+def iri_to_uri(url):
     "Expand an IDN hostname and UTF-8 encode the path of a unicode URL"
     parts = list(urlparse(url))
-    host = parts[1].split(':')
-    host[0] = host[0].encode('idna')
-    parts[1] = ':'.join(host)
+    username, passwd, host, port = re.match(
+        r'^(?:(.*)(?::(.*))?@)?(.*)(?::(.*))?$', parts[1]).groups()
+    parts[1] = ''
+    if username:
+        parts[1] = quote(username.encode('utf-8'))
+        if passwd:
+            parts[1] += ':' + quote(passwd.encode('utf-8'))
+        parts[1] += '@'
+    if host:
+        if parts[0].lower() in ('http', 'https', 'ftp'):
+            parts[1] += host.encode('idna')
+        else:
+            parts[1] += quote(host.encode('utf-8'))
+    if port:
+        parts[1] += ':' + quote(port.encode('utf-8'))
+
     parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
@@ -233,7 +247,7 @@ def json_webservice(url, params={}, headers={}):
             params[key] = params[key].encode('utf-8')
 
     if params:
-        url = url_to_bytestring(url) + '?' + urlencode(params)
+        url = iri_to_uri(url) + '?' + urlencode(params)
 
     req = urllib2.Request(url, headers=headers)
     if not req.has_header('user-agent'):
@@ -276,5 +290,36 @@ def get_process_output(command, input=None):
     output, error = process.communicate(input)
     code = process.wait()
     return output, error, code
+
+def get_country_codes():
+    filename = cacheable_download(
+            'http://www.iso.org/iso/list-en1-semic-3.txt',
+            'lookup/iso-3166-1_list_en.txt')
+
+    f = codecs.open(filename, 'r', 'ISO-8859-1')
+    countries = {
+        u'AC': u'Ascension Island',
+        u'UK': u'United Kingdom',
+        u'SU': u'Soviet Union',
+        u'EU': u'European Union',
+        u'TP': u'East Timor',
+        u'YU': u'Yugoslavia',
+    }
+
+    started = False
+    for line in f:
+        line = line.strip()
+        if started:
+            country, code = line.split(u';')
+            if u',' in country:
+                country = u' '.join(reversed(country.split(u',', 1)))
+            country = country.title()
+            countries[code] = country
+        elif line == u'':
+            started = True
+
+    f.close()
+
+    return countries
 
 # vi: set et sta sw=4 ts=4:
