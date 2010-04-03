@@ -124,7 +124,7 @@ def identify(session, user, source, created, create=True):
     if not identity:
         identity = Identity(source, user)
         identity.created = created
-        session.save(identity)
+        session.add(identity)
         session.flush()
     elif identity.created > created:
         identity.created = created
@@ -181,7 +181,7 @@ def import_factoids(knab, ibid, source):
         fvalue.time = kfactoid.utc_time
 
         factoid.values.append(fvalue)
-        ibid.save_or_update(factoid)
+        ibid.add(factoid)
 
     ibid.commit()
 
