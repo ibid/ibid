@@ -112,7 +112,7 @@ class Set(Processor):
 
             event.session.delete(karma)
         else:
-            event.session.save_or_update(karma)
+            event.session.add(karma)
         event.session.commit()
 
         log.info(u"%s karma for '%s' by %s/%s (%s) because: %s",

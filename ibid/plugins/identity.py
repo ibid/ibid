@@ -54,7 +54,7 @@ class Accounts(Processor):
             return
 
         account = Account(username)
-        event.session.save_or_update(account)
+        event.session.add(account)
         event.session.commit()
         log.info(u"Created account %s (%s) by %s/%s (%s)",
                 account.id, account.username, event.account, event.identity, event.sender['connection'])
@@ -64,14 +64,14 @@ class Accounts(Processor):
                     .filter_by(identity=username, source=event.source).first()
             if identity:
                 identity.account_id = account.id
-                event.session.save_or_update(identity)
+                event.session.add(identity)
                 event.session.commit()
                 log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                         identity.id, identity.identity, identity.source, account.id, account.username)
         else:
             identity = event.session.query(Identity).get(event.identity)
             identity.account_id = account.id
-            event.session.save_or_update(identity)
+            event.session.add(identity)
             event.session.commit()
             log.info(u"Attached identity %s (%s on %s) to account %s (%s)",
                     identity.id, identity.identity, identity.source, account.id, account.username)
@@ -132,7 +132,7 @@ class Accounts(Processor):
         oldname = account.username
         account.username = newname
 
-        event.session.save_or_update(account)
+        event.session.add(account)
         event.session.commit()
         identify_cache.clear()
 
@@ -182,12 +182,12 @@ class Identities(Processor):
                         return
 
                     account = Account(username)
-                    event.session.save_or_update(account)
+                    event.session.add(account)
 
                     currentidentity = event.session.query(Identity) \
                             .get(event.identity)
                     currentidentity.account_id = account.id
-                    event.session.save_or_update(currentidentity)
+                    event.session.add(currentidentity)
 
                     identify_cache.clear()
 
@@ -249,7 +249,7 @@ class Identities(Processor):
             if not ident:
                 ident = Identity(source, identity)
             ident.account_id = account.id
-            event.session.save_or_update(ident)
+            event.session.add(ident)
             event.session.commit()
 
             identify_cache.clear()
@@ -275,7 +275,7 @@ class Identities(Processor):
             if not identity:
                 identity = Identity(source, user)
             identity.account_id = account_id
-            event.session.save_or_update(identity)
+            event.session.add(identity)
             identify_cache.clear()
 
             del self.tokens[token]
@@ -307,7 +307,7 @@ class Identities(Processor):
             event.addresponse(u"I don't know about that identity")
         else:
             identity.account_id = None
-            event.session.save_or_update(identity)
+            event.session.add(identity)
             event.session.commit()
 
             identify_cache.clear()
@@ -343,7 +343,7 @@ class Attributes(Processor):
                 return
 
         account.attributes.append(Attribute(name, value))
-        event.session.save_or_update(account)
+        event.session.add(account)
         event.session.commit()
 
         event.addresponse(True)
@@ -466,7 +466,7 @@ class Identify(Processor):
                     .first()
             if not identity:
                 identity = Identity(event.source, event.sender['id'])
-                event.session.save_or_update(identity)
+                event.session.add(identity)
                 try:
                     event.session.commit()
                     log.info(u'Created identity %s for %s on %s', identity.id, identity.identity, identity.source)
@@ -545,7 +545,7 @@ class AddAuth(Processor):
             credential = password
 
         credential = Credential(method, credential, source, account.id)
-        event.session.save_or_update(credential)
+        event.session.add(credential)
         event.session.commit()
         log.info(u"Added %s credential %s for account %s (%s) on %s by account %s",
                 method, credential.credential, account.id, account.username, source, event.account)
@@ -600,7 +600,7 @@ class Permissions(Processor):
                 return
 
             permission.value = value
-            event.session.save_or_update(permission)
+            event.session.add(permission)
 
         event.session.commit()
         ibid.auth.drop_caches()

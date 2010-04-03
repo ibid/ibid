@@ -86,7 +86,7 @@ class See(Processor):
         sighting.time = event.time
         sighting.count = sighting.count + 1
 
-        event.session.save_or_update(sighting)
+        event.session.add(sighting)
         try:
             event.session.commit()
         except IntegrityError:

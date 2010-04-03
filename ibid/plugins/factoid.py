@@ -84,7 +84,7 @@ class FactoidName(Base):
                     .params(pattern='%\\_\\%%', escape='\\') \
                     .all():
                 row.wild = True
-                self.upgrade_session.save_or_update(row)
+                self.upgrade_session.add(row)
         def upgrade_7_to_8(self):
             self.drop_index(self.table.c._name)
             self.alter_column(Column('name',
@@ -367,7 +367,7 @@ class Forget(Processor):
 
             name = FactoidName(unicode(target), event.identity)
             factoid.names.append(name)
-            event.session.save_or_update(factoid)
+            event.session.add(factoid)
             event.session.commit()
             event.addresponse(True)
             log.info(u"Added name '%s' to factoid %s (%s) by %s/%s (%s)",
@@ -552,7 +552,7 @@ class Set(Processor):
             factoid = Factoid()
             fname = FactoidName(unicode(name), event.identity)
             factoid.names.append(fname)
-            event.session.save_or_update(factoid)
+            event.session.add(factoid)
             event.session.flush()
             log.info(u"Creating factoid %s with name '%s' by %s", factoid.id, fname.name, event.identity)
 
@@ -560,7 +560,7 @@ class Set(Processor):
             value = '%s %s' % (verb, value)
         fvalue = FactoidValue(unicode(value), event.identity)
         factoid.values.append(fvalue)
-        event.session.save_or_update(factoid)
+        event.session.add(factoid)
         event.session.commit()
         self.last_set_factoid=factoid.names[0].name
         log.info(u"Added value '%s' to factoid %s (%s) by %s/%s (%s)",
@@ -614,7 +614,7 @@ class Modify(Processor):
 
             oldvalue = factoid[2].value
             factoid[2].value += suffix
-            event.session.save_or_update(factoid[2])
+            event.session.add(factoid[2])
             event.session.commit()
 
             log.info(u"Appended '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
@@ -707,7 +707,7 @@ class Modify(Processor):
                     event.addresponse(u"That operation makes no sense. Try something like y/abcdef/ABCDEF/")
                     return
 
-            event.session.save_or_update(factoid[2])
+            event.session.add(factoid[2])
             event.session.commit()
 
             log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",

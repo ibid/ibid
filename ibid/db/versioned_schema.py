@@ -78,7 +78,7 @@ class VersionedSchema(object):
                 self._create_table()
 
                 schema = Schema(unicode(self.table.name), self.version)
-                session.save_or_update(schema)
+                session.add(schema)
                 return
             Schema.__table__ = self._get_reflected_model()
 
@@ -92,7 +92,7 @@ class VersionedSchema(object):
                 self._create_table()
 
                 schema = Schema(unicode(self.table.name), self.version)
-                session.save_or_update(schema)
+                session.add(schema)
 
             elif self.version > schema.version:
                 for version in range(schema.version + 1, self.version + 1):
@@ -104,7 +104,7 @@ class VersionedSchema(object):
                     getattr(self, 'upgrade_%i_to_%i' % (version - 1, version))()
 
                     schema.version = version
-                    session.save_or_update(schema)
+                    session.add(schema)
 
                     self.upgrade_reflected_model = \
                             MetaData(session.bind, reflect=True)
