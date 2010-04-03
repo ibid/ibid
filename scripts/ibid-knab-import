@@ -291,7 +291,7 @@ if __name__ == '__main__':
         config.merge(FileConfig('local.ini'))
 
     ibidengine = create_engine(config.databases['ibid'], encoding='utf-8')
-    IbidSession = sessionmaker(bind=ibidengine, transactional=False)
+    IbidSession = sessionmaker(bind=ibidengine, autocommit=True)
     ibid = IbidSession()
 
     import_factoids(knab, ibid, source)
