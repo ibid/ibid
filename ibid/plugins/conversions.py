@@ -555,9 +555,11 @@ class UnicodeData(Processor):
                   'So': u'a Symbol', 'Zl': u'a Line Separator',
                   'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
 
-    @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)$|'
-           r'^(?:unicode|ascii)\s+([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
-           r'^(?:unicode|ascii)\s+#?(\d{2,})$')
+    @match(r'^(?:(?:uni(?:code|han)\s+)?U\+|'
+                r'uni(?:code|han)\s+#?0?x)([0-9a-f]+)$|'
+           r'^(?:unicode|unihan|ascii)\s+'
+                r'([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
+           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$')
     def unichr (self, event, hexcode, hexcode2, deccode):
         if hexcode or hexcode2:
             code = int(hexcode or hexcode2, 16)
@@ -581,7 +583,7 @@ class UnicodeData(Processor):
                           u"%(unihan)s",
                           info)
 
-    @match(r'^unicode\s+(.)$', 'deaddressed')
+    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed')
     def ord (self, event, char):
         try:
             info = self.info(char)
@@ -598,7 +600,7 @@ class UnicodeData(Processor):
                               u"%(unihan)s",
                               info)
 
-    @match(r'^unicode\s+([a-z -]{2,})$')
+    @match(r'^uni(?:code|han)\s+([a-z -]{2,})$')
     def fromname (self, event, name):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
