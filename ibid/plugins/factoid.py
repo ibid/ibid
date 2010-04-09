@@ -484,8 +484,9 @@ class Get(Processor, RPC):
             reply = fvalue.value
             oname = fname.name
             pattern = re.escape(fname.name).replace(r'\$arg', '(.*)')
+            args = re.match(pattern, name, re.I | re.U).groups()
 
-            for i, capture in enumerate(re.match(pattern, name, re.I).groups()):
+            for i, capture in enumerate(args):
                 reply = reply.replace('$%s' % (i + 1), capture)
                 oname = oname.replace('$arg', capture, 1)
 
