@@ -301,16 +301,18 @@ def exchange(event, determiner, object):
     if determiner is None:
         determiner = ''
 
+    detl = determiner.lower()
+
     # determine how to refer to the giver in the genitive case
-    if determiner in ('their', 'our') and who[-1] == 's':
+    if detl in ('their', 'our') and who[-1] in 'sS':
         # giver's name is a plural ending in 's'
         genitive = who + "'"
-    elif determiner.endswith("s'") or determiner.endswith("'s"):
+    elif detl.endswith("s'") or detl.endswith("'s"):
         genitive = determiner
     else:
         genitive = who + "'s"
 
-    if determiner == 'the':
+    if detl == 'the':
         taken = u'the ' + object
     else:
         taken = genitive + u' ' + object
@@ -331,12 +333,12 @@ def exchange(event, determiner, object):
     # determine which determiner we will use when talking about this object in
     # the future -- we only want to refer to it by the giver's name if the giver
     # implied that it was theirs, and we don't want to use demonstratives
-    if determiner in ('this', 'that'):
+    if detl in ('this', 'that'):
         # object is definitely singular
         determiner = indefinite_article(object)
-    elif determiner in ('my', 'our', 'his', 'her', 'its', 'their'):
+    elif detl in ('my', 'our', 'his', 'her', 'its', 'their'):
         determiner = genitive
-    elif determiner in ('these', 'those'):
+    elif detl in ('these', 'those'):
         determiner = u'some'
 
     if determiner:
