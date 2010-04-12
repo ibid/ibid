@@ -1,5 +1,9 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+#
+# The indefinite_article function follows an algorithm by Damian Conway
+# as published in CPAN package Lingua-EN-Inflect-1.891 under the GNU GPL and
+# Artistic License.
 
 import codecs
 from gzip import GzipFile
@@ -279,7 +283,7 @@ def get_process_output(command, input=None):
     return output, error, code
 
 def indefinite_article(noun_phrase):
-    # adapted from CPAN package Lingua-EN-Inflect-1.891 by Damian Conway
+    # algorithm adapted from CPAN package Lingua-EN-Inflect-1.891 by Damian Conway
     m = re.search('\w+', noun_phrase)
     if m:
         word = m.group(0)
