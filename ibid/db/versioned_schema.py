@@ -226,9 +226,9 @@ class VersionedSchema(object):
             sg.traverse_single(constraint)
 
         constraints = []
+        foreign_key_re = re.compile(r'^FOREIGN KEY\(.*?\) (REFERENCES .*)$',
+                                    re.I)
         for constraint in [x.strip() for x in sg.buffer.getvalue().split(',')]:
-            foreign_key_re = re.compile(r'^FOREIGN KEY\(.*?\) (REFERENCES .*)$',
-                                        re.I)
             m = foreign_key_re.match(constraint)
             if m:
                 constraints.append(m.group(1))
