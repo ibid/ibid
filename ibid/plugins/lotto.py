@@ -17,7 +17,7 @@ features = {'lotto': {
 class Lotto(Processor):
     usage = u'lotto'
 
-    feature = ('lotto',)
+    features = ('lotto',)
 
     za_url = 'http://www.nationallottery.co.za/'
     za_re = re.compile(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif')

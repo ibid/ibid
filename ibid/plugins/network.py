@@ -22,7 +22,7 @@ import ibid
 from ibid.plugins import Processor, match, authorise
 from ibid.config import Option, IntOption, FloatOption, DictOption
 from ibid.utils import file_in_path, get_country_codes, get_process_output, \
-                       human_join, unicode_output, url_to_bytestring
+                       human_join, unicode_output, iri_to_uri
 
 features = {}
 
@@ -33,7 +33,7 @@ features['dns'] = {
 class DNS(Processor):
     usage = u'dns [<record type>] [for] <host> [from <nameserver>]'
 
-    feature = ('dns',)
+    features = ('dns',)
 
     def setup(self):
         if Resolver is None:
@@ -82,7 +82,7 @@ features['ping'] = {
 }
 class Ping(Processor):
     usage = u'ping <host>'
-    feature = ('ping',)
+    features = ('ping',)
 
     ping = Option('ping', 'Path to ping executable', 'ping')
 
@@ -115,7 +115,7 @@ features['tracepath'] = {
 }
 class Tracepath(Processor):
     usage = u'tracepath <host>'
-    feature = ('tracepath',)
+    features = ('tracepath',)
 
     tracepath = Option('tracepath', 'Path to tracepath executable', 'tracepath')
 
@@ -144,7 +144,7 @@ features['ipcalc'] = {
 class IPCalc(Processor):
     usage = u"""ipcalc <network>/<subnet>
     ipcalc <address> - <address>"""
-    feature = ('ipcalc',)
+    features = ('ipcalc',)
 
     ipcalc = Option('ipcalc', 'Path to ipcalc executable', 'ipcalc')
 
@@ -221,7 +221,7 @@ class HTTP(Processor):
     usage = u"""(get|head) <url>
     is <domain> (up|down)
     tell me when <domain|url> is up"""
-    feature = ('http',)
+    features = ('http',)
     priority = -10
 
     max_size = IntOption('max_size', u'Only request this many bytes', 500)
@@ -391,7 +391,7 @@ class HTTP(Processor):
 
         try:
             try:
-                conn.request(method.upper(), url_to_bytestring(url),
+                conn.request(method.upper(), iri_to_uri(url),
                              headers=headers)
                 response = conn.getresponse()
                 data = response.read(self.max_size)
@@ -417,7 +417,7 @@ features['tld'] = {
 class TLD(Processor):
     usage = u""".<tld>
     tld for <country>"""
-    feature = ('tld',)
+    features = ('tld',)
 
     country_codes = {}
 
@@ -461,7 +461,7 @@ features['ports'] = {
 class Ports(Processor):
     usage = u"""port for <protocol>
     (tcp|udp) port <number>"""
-    feature = ('ports',)
+    features = ('ports',)
     priority = 10
 
     services = Option('services', 'Path to services file', '/etc/services')
@@ -534,7 +534,7 @@ class Nmap(Processor):
     usage = u"""port scan <hostname>
     net scan <network>/<prefix>"""
 
-    feature = ('nmap',)
+    features = ('nmap',)
     permission = 'nmap'
     min_prefix = IntOption('min_prefix', 'Minimum network prefix that may be scanned', 24)
 

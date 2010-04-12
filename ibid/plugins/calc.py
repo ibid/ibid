@@ -37,7 +37,7 @@ features['bc'] = {
 class BC(Processor):
     usage = u'bc <expression>'
 
-    feature = ('bc',)
+    features = ('bc',)
 
     bc = Option('bc', 'Path to bc executable', 'bc')
     bc_timeout = FloatOption('bc_timeout', 'Maximum BC execution time (sec)', 2.0)
@@ -141,7 +141,7 @@ class PowSubstitutionWalker(object):
 
 class Calc(Processor):
     usage = u'<expression>'
-    feature = ('calc',)
+    features = ('calc',)
 
     priority = 500
 
@@ -212,7 +212,7 @@ features['random'] = {
 }
 class Random(Processor):
     usage = u'random [ <max> | <min> <max> ]'
-    feature = ('random',)
+    features = ('random',)
 
     @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):

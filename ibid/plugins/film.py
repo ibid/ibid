@@ -26,7 +26,7 @@ features['tvshow'] = {
 class TVShow(Processor):
     usage = u'tvshow <show>'
 
-    feature = ('tvshow',)
+    features = ('tvshow',)
 
     def remote_tvrage(self, show):
         info_url = 'http://services.tvrage.com/tools/quickinfo.php?%s'
@@ -88,7 +88,7 @@ features['imdb'] = {
 }
 class IMDB(Processor):
     usage = u'imdb [search] [character|company|episode|movie|person] <terms> [#<index>]'
-    feature = ('imdb',)
+    features = ('imdb',)
 
     access_system = Option("accesssystem", "Method of querying IMDB", "http")
     adult_search = BoolOption("adultsearch", "Include adult films in search results", True)

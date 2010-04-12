@@ -20,7 +20,7 @@ features['nickometer'] = {
 }
 class Nickometer(Processor):
     usage = u'nickometer [<nick>] [with reasons]'
-    feature = ('nickometer',)
+    features = ('nickometer',)
 
     @match(r'^(?:nick|lame)-?o-?meter(?:(?:\s+for)?\s+(.+?))?(\s+with\s+reasons)?$')
     def handle_nickometer(self, event, nick, wreasons):
@@ -45,7 +45,7 @@ features['choose'] = {
 }
 class Choose(Processor):
     usage = u'choose <choice> or <choice>...'
-    feature = ('choose',)
+    features = ('choose',)
 
     choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
 
@@ -59,7 +59,7 @@ features['coffee'] = {
 }
 class Coffee(Processor):
     usage = u'coffee (on|please)'
-    feature = ('coffee',)
+    features = ('coffee',)
 
     pots = {}
 
@@ -114,7 +114,7 @@ features['insult'] = {
 class Insult(Processor):
     usage = u"""(flame | insult) <person>
     (swear | cuss | explete) [at <person>]"""
-    feature = ('insult',)
+    features = ('insult',)
 
     adjectives = ListOption('adjectives', 'List of adjectives', (
         u'acidic', u'antique', u'artless', u'base-court', u'bat-fowling',

@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2010, Ben Steenhuisen, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import re
@@ -16,7 +16,7 @@ features = {'gameservers': {
 
 class Bnet(Processor):
     usage = u'dota players | who is playing dota'
-    feature = ('gameservers',)
+    features = ('gameservers',)
     autoload = False
 
     bnet_host = Option('bnet_host', 'Bnet server hostname / IP', '127.0.0.1')
@@ -54,7 +54,7 @@ class Bnet(Processor):
 
 class CounterStrike(Processor):
     usage = u'cs players | who is playing cs'
-    feature = ('gameservers',)
+    features = ('gameservers',)
     autoload = False
 
     cs_host = Option('cs_host', 'CS server hostname / IP', '127.0.0.1')

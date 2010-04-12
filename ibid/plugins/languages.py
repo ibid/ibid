@@ -11,7 +11,7 @@ from dictclient import Connection
 from ibid.plugins import Processor, match
 from ibid.config import Option, IntOption
 from ibid.utils import decode_htmlentities, json_webservice, human_join, \
-                        is_url, url_to_bytestring
+                        is_url, iri_to_uri
 
 features = {}
 
@@ -24,7 +24,7 @@ class Dict(Processor):
     define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
-    feature = ('dict',)
+    features = ('dict',)
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
@@ -141,7 +141,7 @@ class Translate(Processor):
     usage = u"""translate (<phrase>|<url>) [from <language>] [to <language>]
     translation chain <phrase> [from <language>] [to <language>]"""
 
-    feature = ('translate',)
+    features = ('translate',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
@@ -192,7 +192,7 @@ class Translate(Processor):
 
         if is_url(text):
             if urlparse(text).scheme in ('', 'http'):
-                url = url_to_bytestring(text)
+                url = iri_to_uri(text)
                 query = {'sl': src_lang, 'tl': dest_lang, 'u': url}
                 event.addresponse(u'http://translate.google.com/translate?' +
                                     urlencode(query))

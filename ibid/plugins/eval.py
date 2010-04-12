@@ -20,7 +20,7 @@ features = {'eval': {
 
 class Python(Processor):
     usage = u'py <code>'
-    feature = ('eval',)
+    features = ('eval',)
 
     permission = u'eval'
 
@@ -40,7 +40,7 @@ class Python(Processor):
 
 class Perl(Processor):
     usage = u'pl <code>'
-    feature = ('eval',)
+    features = ('eval',)
 
     permission = u'eval'
 
@@ -56,7 +56,7 @@ class Perl(Processor):
 
 class Lua(Processor):
     usage = u'lua <code>'
-    feature = ('eval',)
+    features = ('eval',)
 
     permission = u'eval'
 

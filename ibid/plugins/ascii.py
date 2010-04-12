@@ -17,7 +17,7 @@ from pyfiglet import Figlet
 
 from ibid.config import Option, IntOption
 from ibid.plugins import Processor, match
-from ibid.utils import file_in_path, url_to_bytestring
+from ibid.utils import file_in_path, iri_to_uri
 
 """
 Dependencies:
@@ -35,7 +35,7 @@ features['draw-aa'] = {
 }
 class DrawImage(Processor):
     usage = u'draw <url> [in colour] [width <width>] [height <height>]'
-    feature = ('draw-aa',)
+    features = ('draw-aa',)
 
     max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
     def_height = IntOption('def_height', 'Default height for libaa output', 10)
@@ -60,7 +60,7 @@ class DrawImage(Processor):
             url += '/'
 
         try:
-            f = urlopen(url_to_bytestring(url))
+            f = urlopen(iri_to_uri(url))
         except HTTPError, e:
             event.addresponse(u'Sorry, error fetching URL: %s', BaseHTTPRequestHandler.responses[e.code][0])
             return
@@ -153,7 +153,7 @@ features['figlet'] = {
 class WriteFiglet(Processor):
     usage = u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
-    feature = ('figlet',)
+    features = ('figlet',)
 
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
     fonts_ = Option('fonts', 'Directory or Zip file containing figlet fonts',
