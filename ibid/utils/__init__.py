@@ -298,10 +298,11 @@ def indefinite_article(noun_phrase):
     if wordi.startswith('hour') and not wordi.startswith('houri'):
         return 'an'
 
-    if word in 'aedhilmnorsx':
-        return 'an'
-    elif len(word) == 1:
-        return 'a'
+    if len(word) == 1:
+        if wordi in 'aedhilmnorsx':
+            return 'an'
+        else:
+            return 'a'
 
     if re.match(r'(?!FJO|[HLMNS]Y.|RY[EO]|SQU|'
                   r'(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])'
