@@ -24,7 +24,7 @@ class Dict(Processor):
     define <word> [using <dictionary>]
     (dictionaries|strategies)
     (dictionary|strategy) <name>"""
-    feature = ('dict',)
+    features = ('dict',)
 
     server = Option('server', 'Dictionary server hostname', 'localhost')
     port = IntOption('port', 'Dictionary server port number', 2628)
@@ -141,7 +141,7 @@ class Translate(Processor):
     usage = u"""translate (<phrase>|<url>) [from <language>] [to <language>]
     translation chain <phrase> [from <language>] [to <language>]"""
 
-    feature = ('translate',)
+    features = ('translate',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)

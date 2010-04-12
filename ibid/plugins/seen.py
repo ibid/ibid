@@ -63,7 +63,7 @@ class Sighting(Base):
                self.type, self.identity_id, self.channel, self.time, self.value)
 
 class See(Processor):
-    feature = ('seen',)
+    features = ('seen',)
 
     priority = 1500
     event_types = (u'message', u'state')
@@ -98,7 +98,7 @@ class See(Processor):
 
 class Seen(Processor):
     usage = u'seen <who>'
-    feature = ('seen',)
+    features = ('seen',)
 
     @match(r'^(?:have\s+you\s+)?seen\s+(\S+)(?:\s+on\s+(\S+))?$')
     def handler(self, event, who, source):

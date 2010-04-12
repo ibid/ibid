@@ -31,7 +31,7 @@ class Help(Processor):
     how do I use <feature>
     help <(category|feature)>
     """
-    feature = ('help',)
+    features = ('help',)
     stemmer = Stemmer('english')
 
     def _get_features(self):
@@ -50,7 +50,7 @@ class Help(Processor):
         features = {}
         processor_modules = set()
         for processor in ibid.processors:
-            for feature in getattr(processor, 'feature', []):
+            for feature in getattr(processor, 'features', []):
                 if feature not in features:
                     features[feature] = {
                             'name': feature,

@@ -21,7 +21,7 @@ class RFCLookup(Processor):
     usage = u"""rfc <number>
     rfc [for] <search terms>
     rfc [for] /regex/"""
-    feature = ('rfc',)
+    features = ('rfc',)
 
     indexurl = Option('index_url', "A HTTP url for the RFC Index file", "http://www.rfc-editor.org/rfc/rfc-index.txt")
     cachetime = IntOption("cachetime", "Time to cache RFC index for", cachetime)

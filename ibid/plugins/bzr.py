@@ -62,7 +62,7 @@ class LogFormatter(log.LogFormatter):
 class Bazaar(Processor, RPC):
     usage = u"""(last commit|commit <revno>) [to <repo>] [full]
     repositories"""
-    feature = ('bzr',)
+    features = ('bzr',)
     autoload = False
 
     repositories = DictOption('repositories', 'Dict of repositories names and URLs')

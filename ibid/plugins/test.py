@@ -18,7 +18,7 @@ class Tests(Processor):
     raise exception
     topic <topic>
     """
-    feature = ('test',)
+    features = ('test',)
     permission = u'debug'
 
     @match(r'^delay\s+(\d+\.?\d*)$')

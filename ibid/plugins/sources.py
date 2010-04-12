@@ -22,7 +22,7 @@ features['actions'] = {
 class Actions(Processor):
     usage = u"""(join|part|leave) [<channel> [on <source>]]
     change nick to <nick> [on <source>]"""
-    feature = ('actions',)
+    features = ('actions',)
 
     permission = 'sources'
 
@@ -75,7 +75,7 @@ class Actions(Processor):
             event.addresponse(u'Changing nick to %s', nick)
 
 class Invited(Processor):
-    feature = ('actions',)
+    features = ('actions',)
 
     event_types = ('invite',)
     permission = 'sources'
@@ -120,7 +120,7 @@ features['saydo'] = {
 }
 class SayDo(Processor):
     usage = u'(say|do) in <channel> [on <source>] <text>'
-    feature = ('saydo',)
+    features = ('saydo',)
 
     permission = u'saydo'
 
@@ -137,7 +137,7 @@ features['redirect'] = {
 }
 class RedirectCommand(Processor):
     usage = u'redirect [to] <channel> [on <source>] <command>'
-    feature = ('redirect',)
+    features = ('redirect',)
 
     priority = -1200
     permission = u'saydo'
@@ -154,7 +154,7 @@ class RedirectCommand(Processor):
         event.message['clean'] = command
 
 class Redirect(Processor):
-    feature = ('redirect',)
+    features = ('redirect',)
 
     processed = True
     priority = 940

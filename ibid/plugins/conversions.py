@@ -9,6 +9,7 @@ import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
+from ibid.compat import any
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
                        unicode_output
@@ -26,7 +27,7 @@ class BaseConvert(Processor):
     [convert] ascii <text> to base <number>
     [convert] <sequence> from base <number> to ascii"""
 
-    feature = ('base',)
+    features = ('base',)
 
     abbr_named_bases = {
             "hex": 16,
@@ -173,7 +174,8 @@ class BaseConvert(Processor):
             'base': self._base_name(base_to),
         })
 
-        if base_to == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+        if base_to == 64 and any(True for plugin in ibid.processors
+                if 'base64' in getattr(plugin, 'features', [])):
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
     @handler
@@ -213,7 +215,8 @@ class BaseConvert(Processor):
             return
 
         event.addresponse(u'That is "%s"', output)
-        if base_from == 64 and [True for plugin in ibid.processors if getattr(plugin, 'feature', None) == 'base64']:
+        if base_from == 64 and any(True for plugin in ibid.processors
+                if 'base64' in getattr(plugin, 'features', [])):
             event.addresponse(u'If you want a base64 encoding, use the "base64" feature')
 
 features['units'] = {
@@ -222,7 +225,7 @@ features['units'] = {
 }
 class Units(Processor):
     usage = u'convert [<value>] <unit> to <unit>'
-    feature = ('units',)
+    features = ('units',)
     priority = 10
 
     units = Option('units', 'Path to units executable', 'units')
@@ -303,7 +306,7 @@ class Currency(Processor):
     usage = u"""exchange <amount> <currency> for <currency>
     currencies for <country>"""
 
-    feature = ('currency',)
+    features = ('currency',)
 
     headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
@@ -433,7 +436,7 @@ class UnicodeData(Processor):
     usage = u"""U+<hex code>
     unicode (<character>|<character name>|<decimal code>|0x<hex code>)"""
 
-    feature = ('unicode',)
+    features = ('unicode',)
 
     bidis = {'AL': u'right-to-left Arabic', 'AN': u'Arabic number',
              'B': u'paragraph separator', 'BN': u'boundary neutral',

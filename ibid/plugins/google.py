@@ -23,7 +23,7 @@ class GoogleAPISearch(Processor):
     usage = u"""google[.<tld>] [for] <term>
     googlefight [for] <term> and <term>"""
 
-    feature = ('google',)
+    features = ('google',)
 
     api_key = Option('api_key', 'Your Google API Key (optional)', None)
     referer = Option('referer', 'The referer string to use (API searches)', default_referer)
@@ -89,7 +89,7 @@ class GoogleScrapeSearch(Processor):
     usage = u"""gcalc <expression>
     gdefine <term>"""
 
-    feature = ('google',)
+    features = ('google',)
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', default_user_agent)
     google_scrape_url = "http://www.google.com/search?q=%s"

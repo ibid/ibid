@@ -247,7 +247,7 @@ You can fix that with a little more code::
    class Dice(Processor):
        usage = u'roll <number> dice'
 
-       feature = ('dice',)
+       features = ('dice',)
 
        @match(r'^roll\s+(\d+)\s+dic?e$')
        def multithrow(self, event, number):
@@ -262,7 +262,7 @@ You can find a list of available categories in :attr:`ibid.categories`
 and if necessary add a category to it from your module.
 
 The Processor can be linked to a feature by specifying it in the
-`feature` attribute.
+`features` attribute.
 Usage for the Processor's functions (in BNF) goes in a `usage`
 attribute.
 "reload tutorial" and you should see "dice" appear in the features for
