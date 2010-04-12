@@ -333,7 +333,7 @@ class TimeZone(Processor):
             offset = timezone['rawOffset']
             return tzoffset('UTC%s%s' % (offset>=0 and '+' or '', offset), offset*3600)
 
-    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+in)?(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
+    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+in)?(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF), selectors = False)
     def convert(self, event, time, from_, to):
         try:
             source = time and parse(time) or datetime.now()
@@ -611,7 +611,7 @@ class FlightSearch(Processor):
 
         return flights
 
-    @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE), selectors = False)
     def flight_search(self, event, priority, dpt, to, dep_date, ret_date):
         try:
             flights = self._flight_search(event, dpt, to, dep_date, ret_date)
