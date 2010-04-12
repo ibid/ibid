@@ -9,7 +9,7 @@ import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
-from ibid.compat import any
+from ibid.compat import any, defaultdict
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
                        unicode_output
@@ -428,6 +428,97 @@ class Currency(Processor):
 
 class UnassignedCharacter(Exception): pass
 
+def fix_pinyin_tone(syllable):
+    """Change numeric tones to diacritics in pinyin."""
+    tone = syllable[-1]
+    if tone.isdigit():
+        tone = {'1': u'\u0304', '2': u'\u0301', '3': u'\u030c',
+                '4': u'\u0300'}.get(tone, '')
+        syllable = syllable[:-1]
+        # if there's an A, E or O then it takes the mark; in the case of AO, the
+        # mark goes on the A
+        for v in 'AaEeOo':
+            if v in syllable:
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
+        # the mark goes on the second letter of UI and IU
+        for v in ('UI', 'ui' 'IU', 'iu'):
+            if v in syllable:
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
+        # otherwise there was only a single vowel
+        for v in u'IiUuVv' \
+                 u'\N{Latin Capital Letter U With Diaeresis}' \
+                 u'\N{Latin Small Letter U With Diaeresis}':
+            if v in syllable:
+                return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
+    else:
+        return syllable
+
+class Unihan(object):
+    def __init__ (self, char):
+        self.char = char
+        url = 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?'
+        params = {'codepoint': self.char.encode('utf8'),
+                  'useuft8': 'true'}
+        self.soup = get_html_parse_tree(url + urlencode(params),
+                                            treetype='html5lib-beautifulsoup')
+        self.phonetic = self.soup.find(text='Phonetic Data') \
+                            .findNext('table')('tr')[1]('td')
+        self.defn = self.soup.find(text='Other Dictionary Data') \
+                            .findNext('table')('tr')[1]('td')[0] \
+                            .contents[0].strip()
+        self.other_data = defaultdict(unicode,
+                                ((row('td')[0].contents[0].strip(),
+                                    row('td')[1].code.contents[0].strip())
+                                 for row in
+                                    self.soup.find(text='Other Data')
+                                    .findNext('table')('tr')[1:]))
+
+    def pinyin (self):
+        return map(fix_pinyin_tone, self.phonetic[1].contents[0].lower().split())
+
+    def hangul (self):
+        return self.other_data['kHangul'].split()
+
+    def korean_yale (self):
+        return self.phonetic[5].contents[0].lower().split()
+
+    def korean (self):
+        return [u'%s [%s]' % (h, y) for h, y in
+                                    zip(self.hangul(), self.korean_yale())]
+
+    def japanese_on (self):
+        return self.phonetic[3].contents[0].lower().split()
+
+    def japanese_kun (self):
+        return self.phonetic[4].contents[0].lower().split()
+
+    def definition (self):
+        return self.defn
+
+    def __unicode__ (self):
+        msgs = []
+        if self.definition():
+            msgs = [u'it means %s' % self.definition()]
+
+        prons = []
+        for reading, lang in ((self.pinyin, 'pinyin'),
+                                (self.korean, 'Korean'),
+                                (self.japanese_on, 'Japanese on'),
+                                (self.japanese_kun, 'Japanese kun')):
+            readings = reading()
+            if readings:
+                prons.append(u'%(readings)s (%(lang)s)' %
+                                {'readings': human_join(readings, conjunction=u'or'), 'lang': lang})
+
+        if prons:
+            msgs.append(u'it is pronounced ' +
+                            human_join(prons, conjunction=u'or'))
+
+        msg =  u'; '.join(msgs)
+        if msg:
+            msg = msg[0].upper() + msg[1:]
+        return msg
+
 features['unicode'] = {
     'description': u'Look up characters in the Unicode database.',
     'categories': ('lookup', 'convert',),
@@ -466,9 +557,11 @@ class UnicodeData(Processor):
                   'So': u'a Symbol', 'Zl': u'a Line Separator',
                   'Zp': u'a Paragraph Separator', 'Zs': u'a Space Separator'}
 
-    @match(r'^(?:(?:unicode\s+)?U\+|unicode\s+#?0?x)([0-9a-f]+)$|'
-           r'^(?:unicode|ascii)\s+([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
-           r'^(?:unicode|ascii)\s+#?(\d{2,})$')
+    @match(r'^(?:(?:uni(?:code|han)\s+)?U\+|'
+                r'uni(?:code|han)\s+#?0?x)([0-9a-f]+)$|'
+           r'^(?:unicode|unihan|ascii)\s+'
+                r'([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
+           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$')
     def unichr (self, event, hexcode, hexcode2, deccode):
         if hexcode or hexcode2:
             code = int(hexcode or hexcode2, 16)
@@ -488,10 +581,11 @@ class UnicodeData(Processor):
             if deccode:
                 info['code'] += ' (%i)' % code
             event.addresponse(u"U+%(code)s is %(name)s%(example)s, "
-                          u"%(category)s with %(bidi)s directionality",
+                          u"%(category)s with %(bidi)s directionality"
+                          u"%(unihan)s",
                           info)
 
-    @match(r'^unicode\s+(.)$', 'deaddressed')
+    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed')
     def ord (self, event, char):
         try:
             info = self.info(char)
@@ -504,10 +598,11 @@ class UnicodeData(Processor):
             else:
                 info['example'] = 'That'
             event.addresponse(u"%(example)s is %(name)s (U+%(code)s), "
-                              u"%(category)s with %(bidi)s directionality",
+                              u"%(category)s with %(bidi)s directionality"
+                              u"%(unihan)s",
                               info)
 
-    @match(r'^unicode\s+([a-z -]{2,})$')
+    @match(r'^uni(?:code|han)\s+([a-z -]{2,})$')
     def fromname (self, event, name):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
@@ -518,7 +613,8 @@ class UnicodeData(Processor):
             if info['example']:
                 info['example'] = ' (' + info['example'] + ')'
             event.addresponse(u"%(name)s is U+%(code)s%(example)s, "
-                              u"%(category)s with %(bidi)s directionality",
+                              u"%(category)s with %(bidi)s directionality"
+                              u"%(unihan)s",
                               info)
 
     # Match any string that can't be a character name or a number.
@@ -543,8 +639,16 @@ class UnicodeData(Processor):
         else:
             example = char
 
+        haninfo = u''
+        if 'CJK' in name and 'IDEOGRAPH' in name:
+            unihan = Unihan(char)
+            haninfo = unicode(unihan)
+            if haninfo:
+                haninfo = u'. ' + haninfo + u'.'
+
         return {'code': u'%04X' % ord(char),
                 'name': name.title().replace('Cjk', 'CJK'), 'char': char,
-                'example': example, 'category': catname.lower(), 'bidi': bidi}
+                'example': example, 'category': catname.lower(), 'bidi': bidi,
+                'unihan': haninfo}
 
 # vi: set et sta sw=4 ts=4:
