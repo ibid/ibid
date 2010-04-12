@@ -24,6 +24,7 @@ except ImportError:
 
 import ibid
 from ibid.compat import json
+from ibid.utils import url_regex
 
 __path__ = pluginPackagePaths(__name__) + __path__
 
@@ -205,8 +206,32 @@ def handler(function):
     function.message_version = 'clean'
     return function
 
-def match(regex, version='clean'):
+selector_patterns = {
+    'alpha'   : r'[a-zA-Z]+',
+    'any'     : r'.*',
+    'chunk'   : r'\S+',
+    'digits'  : r'\d+',
+    'number'  : r'\d*\.?\d+',
+    'url'     : url_regex(),
+    'word'    : r'\w+',
+}
+selector_re = re.compile('{(%s)}' % '|'.join(selector_patterns.keys()))
+def match(regex, version = 'clean', selectors = True):
     "Wrapper: Handle all events where the message matches the regex"
+    if selectors:
+        regex = regex.replace(' ', r'(:?\s+)')
+
+        for pattern in selector_re.finditer(regex):
+            pattern = pattern.group(1)
+            old = '{%s}' % pattern
+            new = '(%s)' % selector_patterns[pattern]
+            regex = regex.replace(old, new)
+
+        if not regex.startswith('^'):
+            regex = '^' + regex
+        if not regex.endswith('$'):
+            regex = regex + '$'
+
     pattern = re.compile(regex, re.I | re.DOTALL)
     def wrap(function):
         function.handler = True
