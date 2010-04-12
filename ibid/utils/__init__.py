@@ -297,7 +297,7 @@ def get_process_output(command, input=None):
 
 def indefinite_article(noun_phrase):
     # algorithm adapted from CPAN package Lingua-EN-Inflect-1.891 by Damian Conway
-    m = re.search('\w+', noun_phrase)
+    m = re.search('\w+', noun_phrase, re.UNICODE)
     if m:
         word = m.group(0)
     else:
