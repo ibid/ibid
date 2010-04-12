@@ -89,7 +89,10 @@ class Youtube(Processor):
         r'(?:v/|(?:watch(?:\.php)?)?\?(?:.+&)?v=)'
         r'([0-9A-Za-z_-]+)(?(1)[&/].*)?$')
     def youtube(self, event, id):
-        url = 'http://www.youtube.com/get_video_info?video_id=' + id
+        url = 'http://www.youtube.com/get_video_info?' + urlencode({
+            'video_id': id,
+            'el': 'detailpage',
+        })
         info = parse_qs(urlopen(url).read())
         event.addresponse(u'%(title)s: %(url)s', {
             'title': info['title'][0].decode('utf-8'),
