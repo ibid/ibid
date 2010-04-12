@@ -217,7 +217,7 @@ def _match_sub_selectors(regex):
         'word'    : r'\w+',
     }
 
-    regex = regex.replace(' ', r'(:?\s+)')
+    regex = regex.replace(' ', r'(?:\s+)')
 
     for pattern in re.finditer('{(%s)}' % '|'.join(selector_patterns.keys()),
                                regex):
