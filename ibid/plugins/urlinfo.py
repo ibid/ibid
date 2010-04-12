@@ -94,12 +94,19 @@ class Youtube(Processor):
             'el': 'detailpage',
         })
         info = parse_qs(urlopen(url).read())
-        event.addresponse(u'%(title)s: %(url)s', {
-            'title': info['title'][0].decode('utf-8'),
-            'url': 'http://www.youtube.com/get_video?' + urlencode({
-                'video_id': id,
-                't': info['token'][0],
-            }),
-        })
+        if info.get('status', [None])[0] == 'ok':
+            event.addresponse(u'%(title)s: %(url)s', {
+                'title': info['title'][0].decode('utf-8'),
+                'url': 'http://www.youtube.com/get_video?' + urlencode({
+                    'video_id': id,
+                    't': info['token'][0],
+                }),
+            })
+        else:
+            event.addresponse(u"Sorry, I couldn't retreive that, YouTube says: "
+                              u"%(status)s: %(reason)s", {
+                  'status': info['status'][0],
+                  'reason': info['reason'][0],
+            })
 
 # vi: set et sta sw=4 ts=4:
