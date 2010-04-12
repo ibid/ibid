@@ -2,8 +2,8 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 #
 # The indefinite_article function follows an algorithm by Damian Conway
-# as published in CPAN package Lingua-EN-Inflect-1.891 under the GNU GPL and
-# Artistic License.
+# as published in CPAN package Lingua-EN-Inflect-1.891 under the GNU GPL
+# (version 1 or later) and Artistic License 1.0.
 
 import codecs
 from gzip import GzipFile
