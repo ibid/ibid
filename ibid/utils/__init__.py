@@ -291,7 +291,7 @@ def indefinite_article(noun_phrase):
         return u'an'
 
     wordi = word.lower()
-    for anword in ("euler", "heir", "honest", "hono"):
+    for anword in ('euler', 'heir', 'honest', 'hono'):
         if wordi.startswith(anword):
             return u'an'
 
