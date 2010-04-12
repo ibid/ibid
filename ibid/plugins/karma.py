@@ -51,7 +51,7 @@ class Karma(Base):
 
 class Set(Processor):
     usage = u'<subject> (++|--|==|ftw|ftl) [[reason]]'
-    feature = ('karma',)
+    features = ('karma',)
 
     # Clashes with morse & math
     priority = 510
@@ -126,7 +126,7 @@ class Set(Processor):
 class Get(Processor):
     usage = u"""karma for <subject>
     [reverse] karmaladder"""
-    feature = ('karma',)
+    features = ('karma',)
 
     @match(r'^karma\s+(?:for\s+)?(.+)$')
     def handle_karma(self, event, subject):
@@ -153,7 +153,7 @@ class Get(Processor):
 
 class Forget(Processor):
     usage = u'forget karma for <subject> [[reason]]'
-    feature = ('karma',)
+    features = ('karma',)
 
     # Clashes with factoid
     priority = -10

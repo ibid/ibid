@@ -259,7 +259,7 @@ class RPC(pb.Referenceable, resource.Resource):
     isLeaf = True
 
     def __init__(self):
-        ibid.rpc[self.feature] = self
+        ibid.rpc[self.features[0]] = self
         self.form = templates.get_template('plugin_form.html')
         self.list = templates.get_template('plugin_functions.html')
 
@@ -306,7 +306,7 @@ class RPC(pb.Referenceable, resource.Resource):
                 if name.startswith('remote_'):
                     functions.append(name.replace('remote_', '', 1))
 
-            return self.list.render(object=self.feature, functions=functions) \
+            return self.list.render(object=self.features[0], functions=functions) \
                     .encode('utf-8')
 
         args, varargs, varkw, defaults = getargspec(function)

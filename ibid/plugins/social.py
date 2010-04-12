@@ -24,7 +24,7 @@ features['lastfm'] = {
 class LastFm(Processor):
     usage = u'last.fm for <username>'
 
-    feature = ('lastfm',)
+    features = ('lastfm',)
 
     @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
     def listsongs(self, event, username):
@@ -46,7 +46,7 @@ class Twitter(Processor):
     usage = u"""latest (tweet|identica) from <name>
     (tweet|identica) <number>"""
 
-    feature = ('microblog',)
+    features = ('microblog',)
 
     default = {
         'twitter':   {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},

@@ -31,7 +31,7 @@ To do anything, the plugin must contain classes extending
 
       Default: ``None``
 
-   .. attribute:: feature
+   .. attribute:: features
 
       List: Strings naming each feature that this Processor is part of.
       Used in locating "usage" strings for on-line documentation.

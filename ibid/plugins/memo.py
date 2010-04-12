@@ -65,7 +65,7 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id,
 class Tell(Processor):
     usage = u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
-    feature = ('memo',)
+    features = ('memo',)
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
@@ -228,7 +228,7 @@ def get_memos(event, delivered=False):
             .order_by(Memo.time.asc()).all()
 
 class Deliver(Processor):
-    feature = ('memo',)
+    features = ('memo',)
 
     addressed = False
     processed = True
@@ -289,7 +289,7 @@ class Deliver(Processor):
             nomemos_cache.add(event.identity)
 
 class Notify(Processor):
-    feature = ('memo',)
+    features = ('memo',)
 
     event_types = (u'state',)
     addressed = False
@@ -325,7 +325,7 @@ class Messages(Processor):
     usage = u"""my messages
     message <number>
     my messages for <person> [on <source>]"""
-    feature = ('memo',)
+    features = ('memo',)
 
     @match(r'^my\s+messages$')
     def messages(self, event):

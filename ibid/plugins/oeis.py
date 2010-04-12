@@ -19,7 +19,7 @@ class OEIS(Processor):
     usage = u"""oeis (A<OEIS number>|M<EIS number>|N<HIS number>)
     oeis <term>[, ...]"""
 
-    feature = ('oeis',)
+    features = ('oeis',)
 
     @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
     def oeis (self, event, query):

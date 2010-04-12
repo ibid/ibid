@@ -122,10 +122,10 @@ URL Functions
 
    Is *url* a valid URL? (according to :func:`url_regex`)
 
-.. function:: url_to_bytestring(url)
+.. function:: iri_to_uri(iri)
 
-   Convert a unicode *url* to punycode host and UTF-8 path.
-   This allows IDN URLs to be opened with :mod:`urllib`.
+   Convert a unicode *iri* to punycode host and UTF-8 path.
+   This allows IRIs to be opened with :mod:`urllib`.
 
 Web Service Functions
 ---------------------
