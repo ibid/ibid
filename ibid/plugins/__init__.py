@@ -206,31 +206,37 @@ def handler(function):
     function.message_version = 'clean'
     return function
 
-selector_patterns = {
-    'alpha'   : r'[a-zA-Z]+',
-    'any'     : r'.*',
-    'chunk'   : r'\S+',
-    'digits'  : r'\d+',
-    'number'  : r'\d*\.?\d+',
-    'url'     : url_regex(),
-    'word'    : r'\w+',
-}
-selector_re = re.compile('{(%s)}' % '|'.join(selector_patterns.keys()))
-def match(regex, version = 'clean', selectors = True):
+def _match_sub_selectors(regex):
+    selector_patterns = {
+        'alpha'   : r'[a-zA-Z]+',
+        'any'     : r'.*',
+        'chunk'   : r'\S+',
+        'digits'  : r'\d+',
+        'number'  : r'\d*\.?\d+',
+        'url'     : url_regex(),
+        'word'    : r'\w+',
+    }
+
+    regex = regex.replace(' ', r'(:?\s+)')
+
+    for pattern in re.finditer('{(%s)}' % '|'.join(selector_patterns.keys()),
+                               regex):
+        pattern = pattern.group(1)
+        old = '{%s}' % pattern
+        new = '(%s)' % selector_patterns[pattern]
+        regex = regex.replace(old, new)
+
+    if not regex.startswith('^'):
+        regex = '^' + regex
+    if not regex.endswith('$'):
+        regex = regex + '$'
+    
+    return regex
+
+def match(regex, version='clean', selectors=True):
     "Wrapper: Handle all events where the message matches the regex"
     if selectors:
-        regex = regex.replace(' ', r'(:?\s+)')
-
-        for pattern in selector_re.finditer(regex):
-            pattern = pattern.group(1)
-            old = '{%s}' % pattern
-            new = '(%s)' % selector_patterns[pattern]
-            regex = regex.replace(old, new)
-
-        if not regex.startswith('^'):
-            regex = '^' + regex
-        if not regex.endswith('$'):
-            regex = regex + '$'
+        regex = _match_sub_selectors(regex)
 
     pattern = re.compile(regex, re.I | re.DOTALL)
     def wrap(function):
