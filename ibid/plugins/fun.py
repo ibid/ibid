@@ -259,7 +259,7 @@ features['bucket'] = {
     'categories': ('fun',),
 }
 class ExchangeAction(Processor):
-    feature = ('bucket',)
+    features = ('bucket',)
     event_types = (u'action',)
 
     addressed = False
@@ -272,7 +272,7 @@ class ExchangeAction(Processor):
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
     carrying|have"""
-    feature = ('bucket',)
+    features = ('bucket',)
 
     @match(r"^(?:have|take)\s+" + object_pat + "$")
     def have(self, event, determiner, object):
