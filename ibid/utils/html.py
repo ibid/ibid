@@ -58,6 +58,8 @@ def get_html_parse_tree(url, data=None, headers={}, treetype='beautifulsoup'):
             kwargs['namespaceHTMLElements'] = False
         parser = HTMLParser(**kwargs)
     else:
+        if treetype == "html5lib-beautifulsoup":
+            treetype = "beautifulsoup"
         parser = HTMLParser(tree=treebuilders.getTreeBuilder(treetype))
 
     return parser.parse(data, encoding = encoding)

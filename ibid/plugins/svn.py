@@ -393,7 +393,7 @@ class Subversion(Processor, RPC):
     usage = u"""(last commit|commit <revno>) [to <repo>] [full]
     (svnrepos|svnrepositories)
     """
-    feature = ('svn',)
+    features = ('svn',)
     autoload = False
 
     permission = u'svn'

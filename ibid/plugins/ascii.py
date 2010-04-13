@@ -35,7 +35,7 @@ features['draw-aa'] = {
 }
 class DrawImage(Processor):
     usage = u'draw <url> [in colour] [width <width>] [height <height>]'
-    feature = ('draw-aa',)
+    features = ('draw-aa',)
 
     max_filesize = IntOption('max_filesize', 'Only request this many KiB', 200)
     def_height = IntOption('def_height', 'Default height for libaa output', 10)
@@ -153,7 +153,7 @@ features['figlet'] = {
 class WriteFiglet(Processor):
     usage = u"""figlet <text> [in <font>]
     list figlet fonts [from <index>]"""
-    feature = ('figlet',)
+    features = ('figlet',)
 
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
     fonts_ = Option('fonts', 'Directory or Zip file containing figlet fonts',

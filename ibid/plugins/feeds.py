@@ -103,7 +103,7 @@ class Manage(Processor):
     poll <name> feed notify <channel> on <source>
     stop polling <name> feed
     """
-    feature = ('feeds',)
+    features = ('feeds',)
 
     permission = u'feeds'
 
@@ -208,7 +208,7 @@ class Manage(Processor):
 class Retrieve(Processor):
     usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
-    feature = ('feeds',)
+    features = ('feeds',)
 
     interval = IntOption('interval', 'Feed Poll interval (in seconds)', 300)
 

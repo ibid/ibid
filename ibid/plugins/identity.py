@@ -29,7 +29,7 @@ class Accounts(Processor):
     usage = u"""create account [<name>]
     delete (my account|account <name>)
     rename (my account|account <name>) to <name>"""
-    feature = ('accounts',)
+    features = ('accounts',)
 
     @match(r'^create\s+account(?:\s+(.+))?$')
     def new_account(self, event, username):
@@ -146,7 +146,7 @@ chars = [x for x in string.letters + string.digits if x not in '01lOIB86G']
 class Identities(Processor):
     usage = u"""(I am|<username> is) <identity> on <source>
     remove identity <identity> on <source> [from <username>]"""
-    feature = ('accounts',)
+    features = ('accounts',)
     priority = -10
 
     def __init__(self, name):
@@ -319,7 +319,7 @@ class Identities(Processor):
 
 class Attributes(Processor):
     usage = u'set (my|<account>) <name> to <value>'
-    feature = ('accounts',)
+    features = ('accounts',)
 
     @match(r"^set\s+(my|.+?)(?:\'s)?\s+(.+)\s+to\s+(.+)$")
     def attribute(self, event, username, name, value):
@@ -353,7 +353,7 @@ class Attributes(Processor):
 
 class Describe(Processor):
     usage = u'who (am I|is <username>)'
-    feature = ('accounts',)
+    features = ('accounts',)
 
     @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
     def describe(self, event, username):
@@ -384,7 +384,7 @@ features['summon'] = {
 }
 class Summon(Processor):
     usage = u'summon <person> [via <source>]'
-    feature = ('summon',)
+    features = ('summon',)
     permission = u'summon'
 
     default_source = Option('default_source',
@@ -509,7 +509,7 @@ features['auth'] = {
 }
 class AddAuth(Processor):
     usage = u'authenticate <account> [on source] using <method> [<credential>]'
-    feature = ('auth',)
+    features = ('auth',)
 
     @match(r'^authenticate\s+(.+?)(?:\s+on\s+(.+))?\s+using\s+(\S+)\s+(.+)$')
     def handler(self, event, user, source, method, credential):
@@ -557,7 +557,7 @@ class Permissions(Processor):
     usage = u"""(grant|revoke|remove) <permission> (to|from|on) <username> [when authed]
     permissions [for <username>]
     list permissions"""
-    feature = ('auth',)
+    features = ('auth',)
 
     permission = u'admin'
 
@@ -643,7 +643,7 @@ class Permissions(Processor):
 
 class Auth(Processor):
     usage = u'auth <credential>'
-    feature = ('auth',)
+    features = ('auth',)
 
     @match(r'^auth(?:\s+(.+))?$')
     def handler(self, event, password):
