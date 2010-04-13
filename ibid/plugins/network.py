@@ -424,7 +424,7 @@ class HTTP(Processor):
                 guessed = detect(data)
                 if guessed['confidence'] > 0.5:
                     charset = guessed['encoding']
-                    # Common gussing mistake:
+                    # Common guessing mistake:
                     if charset.startswith('ISO-8859') and '\x92' in data:
                         charset = 'windows-1252'
                     data = unicode(data, charset, errors='replace')
