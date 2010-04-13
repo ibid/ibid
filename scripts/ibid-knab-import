@@ -33,7 +33,7 @@ def decode(string):
         charset = guessed['encoding']
         if guessed['confidence'] < 0.5:
             charset = 'ISO-8859-15'
-        # Common gussing mistake:
+        # Common guessing mistake:
         if charset.startswith('ISO-8859') and '\x92' in string:
             charset = 'windows-1252'
         decoded = unicode(string, charset, errors='replace')

@@ -12,6 +12,7 @@ from sys import version_info
 from urllib import getproxies_environment
 from urlparse import urlparse
 
+from chardet import detect
 try:
     from dns.resolver import Resolver, NoAnswer, NXDOMAIN
     from dns.reversename import from_address
@@ -270,10 +271,18 @@ class HTTP(Processor):
                 }
 
             if action.upper() == 'GET':
-                match = re.search(r'<title>(.*)<\/title>', data,
-                                  re.I | re.DOTALL)
-                if match:
-                    reply += u' "%s"' % match.groups()[0].strip()
+                got_title = False
+                content_type = self._get_header(headers, 'content-type')
+                if (content_type.startswith('text/html') or
+                        content_type.startswith('application/xhtml+xml')):
+                    match = re.search(r'<title>(.*)<\/title>', data,
+                                      re.I | re.DOTALL)
+                    if match:
+                        got_title = True
+                        reply += u' "%s"' % match.groups()[0].strip()
+
+                if not got_title:
+                    reply += u' ' + content_type
 
             event.addresponse(reply)
 
@@ -402,13 +411,24 @@ class HTTP(Processor):
             if version_info[1] < 6:
                 socket.setdefaulttimeout(None)
 
-        contenttype = response.getheader('Content-Type',
-                                         'text/html; charset=utf-8')
-        match = re.search('charset=([a-zA-Z0-9-]+)', contenttype)
-        charset = match and match.group(1) or 'utf-8'
+        contenttype = response.getheader('Content-Type', None)
+        if contenttype:
+            match = re.search('^charset=([a-zA-Z0-9-]+)', contenttype)
+            try:
+                if match:
+                    data = data.decode(match.group(1))
+                elif contenttype.startswith('text/'):
+                    data = data.decode('utf-8')
+            except UnicodeDecodeError:
+                guessed = detect(data)
+                if guessed['confidence'] > 0.5:
+                    charset = guessed['encoding']
+                    # Common guessing mistake:
+                    if charset.startswith('ISO-8859') and '\x92' in data:
+                        charset = 'windows-1252'
+                    data = unicode(data, charset, errors='replace')
 
-        return response.status, response.reason, data.decode(charset), \
-               response.getheaders()
+        return response.status, response.reason, data, response.getheaders()
 
 features['tld'] = {
     'description': u'Resolve country TLDs (ISO 3166)',
