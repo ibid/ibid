@@ -504,7 +504,7 @@ class UnicodeData(Processor):
                               u"%(category)s with %(bidi)s directionality",
                               info)
 
-    @match(r'^unicode\s+([a-z -]{2,})$')
+    @match(r'^unicode\s+([a-z][a-z0-9 -]+)$')
     def fromname (self, event, name):
         try:
             char = eval(ur'u"\N{%s}"' % name.upper())
