@@ -1,12 +1,13 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 #
-# The youtube Processor uses code from youtube-dl:
+# The youtube Processor is inspired by (and steals the odd RE from) youtube-dl:
 #   Copyright (c) 2006-2008 Ricardo Garcia Gonzalez
 #   Released under MIT Licence
 
+from cgi import parse_qs
 from urllib import urlencode
-from urllib2 import urlopen, build_opener, HTTPError, HTTPRedirectHandler, HTTPCookieProcessor
+from urllib2 import urlopen, build_opener, HTTPError, HTTPRedirectHandler
 import logging
 import re
 
@@ -88,16 +89,32 @@ class Youtube(Processor):
         r'(?:v/|(?:watch(?:\.php)?)?\?(?:.+&)?v=)'
         r'([0-9A-Za-z_-]+)(?(1)[&/].*)?$')
     def youtube(self, event, id):
-        url = 'http://www.youtube.com/watch?v=' + id
-        opener = build_opener(HTTPCookieProcessor())
-        opener.addheaders = [('User-Agent', default_user_agent)]
-        video_webpage = opener.open(url).read()
-        title = re.search(r'<title>\s*YouTube\s+-\s+([^<]*)</title>',
-                video_webpage, re.M | re.I | re.DOTALL).group(1).strip()
-        t = re.search(r', "t": "([^"]+)"', video_webpage).group(1)
-        event.addresponse(u'%(title)s: %(url)s', {
-            'title': title,
-            'url': 'http://www.youtube.com/get_video?video_id=%s&t=%s' % (id, t),
-        })
+        for el_type in ('embedded', 'detailpage', 'vevo'):
+            url = 'http://www.youtube.com/get_video_info?' + urlencode({
+                'video_id': id,
+                'el': el_type,
+                'ps': 'default',
+                'eurl': '',
+                'gl': 'US',
+                'hl': 'en',
+            })
+            info = parse_qs(urlopen(url).read())
+            if info.get('status', [None])[0] == 'ok':
+                break
+
+        if info.get('status', [None])[0] == 'ok':
+            event.addresponse(u'%(title)s: %(url)s', {
+                'title': info['title'][0].decode('utf-8'),
+                'url': 'http://www.youtube.com/get_video?' + urlencode({
+                    'video_id': id,
+                    't': info['token'][0],
+                }),
+            })
+        else:
+            event.addresponse(u"Sorry, I couldn't retreive that, YouTube says: "
+                              u"%(status)s: %(reason)s", {
+                  'status': info['status'][0],
+                  'reason': info['reason'][0],
+            })
 
 # vi: set et sta sw=4 ts=4:
