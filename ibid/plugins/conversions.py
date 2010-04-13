@@ -602,7 +602,7 @@ class UnicodeData(Processor):
                               u"%(unihan)s",
                               info)
 
-    @match(r'^uni(?:code|han)\s+([a-z -]{2,})$', selectors=False)
+    @match(r'^uni(?:code|han)\s+([a-z][a-z0-9 -]+)$', selectors=False)
     def fromname (self, event, name):
         try:
             char = unicodedata.lookup(name.upper())
