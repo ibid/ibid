@@ -82,9 +82,14 @@ have permission to do so)::
 
 The ``$who`` substitutes the speaker's name. Other substitutions possible are:
 
-* ``$channel``
-* ``$year``, ``$month``, ``$day``, ``$hour``, ``$minute``, ``$second``,
-  ``$date``, ``$time``, ``$dow``, ``$unixtime``
+* ``$channel``, ``$source``
+* ``$year``, ``$month``, ``$mon``, ``$month1``, ``$month2``, ``$day``,
+  ``$day2``, ``$hour``, ``$minute``, ``$second``,
+  ``$date``, ``$time``, ``$weekday``, ``$unixtime``
+
+``$month``, ``$mon``, ``$month1`` and ``$month2`` substitute, respectively, the
+month name, abbreviated month name, month number and zero-padded month number;
+``$day2`` substitutes the zero-padded day number.
 
 And factoids can have multiple names. Our greeting only responds to "hi", it
 should respond to more greetings::
