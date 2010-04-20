@@ -144,7 +144,8 @@ class Accounts(Processor):
 chars = [x for x in string.letters + string.digits if x not in '01lOIB86G']
 
 class Identities(Processor):
-    usage = u"""(I am|<username> is) <identity> on <source>
+    usage = u"""I am <identity> on <source>
+    link user <username> to <identity> on <source>
     remove identity <identity> on <source> [from <username>]"""
     features = ('accounts',)
     priority = -10
@@ -153,13 +154,13 @@ class Identities(Processor):
         Processor.__init__(self, name)
         self.tokens = {}
 
-    @match(r'^(I|.+?)\s+(?:is|am)\s+(.+)\s+on\s+(.+)$')
+    @match(r'^(?:I\s+am|link\s+user\s+(.+?)\s+to)\s+(.+)\s+on\s+(.+)$')
     def identity(self, event, username, identity, source):
         admin = False
         identity = identity.replace(' ', '')
         reverse_attach = False
 
-        if username.upper() == 'I':
+        if username is None:
             if event.account:
                 account = event.session.query(Account).get(event.account)
             else:
