@@ -466,6 +466,9 @@ class Unihan(object):
         self.defn = self.soup.find(text='Other Dictionary Data') \
                             .findNext('table')('tr')[1]('td')[0] \
                             .contents[0].strip()
+        self.variants = self.soup.find(text='Variants')
+        if self.variants is not None:
+            self.variants = self.variants.findNext('table')('tr')[1]('td')
         self.other_data = defaultdict(unicode,
                                 ((row('td')[0].contents[0].strip(),
                                     row('td')[1].code.contents[0].strip())
@@ -495,10 +498,28 @@ class Unihan(object):
     def definition (self):
         return self.defn
 
+    def variant (self):
+        if self.variants is None:
+            return []
+
+        msgs = []
+        for variant, name in ((0, 'simplified'),
+                              (1, 'traditional')):
+            variant = self.variants[variant].contents[0]
+            if not isinstance(variant, basestring):
+                variant, _ = variant.contents[0].split(None, 1)
+
+                msgs.append(u'the %(name)s form is %(var)s' %
+                            {'name': name,
+                             'var': unichr(int(variant[2:], 16))})
+        return msgs
+
     def __unicode__ (self):
         msgs = []
         if self.definition():
             msgs = [u'it means %s' % self.definition()]
+
+        msgs += self.variant()
 
         prons = []
         for reading, lang in ((self.pinyin, 'pinyin'),
