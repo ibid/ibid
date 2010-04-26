@@ -353,12 +353,12 @@ class Attributes(Processor):
                 event.identity, event.sender['connection'])
 
 class Describe(Processor):
-    usage = u'who (am I|is <username>)'
+    usage = u"list (my|<username>'s) identities"
     features = ('accounts',)
 
-    @match(r'^who\s+(?:is|am)\s+(I|.+?)$')
+    @match(r"^list\s+(my|.+?)(?:'?s)?\s+identities$")
     def describe(self, event, username):
-        if username.upper() == 'I':
+        if username.lower() == 'my':
             if not event.account:
                 identity = event.session.query(Identity).get(event.identity)
                 event.addresponse(u"%(name)s on %(source)s", {
