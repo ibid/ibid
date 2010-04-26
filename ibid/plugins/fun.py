@@ -271,7 +271,7 @@ class ExchangeAction(Processor):
 
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
-    carrying|have"""
+    what are you carrying?"""
     features = ('bucket',)
 
     @match(r"^(?:have|take)\s+" + object_pat + "$")
