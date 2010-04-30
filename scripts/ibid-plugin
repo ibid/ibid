@@ -21,6 +21,7 @@ from sqlalchemy.exceptions import IntegrityError
 sys.path.insert(0, '.')
 
 import ibid
+import ibid.core
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
@@ -126,29 +127,7 @@ while True:
     except (KeyboardInterrupt, EOFError):
         break
 
-    for processor in ibid.processors:
-        try:
-            processor.process(event)
-        except Exception, e:
-            log.exception(u"Exception occured in %s processor of %s plugin",
-                    processor.__class__.__name__, processor.name)
-            event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
-            event.processed = True
-            if 'session' in event:
-                event.session.rollback()
-                event.session.close()
-                del event['session']
-
-        if 'session' in event:
-            try:
-                event.session.commit()
-            except IntegrityError:
-                log.exception(u"Exception occured committing session from the %s processor of %s plugin",
-                        processor.__class__.__name__, processor.name)
-                event.complain = u'exception'
-                event.session.rollback()
-                event.session.close()
-                del event['session']
+    ibid.core.process(event, log)
 
     if options.verbose:
         print "Event: %s" % repr(event)
