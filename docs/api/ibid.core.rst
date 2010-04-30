@@ -11,6 +11,17 @@ loading as well as the Event dispatcher.
 Dispatcher
 ----------
 
+.. function:: process(event, log)
+
+      This function takes *event* and passes it to the
+      :meth:`process() <ibid.plugins.Processor.process>` function in
+      each processor, in order of increasing :attr:`priority
+      <ibid.plugins.Processor.priority>`. Messages are logged on the logger
+      *log*.
+
+      After each :class:`Processor <ibid.plugins.Processor>`, any
+      unclean SQLAlchemy sessions are committed and exceptions logged.
+
 .. class:: Dispatcher
 
    The Ibid :class:`Event <ibid.event.Event>` dispatcher.
