@@ -5,8 +5,10 @@ import logging
 from twisted.python import log
 from twisted.trial import unittest
 from shutil import copyfile
+import re
 
 import ibid
+from ibid.core import process
 from ibid.event import Event
 from ibid.db.models import Identity
 from ibid.config import FileConfig
@@ -63,7 +65,7 @@ class PluginTestCase(unittest.TestCase):
     load = []
     noload = []
     load_base = True
-    load_configured = False
+    load_configured = None
     username = u'user'
     public = False
 
@@ -81,6 +83,9 @@ class PluginTestCase(unittest.TestCase):
 
         self.source = u'test_source_' + unicode(id(self))
         ibid.sources[self.source] = TestSource()
+
+        if self.load_configured is None:
+            self.load_configured = not self.load
 
         load = self.load
         if self.load_base:
@@ -116,6 +121,24 @@ class PluginTestCase(unittest.TestCase):
             event.message = message
 
         return event
+
+    def assertResponseMatches(self, event, regex):
+        if isinstance(event, basestring):
+            event = self.make_event(event)
+        process(event, logging.getLogger())
+
+        if isinstance(regex, basestring):
+            regex = re.compile(regex, re.U | re.I | re.DOTALL)
+
+        self.assert_(regex.match(event.responses[0]['reply']))
+
+    def assertSucceeds(self, event):
+        if isinstance(event, basestring):
+            event = self.make_event(event)
+        process(event, logging.getLogger())
+
+        self.assert_(event.get('processed', False))
+        self.assert_('complain' not in event, None)
 
     def tearDown(self):
         del ibid.sources[self.source]
