@@ -2,6 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import logging
+import sys
 
 from ibid.test import PluginTestCase
 from ibid.core import process
@@ -17,4 +18,4 @@ class CalcTest(PluginTestCase):
     def test_too_big(self):
         event = self.make_event(u'100**100**100')
         process(event, logging.getLogger())
-        self.assert_('big number' in event.respones[0]['reply'])
+        self.assert_('big number' in event.responses[0]['reply'])

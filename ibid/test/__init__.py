@@ -4,10 +4,13 @@ import logging
 
 from twisted.python import log
 from twisted.trial import unittest
+from shutil import copyfile
 
 import ibid
 from ibid.event import Event
 from ibid.db.models import Identity
+from ibid.config import FileConfig
+from ibid.utils import locate_resource
 
 # Trial collects log output, so we feed ours logs into it.
 class TwistedLogHandler(logging.Handler):
@@ -61,26 +64,22 @@ class PluginTestCase(unittest.TestCase):
     noload = []
     load_base = True
     load_configured = False
-    config = FakeConfig({'databases': {'ibid': 'sqlite:///test.db'},
-                         'botname': 'bot'
-                        })
-    username = 'user'
+    username = u'user'
     public = False
 
     def setUp(self):
-        self._old_auth = ibid.auth
         ibid.auth = TestAuth()
 
-        self._old_config = ibid.config
-        # TODO: use fresh database
-        self.config['database'] = 'sqlite:///test.db'
-        ibid.config = self.config
+        ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
+        # copy test database to database location
+        # ASSUMES sqlite
+        copyfile(locate_resource('ibid.test', 'test.db'), '/tmp/test.db')
 
         ibid.reload_reloader()
         ibid.reloader.reload_databases()
         ibid.reloader.reload_dispatcher()
 
-        self.source = u'test_source_' + id(self)
+        self.source = u'test_source_' + unicode(id(self))
         ibid.sources[self.source] = TestSource()
 
         load = self.load
@@ -103,10 +102,11 @@ class PluginTestCase(unittest.TestCase):
 
         session.close()
 
-    def make_event(self, message=None, type='message'):
+    def make_event(self, message=None, type=u'message'):
         event = Event(self.source, type)
         event.sender['id'] = event.sender['connection'] = \
             event.sender['nick'] = self.username
+        event.identity = self.identity_id
         event.account = None
         event.addressed = not self.public
         event.public = self.public
@@ -115,9 +115,9 @@ class PluginTestCase(unittest.TestCase):
         if message is not None:
             event.message = message
 
+        return event
+
     def tearDown(self):
         del ibid.sources[self.source]
-        ibid.auth = self._old_auth
-        ibid.config = self.old_config
 
 # vi: set et sta sw=4 ts=4:
