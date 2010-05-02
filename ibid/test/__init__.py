@@ -5,6 +5,8 @@ import logging
 from twisted.python import log
 from twisted.trial import unittest
 from shutil import copyfile
+import os
+from tempfile import mkstemp
 import re
 
 import ibid
@@ -73,9 +75,13 @@ class PluginTestCase(unittest.TestCase):
         ibid.auth = TestAuth()
 
         ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
-        # copy test database to database location
-        # ASSUMES sqlite
-        copyfile(locate_resource('ibid.test', 'test.db'), '/tmp/test.db')
+
+        # Make a temporary copy of the test database.
+        # This assumes SQLite, both in the fact that the database is a single
+        # file and in forming the URL.
+        self.dbfile = mkstemp('.db', 'ibid-test-')[1]
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
+        copyfile(locate_resource('ibid.test', 'test.db'), self.dbfile)
 
         ibid.reload_reloader()
         ibid.reloader.reload_databases()
@@ -142,5 +148,6 @@ class PluginTestCase(unittest.TestCase):
 
     def tearDown(self):
         del ibid.sources[self.source]
+        os.remove(self.dbfile)
 
 # vi: set et sta sw=4 ts=4:
