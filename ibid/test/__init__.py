@@ -144,7 +144,9 @@ class PluginTestCase(unittest.TestCase):
         process(event, logging.getLogger())
 
         self.assert_(event.get('processed', False))
-        self.assert_('complain' not in event, None)
+
+        if 'complain' in event:
+            self.fail("Event has complain set to %s" % event['complain'])
 
     def tearDown(self):
         del ibid.sources[self.source]
