@@ -454,7 +454,7 @@ def fix_pinyin_tone(syllable):
         return syllable
 
 class Unihan(object):
-    def __init__ (self, char):
+    def __init__(self, char):
         self.char = char
         url = 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?'
         params = {'codepoint': self.char.encode('utf8'),
@@ -466,6 +466,9 @@ class Unihan(object):
         self.defn = self.soup.find(text='Other Dictionary Data') \
                             .findNext('table')('tr')[1]('td')[0] \
                             .contents[0].strip()
+        self.variants = self.soup.find(text='Variants')
+        if self.variants is not None:
+            self.variants = self.variants.findNext('table')('tr')[1]('td')
         self.other_data = defaultdict(unicode,
                                 ((row('td')[0].contents[0].strip(),
                                     row('td')[1].code.contents[0].strip())
@@ -473,32 +476,50 @@ class Unihan(object):
                                     self.soup.find(text='Other Data')
                                     .findNext('table')('tr')[1:]))
 
-    def pinyin (self):
+    def pinyin(self):
         return map(fix_pinyin_tone, self.phonetic[1].contents[0].lower().split())
 
-    def hangul (self):
+    def hangul(self):
         return self.other_data['kHangul'].split()
 
-    def korean_yale (self):
+    def korean_yale(self):
         return self.phonetic[5].contents[0].lower().split()
 
-    def korean (self):
+    def korean(self):
         return [u'%s [%s]' % (h, y) for h, y in
                                     zip(self.hangul(), self.korean_yale())]
 
-    def japanese_on (self):
+    def japanese_on(self):
         return self.phonetic[3].contents[0].lower().split()
 
-    def japanese_kun (self):
+    def japanese_kun(self):
         return self.phonetic[4].contents[0].lower().split()
 
-    def definition (self):
+    def definition(self):
         return self.defn
 
-    def __unicode__ (self):
+    def variant(self):
+        if self.variants is None:
+            return []
+
+        msgs = []
+        for variant, name in ((0, 'simplified'),
+                              (1, 'traditional')):
+            variant = self.variants[variant].contents[0]
+            if not isinstance(variant, basestring):
+                variant, rest = variant.contents[0].split(None, 1)
+
+                msgs.append(u'the %(name)s form is %(var)s' %
+                            {'name': name,
+                             'var': unichr(int(variant[2:], 16))})
+        return msgs
+
+    def __unicode__(self):
         msgs = []
         if self.definition():
             msgs = [u'it means %s' % self.definition()]
+
+        msgs += self.variant()
 
         prons = []
         for reading, lang in ((self.pinyin, 'pinyin'),
@@ -562,7 +583,7 @@ class UnicodeData(Processor):
            r'^(?:unicode|unihan|ascii)\s+'
                 r'([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
            r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$')
-    def unichr (self, event, hexcode, hexcode2, deccode):
+    def unichr(self, event, hexcode, hexcode2, deccode):
         if hexcode or hexcode2:
             code = int(hexcode or hexcode2, 16)
         else:
@@ -586,7 +607,7 @@ class UnicodeData(Processor):
                           info)
 
     @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed')
-    def ord (self, event, char):
+    def ord(self, event, char):
         try:
             info = self.info(char)
         except UnassignedCharacter:
@@ -603,7 +624,7 @@ class UnicodeData(Processor):
                               info)
 
     @match(r'^uni(?:code|han)\s+([a-z][a-z0-9 -]+)$')
-    def fromname (self, event, name):
+    def fromname(self, event, name):
         try:
             char = unicodedata.lookup(name.upper())
         except KeyError:
@@ -619,11 +640,11 @@ class UnicodeData(Processor):
 
     # Match any string that can't be a character name or a number.
     @match(r'^unicode\s+(.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)$', 'deaddressed')
-    def characters (self, event, string):
+    def characters(self, event, string):
         event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
                                         for c in string))
 
-    def info (self, char):
+    def info(self, char):
         cat = unicodedata.category(char)
         if cat == 'Cn':
             raise UnassignedCharacter
