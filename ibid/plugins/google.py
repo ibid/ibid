@@ -98,7 +98,8 @@ class GoogleScrapeSearch(Processor):
         url = self.google_scrape_url
         if country:
             url += "&cr=country%s" % country.upper()
-        f = urlopen(Request(url % quote(query), headers={'user-agent': self.user_agent}))
+        f = urlopen(Request(url % quote(query.encode('utf-8')),
+                            headers={'user-agent': self.user_agent}))
         soup = BeautifulSoup(f.read())
         f.close()
         return soup
