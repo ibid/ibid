@@ -66,6 +66,12 @@ String Functions
    It's recommended to use complete words for *singular* and *plural*
    rather than suffixes.
 
+.. function:: indefinite_article(phrase)
+
+    Use heuristics to determine whether the pronunciation of *phrase* starts
+    with a vowel or consonant (assuming it is English) and return 'an' or 'a'
+    respectively.
+
 .. function:: decode_htmlentities(text)
 
    Return *text* with all HTML entities removed, both numeric and
