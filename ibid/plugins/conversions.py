@@ -308,12 +308,15 @@ class Currency(Processor):
 
     features = ('currency',)
 
-    headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
 
     def _load_currencies(self):
-        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
+        etree = get_html_parse_tree(
+                'http://www.xe.com/iso4217.php', headers = {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'http://www.xe.com/',
+                }, treetype='etree')
 
         tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
