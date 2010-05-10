@@ -4,6 +4,7 @@
 """Logs messages sent and received."""
 
 from datetime import datetime
+from errno import EEXIST
 from os.path import dirname, join, expanduser
 from os import chmod, makedirs
 from threading import Lock
@@ -78,7 +79,7 @@ class Log(Processor):
                 try:
                     makedirs(dirname(filename), int(self.dir_mode, 8))
                 except OSError, e:
-                    if e.errno != 17:
+                    if e.errno != EEXIST:
                         raise e
 
                 log = open(filename, 'a')
