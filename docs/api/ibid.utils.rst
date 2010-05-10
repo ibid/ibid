@@ -157,6 +157,11 @@ Web Service Functions
          'http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm',
          'lookup/iso-3166-1_decoding_table.htm')
 
+.. function:: generic_webservice(url, [params, headers])
+
+   Request *url*, with optional dicts of parameters *params* and headers
+   *headers*, and return the data.
+
 .. function:: json_webservice(url, [params, headers])
 
    Request *url*, with optional dicts of parameters *params* and headers
