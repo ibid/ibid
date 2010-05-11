@@ -275,9 +275,9 @@ class Retrieve(Processor):
             else:
                 summary = article.content[0].value
 
-        event.addresponse(u'"%(title)s" %(link)s : %(summary)s', {
+        event.addresponse(u'"%(title)s"%(link)s : %(summary)s', {
             'title': html2text_file(article.title, None).strip(),
-            'link': article.link,
+            'link': get_link(article),
             'summary': summary,
         })
 
@@ -309,12 +309,19 @@ class Retrieve(Processor):
                 seen[id] = entry.updated_parsed
                 if entry.updated_parsed != old_seen.get(id):
                     event.addresponse(
-                        u"%(status)s item in %(feed)s: %(title)s", {
+                        u"%(status)s item in %(feed)s: %(title)s%(link)s", {
                             'status': id in old_seen and u'Updated' or u'New',
                             'feed': feed.name,
                             'title': entry.title,
+                            'link': get_link(entry),
                         },
                         source=feed.source, target=feed.target, adress=False)
             self.last_seen[feed.name] = seen
+
+def get_link(entry):
+    if hasattr(entry, 'link'):
+        return u' <%s>' % entry.link
+    else:
+        return u''
 
 # vi: set et sta sw=4 ts=4:
