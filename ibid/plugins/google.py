@@ -13,7 +13,7 @@ from ibid.utils import decode_htmlentities, json_webservice
 
 features = {'google': {
     'description': u'Retrieves results from Google and Google Calculator.',
-    'categories': ('lookup', 'web',),
+    'categories': ('lookup', 'web', 'calculate', ),
 }}
 
 default_user_agent = 'Mozilla/5.0'
