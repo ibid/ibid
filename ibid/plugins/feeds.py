@@ -320,7 +320,7 @@ class Retrieve(Processor):
 
 def get_link(entry):
     if hasattr(entry, 'link'):
-        return u' <%s>' % entry.link
+        return u' ' + entry.link
     else:
         return u''
 
