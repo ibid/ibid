@@ -80,7 +80,7 @@ class FactoidName(Base):
             # http://www.sqlalchemy.org/trac/ticket/1400:
             # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
-                    .filter('name LIKE :pattern ESCAPE :escape') \
+                    .filter('lower(name) LIKE lower(:pattern) ESCAPE :escape') \
                     .params(pattern='%\\_\\%%', escape='\\') \
                     .all():
                 row.wild = True
@@ -227,8 +227,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
         if wild:
             # Reversed LIKE because factoid name contains SQL wildcards if
             # factoid supports arguments
-            query = query.filter(':fact LIKE name ESCAPE :escape') \
-                         .params(fact=name, escape='\\')
+            query = query.filter(
+                    'lower(:fact) LIKE lower(name) ESCAPE :escape'
+                ).params(fact=name, escape='\\')
         else:
             query = query.filter(FactoidName.name == escape_name(name))
         # For normal matches, restrict to the subset applicable
@@ -242,8 +243,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
                 pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
                 # http://www.sqlalchemy.org/trac/ticket/1400:
                 # We can't use .like() in MySQL
-                query = query.filter('value LIKE :pattern ESCAPE :escape') \
-                             .params(pattern=pattern, escape='\\')
+                query = query.filter(
+                        'lower(value) LIKE lower(:pattern) ESCAPE :escape'
+                    ).params(pattern=pattern, escape='\\')
 
         if number:
             try:
