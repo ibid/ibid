@@ -166,7 +166,9 @@ class Translate(Processor):
                   'slovenian':'sl', 'spanish':'es', 'swahili':'sw',
                   'swedish':'sv', 'thai':'th', 'turkish':'tr', 'ukrainian':'uk',
                   'uzbek': 'uz', 'vietnamese':'vi', 'welsh':'cy',
-                  'yiddish': 'yi', 'haitian creole': 'ht'}
+                  'yiddish': 'yi', 'haitian creole': 'ht',
+                  'armenian': 'hy', 'azerbaijani': 'az', 'basque': 'eu',
+                  'georgian': 'ka', 'urdu': 'ur'}
 
     alt_lang_names = {'simplified':'zh-CN', 'simplified chinese':'zh-CN',
                    'traditional':'zh-TW', 'traditional chinese':'zh-TW',
