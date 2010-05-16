@@ -10,11 +10,11 @@ from nickometer import nickometer
 
 import ibid
 from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
-                    ForeignKey, Base, VersionedSchema
+                    ForeignKey, Base, VersionedSchema, relation
 from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
-from ibid.utils import human_join, indefinite_article
+from ibid.utils import human_join, indefinite_article, identity_name
 
 features = {}
 
@@ -266,25 +266,27 @@ class Item(Base):
         Base.metadata,
         Column('id', Integer, primary_key=True),
         Column('description', IbidUnicodeText, nullable=False, index=True),
-        Column('owner', IbidUnicodeText, index=True),
+        Column('determiner', IbidUnicodeText, index=True),
         Column('carried', Boolean, nullable=False, index=True),
-        Column('giver', Integer, ForeignKey('identities.id'), nullable=False),
+        Column('giver_id', Integer, ForeignKey('identities.id'), nullable=False),
         useexisting=True)
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
 
-    def __init__ (self, description, owner, giver):
+    giver = relation('Identity')
+
+    def __init__(self, description, determiner, giver):
         self.description = description
-        self.owner = owner
+        self.determiner = determiner
         self.carried = True
-        self.giver = giver
+        self.giver_id = giver
 
     @classmethod
-    def carried_items (cls, session):
+    def carried_items(cls, session):
         return session.query(cls).filter_by(carried=True)
 
     @classmethod
-    def take_item (cls, session):
+    def take_item(cls, session):
         items = cls.carried_items(session)
         num = items.count()
         if num:
@@ -297,9 +299,9 @@ class Item(Base):
 
         return item
 
-    def __unicode__ (self):
-        if self.owner:
-            return self.owner + u' ' + self.description
+    def __unicode__(self):
+        if self.determiner:
+            return self.determiner + u' ' + self.description
         else:
             return self.description
 
@@ -335,6 +337,20 @@ class ExchangeMessage(Processor):
                                 human_join(map(unicode, items)))
         else:
             event.addresponse(u"I'm not carrying anything")
+
+    @match(r'^(?:who\s+gave\s+you|where\s+did\s+you\s+get)\s+'
+                + object_pat + '$')
+    def query_giver(self, event, determiner, object):
+        items = Item.carried_items(event.session) \
+                .filter_by(description=object).all()
+        if items:
+            event.addresponse(u'I got ' +
+                human_join(u'%(item)s from %(giver)s' %
+                                {'item': item,
+                                'giver': identity_name(event, item.giver)}
+                            for item in items))
+        else:
+            event.addresponse("There's nothing like that in my bucket.")
 
 def exchange(event, determiner, object):
     who = event.sender['nick']
@@ -381,10 +397,7 @@ def exchange(event, determiner, object):
         determiner = u'some'
 
     if determiner:
-        if determiner == genitive:
-            item = Item(object, determiner, event.identity)
-        else:
-            item = Item(determiner + u' ' + object, None, event.identity)
+        item = Item(object, determiner, event.identity)
     else:
         item = Item(object, None, event.identity)
 
