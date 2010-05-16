@@ -318,7 +318,8 @@ class ExchangeAction(Processor):
 
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
-    what are you carrying?"""
+    what are you carrying?
+    who gave you <object>?"""
     features = ('bucket',)
 
     @match(r"^(?:have|take)\s+" + object_pat + "$")
@@ -329,7 +330,7 @@ class ExchangeMessage(Processor):
         else:
             return exchange(event, determiner, object)
 
-    @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
+    @match(r'^(?:what\s+(?:are|do)\s+(?:yo)?u\s+)?(?:carrying|have)$')
     def query_carrying(self, event):
         items = Item.carried_items(event.session).all()
         if items:
@@ -338,7 +339,7 @@ class ExchangeMessage(Processor):
         else:
             event.addresponse(u"I'm not carrying anything")
 
-    @match(r'^(?:who\s+gave\s+you|where\s+did\s+you\s+get)\s+'
+    @match(r'^(?:who\s+gave\s+(?:yo)?u|where\s+did\s+(?:yo)?u\s+get)\s+'
                 + object_pat + '$')
     def query_giver(self, event, determiner, object):
         items = Item.carried_items(event.session) \
