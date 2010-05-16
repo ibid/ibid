@@ -2,13 +2,16 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from unicodedata import normalize
-from random import choice, random
+from random import choice, random, randrange
 import re
 from threading import Lock
 
 from nickometer import nickometer
 
 import ibid
+from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
+                    ForeignKey, Base, VersionedSchema
+from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article
@@ -248,9 +251,6 @@ class Insult(Processor):
 
         event.addresponse(u' '.join(swearage) + u'!', address=False)
 
-carrying = None
-carrying_lock = Lock()
-
 object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
             r"the|a|an|this|these|that|those|some)\s+)?(.*)"
 
@@ -258,6 +258,51 @@ features['bucket'] = {
     'description': u'Exchanges objects with people',
     'categories': ('fun',),
 }
+
+class EmptyBucketException(Exception): pass
+
+class Item(Base):
+    __table__ = Table('bucket_items',
+        Base.metadata,
+        Column('id', Integer, primary_key=True),
+        Column('description', IbidUnicodeText, nullable=False, index=True),
+        Column('owner', IbidUnicodeText, index=True),
+        Column('carried', Boolean, nullable=False, index=True),
+        Column('giver', Integer, ForeignKey('identities.id'), nullable=False),
+        useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+    def __init__ (self, description, owner, giver):
+        self.description = description
+        self.owner = owner
+        self.carried = True
+        self.giver = giver
+
+    @classmethod
+    def carried_items (cls, session):
+        return session.query(cls).filter_by(carried=True)
+
+    @classmethod
+    def take_item (cls, session):
+        items = cls.carried_items(session)
+        num = items.count()
+        if num:
+            item = items[randrange(0, num)]
+        else:
+            raise EmptyBucketException
+
+        item.carried = False
+        session.save_or_update(item)
+
+        return item
+
+    def __unicode__ (self):
+        if self.owner:
+            return self.owner + u' ' + self.description
+        else:
+            return self.description
+
 class ExchangeAction(Processor):
     features = ('bucket',)
     event_types = (u'action',)
@@ -284,18 +329,14 @@ class ExchangeMessage(Processor):
 
     @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
     def query_carrying(self, event):
-        carrying_lock.acquire()
-
-        if carrying is None:
-            event.addresponse(u"I'm not carrying anything")
+        items = Item.carried_items(event.session).all()
+        if items:
+            event.addresponse(u"I'm carrying %s",
+                                human_join(map(unicode, items)))
         else:
-            event.addresponse(u"I'm carrying %s", carrying)
-
-        carrying_lock.release()
+            event.addresponse(u"I'm not carrying anything")
 
 def exchange(event, determiner, object):
-    global carrying
-
     who = event.sender['nick']
 
     if determiner is None:
@@ -317,18 +358,16 @@ def exchange(event, determiner, object):
     else:
         taken = genitive + u' ' + object
 
-    carrying_lock.acquire()
-
-    if carrying is None:
-        event.addresponse(u'takes %s but has nothing to give in exchange',
-                            taken, action=True)
-    else:
+    try:
         event.addresponse(u'hands %(who)s %(carrying)s '
                             u'in exchange for %(taken)s',
                             {'who': who,
-                             'carrying': carrying,
+                             'carrying': Item.take_item(event.session),
                              'taken': taken},
                             action=True)
+    except EmptyBucketException:
+        event.addresponse(u'takes %s but has nothing to give in exchange',
+                            taken, action=True)
 
     # determine which determiner we will use when talking about this object in
     # the future -- we only want to refer to it by the giver's name if the giver
@@ -342,10 +381,13 @@ def exchange(event, determiner, object):
         determiner = u'some'
 
     if determiner:
-        carrying = determiner + u' ' + object
+        if determiner == genitive:
+            item = Item(object, determiner, event.identity)
+        else:
+            item = Item(determiner + u' ' + object, None, event.identity)
     else:
-        carrying = object
+        item = Item(object, None, event.identity)
 
-    carrying_lock.release()
+    event.session.save_or_update(item)
 
 # vi: set et sta sw=4 ts=4:
