@@ -142,8 +142,8 @@ class AptFile(Processor):
         result = result['r']
         if result:
             if isinstance(result[0], list):
-                numpackages = len(set(x[-1] for x in result))
                 bypkg = map(lambda x: (x[-1], u'/'.join(x[:-1])), result)
+                numpackages = len(bypkg)
                 packages = defaultdict(list)
                 for p, arch in bypkg:
                     packages[p].append(arch)
