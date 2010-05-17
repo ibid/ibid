@@ -265,8 +265,10 @@ class Item(Base):
     __table__ = Table('bucket_items',
         Base.metadata,
         Column('id', Integer, primary_key=True),
-        Column('description', IbidUnicodeText, nullable=False, index=True),
-        Column('determiner', IbidUnicodeText, index=True),
+        Column('description', IbidUnicodeText(case_insensitive=True),
+                nullable=False, index=True),
+        Column('determiner', IbidUnicodeText(case_insensitive=True),
+                index=True),
         Column('carried', Boolean, nullable=False, index=True),
         Column('giver_id', Integer, ForeignKey('identities.id'), nullable=False),
         useexisting=True)
