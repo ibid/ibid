@@ -5,9 +5,11 @@ import os
 import re
 from subprocess import Popen, PIPE
 
+from ibid.compat import defaultdict
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join, cacheable_download
+from ibid.utils import file_in_path, unicode_output, human_join, \
+                       cacheable_download, json_webservice
 
 features = {}
 
@@ -119,39 +121,43 @@ features['apt-file'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class AptFile(Processor):
-    usage = u'apt-file [search] <term>'
+    usage = u'apt-file [search] <term> [on <distribution>[/<architecture>]]'
     features = ('apt-file',)
 
-    aptfile = Option('apt-file', 'Path to apt-file executable', 'apt-file')
+    distro = Option('distro', 'Default distribution to search', 'sid')
+    arch = Option('arch', 'Default distribution to search', 'i386')
 
-    def setup(self):
-        if not file_in_path(self.aptfile):
-            raise Exception("Cannot locate apt-file executable")
+    @match(r'^apt-?file\s+(?:search\s+)?(\S+)'
+           r'(?:\s+[oi]n\s+(\S+?)(?:[/-](\S+))?)?$')
+    def search(self, event, term, distro, arch):
+        distro = distro and distro.lower() or self.distro
+        arch = arch and arch.lower() or self.arch
+        distro = distro + u'-' + arch
+        if distro == u'all-all':
+            distro = u'all'
 
-    @match(r'^apt-?file\s+(?:search\s+)?(.+)$')
-    def search(self, event, term):
-        apt = Popen([self.aptfile, 'search', term], stdout=PIPE, stderr=PIPE)
-        output, error = apt.communicate()
-        code = apt.wait()
-
-        if code == 0:
-            if output:
-                output = unicode_output(output.strip())
-                output = [line.split(u':')[0] for line in output.splitlines()]
-                packages = sorted(set(output))
-                event.addresponse(u'Found %(num)i packages: %(names)s', {
-                    'num': len(packages),
-                    'names': human_join(packages),
-                })
+        result = json_webservice(
+            u'http://dde.debian.net/dde/q/aptfile/byfile/%s/%s' %
+            (distro, term), {'t': 'json'})
+        result = result['r']
+        if result:
+            if isinstance(result[0], list):
+                numpackages = len(set(x[-1] for x in result))
+                bypkg = map(lambda x: (x[-1], u'/'.join(x[:-1])), result)
+                packages = defaultdict(list)
+                for p, arch in bypkg:
+                    packages[p].append(arch)
+                packages = map(lambda i: u'%s [%s]' % (i[0], u', '.join(i[1])),
+                               packages.iteritems())
             else:
-                event.addresponse(u'No packages found')
+                numpackages = len(result)
+                packages = result
+            event.addresponse(u'Found %(num)i packages: %(names)s', {
+                'num': numpackages,
+                'names': human_join(packages),
+            })
         else:
-            error = unicode_output(error.strip())
-            if u"The cache directory is empty." in error:
-                event.addresponse(u'Search error: apt-file cache empty')
-            else:
-                event.addresponse(u'Search error')
-            raise Exception("apt-file: %s" % error)
+            event.addresponse(u'No packages found')
 
 features['man'] = {
     'description': u'Retrieves information from manpages.',
