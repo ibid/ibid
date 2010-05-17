@@ -7,6 +7,7 @@ import re
 from threading import Lock
 
 from nickometer import nickometer
+from sqlalchemy.sql import not_
 
 import ibid
 from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
@@ -14,7 +15,8 @@ from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
 from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
-from ibid.utils import human_join, indefinite_article, identity_name
+from ibid.utils import human_join, indefinite_article, identity_name, \
+                        plural
 
 features = {}
 
@@ -344,16 +346,71 @@ class ExchangeMessage(Processor):
     @match(r'^(?:who\s+gave\s+(?:yo)?u|where\s+did\s+(?:yo)?u\s+get)\s+'
                 + object_pat + '$')
     def query_giver(self, event, determiner, object):
-        items = Item.carried_items(event.session) \
-                .filter_by(description=object).all()
+        if determiner is None:
+            determiner = ''
+
+        who = event.sender['nick']
+        if determiner.lower() == 'our':
+            if who[-1] in 'sS':
+                determiner = who + "'"
+            else:
+                determiner = who + "'s"
+            yours = True
+        elif determiner.lower() == 'my':
+            determiner = who + "'s"
+            yours = True
+        else:
+            yours = False
+
+        all_items = Item.carried_items(event.session) \
+                    .filter_by(description=object)
+
+        if "'" in determiner:
+            # We don't want objects with different owners,
+            # but otherwise "an axe" and "the axe" should match, etc.
+            items = all_items.filter(determiner ==
+                                     Item.__table__.c.determiner).all()
+        else:
+            items = all_items.all()
+
         if items:
             event.addresponse(u'I got ' +
                 human_join(u'%(item)s from %(giver)s' %
                                 {'item': item,
                                 'giver': identity_name(event, item.giver)}
                             for item in items))
-        else:
-            event.addresponse("There's nothing like that in my bucket.")
+            return
+
+        if "'" in determiner:
+                # Find unowned items
+                clause = not_(Item.__table__.c.determiner.contains(u"'"))
+                items = all_items.filter(clause).all()
+
+                if items:
+                    if yours:
+                        owner_desc = 'yours'
+                    else:
+                        owner_desc = determiner
+
+                    event.addresponse(u'I got ' +
+                        human_join(u'%(item)s from %(giver)s' %
+                            {'item': item,
+                            'giver': identity_name(event, item.giver)}
+                            for item in items)
+                        + ". I didn't realise %(predicate)s %(desc)s." %
+                            {'desc': owner_desc,
+                             'predicate': plural(len(items),
+                                                'it was',
+                                                'they were')})
+                    return
+
+        if yours:
+            object = u'your ' + object
+        elif determiner:
+            object = determiner + u' ' + object
+        event.addresponse(choice((
+            u"There's nothing like that in my bucket.",
+            u"I don't have %s" % object)))
 
 def exchange(event, determiner, object):
     who = event.sender['nick']
