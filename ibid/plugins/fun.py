@@ -315,10 +315,13 @@ class ExchangeAction(Processor):
 
     addressed = False
 
+    bucket_size = IntOption('bucket_size', """The maximum number of objects in
+ the bucket""", 5)
+
     @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
     def give(self, event, addressee, determiner, object):
         if addressee in ibid.config.plugins['core']['names']:
-            return exchange(event, determiner, object)
+            return exchange(event, determiner, object, self.bucket_size)
 
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
@@ -326,13 +329,16 @@ class ExchangeMessage(Processor):
     who gave you <object>?"""
     features = ('bucket',)
 
+    bucket_size = IntOption('bucket_size', """The maximum number of objects in
+ the bucket""", 5)
+
     @match(r"^(?:have|take)\s+" + object_pat + "$")
     def have(self, event, determiner, object):
         if determiner in ('his', 'her', 'their', 'its'):
             event.addresponse("I don't know whose %s you're talking about",
                                 object)
         else:
-            return exchange(event, determiner, object)
+            return exchange(event, determiner, object, self.bucket_size)
 
     @match(r'^(?:what\s+(?:are|do)\s+(?:yo)?u\s+)?(?:carrying|have)$')
     def query_carrying(self, event):
@@ -413,7 +419,7 @@ class ExchangeMessage(Processor):
             u"There's nothing like that in my bucket.",
             u"I don't have %s" % object)))
 
-def exchange(event, determiner, object):
+def exchange(event, determiner, object, bucket_size):
     who = event.sender['nick']
 
     if determiner is None:
@@ -435,16 +441,20 @@ def exchange(event, determiner, object):
     else:
         taken = genitive + u' ' + object
 
-    try:
-        event.addresponse(u'hands %(who)s %(carrying)s '
-                            u'in exchange for %(taken)s',
-                            {'who': who,
-                             'carrying': Item.take_item(event.session),
-                             'taken': taken},
-                            action=True)
-    except EmptyBucketException:
-        event.addresponse(u'takes %s but has nothing to give in exchange',
-                            taken, action=True)
+    count = Item.carried_items(event.session).count()
+    if count >= bucket_size:
+        try:
+            event.addresponse(u'hands %(who)s %(carrying)s '
+                                u'in exchange for %(taken)s',
+                                {'who': who,
+                                 'carrying': Item.take_item(event.session),
+                                 'taken': taken},
+                                action=True)
+        except EmptyBucketException:
+            event.addresponse(u'takes %s but has nothing to give in exchange',
+                                taken, action=True)
+    else:
+        event.addresponse(u'takes %s', taken, action=True)
 
     # determine which determiner we will use when talking about this object in
     # the future -- we only want to refer to it by the giver's name if the giver
