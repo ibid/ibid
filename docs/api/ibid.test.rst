@@ -15,19 +15,19 @@ End-to-end testing
 
     The clean database is a SQLite database at ``ibid/test/test.db`` (which needs to
     be updated when the schema changes). The tests also use the config at
-    ``ibid/test/test.ini``
+    ``ibid/test/test.ini``.
 
     .. attribute:: load
 
         List: strings naming plugins to be loaded before running tests.
 
-        Default: ``[]``
+        Default: empty
 
     .. attribute:: noload
 
         List: strings naming plugins *not* to be loaded.
 
-        Default: ``[]``
+        Default: empty
 
     .. attribute:: load_base
 
@@ -54,3 +54,34 @@ End-to-end testing
         public.
 
         Default: ``False``
+
+    .. method:: setUp()
+
+        If you override this method, make sure you call
+        :meth:`PluginTestCase.setUp()`.
+
+    .. method:: tearDown()
+
+        If you override this method, make sure you call
+        :meth:`PluginTestCase.tearDown()`.
+
+
+    .. method:: make_event(message=None, type=u'message')
+
+        Create and return an event on the test source, from the test user, of
+        type *type*.
+
+    .. method:: assertResponseMatches(event, regex)
+
+        Process *event* (either an event or a string to be treated as a
+        message from the test user on the test source), and check that the
+        response matches *regex* (either a regex string or a compiled regex).
+
+        Only checks the first response.
+
+    .. method:: assertSucceeds(event)
+
+        Process *event* (either an event or a string to be treated as a
+        message from the test user on the test source), and check that it is
+        processed by some :class:`Processor <ibid.plugins.Processor>` and no
+        complaint is set.
