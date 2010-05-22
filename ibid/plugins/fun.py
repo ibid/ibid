@@ -375,8 +375,7 @@ class ExchangeMessage(Processor):
         if "'" in determiner:
             # We don't want objects with different owners,
             # but otherwise "an axe" and "the axe" should match, etc.
-            items = all_items.filter(determiner ==
-                                     Item.__table__.c.determiner).all()
+            items = all_items.filter_by(determiner=determiner).all()
         else:
             items = all_items.all()
 
