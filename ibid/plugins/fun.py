@@ -389,27 +389,27 @@ class ExchangeMessage(Processor):
             return
 
         if "'" in determiner:
-                # Find unowned items
-                clause = not_(Item.__table__.c.determiner.contains(u"'"))
-                items = all_items.filter(clause).all()
+            # Find unowned items
+            clause = not_(Item.__table__.c.determiner.contains(u"'"))
+            items = all_items.filter(clause).all()
 
-                if items:
-                    if yours:
-                        owner_desc = 'yours'
-                    else:
-                        owner_desc = determiner
+            if items:
+                if yours:
+                    owner_desc = 'yours'
+                else:
+                    owner_desc = determiner
 
-                    event.addresponse(u'I got ' +
-                        human_join(u'%(item)s from %(giver)s' %
-                            {'item': item,
-                            'giver': identity_name(event, item.giver)}
-                            for item in items)
-                        + ". I didn't realise %(predicate)s %(desc)s." %
-                            {'desc': owner_desc,
-                             'predicate': plural(len(items),
-                                                'it was',
-                                                'they were')})
-                    return
+                event.addresponse(u'I got ' +
+                    human_join(u'%(item)s from %(giver)s' %
+                        {'item': item,
+                        'giver': identity_name(event, item.giver)}
+                        for item in items)
+                    + ". I didn't realise %(predicate)s %(desc)s." %
+                        {'desc': owner_desc,
+                         'predicate': plural(len(items),
+                                            'it was',
+                                            'they were')})
+                return
 
         if yours:
             object = u'your ' + object
