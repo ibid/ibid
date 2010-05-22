@@ -4,7 +4,6 @@
 from unicodedata import normalize
 from random import choice, random, randrange
 import re
-from threading import Lock
 
 from nickometer import nickometer
 from sqlalchemy.sql import not_
@@ -277,7 +276,7 @@ class Item(Base):
 
     __table__.versioned_schema = VersionedSchema(__table__, 1)
 
-    giver = relation('Identity')
+    giver = relation(Identity)
 
     def __init__(self, description, determiner, giver):
         self.description = description
