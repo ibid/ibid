@@ -382,8 +382,8 @@ class ExchangeMessage(Processor):
         if items:
             event.addresponse(u'I got ' +
                 human_join(u'%(item)s from %(giver)s' %
-                                {'item': u'your ' + item.description
-                                            if yours else item,
+                                {'item':
+                                    [item.description, u'your ' + item][yours],
                                 'giver': identity_name(event, item.giver)}
                             for item in items))
             return
