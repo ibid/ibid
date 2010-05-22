@@ -383,14 +383,15 @@ class ExchangeMessage(Processor):
             event.addresponse(u'I got ' +
                 human_join(u'%(item)s from %(giver)s' %
                                 {'item':
-                                    [item.description, u'your ' + item][yours],
+                                    [item, u'your ' + item.description][yours],
                                 'giver': identity_name(event, item.giver)}
                             for item in items))
             return
 
         if "'" in determiner:
             # Find unowned items
-            clause = not_(Item.__table__.c.determiner.contains(u"'"))
+            clause = not_(Item.determiner.contains(u"'")) or \
+                    Item.determiner == None
             items = all_items.filter(clause).all()
 
             if items:
