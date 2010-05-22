@@ -314,8 +314,9 @@ class ExchangeAction(Processor):
 
     addressed = False
 
-    bucket_size = IntOption('bucket_size', """The maximum number of objects in
- the bucket""", 5)
+    bucket_size = IntOption('bucket_size',
+                            "The maximum number of objects in the bucket",
+                            5)
 
     @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
     def give(self, event, addressee, determiner, object):
@@ -328,8 +329,9 @@ class ExchangeMessage(Processor):
     who gave you <object>?"""
     features = ('bucket',)
 
-    bucket_size = IntOption('bucket_size', """The maximum number of objects in
- the bucket""", 5)
+    bucket_size = IntOption('bucket_size',
+                            "The maximum number of objects in the bucket",
+                            5)
 
     @match(r"^(?:have|take)\s+" + object_pat + "$")
     def have(self, event, determiner, object):
