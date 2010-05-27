@@ -136,7 +136,11 @@ class PluginTestCase(unittest.TestCase):
         if isinstance(regex, basestring):
             regex = re.compile(regex, re.U | re.I | re.DOTALL)
 
-        self.assert_(regex.match(event.responses[0]['reply']))
+        for response in event.responses:
+            if regex.match(response['reply']):
+                return
+        else:
+            self.fail("No response matches regex")
 
     def assertSucceeds(self, event):
         if isinstance(event, basestring):
