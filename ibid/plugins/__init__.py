@@ -230,15 +230,15 @@ def _match_sub_selectors(regex):
         regex = '^' + regex
     if not regex.endswith('$'):
         regex = regex + '$'
-    
+
     return regex
 
-def match(regex, version='clean', selectors=True):
+def match(regex, version='clean', simple=True):
     "Wrapper: Handle all events where the message matches the regex"
-    if selectors:
+    if simple:
         regex = _match_sub_selectors(regex)
 
-    pattern = re.compile(regex, re.I | re.DOTALL)
+    pattern = re.compile(regex, re.I | re.UNICODE | re.DOTALL)
     def wrap(function):
         function.handler = True
         function.pattern = pattern
