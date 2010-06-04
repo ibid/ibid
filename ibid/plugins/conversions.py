@@ -12,7 +12,7 @@ from ibid.plugins import Processor, handler, match
 from ibid.compat import any, defaultdict
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
-                       unicode_output
+                       unicode_output, generic_webservice
 from ibid.utils.html import get_html_parse_tree
 
 features = {}
@@ -308,12 +308,15 @@ class Currency(Processor):
 
     features = ('currency',)
 
-    headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
 
     def _load_currencies(self):
-        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
+        etree = get_html_parse_tree(
+                'http://www.xe.com/iso4217.php', headers = {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'http://www.xe.com/',
+                }, treetype='etree')
 
         tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
@@ -392,21 +395,34 @@ class Currency(Processor):
                 event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
             return
 
-        data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
-        etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
+        data = generic_webservice(
+                'http://download.finance.yahoo.com/d/quotes.csv', {
+                    'f': 'l1ba',
+                    'e': '.csv',
+                    's': canonical_frm + canonical_to + '=X',
+                })
+        last_trade_rate, bid, ask = data.strip().split(',')
+        if last_trade_rate == 0:
+            event.addresponse(
+                    u"Whoops, looks like I couldn't make that conversion")
+            return
 
-        result = [tag.text for tag in etree.getiterator('h2')]
-        if result:
-            event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
-                'fresult': result[0],
-                'tresult': result[2],
+        event.addresponse(
+            u'%(fresult)s %(fcode)s (%(fcountry)s %(fcurrency)s) = '
+            u'%(tresult)0.2f %(tcode)s (%(tcountry)s %(tcurrency)s) '
+            u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
+                'fresult': amount,
+                'tresult': float(amount) * float(last_trade_rate),
                 'fcountry': self.currencies[canonical_frm][0][0],
                 'fcurrency': self.currencies[canonical_frm][1],
                 'tcountry': self.currencies[canonical_to][0][0],
                 'tcurrency': self.currencies[canonical_to][1],
+                'fcode': canonical_frm,
+                'tcode': canonical_to,
+                'rate': last_trade_rate,
+                'bid': bid,
+                'ask': ask,
             })
-        else:
-            event.addresponse(u"The bureau de change appears to be closed for lunch")
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
