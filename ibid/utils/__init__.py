@@ -226,8 +226,8 @@ def url_regex():
 def is_url(url):
     return re.match('^' + url_regex() + '$', url, re.I) is not None
 
-def json_webservice(url, params={}, headers={}):
-    "Request data from a JSON webservice, and deserialise"
+def generic_webservice(url, params={}, headers={}):
+    "Retreive data from a webservice"
 
     for key in params:
         if isinstance(params[key], unicode):
@@ -243,6 +243,12 @@ def json_webservice(url, params={}, headers={}):
     f = urllib2.urlopen(req)
     data = f.read()
     f.close()
+    return data
+
+def json_webservice(url, params={}, headers={}):
+    "Request data from a JSON webservice, and deserialise"
+
+    data = generic_webservice(url, params, headers)
     try:
         return json.loads(data)
     except ValueError, e:
