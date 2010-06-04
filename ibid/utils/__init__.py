@@ -381,4 +381,12 @@ def get_country_codes():
 
     return countries
 
+def identity_name (event, identity):
+    if event.identity == identity.id:
+        return u'you'
+    elif event.source == identity.source:
+        return identity.identity
+    else:
+        return u'%s on %s' % (identity.identity, identity.source)
+
 # vi: set et sta sw=4 ts=4:

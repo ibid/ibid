@@ -116,6 +116,10 @@ String Functions
 
    Returns the filename to the resource.
 
+.. function:: identity_name(event, identity)
+
+    Refer to *identity* naturally in response to *event*.
+
 URL Functions
 -------------
 
