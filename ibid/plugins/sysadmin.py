@@ -4,12 +4,13 @@
 import os
 import re
 from subprocess import Popen, PIPE
+from urllib2 import HTTPError
 
 from ibid.compat import defaultdict
 from ibid.plugins import Processor, match
 from ibid.config import Option
-from ibid.utils import file_in_path, unicode_output, human_join, \
-                       cacheable_download, json_webservice
+from ibid.utils import cacheable_download, file_in_path, human_join, \
+                       json_webservice, plural, unicode_output
 
 features = {}
 
@@ -135,6 +136,8 @@ class AptFile(Processor):
         distro = distro + u'-' + arch
         if distro == u'all-all':
             distro = u'all'
+        if '/' in distro + term or '?' in distro + term:
+            return
 
         result = json_webservice(
             u'http://dde.debian.net/dde/q/aptfile/byfile/%s/%s' %
@@ -158,6 +161,143 @@ class AptFile(Processor):
             })
         else:
             event.addresponse(u'No packages found')
+
+features['debian-bts'] = {
+    'description': u'Searches the Debain Bug Tracking System',
+    'categories': ('sysadmin', 'lookup',),
+}
+class DebianBTS(Processor):
+    usage = u"""debian bug #<number>
+    debian bugs in <package> [/search/]
+    """
+    features = ('debian-bts',)
+
+    @match(r'^deb(?:ian\s+)?bug\s+#?([0-9]+)$')
+    def lookup(self, event, bug_number):
+        bug_number = int(bug_number)
+        try:
+            result = json_webservice(
+                u'http://dde.debian.net/dde/q/bts/bynumber/%i' % bug_number,
+                {'t': 'json'})
+        except HTTPError, e:
+            if e.code == 400:
+                event.addresponse(
+                        u"Sorry, but I can't find a bug of that number.")
+                return
+            else:
+                raise
+        bug = result['r']
+
+        tags = bug['tags']
+        if bug['pending'] != 'pending':
+            tags.append(bug['pending'])
+        if tags:
+            tags = ', ' + ', '.join(bug['tags'])
+        else:
+            tags = ''
+
+        package = ''
+        if not bug['subject'].startswith(bug['package'] + ':'):
+            package = bug['package']
+        if (bug['source']
+                and bug['package'] != bug['source']
+                and not bug['package'].startswith('src:')
+                and not bug['found_versions']):
+            if package:
+                package += ' (src:%s)' % bug['source']
+            else:
+                package = 'src:' + bug['source']
+        if bug['found_versions']:
+            if package:
+                package += ' '
+            package += human_join(bug['found_versions'])
+        if package:
+            package = ' In %s,' % package
+
+        affects = ''
+        if bug['affects']:
+            affects = ' Affects %s,' % bug['affects']
+
+        blocked = ''
+        if bug['blockedby']:
+            blocked = map(int, bug['blockedby'].split())
+            blocked.sort()
+            blocked = map(str, blocked)
+            if len(blocked) > 5:
+                blocked = blocked[:5] + ['others']
+            blocked = ' Blocked by %s,' + human_join(blocked)
+
+        merged = ''
+        if bug['mergedwith']:
+            merged = ' Merged with %s,' % bug['mergedwith']
+
+        event.addresponse(
+            u'%(archived)s"%(subject)s" [%(severity)s%(tags)s]%(package)s'
+            u'%(affects)s%(merged)s%(blocked_by)s'
+            u' http://bugs.debian.org/%(bug_num)i', {
+                'affects': affects,
+                'archived': bug['archived'] and 'Archived: ' or '',
+                'blocked_by': blocked,
+                'bug_num': bug_number,
+                'merged': merged,
+                'package': package,
+                'severity': bug['severity'],
+                'subject': bug['subject'],
+                'tags': tags,
+            })
+
+    @match(r'^deb(?:ian\s+)?bugs?\s+in\s+(\S+)(?:\s+/(.+)/)?$')
+    def search(self, event, package, search):
+        if '/' in package or '?' in package:
+            return
+        package = package.lower()
+        if search is not None:
+            search = search.lower()
+        result = json_webservice(
+            u'http://dde.debian.net/dde/q/bts/bypackage/%s' % package,
+            {'t': 'json'})
+        bugs = result['r']
+        if not bugs:
+            event.addresponse(u"Sorry, I couldn't find any open bugs on %s",
+                    package)
+            return
+
+        severities = {
+            'critical': 4,
+            'grave': 3,
+            'serious': 2,
+            'important': 1,
+            'normal': 0,
+            'minor': -1,
+            'wishlist': -2,
+        }
+
+        buglist = []
+        for b in bugs.itervalues():
+            if search and search not in b['subject'].lower():
+                continue
+
+            tags = b['tags']
+            if b['pending'] != 'pending':
+                tags.append(b['pending'])
+            if tags:
+                tags = ', ' + ', '.join(b['tags'])
+            else:
+                tags = ''
+
+            body = '%s [%s%s]' % (b['subject'], b['severity'], tags)
+            sev = 0 - severities.get(b['severity'], 0)
+            buglist.append((b['bug_num'], sev, body))
+        buglist.sort()
+        if not buglist:
+            event.addresponse(u"Sorry, I couldn't find any open bugs matching "
+                              u"your query")
+            return
+        event.addresponse(u'Found %(count)i matching %(plural)s: %(bugs)s', {
+            'count': len(buglist),
+            'plural': plural(len(buglist), u'bug', u'bugs'),
+            'bugs': ', '.join('%i: %s' % (b[0], b[2]) for b in buglist)
+        })
 
 features['man'] = {
     'description': u'Retrieves information from manpages.',
