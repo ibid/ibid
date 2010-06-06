@@ -510,7 +510,7 @@ class WerewolfGame(Processor):
 
         self.timed_goto(event, self.start_delay, self.start)
 
-    @match(r'^joins?\b', selectors=False)
+    @match(r'^joins?\b', simple=False)
     def join(self, event):
         if self.state != self.prestart:
             log.debug(u'Not joining: already in state %s.',

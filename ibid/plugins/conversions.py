@@ -561,7 +561,7 @@ class UnicodeData(Processor):
                 r'uni(?:code|han)\s+#?0?x)([0-9a-f]+)$|'
            r'^(?:unicode|unihan|ascii)\s+'
                 r'([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
-           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$')
+           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$', simple=False)
     def unichr (self, event, hexcode, hexcode2, deccode):
         if hexcode or hexcode2:
             code = int(hexcode or hexcode2, 16)
@@ -585,7 +585,7 @@ class UnicodeData(Processor):
                           u"%(unihan)s",
                           info)
 
-    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed')
+    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed', simple=False)
     def ord (self, event, char):
         try:
             info = self.info(char)
@@ -602,7 +602,7 @@ class UnicodeData(Processor):
                               u"%(unihan)s",
                               info)
 
-    @match(r'^uni(?:code|han)\s+([a-z][a-z0-9 -]+)$', selectors=False)
+    @match(r'uni(?:code|han) ([a-z][a-z0-9 -]+)')
     def fromname (self, event, name):
         try:
             char = unicodedata.lookup(name.upper())
@@ -618,7 +618,7 @@ class UnicodeData(Processor):
                               info)
 
     # Match any string that can't be a character name or a number.
-    @match(r'^unicode\s+(.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)$', 'deaddressed')
+    @match(r'unicode (.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)', 'deaddressed')
     def characters (self, event, string):
         event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
                                         for c in string))
