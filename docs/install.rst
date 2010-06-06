@@ -322,7 +322,7 @@ Load any factpacks you desire (in this case, common greetings)::
 
    ibid@box $ ibid-factpack ~/ibid/factpack/greetings.json
 
-Runi your bot::
+Run your bot::
 
    ibid@box $ twistd -n ibid
 

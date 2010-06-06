@@ -225,7 +225,7 @@ class HTTP(Processor):
     features = ('http',)
     priority = -10
 
-    max_size = IntOption('max_size', u'Only request this many bytes', 500)
+    max_size = IntOption('max_size', u'Only request this many bytes', 2048)
     timeout = IntOption('timeout',
             u'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', u'Mapping of site names to domains', {})

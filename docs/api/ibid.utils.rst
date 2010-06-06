@@ -66,6 +66,12 @@ String Functions
    It's recommended to use complete words for *singular* and *plural*
    rather than suffixes.
 
+.. function:: indefinite_article(phrase)
+
+    Use heuristics to determine whether the pronunciation of *phrase* starts
+    with a vowel or consonant (assuming it is English) and return 'an' or 'a'
+    respectively.
+
 .. function:: decode_htmlentities(text)
 
    Return *text* with all HTML entities removed, both numeric and
@@ -110,6 +116,10 @@ String Functions
 
    Returns the filename to the resource.
 
+.. function:: identity_name(event, identity)
+
+    Refer to *identity* naturally in response to *event*.
+
 URL Functions
 -------------
 
@@ -150,6 +160,11 @@ Web Service Functions
       filename = cacheable_download(
          'http://www.iso.org/iso/country_codes/iso_3166_code_lists/iso-3166-1_decoding_table.htm',
          'lookup/iso-3166-1_decoding_table.htm')
+
+.. function:: generic_webservice(url, [params, headers])
+
+   Request *url*, with optional dicts of parameters *params* and headers
+   *headers*, and return the data.
 
 .. function:: json_webservice(url, [params, headers])
 

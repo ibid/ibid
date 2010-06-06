@@ -167,7 +167,7 @@ class VersionedSchema(object):
                 raise Exception(u"Column %s.%s is unique but not indexed. "
                     u"SQLite doesn't like such things, "
                     u"so please be nice and don't do that."
-                    % (self.table.name, self.column.name))
+                    % (self.table.name, column.name))
 
         # Strip out Indexes and Constraints that SQLAlchemy can't create by
         # itself

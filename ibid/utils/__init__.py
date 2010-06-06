@@ -1,5 +1,9 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+#
+# The indefinite_article function follows an algorithm by Damian Conway
+# as published in CPAN package Lingua-EN-Inflect-1.891 under the GNU GPL
+# (version 1 or later) and Artistic License 1.0.
 
 import codecs
 from gzip import GzipFile
@@ -239,8 +243,8 @@ def url_regex():
 def is_url(url):
     return re.match('^' + url_regex() + '$', url, re.I) is not None
 
-def json_webservice(url, params={}, headers={}):
-    "Request data from a JSON webservice, and deserialise"
+def generic_webservice(url, params={}, headers={}):
+    "Retreive data from a webservice"
 
     for key in params:
         if isinstance(params[key], unicode):
@@ -256,6 +260,12 @@ def json_webservice(url, params={}, headers={}):
     f = urllib2.urlopen(req)
     data = f.read()
     f.close()
+    return data
+
+def json_webservice(url, params={}, headers={}):
+    "Request data from a JSON webservice, and deserialise"
+
+    data = generic_webservice(url, params, headers)
     try:
         return json.loads(data)
     except ValueError, e:
@@ -291,6 +301,55 @@ def get_process_output(command, input=None):
     code = process.wait()
     return output, error, code
 
+def indefinite_article(noun_phrase):
+    # algorithm adapted from CPAN package Lingua-EN-Inflect-1.891 by Damian Conway
+    m = re.search('\w+', noun_phrase, re.UNICODE)
+    if m:
+        word = m.group(0)
+    else:
+        return u'an'
+
+    wordi = word.lower()
+    for anword in ('euler', 'heir', 'honest', 'hono'):
+        if wordi.startswith(anword):
+            return u'an'
+
+    if wordi.startswith('hour') and not wordi.startswith('houri'):
+        return u'an'
+
+    if len(word) == 1:
+        if wordi in 'aedhilmnorsx':
+            return u'an'
+        else:
+            return u'a'
+
+    if re.match(r'(?!FJO|[HLMNS]Y.|RY[EO]|SQU|'
+                  r'(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])'
+                  r'[FHLMNRSX][A-Z]', word):
+        return u'an'
+
+    for regex in (r'^e[uw]', r'^onc?e\b',
+                    r'^uni([^nmd]|mo)','^u[bcfhjkqrst][aeiou]'):
+        if re.match(regex, wordi):
+            return u'a'
+
+    # original regex was /^U[NK][AIEO]?/ but that matches UK, UN, etc.
+    if re.match('^U[NK][AIEO]', word):
+        return u'a'
+    elif word == word.upper():
+        if wordi[0] in 'aedhilmnorsx':
+            return u'an'
+        else:
+            return u'a'
+
+    if wordi[0] in 'aeiou':
+        return u'an'
+
+    if re.match(r'^y(b[lor]|cl[ea]|fere|gg|p[ios]|rou|tt)', wordi):
+        return u'an'
+    else:
+        return u'a'
+
 def get_country_codes():
     filename = cacheable_download(
             'http://www.iso.org/iso/list-en1-semic-3.txt',
@@ -321,5 +380,13 @@ def get_country_codes():
     f.close()
 
     return countries
+
+def identity_name (event, identity):
+    if event.identity == identity.id:
+        return u'you'
+    elif event.source == identity.source:
+        return identity.identity
+    else:
+        return u'%s on %s' % (identity.identity, identity.source)
 
 # vi: set et sta sw=4 ts=4:
