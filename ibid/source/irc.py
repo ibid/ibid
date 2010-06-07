@@ -230,6 +230,8 @@ class Ircbot(irc.IRCClient):
             self.do_auth_callback(params[1], True)
         elif command == '307' and len(params) == 3 and params[2] == 'user has identified to services':
             self.do_auth_callback(params[1], True)
+        elif command == '307' and len(params) == 3 and params[2] == 'has identified for this nick':
+            self.do_auth_callback(params[1], True)
         elif command == '320' and len(params) == 3 and params[2] == 'is identified to services ':
             self.do_auth_callback(params[1], True)
         elif command == '330' and len(params) == 4 and params[3] == 'is logged in as':
