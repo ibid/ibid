@@ -95,7 +95,7 @@ class PluginTestCase(unittest.TestCase):
 
         load = self.load
         if self.load_base:
-            load += ['admin', 'core']
+            load += ['core']
 
         ibid.reloader.load_processors(load, self.noload, self.load_configured)
 
