@@ -1,13 +1,13 @@
 # Copyright (c) 2009-2010, Jeremy Thurgood, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import logging
-
-from twisted.python import log
-from twisted.trial import unittest
 from shutil import copyfile
 import os
 from tempfile import mkstemp
 import re
+
+from twisted.python import log
+from twisted.trial import unittest
 
 import ibid
 from ibid.core import process

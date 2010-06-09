@@ -7,7 +7,6 @@ from optparse import OptionParser
 from os import getenv
 from os.path import exists
 import sys
-import socket
 
 try:
     import readline
@@ -16,8 +15,6 @@ try:
 except ImportError:
     pass
 
-from sqlalchemy.exceptions import IntegrityError
-
 sys.path.insert(0, '.')
 
 import ibid
@@ -25,7 +22,6 @@ import ibid.core
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
-from ibid.utils import JSONException
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
 plugins is the list of plugins to load.
