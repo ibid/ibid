@@ -125,6 +125,14 @@ Plugins
 * Any changes to database schema should have upgrade-rules included for
   painless upgrade by users.
 
+Bot Responses
+^^^^^^^^^^^^^
+
+* While there are exceptions, a well behaved Ibid only speaks when
+  spoken to.
+
+* URLs should be surrounded with whitespace to help clients detect them.
+
 .. _bzr-guide:
 
 Bazaar for Ibid Developers

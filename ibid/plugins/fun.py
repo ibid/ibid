@@ -4,13 +4,14 @@
 from unicodedata import normalize
 from random import choice, random
 import re
+from threading import Lock
 
 from nickometer import nickometer
 
 import ibid
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
-from ibid.utils import human_join
+from ibid.utils import human_join, indefinite_article
 
 features = {}
 
@@ -246,5 +247,105 @@ class Insult(Processor):
             swearage.append(choice(self.swearnouns))
 
         event.addresponse(u' '.join(swearage) + u'!', address=False)
+
+carrying = None
+carrying_lock = Lock()
+
+object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
+            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
+
+features['bucket'] = {
+    'description': u'Exchanges objects with people',
+    'categories': ('fun',),
+}
+class ExchangeAction(Processor):
+    features = ('bucket',)
+    event_types = (u'action',)
+
+    addressed = False
+
+    @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
+    def give(self, event, addressee, determiner, object):
+        if addressee in ibid.config.plugins['core']['names']:
+            return exchange(event, determiner, object)
+
+class ExchangeMessage(Processor):
+    usage = u"""(have|take) <object>
+    what are you carrying?"""
+    features = ('bucket',)
+
+    @match(r"^(?:have|take)\s+" + object_pat + "$")
+    def have(self, event, determiner, object):
+        if determiner in ('his', 'her', 'their', 'its'):
+            event.addresponse("I don't know whose %s you're talking about",
+                                object)
+        else:
+            return exchange(event, determiner, object)
+
+    @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
+    def query_carrying(self, event):
+        carrying_lock.acquire()
+
+        if carrying is None:
+            event.addresponse(u"I'm not carrying anything")
+        else:
+            event.addresponse(u"I'm carrying %s", carrying)
+
+        carrying_lock.release()
+
+def exchange(event, determiner, object):
+    global carrying
+
+    who = event.sender['nick']
+
+    if determiner is None:
+        determiner = ''
+
+    detl = determiner.lower()
+
+    # determine how to refer to the giver in the genitive case
+    if detl in ('their', 'our') and who[-1] in 'sS':
+        # giver's name is a plural ending in 's'
+        genitive = who + "'"
+    elif detl.endswith("s'") or detl.endswith("'s"):
+        genitive = determiner
+    else:
+        genitive = who + "'s"
+
+    if detl == 'the':
+        taken = u'the ' + object
+    else:
+        taken = genitive + u' ' + object
+
+    carrying_lock.acquire()
+
+    if carrying is None:
+        event.addresponse(u'takes %s but has nothing to give in exchange',
+                            taken, action=True)
+    else:
+        event.addresponse(u'hands %(who)s %(carrying)s '
+                            u'in exchange for %(taken)s',
+                            {'who': who,
+                             'carrying': carrying,
+                             'taken': taken},
+                            action=True)
+
+    # determine which determiner we will use when talking about this object in
+    # the future -- we only want to refer to it by the giver's name if the giver
+    # implied that it was theirs, and we don't want to use demonstratives
+    if detl in ('this', 'that'):
+        # object is definitely singular
+        determiner = indefinite_article(object)
+    elif detl in ('my', 'our', 'his', 'her', 'its', 'their'):
+        determiner = genitive
+    elif detl in ('these', 'those'):
+        determiner = u'some'
+
+    if determiner:
+        carrying = determiner + u' ' + object
+    else:
+        carrying = object
+
+    carrying_lock.release()
 
 # vi: set et sta sw=4 ts=4:

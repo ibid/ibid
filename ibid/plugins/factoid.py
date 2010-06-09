@@ -80,7 +80,7 @@ class FactoidName(Base):
             # http://www.sqlalchemy.org/trac/ticket/1400:
             # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
-                    .filter('name LIKE :pattern ESCAPE :escape') \
+                    .filter('lower(name) LIKE lower(:pattern) ESCAPE :escape') \
                     .params(pattern='%\\_\\%%', escape='\\') \
                     .all():
                 row.wild = True
@@ -227,8 +227,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
         if wild:
             # Reversed LIKE because factoid name contains SQL wildcards if
             # factoid supports arguments
-            query = query.filter(':fact LIKE name ESCAPE :escape') \
-                         .params(fact=name, escape='\\')
+            query = query.filter(
+                    'lower(:fact) LIKE lower(name) ESCAPE :escape'
+                ).params(fact=name, escape='\\')
         else:
             query = query.filter(FactoidName.name == escape_name(name))
         # For normal matches, restrict to the subset applicable
@@ -242,8 +243,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
                 pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
                 # http://www.sqlalchemy.org/trac/ticket/1400:
                 # We can't use .like() in MySQL
-                query = query.filter('value LIKE :pattern ESCAPE :escape') \
-                             .params(pattern=pattern, escape='\\')
+                query = query.filter(
+                        'lower(value) LIKE lower(:pattern) ESCAPE :escape'
+                    ).params(pattern=pattern, escape='\\')
 
         if number:
             try:
@@ -437,18 +439,28 @@ def _interpolate(message, event):
     utcnow = datetime.utcnow()
     now = utcnow.replace(tzinfo=tzutc()).astimezone(tzlocal())
 
-    message = message.replace(u'$who', event.sender['nick'])
-    message = message.replace(u'$channel', event.channel)
-    message = message.replace(u'$year', unicode(now.year))
-    message = message.replace(u'$month', unicode(now.month))
-    message = message.replace(u'$day', unicode(now.day))
-    message = message.replace(u'$hour', unicode(now.hour))
-    message = message.replace(u'$minute', unicode(now.minute))
-    message = message.replace(u'$second', unicode(now.second))
-    message = message.replace(u'$date', format_date(utcnow, 'date'))
-    message = message.replace(u'$time', format_date(utcnow, 'time'))
-    message = message.replace(u'$dow', unicode(now.strftime('%A')))
-    message = message.replace(u'$unixtime', unicode(utcnow.strftime('%s')))
+    substitutions = [(u'who', event.sender['nick']),
+            (u'channel', event.channel),
+            (u'source', event.source),
+            (u'year', unicode(now.year)),
+            (u'month2', u'%02i' % now.month),
+            (u'month1', unicode(now.month)),
+            (u'month', unicode(now.strftime('%B'))),
+            (u'mon', unicode(now.strftime('%b'))),
+            (u'day2', u'%02i' % now.day),
+            (u'day', unicode(now.day)),
+            (u'hour', unicode(now.hour)),
+            (u'minute', unicode(now.minute)),
+            (u'second', unicode(now.second)),
+            (u'date', format_date(utcnow, 'date')),
+            (u'time', format_date(utcnow, 'time')),
+            (u'dow', unicode(now.strftime('%A'))),
+            (u'weekday', unicode(now.strftime('%A'))),
+            (u'unixtime', unicode(utcnow.strftime('%s'))),
+        ]
+
+    for var, expansion in substitutions:
+        message = message.replace(u'$' + var, expansion)
     return message
 
 class Get(Processor, RPC):
