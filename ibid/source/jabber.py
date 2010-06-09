@@ -102,8 +102,9 @@ class JabberBot(xmppim.MessageProtocol, xmppim.PresenceClientProtocol, xmppim.Ro
             priority = 0
 
         realjid = None
-        if presence.x and presence.x.defaultUri == 'http://jabber.org/protocol/muc#user' and presence.x.item.hasAttribute('jid'):
-            realjid = JID(presence.x.item["jid"])
+        for mucuser in presence.elements(name='x', uri='http://jabber.org/protocol/muc#user'):
+            if mucuser.item.hasAttribute('jid'):
+                realjid = JID(mucuser.item["jid"])
 
         self.availableReceived(entity, show, statuses, priority, realjid)
 
