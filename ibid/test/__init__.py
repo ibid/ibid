@@ -70,8 +70,12 @@ class PluginTestCase(unittest.TestCase):
     load_configured = None
     username = u'user'
     public = False
+    network = False
 
     def setUp(self):
+        if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
+            raise unittest.SkipTest('test uses network')
+
         ibid.auth = TestAuth()
 
         ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))

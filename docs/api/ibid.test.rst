@@ -55,6 +55,14 @@ End-to-end testing
 
         Default: ``False``
 
+    .. attribute:: network
+
+        Boolean: whether or not the test uses the external network. Used to
+        skip tests in networkless environments (where the environment variable
+        `IBID_NETWORKLESS_TEST` is defined).
+
+        Default: ``False``
+
     .. method:: setUp()
 
         If you override this method, make sure you call

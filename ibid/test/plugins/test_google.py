@@ -5,6 +5,7 @@ from ibid.test import PluginTestCase
 
 class GDefineTest(PluginTestCase):
     load = ['google']
+    network = True
 
     def test_basic(self):
         words = u'puppy Kojien'.split()
