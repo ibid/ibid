@@ -8,9 +8,9 @@ from urllib2 import HTTPError
 
 from ibid.compat import defaultdict
 from ibid.plugins import Processor, match
-from ibid.config import Option
-from ibid.utils import cacheable_download, file_in_path, human_join, \
-                       json_webservice, plural, unicode_output
+from ibid.config import DictOption, Option
+from ibid.utils import cacheable_download, file_in_path, generic_webservice, \
+                       human_join, json_webservice, plural, unicode_output
 
 features = {}
 
@@ -298,6 +298,66 @@ class DebianBTS(Processor):
             'plural': plural(len(buglist), u'bug', u'bugs'),
             'bugs': ', '.join('%i: %s' % (b[0], b[2]) for b in buglist)
         })
+
+features['rmadison'] = {
+    'description': u'Shows package versions in Debian and Ubuntu distributions',
+    'categories': ('sysadmin', 'lookup',),
+}
+class RMadison(Processor):
+    usage = u"""what versions of <package> are in <distro>[/<verison>]
+    rmadison <package> [in <distro>[/<verison>]]
+    """
+    features = ('rmadison',)
+    rmadison_sources = DictOption('rmadison_sources', "Rmadison service URLs", {
+        'debian': 'http://qa.debian.org/madison.php',
+        'bpo': 'http://www.backports.org/cgi-bin/madison.cgi',
+        'debug': 'http://debug.debian.net/cgi-bin/madison.cgi',
+        'ubuntu': 'http://people.canonical.com/~ubuntu-archive/madison.cgi',
+        'udd': 'http://qa.debian.org/cgi-bin/madison.cgi',
+    })
+
+    @match(r'^(?:what\s+)?versions?\s+of\s+(\S+)\s+(?:are\s+)?'
+            r'in\s+(\S+?)(?:[\s/]+(\S+))?$')
+    def english_rmadison(self, event, package, distro, release):
+        self.rmadison(event, package, distro, release)
+
+    @match(r'^rmadison\s+(\S+)(?:\s+in\s+(\S+?)(?:[\s/]+(\S+))?)?$')
+    def rmadison(self, event, package, distro, release):
+        distro = distro and distro.lower() or 'all'
+        params = {
+            'package': package.lower(),
+            'text': 'on',
+        }
+        if release is not None:
+            params['s'] = release.lower()
+        if distro == 'all':
+            params['table'] = 'all'
+            distro = 'udd'
+        if distro not in self.rmadison_sources:
+            event.addresponse(
+                    "I'm sorry, but I don't have a madison source for %s",
+                    distro)
+            return
+        table = generic_webservice(self.rmadison_sources[distro], params)
+        table = table.strip().splitlines()
+        if table[0] == 'Traceback (most recent call last):':
+            # Not very REST
+            event.addresponse(u"Whoops, madison couldn't understand that: %s",
+                    table[-1])
+        versions = []
+        for row in table:
+            row = [x.strip() for x in row.split('|')]
+            if versions and versions[-1][0] == row[1]:
+                versions[-1].append(row[2])
+            else:
+                versions.append([row[1], row[2]])
+        versions = human_join(u'%s (%s)' % (r[0], u', '.join(r[1:]))
+                              for r in versions)
+        if versions:
+            event.addresponse(versions)
+        else:
+            event.addresponse(u"Sorry, I can't find a package called %s",
+                              package.lower())
 
 features['man'] = {
     'description': u'Retrieves information from manpages.',
