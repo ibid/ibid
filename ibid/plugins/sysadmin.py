@@ -4,6 +4,7 @@
 import os
 import re
 from subprocess import Popen, PIPE
+from urllib import quote
 from urllib2 import HTTPError
 
 from ibid.compat import defaultdict
@@ -129,19 +130,17 @@ class AptFile(Processor):
     arch = Option('arch', 'Default distribution to search', 'i386')
 
     @match(r'^apt-?file\s+(?:search\s+)?(\S+)'
-           r'(?:\s+[oi]n\s+(\S+?)(?:[/-](\S+))?)?$')
+           r'(?:\s+[oi]n\s+([a-z]+?)(?:[/-]([a-z0-9]+))?)?$')
     def search(self, event, term, distro, arch):
         distro = distro and distro.lower() or self.distro
         arch = arch and arch.lower() or self.arch
         distro = distro + u'-' + arch
         if distro == u'all-all':
             distro = u'all'
-        if '/' in distro + term or '?' in distro + term:
-            return
 
         result = json_webservice(
             u'http://dde.debian.net/dde/q/aptfile/byfile/%s/%s' %
-            (distro, term), {'t': 'json'})
+            (distro, quote(term)), {'t': 'json'})
         result = result['r']
         if result:
             if isinstance(result[0], list):
