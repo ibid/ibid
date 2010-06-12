@@ -40,17 +40,20 @@ class Aptitude(Processor):
             'suggested': human_join(result['sugg']),
         })
 
+    _release_cache = None
     @match(r'^(?:apt|aptitude|apt-get)\s+show\s+([a-z0-9+.:-]+)'
            r'(?:(?:/|\s+in\s+)([a-z-]+))?$')
     def show(self, event, package, distro):
         if distro is None or distro.lower() == 'all':
             distro = 'all'
         else:
-            releases = json_webservice(
+            if self._release_cache is None:
+                self._release_cache = json_webservice(
                     u'http://dde.debian.net/dde/q/udd/packages', {
                         'list': '',
                         't': 'json',
                     })['r']
+            releases = self._release_cache
             if distro not in releases:
                 candidates = [x for x in releases if distro in x]
                 if len(candidates) == 1:
