@@ -299,6 +299,7 @@ def sqlite_creator(database, synchronous=True):
         connection.create_function('regexp', 2, regexp)
         if not synchronous:
             connection.execute('PRAGMA synchronous = OFF')
+        connection.execute('PRAGMA foreign_keys=ON')
         return connection
     return connect
 
