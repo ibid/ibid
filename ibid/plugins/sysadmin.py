@@ -245,10 +245,8 @@ class DebianBTS(Processor):
                 'tags': tags,
             })
 
-    @match(r'^deb(?:ian\s+)?bugs?\s+in\s+(\S+)(?:\s+/(.+)/)?$')
+    @match(r'^deb(?:ian\s+)?bugs?\s+in\s+([a-z0-9+.:-]+)(?:\s+/(.+)/)?$')
     def search(self, event, package, search):
-        if '/' in package or '?' in package:
-            return
         package = package.lower()
         if search is not None:
             search = search.lower()
