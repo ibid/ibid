@@ -262,8 +262,8 @@ features['rmadison'] = {
     'categories': ('sysadmin', 'lookup',),
 }
 class RMadison(Processor):
-    usage = u"""what versions of <package> are in <distro>[/<verison>]
-    rmadison <package> [in <distro>[/<verison>]]
+    usage = u"""what versions of <package> are in <distro>[/<version>]
+    rmadison <package> [in <distro>[/<version>]]
     """
     features = ('rmadison',)
     rmadison_sources = DictOption('rmadison_sources', "Rmadison service URLs", {
