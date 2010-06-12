@@ -125,7 +125,7 @@ source like 'jabber'.
         copyfileobj(resource_stream('ibid', 'logging.ini'),
                     open('logging.ini', 'w'))
 
-db = DatabaseManager(check_schema_versions=False)
+db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
 Session = db['ibid']
 upgrade_schemas(Session)
 
