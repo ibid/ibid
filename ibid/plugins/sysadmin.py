@@ -298,7 +298,7 @@ class RMadison(Processor):
             return
         table = generic_webservice(self.rmadison_sources[distro], params)
         table = table.strip().splitlines()
-        if table[0] == 'Traceback (most recent call last):':
+        if table and table[0] == 'Traceback (most recent call last):':
             # Not very REST
             event.addresponse(u"Whoops, madison couldn't understand that: %s",
                     table[-1])
