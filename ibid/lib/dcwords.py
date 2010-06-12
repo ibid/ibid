@@ -217,10 +217,8 @@ class DCClient(LineReceiver):
         "Information about a user"
         self._state_Connected()
 
-        myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)'
-                               r'(?:<(\S*) ([A-Z0-9.:,/]*)>)?'
-                               r'\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
-        m = myinfo_re.match(params)
+        m = re.match(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?'
+                     r'\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$', params)
         if not m:
             log.error("Couldn't decode MyINFO: %s", params)
             return

@@ -30,8 +30,8 @@ class Lotto(Processor):
         s = "".join(f)
         f.close()
 
-        za_re = re.compile(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif')
-        balls = za_re.findall(s)
+        balls = re.findall(r'images/(?:power_)?balls/(?:ball|power)_(\d+).gif',
+                           s)
 
         if len(balls) != 20:
             event.addresponse(u'I expected to get %(expected)s balls, but found %(found)s. They were: %(balls)s', {
