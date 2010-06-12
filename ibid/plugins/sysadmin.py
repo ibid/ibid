@@ -23,100 +23,58 @@ class Aptitude(Processor):
     usage = u'apt (search|show) <term>'
     features = ('aptitude',)
 
-    aptitude = Option('aptitude', 'Path to aptitude executable', 'aptitude')
-
-    bad_search_strings = (
-        "?action", "~a", "?automatic", "~A", "?broken", "~b",
-        "?config-files", "~c", "?garbage", "~g", "?installed", "~i",
-        "?new", "~N", "?obsolete", "~o", "?upgradable", "~U",
-        "?user-tag", "?version", "~V"
-    )
-
-    def setup(self):
-        if not file_in_path(self.aptitude):
-            raise Exception("Cannot locate aptitude executable")
-
-    def _check_terms(self, event, term):
-        "Check for naughty users"
-
-        for word in self.bad_search_strings:
-            if word in term:
-                event.addresponse(u"I can't tell you about my host system. Sorry")
-                return False
-
-        if term.strip().startswith("-"):
-            event.addresponse(False)
-            return False
-
-        return True
-
-    @match(r'^(?:apt|aptitude|apt-get|apt-cache)\s+search\s+(.+)$')
+    @match(r'^(?:apt|aptitude|apt-get|apt-cache|axi-cache)\s+search\s+(.+)$')
     def search(self, event, term):
-
-        if not self._check_terms(event, term):
+        terms = re.split(r'(?u)[\s/?]', term)
+        result = json_webservice(
+            u'http://debtags.debian.net/dde/q/axi/cquery/%s' %
+            u'/'.join(terms), {'t': 'json'})
+        result = result['r']
+        if not result['pkgs']:
+            event.addresponse(u"Sorry, I couldn't find anything relevant. "
+                              u"Try being less specific?")
             return
+        event.addresponse(u"Packages: %(packages)s. "
+                          u"Not there? Try these terms: %(suggested)s", {
+            'packages': human_join(pkg[1] for pkg in result['pkgs']),
+            'suggested': human_join(result['sugg']),
+        })
 
-        apt = Popen([self.aptitude, 'search', '-F', '%p', term], stdout=PIPE, stderr=PIPE)
-        output, error = apt.communicate()
-        code = apt.wait()
-
-        if code == 0:
-            if output:
-                output = unicode_output(output.strip())
-                output = [line.strip() for line in output.splitlines()]
-                event.addresponse(u'Found %(num)i packages: %(names)s', {
-                    'num': len(output),
-                    'names': human_join(output),
-                })
-            else:
-                event.addresponse(u'No packages found')
+    @match(r'^(?:apt|aptitude|apt-get)\s+show\s+([a-z0-9+.:-]+)'
+           r'(?:(?:/|\s+in\s+)([a-z-]+))?$')
+    def show(self, event, package, distro):
+        if distro is None or distro.lower() == 'all':
+            distro = 'all'
         else:
-            error = unicode_output(error.strip())
-            if error.startswith(u"E: "):
-                error = error[3:]
-            event.addresponse(u"Couldn't search: %s", error)
-
-    @match(r'^(?:apt|aptitude|apt-get)\s+show\s+(.+)$')
-    def show(self, event, term):
-
-        if not self._check_terms(event, term):
-            return
-
-        apt = Popen([self.aptitude, 'show', term], stdout=PIPE, stderr=PIPE)
-        output, error = apt.communicate()
-        code = apt.wait()
-
-        if code == 0:
-            description = None
-            provided = None
-            output = unicode_output(output)
-            real = True
-            for line in output.splitlines():
-                if not description:
-                    if line.startswith(u'Description:'):
-                        description = u'%s:' % line.split(None, 1)[1]
-                    elif line.startswith(u'Provided by:'):
-                        provided = line.split(None, 2)[2]
-                    elif line == u'State: not a real package':
-                        real = False
-                elif line != "":
-                    description += u' ' + line.strip()
+            releases = json_webservice(
+                    u'http://dde.debian.net/dde/q/udd/packages', {
+                        'list': '',
+                        't': 'json',
+                    })['r']
+            if distro not in releases:
+                candidates = [x for x in releases if distro in x]
+                if len(candidates) == 1:
+                    distro = candidates[0]
                 else:
-                    # More than one package listed
-                    break
-            if provided:
-                event.addresponse(u'Virtual package provided by %s', provided)
-            elif description:
-                event.addresponse(description)
-            elif not real:
-                event.addresponse(u'Virtual package, not provided by anything')
-            else:
-                raise Exception("We couldn't successfully parse aptitude's output")
-        else:
-            error = unicode_output(error.strip())
-            if error.startswith(u"E: "):
-                error = error[3:]
-            event.addresponse(u"Couldn't find package: %s", error)
+                    event.addresponse(u"Sorry, I don't know about %(distro)s. "
+                                      u"How about one of: %(releases)s?", {
+                        'distro': distro,
+                        'releases': human_join(
+                            x.startswith('prio-') and x[5:] or x
+                            for x in releases
+                        ),})
+                    return
+        result = json_webservice(
+            u'http://dde.debian.net/dde/q/udd/packages/%s/%s' %
+            (distro, package), {'t': 'json'})
+        result = result['r']
+        if not result:
+            event.addresponse(u"Sorry, I couldn't find anything of that name. "
+                              u"Is it a binary package?")
+            return
+        event.addresponse(u'%(package)s %(version)s: %(description)s: '
+                          u'%(long_description)s',
+                          result)
 
 features['apt-file'] = {
     'description': u'Searches for packages containing the specified file',
