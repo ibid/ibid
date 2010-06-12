@@ -35,8 +35,8 @@ def permission(name, account, source, session):
     if 'permissions' in ibid.config.auth:
         permissions.extend(ibid.config.auth['permissions'])
 
+    permission_re = re.compile('^([+-]?)(\S+)$')
     for permission in permissions:
-        permission_re = re.compile('^([+-]?)(\S+)$')
         match = permission_re.match(permission)
         if match and match.group(2) == name :
             if match.group(1) == '+':
