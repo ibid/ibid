@@ -41,8 +41,8 @@ class Aptitude(Processor):
         })
 
     _release_cache = None
-    @match(r'^(?:apt|aptitude|apt-get)\s+show\s+([a-z0-9+.:-]+)'
-           r'(?:(?:/|\s+in\s+)([a-z-]+))?$')
+    @match(r'^(?:apt|aptitude|apt-get|apt-cache|axi-cache)\s+show\s+'
+           r'([a-z0-9+.:-]+)(?:(?:/|\s+in\s+)([a-z-]+))?$')
     def show(self, event, package, distro):
         if distro is None or distro.lower() == 'all':
             distro = 'all'
