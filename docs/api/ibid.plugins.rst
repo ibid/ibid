@@ -165,7 +165,8 @@ Decorators
       def foo(self, event, parameter):
          event.addresponse(u'Foo: %s', parameter)
 
-   The above match is equivalent to this non-simple version:
+   The above match is equivalent to this non-simple version::
+
       @match(r'^(?:foo|bar)\s+(\S+)$', simple=False)
 
    *version* can be set to one of:
