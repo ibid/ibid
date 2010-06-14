@@ -123,7 +123,7 @@ class AptFile(Processor):
             event.addresponse(u'No packages found')
 
 features['debian-bts'] = {
-    'description': u'Searches the Debain Bug Tracking System',
+    'description': u'Searches the Debian Bug Tracking System',
     'categories': ('sysadmin', 'lookup',),
 }
 class DebianBTS(Processor):
