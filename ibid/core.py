@@ -7,6 +7,7 @@ import re
 import logging
 import socket
 from os.path import join, expanduser
+import sys
 
 from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
@@ -38,6 +39,7 @@ class Dispatcher(object):
                         processor.name,
                         event)
                 event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
+                event.exc_info = sys.exc_info()
                 event.processed = True
                 if 'session' in event:
                     event.session.rollback()
@@ -51,6 +53,7 @@ class Dispatcher(object):
                     self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
                             processor.__class__.__name__, processor.name)
                     event.complain = u'exception'
+                    event.exc_info = sys.exc_info()
                     event.session.rollback()
                     event.session.close()
                     del event['session']
