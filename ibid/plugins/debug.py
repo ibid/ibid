@@ -50,6 +50,6 @@ class LastException(Processor):
                     lines = format_exception_only(*last_exc_info[:2])
                 else:
                     lines = format_exception(*last_exc_info)
-                event.addresponse(unicode(''.join(lines)[:-1]))
+                event.addresponse(unicode(''.join(lines)[:-1]), conflate=False)
         finally:
             exc_lock.release()
