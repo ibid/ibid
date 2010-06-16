@@ -4,8 +4,8 @@
 import logging
 import re
 
-from sqlalchemy import Column, Index, UniqueConstraint, MetaData, \
-                       __version__ as _sqlalchemy_version
+from sqlalchemy import Column, Index, CheckConstraint, UniqueConstraint, \
+                       MetaData, __version__ as _sqlalchemy_version
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
                                   ProgrammingError, InternalError
 if _sqlalchemy_version < '0.5':
@@ -176,6 +176,8 @@ class VersionedSchema(object):
                     ('constraints', old_constraints),
                     ('indexes', old_indexes)):
                 for constraint in old_list:
+                    if isinstance(constraint, CheckConstraint):
+                        continue
                     if any(True for column in constraint.columns
                             if isinstance(column.type, IbidUnicodeText)):
                         indices.append((
