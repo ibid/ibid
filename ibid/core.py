@@ -329,27 +329,32 @@ class DatabaseManager(dict):
         else:
             if uri.startswith(u'mysql://'):
                 if u'?' not in uri:
-                    uri += u'?charset=utf8'
-                else:
-                    params = parse_qs(uri.split(u'?', 1)[1])
-                    if u'charset' not in params:
-                        uri += u'&charset=utf8'
+                    uri += u'?'
+                params = parse_qs(uri.split(u'?', 1)[1])
+                if u'charset' not in params:
+                    uri += u'&charset=utf8'
+                if u'sql_mode' not in params:
+                    uri += u'&sql_mode=ANSI_QUOTES'
+                # As recommended by SQLAlchemy due to a memory leak:
+                # http://www.sqlalchemy.org/trac/wiki/DatabaseNotes
+                if u'use_unicode' not in params:
+                    uri += u'&use_unicode=0'
 
             engine = create_engine(uri, encoding='utf-8',
-                convert_unicode=True, assert_unicode=True, echo=echo)
+                convert_unicode=True, assert_unicode=True, echo=echo,
+                # For MySQL which closes 8hr old connections:
+                pool_recycle=3600)
 
             if uri.startswith('mysql://'):
                 class MySQLModeListener(object):
                     def connect(self, dbapi_con, con_record):
-                        dbapi_con.set_sql_mode("ANSI")
                         mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
                         c = dbapi_con.cursor()
-                        c.execute("SET storage_engine=%s;" % mysql_engine)
-                        c.execute("SET time_zone='+0:00';")
+                        c.execute("SET SESSION storage_engine=%s;"
+                                  % mysql_engine)
+                        c.execute("SET SESSION time_zone='+0:00';")
                         c.close()
                 engine.pool.add_listener(MySQLModeListener())
-
-                engine.dialect.use_ansiquotes = True
 
             elif uri.startswith('postgres://'):
                 class PGSQLModeListener(object):
