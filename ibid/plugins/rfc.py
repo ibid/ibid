@@ -68,7 +68,6 @@ class RFCLookup(Processor):
         record_re = re.compile(r"^(.+?)\. ((?:(?:[A-Z]{1,2}|[A-Z]\.-?[A-Z]|[A-Z]-[A-Z]|[A-Z]\([A-Z]\)|[A-Z][a-z]+)\.{0,2}"
             r"(?: (?:[Vv]an|[Dd]e[nr]?|[Ll][ae]|El|Del|Dos|da))* ?[a-zA-Z\-']+(?:[\.,]? (?:\d+(?:rd|nd|st|th)|Jr|I+)\.?)?|%s)"
             r"(?:, ?)?)+\. ([A-Z][a-z]{2,8}(?: \d{1,2})? \d{4})\. \((.+)\)$" % "|".join(special_authors))
-        extensions_re = re.compile(r"\) \(")
 
         def __init__(self, number, record):
             self.number = number
@@ -84,7 +83,7 @@ class RFCLookup(Processor):
                     log.warning("CAN'T DECODE RFC: " + self.record)
                 else:
                     self.title, self.authors, self.date, extensions = m.groups()
-                    extensions = self.extensions_re.split(extensions)
+                    extensions = extensions.split(') (')
                     self.formats = []
                     self.status = None
                     self.also = None

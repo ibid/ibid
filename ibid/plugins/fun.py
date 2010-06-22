@@ -52,11 +52,10 @@ class Choose(Processor):
     usage = u'choose <choice> or <choice>...'
     features = ('choose',)
 
-    choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
-
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
+        choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
+        event.addresponse(u'I choose %s', choice(choose_re.split(choices)))
 
 features['coffee'] = {
     'description': u'Times coffee brewing and reserves cups for people',

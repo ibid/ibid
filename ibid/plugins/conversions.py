@@ -348,15 +348,14 @@ class Currency(Processor):
         self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
         self.currencies['XOF'][1] = u'Francs'
 
-    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
-
     def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
 
         if name.upper() in self.currencies:
             return name.upper()
 
-        m = self.strip_currency_re.match(name)
+        strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
+        m = strip_currency_re.match(name)
 
         if m is None:
             return False

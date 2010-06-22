@@ -18,8 +18,6 @@ from ibid.config import Option, IntOption, ListOption
 from ibid.event import Event
 from ibid.source import IbidSourceFactory
 
-stripsig = re.compile(r'^-- $.*', re.M+re.S)
-
 class IbidDelivery:
     implements(smtp.IMessageDelivery)
 
@@ -65,6 +63,7 @@ class Message:
 
         message = mail.is_multipart() and mail.get_payload()[0].get_payload() or mail.get_payload()
         if len(message) > 0:
+            stripsig = re.compile(r'^-- $.*', re.M+re.S)
             event.message = stripsig.sub('', unicode(message, 'utf-8', 'replace')).strip().replace('\n', ' ')
         else:
             event.message = event.subject
