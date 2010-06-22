@@ -273,7 +273,7 @@ class UnicodeWarning(Processor):
             for value in object:
                 self.process(value)
         elif isinstance(object, str):
-            self.log.warning(u'Found a non-unicode string: %s' % object)
+            self.log.warning(u'Found a non-unicode string: %r' % object)
 
 class ChannelTracker(Processor):
     priority = -1550
