@@ -50,7 +50,6 @@ Other things we recommend:
 * Install GNU units for the unit conversion plugin ("units")
 * Install bc for "bc" calculations ("bc")
 * Install ipcalc ("ipcalc")
-* Install and configure apt-file ("apt-file")
 * Install tracepath ("iputils-tracepath")
 * Install fortune ("fortunes-min")
 * Install man ("man-db")
