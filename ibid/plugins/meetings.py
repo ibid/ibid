@@ -247,8 +247,11 @@ class MeetingLogger(Processor):
     feature = ('meeting',)
 
     def process(self, event):
-        if 'channel' in event and 'source' in event \
-                and (event.source, event.channel) in meetings:
+        if ('channel' in event
+                and 'source' in event
+                and (event.source, event.channel) in meetings
+                and 'message' in event
+                and 'responses' in event):
             meeting = meetings[(event.source, event.channel)]
             message = event.message
             if isinstance(message, dict):
