@@ -442,4 +442,35 @@ class Bible(Processor):
                                         ('bookname', 'chapter', 'verse', 'text'))
         return ((book, chapter, verse), text)
 
+
+features['dinner'] = {
+    'description': u'Retrieves a random recipe',
+    'categories': ('web', 'fun'),
+}
+class Dinner(Processor):
+    usage = u"""[veg] (lunch|supper|dinner)"""
+    features = ('dinner',)
+
+    @match(r'^(?:(?:what the fuck|wtf|what) should I (?:make|have|eat) for )'
+            r'?(veg.* )?(?:dinner|lunch|supper)$')
+    def dinner (self, event, veg):
+        url = 'http://www.whatthefuckshouldimakefordinner.com/'
+        if veg:
+            url += 'veg.php'
+
+        soup = get_html_parse_tree(url)
+        link = soup.find('a')
+        recipe = u''.join(link.contents)
+
+        if ('fuck' in event.message['raw'].lower() or
+                'wtf' in event.message['raw'].lower()):
+            template = u"Try some fucking %(recipe)s. If you're to thick " \
+                       u"to work it out for yourself, there's a recipe at " \
+                       u"%(link)s"
+        else:
+            template = u"Try some %(recipe)s. If you can't " \
+                       u"work it out for yourself, there's a recipe at " \
+                       u"%(link)s"
+        event.addresponse(template % {'recipe': recipe, 'link': link['href']})
+
 # vi: set et sta sw=4 ts=4:
