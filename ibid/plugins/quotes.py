@@ -471,6 +471,6 @@ class Dinner(Processor):
             template = u"Try some %(recipe)s. If you can't " \
                        u"work it out for yourself, there's a recipe at " \
                        u"%(link)s"
-        event.addresponse(template % {'recipe': recipe, 'link': link['href']})
+        event.addresponse(template, {'recipe': recipe, 'link': link['href']})
 
 # vi: set et sta sw=4 ts=4:
