@@ -251,9 +251,6 @@ class Insult(Processor):
 
         event.addresponse(u' '.join(swearage) + u'!', address=False)
 
-object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
-            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
-
 features['bucket'] = {
     'description': u'Exchanges objects with people',
     'categories': ('fun',),
@@ -307,6 +304,9 @@ class Item(Base):
         else:
             return self.description
 
+object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
+            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
+
 class ExchangeAction(Processor):
     features = ('bucket',)
     event_types = (u'action',)
@@ -325,7 +325,8 @@ class ExchangeAction(Processor):
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
     what are you carrying?
-    who gave you <object>?"""
+    who gave you <object>?
+    give <person> <object>"""
     features = ('bucket',)
 
     bucket_size = IntOption('bucket_size',
@@ -373,6 +374,53 @@ class ExchangeMessage(Processor):
                 return ('unowned', all_items.filter(clause).all())
         else:
             return ('all', all_items.all())
+
+    @match(r'^give (\S+) ' + object_pat + r'$')
+    def give(self, event, receiver, determiner, object):
+        if determiner is None:
+            determiner = ''
+
+        who = event.sender['nick']
+        if determiner.lower() == 'our':
+            if who[-1] in 'sS':
+                determiner = who + "'"
+            else:
+                determiner = who + "'s"
+            yours = 'your'
+        elif determiner.lower() == 'my':
+            determiner = who + "'s"
+            yours = 'your'
+        elif determiner.lower() in ('his', 'her', 'their'):
+            yours = determiner.lower()
+            determiner = receiver + "'s"
+        else:
+            yours = False
+
+        if receiver.lower() == 'me':
+            receiver = who
+
+        kind, items = self.find_items(event.session, determiner, object)
+
+        if items:
+            item = choice(items)
+            item.carried = False
+            event.session.save_or_update(item)
+
+            if kind == 'owned' and yours:
+                item.determiner = yours
+            event.addresponse(u'hands %(receiver)s %(item)s ' %
+                                {'receiver': receiver,
+                                 'item': item},
+                                action=True)
+        else:
+            if yours:
+                object = yours + u' ' + object
+            elif determiner:
+                object = determiner + u' ' + object
+            event.addresponse(choice((
+                u"There's nothing like that in my bucket.",
+                u"I don't have %s" % object)))
+
 
     @match(r'^(?:who\s+gave\s+(?:yo)?u|where\s+did\s+(?:yo)?u\s+get)\s+'
                 + object_pat + '$')
