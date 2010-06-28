@@ -406,7 +406,7 @@ class ExchangeMessage(Processor):
             item.carried = False
             event.session.save_or_update(item)
 
-            if kind == 'owned' and yours:
+            if kind == 'owned' and yours != 'your':
                 item.determiner = yours
             event.addresponse(u'hands %(receiver)s %(item)s ' %
                                 {'receiver': receiver,
