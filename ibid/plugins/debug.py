@@ -53,4 +53,4 @@ class LastException(Processor):
                 lines = [u'%s: %r\n' % item for item in exc_event.iteritems()]
             else:
                 lines = format_exception(*exc_event['exc_info'])
-            event.addresponse(unicode(''.join(lines)[:-1]), conflate=False)
+            event.addresponse(u''.join(lines)[:-1], conflate=False)
