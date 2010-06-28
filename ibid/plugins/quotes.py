@@ -464,7 +464,7 @@ class Dinner(Processor):
 
         if ('fuck' in event.message['raw'].lower() or
                 'wtf' in event.message['raw'].lower()):
-            template = u"Try some fucking %(recipe)s. If you're to thick " \
+            template = u"Try some fucking %(recipe)s. If you're too thick " \
                        u"to work it out for yourself, there's a recipe at " \
                        u"%(link)s"
         else:
