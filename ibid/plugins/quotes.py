@@ -451,7 +451,7 @@ class Dinner(Processor):
     usage = u"""what should I have for [vegetarian] (lunch|supper|dinner)"""
     features = ('dinner',)
 
-    @match(r'^(?:(?:what the fuck|wtf|what) should I (?:make|have|eat) for )'
+    @match(r'^(?:(?:what the fuck|wtf|what) should .* (?:make|have|eat) for )'
             r'?(veg.* )?(?:dinner|lunch|supper)$')
     def dinner (self, event, veg):
         url = 'http://www.whatthefuckshouldimakefordinner.com/'
