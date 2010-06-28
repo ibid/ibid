@@ -6,7 +6,7 @@ from random import choice, random, randrange
 import re
 
 from nickometer import nickometer
-from sqlalchemy.sql import not_
+from sqlalchemy.sql import not_, or_
 
 import ibid
 from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
@@ -369,8 +369,8 @@ class ExchangeMessage(Processor):
                 return ('owned', items)
             else:
                 # find unowned items
-                clause = not_(Item.determiner.contains(u"'")) or \
-                        Item.determiner == None
+                clause = or_(not_(Item.determiner.contains(u"'")),
+                            Item.determiner == None)
                 return ('unowned', all_items.filter(clause).all())
         else:
             return ('all', all_items.all())
