@@ -448,7 +448,7 @@ features['dinner'] = {
     'categories': ('web', 'fun'),
 }
 class Dinner(Processor):
-    usage = u"""[veg] (lunch|supper|dinner)"""
+    usage = u"""what should I have for [vegetarian] (lunch|supper|dinner)"""
     features = ('dinner',)
 
     @match(r'^(?:(?:what the fuck|wtf|what) should I (?:make|have|eat) for )'
