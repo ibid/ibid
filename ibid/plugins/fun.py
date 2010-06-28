@@ -355,7 +355,7 @@ class ExchangeMessage(Processor):
 
         Return a tuple (kind, items).
 
-        If determiner is a genitive and their are matching objects with the
+        If determiner is a genitive and there are matching objects with the
         correct owner, return them with kind='owned'; if there are no matching
         objects, find unowned objects and return with kind='unowned'. If the
         determiner is *not* genitive, ignore determiners and set kind='all'."""
