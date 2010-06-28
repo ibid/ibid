@@ -408,7 +408,7 @@ class ExchangeMessage(Processor):
 
             if kind == 'owned' and yours != 'your':
                 item.determiner = yours
-            event.addresponse(u'hands %(receiver)s %(item)s ' %
+            event.addresponse(u'hands %(receiver)s %(item)s ',
                                 {'receiver': receiver,
                                  'item': item},
                                 action=True)
