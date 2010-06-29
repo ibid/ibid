@@ -119,7 +119,7 @@ class Twitter(Processor):
         except self.NoSuchUserException, e:
                 event.addresponse(u'No such %s', service['user'])
 
-    @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
+    @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$', simple=False)
     def twitter(self, event, id):
         self.update(event, u'twitter', id)
 
