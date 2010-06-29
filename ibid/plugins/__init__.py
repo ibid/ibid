@@ -24,6 +24,7 @@ except ImportError:
 
 import ibid
 from ibid.compat import json
+from ibid.utils import url_regex
 
 __path__ = pluginPackagePaths(__name__) + __path__
 
@@ -205,9 +206,39 @@ def handler(function):
     function.message_version = 'clean'
     return function
 
-def match(regex, version='clean'):
+def _match_sub_selectors(regex):
+    selector_patterns = {
+        'alpha'   : r'[a-zA-Z]+',
+        'any'     : r'.*',
+        'chunk'   : r'\S+',
+        'digits'  : r'\d+',
+        'number'  : r'\d*\.?\d+',
+        'url'     : url_regex(),
+        'word'    : r'\w+',
+    }
+
+    regex = regex.replace(' ', r'(?:\s+)')
+
+    for pattern in re.finditer('{(%s)}' % '|'.join(selector_patterns.keys()),
+                               regex):
+        pattern = pattern.group(1)
+        old = '{%s}' % pattern
+        new = '(%s)' % selector_patterns[pattern]
+        regex = regex.replace(old, new)
+
+    if not regex.startswith('^'):
+        regex = '^' + regex
+    if not regex.endswith('$'):
+        regex = regex + '$'
+
+    return regex
+
+def match(regex, version='clean', simple=True):
     "Wrapper: Handle all events where the message matches the regex"
-    pattern = re.compile(regex, re.I | re.DOTALL)
+    if simple:
+        regex = _match_sub_selectors(regex)
+
+    pattern = re.compile(regex, re.I | re.UNICODE | re.DOTALL)
     def wrap(function):
         function.handler = True
         function.pattern = pattern
