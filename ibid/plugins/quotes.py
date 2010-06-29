@@ -453,7 +453,7 @@ class Dinner(Processor):
 
     @match(r'(?:(?:what the fuck|wtf|what) should {any} (?:make|have|eat) for )'
             r'?(veg.* )?(?:dinner|lunch|supper)')
-    def dinner (self, who, event, veg):
+    def dinner (self, event, who, veg):
         url = 'http://www.whatthefuckshouldimakefordinner.com/'
         if veg:
             url += 'veg.php'
