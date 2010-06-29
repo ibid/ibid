@@ -305,7 +305,7 @@ class Item(Base):
             return self.description
 
 object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
-            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
+            r"the|a|an|this|these|that|those|some) )?{any}"
 
 class ExchangeAction(Processor):
     features = ('bucket',)
@@ -317,7 +317,7 @@ class ExchangeAction(Processor):
                             "The maximum number of objects in the bucket",
                             5)
 
-    @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
+    @match(r'(?:gives|hands) {chunk} ' + object_pat)
     def give(self, event, addressee, determiner, object):
         if addressee in ibid.config.plugins['core']['names']:
             return exchange(event, determiner, object, self.bucket_size)
@@ -333,7 +333,7 @@ class ExchangeMessage(Processor):
                             "The maximum number of objects in the bucket",
                             5)
 
-    @match(r"^(?:have|take)\s+" + object_pat + "$")
+    @match(r'(?:have|take) ' + object_pat)
     def have(self, event, determiner, object):
         if determiner in ('his', 'her', 'their', 'its'):
             event.addresponse("I don't know whose %s you're talking about",
@@ -341,7 +341,7 @@ class ExchangeMessage(Processor):
         else:
             return exchange(event, determiner, object, self.bucket_size)
 
-    @match(r'^(?:what\s+(?:are|do)\s+(?:yo)?u\s+)?(?:carrying|have)$')
+    @match(r'(?:what (?:are|do) (?:yo)?u )?(?:carrying|have)')
     def query_carrying(self, event):
         items = Item.carried_items(event.session).all()
         if items:
@@ -375,7 +375,7 @@ class ExchangeMessage(Processor):
         else:
             return ('all', all_items.all())
 
-    @match(r'^give (\S+) ' + object_pat + r'$')
+    @match(r'give {chunk} ' + object_pat)
     def give(self, event, receiver, determiner, object):
         if determiner is None:
             determiner = ''
@@ -422,8 +422,7 @@ class ExchangeMessage(Processor):
                 u"I don't have %s" % object)))
 
 
-    @match(r'^(?:who\s+gave\s+(?:yo)?u|where\s+did\s+(?:yo)?u\s+get)\s+'
-                + object_pat + '$')
+    @match(r'(?:who gave (?:yo)?u|where did (?:yo)?u get) ' + object_pat)
     def query_giver(self, event, determiner, object):
         if determiner is None:
             determiner = ''
