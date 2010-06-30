@@ -11,7 +11,7 @@ features = {'debug': {
     'categories': ('debug',),
 }}
 
-last_exc_info = None
+last_exc_event = None
 
 class SetLastException(Processor):
     # Come after everything. We don't modify events, and we want to catch
@@ -19,27 +19,38 @@ class SetLastException(Processor):
     priority = 10000
 
     def process(self, event):
-        global last_exc_info
+        global last_exc_event
 
         if 'exc_info' in event:
-            last_exc_info = event.exc_info
+            last_exc_event = event
 
 class LastException(Processor):
     features = (u'debug',)
     usage = u"""last exception
-    last traceback"""
+    last traceback
+    last bad event"""
 
     permission = u'debug'
 
-    @match(r'^last\s+(exception|trac[ek]back)$')
+    @match(r'^last (exception|trac[ek]back|bad event)$')
     @authorise()
     def exception(self, event, kind):
-        if last_exc_info is None:
+        exc_event = last_exc_event
+        if exc_event is None:
             event.addresponse(choice((u'Are you *looking* for trouble?',
                                       u"I'll make an exception for you.")))
         else:
             if kind.lower() == 'exception':
-                lines = format_exception_only(*last_exc_info[:2])
+                try:
+                    lines = [u'%(type)s event "%(message)s" triggered ' %
+                             {'type': exc_event.type,
+                              'message': exc_event.message['raw']}]
+                except KeyError:
+                    lines = [u'%(type)s event triggered' % exc_event.type]
+
+                lines += format_exception_only(*exc_event['exc_info'][:2])
+            elif 'event' in kind.lower():
+                lines = [u'%s: %r\n' % item for item in exc_event.iteritems()]
             else:
-                lines = format_exception(*last_exc_info)
-            event.addresponse(unicode(''.join(lines)[:-1]), conflate=False)
+                lines = format_exception(*exc_event['exc_info'])
+            event.addresponse(u''.join(lines)[:-1], conflate=False)
