@@ -458,7 +458,7 @@ class Dinner(Processor):
         if veg:
             url += 'veg.php'
 
-        soup = get_html_parse_tree(url)
+        soup = get_html_parse_tree(url, headers={'Cache-Control': 'max-age=0'})
         link = soup.find('a')
         recipe = u''.join(link.contents)
 
