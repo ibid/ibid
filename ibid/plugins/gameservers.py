@@ -107,7 +107,7 @@ class CounterStrike(Processor):
 class Teeworlds(Processor):
     usage = u'teeworlds players <server>:<port>'
     features = ('gameservers',)
-#   autoload = False
+    autoload = False
 
     @match(r'^(?:tw|teeworlds)\s+players\s+([\d\D.]+):(\d+)$')
     def tw_players(self, event, tw_host, tw_port):
