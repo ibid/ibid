@@ -39,7 +39,7 @@ class Bnet(Processor):
 
         s.close()
 
-        player_re = re.compile(r'^1018 INFO "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+' % gametype)
+        player_re = re.compile(r'^1018 Idata "\s+bnet\s+%s\s+"(\S+?)"?\s+\d+\s+' % gametype)
         users = [player_re.match(line).group(1) for line in out.splitlines() if player_re.match(line)]
         users.sort()
         return users
@@ -102,5 +102,37 @@ class CounterStrike(Processor):
             'map': map,
             'players': human_join(u'%s (%i)' % (p['nickname'], p['fragtotal']) for p in players),
         })
+
+class Teeworlds(Processor):
+    usage = u'teeworlds players <server>:<port>'
+    features = ('gameservers',)
+#   autoload = False
+
+    @match(r'^(?:tw|teeworlds)\s+players\s+([\d\D.]+):(\d+)$')
+    def tw_players(self, event, tw_host, tw_port):
+        server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server.settimeout(5)
+        server.sendto(chr(255) * 10 + 'gief', (tw_host, int(tw_port)))
+        data, _ = server.recvfrom(1024)
+        data = data.split(chr(0))
+        data[0] = data[0][data[0].find('info') + 4:]
+        data = [d.decode('utf-8', 'ignore') for d in data]
+
+        event.addresponse(u'%(host_name)s(%(host_version)s) has '
+            '%(num_players)s of %(max_players)s players playing %(mode)s '
+            'on %(map)s.', {
+                'host_version': data[0],
+                'host_name': data[1],
+                'map': data[2],
+                'mode': data[3],
+                'num_players': data[6],
+                'max_players': data[7],
+            })
+        if len(data) > 9:
+            scores = []
+            for name, score in zip(data[8::2], data[9::2]):
+                scores += ['%s = %s' % (name, score)]
+            event.addresponse('Scores: ' + human_join(scores))
+
 
 # vi: set et sta sw=4 ts=4:
