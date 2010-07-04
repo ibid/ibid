@@ -1,4 +1,5 @@
-# Copyright (c) 2009-2010, Ben Steenhuisen, Stefano Rivera
+# Copyright (c) 2009-2010, Ben Steenhuisen, Stefano Rivera,
+# Tslil Clingman, Marco Gallotta
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import re
