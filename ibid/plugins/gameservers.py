@@ -132,8 +132,8 @@ class Teeworlds(Processor):
         if len(data) > 9:
             scores = zip(map(int, data[9::2]), data[8::2])
             scores.sort(reverse=True)
-            event.addresponse('Scores: ' + human_join(
-                ['%s = %d' % (score[1], score[0])for score in scores]))
+            event.addresponse('Scores: ' + human_join(['%d. %s (%d)' %
+                (rank+1, score[1], score[0]) for rank, score in enumerate(scores)]))
 
 
 # vi: set et sta sw=4 ts=4:
