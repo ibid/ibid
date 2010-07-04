@@ -130,10 +130,10 @@ class Teeworlds(Processor):
                 'max_players': data[7],
             })
         if len(data) > 9:
-            scores = []
-            for name, score in zip(data[8::2], data[9::2]):
-                scores += ['%s = %s' % (name, score)]
-            event.addresponse('Scores: ' + human_join(scores))
+            scores = zip(map(int, data[9::2]), data[8::2])
+            scores.sort(reverse=True)
+            event.addresponse('Scores: ' + human_join(
+                ['%s = %d' % (score[1], score[0])for score in scores]))
 
 
 # vi: set et sta sw=4 ts=4:
