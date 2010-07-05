@@ -406,7 +406,7 @@ class ExchangeMessage(Processor):
             item.carried = False
             event.session.save_or_update(item)
 
-            if kind == 'owned' and yours != 'your':
+            if kind == 'owned' and yours and yours != 'your':
                 item.determiner = yours
             event.addresponse(u'hands %(receiver)s %(item)s ',
                                 {'receiver': receiver,
@@ -420,7 +420,6 @@ class ExchangeMessage(Processor):
             event.addresponse(choice((
                 u"There's nothing like that in my bucket.",
                 u"I don't have %s" % object)))
-
 
     @match(r'(?:who gave (?:yo)?u|where did (?:yo)?u get) ' + object_pat)
     def query_giver(self, event, determiner, object):
