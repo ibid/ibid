@@ -132,7 +132,7 @@ class PluginTestCase(unittest.TestCase):
 
         return event
 
-    def assertResponseMatches(self, event, regex):
+    def responseMatches(self, event, regex):
         if isinstance(event, basestring):
             event = self.make_event(event)
         process(event, logging.getLogger())
@@ -142,9 +142,17 @@ class PluginTestCase(unittest.TestCase):
 
         for response in event.responses:
             if regex.match(response['reply']):
-                return
+                return True
         else:
+            return False
+
+    def assertResponseMatches(self, event, regex):
+        if not self.responseMatches(event, regex):
             self.fail("No response matches regex")
+
+    def failIfResponseMatches(self, event, regex):
+        if self.responseMatches(event, regex):
+            self.fail("Response unexpectedly matches regex")
 
     def assertSucceeds(self, event):
         if isinstance(event, basestring):
@@ -155,6 +163,16 @@ class PluginTestCase(unittest.TestCase):
 
         if 'complain' in event:
             self.fail("Event has complain set to %s" % event['complain'])
+
+    def assertFails(self, event):
+        if isinstance(event, basestring):
+            event = self.make_event(event)
+        process(event, logging.getLogger())
+
+        self.assert_(event.get('processed', False))
+
+        if event.get('processed', False) and 'complain' not in event:
+            self.fail("Event was expected to fail")
 
     def tearDown(self):
         del ibid.sources[self.source]

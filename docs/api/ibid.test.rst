@@ -31,7 +31,7 @@ End-to-end testing
 
     .. attribute:: load_base
 
-        Boolean: whether to load a small set of base plugins (namely, admin and core).
+        Boolean: whether to load a small set of base plugins (currently, just core).
 
         Default: ``True``
 
@@ -79,13 +79,19 @@ End-to-end testing
         Create and return an event on the test source, from the test user, of
         type *type*.
 
-    .. method:: assertResponseMatches(event, regex)
+    .. method:: responseMatches(event, regex)
 
         Process *event* (either an event or a string to be treated as a
-        message from the test user on the test source), and check that the
+        message from the test user on the test source), and return whether the
         response matches *regex* (either a regex string or a compiled regex).
 
-        Only checks the first response.
+    .. method:: assertResponseMatches(event, regex)
+
+        Assert that :meth:`responseMatches` returns true.
+
+    .. method:: failIfResponseMatches(event, regex)
+    
+        The opposite of :meth:`assertResponseMatches`.
 
     .. method:: assertSucceeds(event)
 
@@ -93,3 +99,7 @@ End-to-end testing
         message from the test user on the test source), and check that it is
         processed by some :class:`Processor <ibid.plugins.Processor>` and no
         complaint is set.
+
+    .. method:: assertFails(event)
+
+        The opposite of :meth:`assertSucceeds`.
