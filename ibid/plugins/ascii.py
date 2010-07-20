@@ -6,6 +6,7 @@ from cStringIO import StringIO
 import Image
 from os import listdir, remove
 import os.path
+from random import choice
 import subprocess
 from tempfile import mkstemp
 from urllib2 import HTTPError, URLError, urlopen
@@ -163,9 +164,15 @@ class WriteFiglet(Processor):
         Processor.__init__(self, name)
         if os.path.isdir(self.fonts_):
             self.fontstore = 'dir'
-            self.fonts = sorted(os.path.splitext(name)[0]
-                                for name in listdir(self.fonts_)
-                                if name.endswith('.flf'))
+            fonts = set(os.path.splitext(name)[0]
+                        for name in listdir(self.fonts_)
+                        if name.endswith('.flf'))
+            good_tlfs = set(('circle', 'emboss', 'emboss2', 'future', 'letter',
+                             'pagga', 'smblock', 'smbraille', 'wideterm',))
+            fonts.update(set(os.path.splitext(name)[0]
+                             for name in listdir(self.fonts_)
+                             if name.endswith('.tlf')).intersection(good_tlfs))
+            self.fonts = sorted(fonts)
         else:
             self.fontstore = 'zip'
             zip = ZipFile(self.fonts_)
@@ -189,7 +196,16 @@ class WriteFiglet(Processor):
             text = '%s%s' % (text, font_phrase)
             font = None
         if font is None:
-            font = 'slant'
+            if self.fonts:
+                if 'slant' in self.fonts:
+                    font = 'slant'
+                elif 'letter' in self.fonts:
+                    font = 'letter'
+                else:
+                    font = choice(self.fonts)
+            else:
+                event.addresponse(u"I'm afraid I have no fonts available")
+                return
         self._write(event, text, font)
 
     def _write(self, event, text, font):
@@ -203,6 +219,8 @@ class WriteFiglet(Processor):
         while rendered and rendered[-1].strip() == '':
             del rendered[-1]
         if rendered and len(rendered[0]) > self.max_width:
-            event.addresponse(u"Sorry that's too long, nobody will be able to read it")
+            event.addresponse(
+                    u"Sorry that's too long, nobody will be able to read it")
             return
-        event.addresponse(unicode('\n'.join(rendered)), address=False, conflate=False)
+        event.addresponse(unicode('\n'.join(rendered), 'utf-8'),
+                          address=False, conflate=False)
