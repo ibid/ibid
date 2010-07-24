@@ -344,6 +344,9 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def join(self, channel):
         return self.proto.join(channel)
 
+    def join_with_key(self, channel, key):
+        return self.proto.join_with_key(channel, key)
+
     def leave(self, channel):
         return self.proto.leave(channel)
 
