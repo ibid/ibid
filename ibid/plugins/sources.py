@@ -26,9 +26,9 @@ class Actions(Processor):
 
     permission = 'sources'
 
-    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:(?:key\s+)?(\S+))?$')
     @authorise()
-    def channel(self, event, action, channel, source):
+    def channel(self, event, action, channel, source, key):
         action = action.lower()
 
         if not source:
@@ -49,7 +49,14 @@ class Actions(Processor):
             return
 
         if action == 'join':
-            source.join(channel)
+            if key:
+                if not hasattr(source, 'join_with_key'):
+                    event.addresponse(u'%s cannot join key-protected channels',
+                            source.name)
+                    return
+                source.join_with_key(channel, key)
+            else:
+                source.join(channel)
             event.addresponse(u'Joining %s', channel)
         else:
             source.leave(channel)
