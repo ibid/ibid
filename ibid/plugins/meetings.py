@@ -2,6 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime, timedelta
+from errno import EEXIST
 import logging
 from os import chmod, makedirs
 from os.path import dirname, expanduser, join
@@ -180,7 +181,7 @@ class Meeting(Processor):
             try:
                 makedirs(dirname(filename), int(self.dir_mode, 8))
             except OSError, e:
-                if e.errno != 17:
+                if e.errno != EEXIST:
                     raise e
             f = open(filename, 'w+')
             chmod(filename, int(self.file_mode, 8))
