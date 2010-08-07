@@ -261,23 +261,17 @@ class Deliver(Processor):
             if 'memo' in event and event.memo == memo.id:
                 continue
 
+            message = u'By the way, %(sender)s on %(source)s told me ' \
+                      u'"%(message)s" %(ago)s ago' % {
+                'sender': memo.sender.identity,
+                'source': memo.sender.source,
+                'message': memo.memo,
+                'ago': ago(event.time - memo.time),
+            }
             if memo.private:
-                message = u'By the way, %(sender)s on %(source)s told me ' \
-                          u'"%(message)s" %(ago)s ago' % {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                }
                 event.addresponse(message, target=event.sender['connection'])
             else:
-                event.addresponse(u'By the way, %(sender)s on %(source)s '
-                                  u'told me "%(message)s" %(ago)s ago', {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                })
+                event.addresponse(message)
 
             memo.delivered = True
             event.session.save_or_update(memo)
