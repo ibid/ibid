@@ -249,7 +249,7 @@ class Deliver(Processor):
                 message = u'By the way, you have a pile of memos waiting for ' \
                           u'you, too many to read out in public. PM me'
                 if public:
-                    event.addresponse(u'%s: ' + message, event.sender['nick'])
+                    event.addresponse(message)
                 else:
                     event.addresponse(message,
                                       target=event.sender['connection'])
