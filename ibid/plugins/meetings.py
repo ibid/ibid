@@ -247,18 +247,27 @@ class MeetingLogger(Processor):
     feature = ('meeting',)
 
     def process(self, event):
-        if 'channel' in event and 'source' in event \
-                and (event.source, event.channel) in meetings:
+        if ('channel' in event and 'source' in event
+                and (event.source, event.channel) in meetings):
             meeting = meetings[(event.source, event.channel)]
-            message = event.message
-            if isinstance(message, dict):
-                message = message['raw']
-            meeting['log'].append({
+
+            log_event = {
                 'nick': event.sender['nick'],
                 'type': event.type,
-                'message': message,
                 'time': event.time,
-            })
+            }
+
+            if 'message' in event:
+                message = event.message
+                if isinstance(message, dict):
+                    message = message['raw']
+                log_event['message'] = message
+
+            if 'sender' in event:
+                log_event['nick'] = event.sender['nick']
+
+            meeting['log'].append(log_event)
+
             for response in event.responses:
                 type = 'message'
                 if response.get('action', False):
