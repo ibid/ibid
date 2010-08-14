@@ -269,7 +269,8 @@ class Deliver(Processor):
                 'ago': ago(event.time - memo.time),
             }
             if memo.private:
-                event.addresponse(message, target=event.sender['connection'])
+                event.addresponse(message, target=event.sender['connection'],
+                                  public=False)
             else:
                 event.addresponse(message)
 
