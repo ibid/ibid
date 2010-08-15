@@ -252,7 +252,8 @@ class Deliver(Processor):
                     event.addresponse(message)
                 else:
                     event.addresponse(message,
-                                      target=event.sender['connection'])
+                                      target=event.sender['connection'],
+                                      address=False)
                 notified_overlimit_cache.add(event.identity)
             return
 
@@ -270,7 +271,7 @@ class Deliver(Processor):
             }
             if memo.private:
                 event.addresponse(message, target=event.sender['connection'],
-                                  public=False)
+                                  address=False)
             else:
                 event.addresponse(message)
 
@@ -307,12 +308,12 @@ class Notify(Processor):
             event.addresponse(
                 u'You have %s messages, too many for me to tell you in public,'
                 u' so ask me in private.',
-                len(memos), target=event.sender['connection'])
+                len(memos), target=event.sender['connection'], address=False)
         elif len(memos) > 0:
             event.addresponse(u'You have %s messages. '
                     u"Would you like to read them now?",
                 len(memos),
-                target=event.sender['connection'])
+                target=event.sender['connection'], address=False)
         else:
             nomemos_cache.add(event.identity)
 
