@@ -92,8 +92,15 @@ class FactoidName(Base):
                                      key='_name', nullable=False, unique=True,
                                      index=True), force_rebuild=True)
             self.add_index(self.table.c._name)
+        def upgrade_8_to_9(self):
+            for row in self.upgrade_session.query(FactoidName) \
+                    .filter_by(name=u'') \
+                    .all():
+                self.upgrade_session.delete(row)
+                if len(row.factoid.names) == 0:
+                    self.upgrade_session.delete(row.factoid)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 8)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 9)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
