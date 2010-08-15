@@ -354,6 +354,10 @@ class Forget(Processor):
 
         target = strip_name(target)
 
+        if target == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
+
         if target.lower() == source.lower():
             event.addresponse(u"That makes no sense, they *are* the same")
             return
@@ -540,6 +544,10 @@ class Set(Processor):
         addition = addition1 or addition2
 
         name = strip_name(name)
+
+        if name == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
 
         if name.lower() in self.interrogatives:
             event.addresponse(choice((
