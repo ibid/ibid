@@ -452,7 +452,7 @@ class Dinner(Processor):
     features = ('dinner',)
 
     @match(r'(?:(?:what the fuck|wtf|what) should {any} (?:make|have|eat) for )'
-            r'?(veg\S+ )?(?:dinner|lunch|supper)')
+            r'?(veg\S* )?(?:dinner|lunch|supper)')
     def dinner (self, event, who, veg):
         url = 'http://www.whatthefuckshouldimakefordinner.com/'
         if veg:
