@@ -198,7 +198,7 @@ class WriteFiglet(Processor):
         if index is None:
             index = 0
         index = int(index)
-        if index >= len(self.fonts.keys()):
+        if index >= len(self.fonts):
             event.addresponse(u'I wish I had that many fonts installed')
             return
         event.addresponse(unicode(', '.join(self.fonts.keys()[int(index):])))
