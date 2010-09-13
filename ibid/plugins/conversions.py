@@ -465,8 +465,8 @@ def fix_pinyin_tone(syllable):
                  u'\N{Latin Small Letter U With Diaeresis}':
             if v in syllable:
                 return unicodedata.normalize('NFC', syllable.replace(v, v+tone))
-    else:
-        return syllable
+
+    return syllable
 
 def html_flatten(soup):
     text = []
