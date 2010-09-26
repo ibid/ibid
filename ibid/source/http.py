@@ -6,7 +6,7 @@ import logging
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 import ibid
 from ibid.source import IbidSourceFactory

@@ -13,7 +13,7 @@ install_requires=[
     'feedparser',
     'html2text',
     'html5lib',
-    'jinja',
+    'jinja2',
     'pyopenssl',
     'PyStemmer',
     'python-dateutil',

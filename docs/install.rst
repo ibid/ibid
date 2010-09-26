@@ -65,7 +65,7 @@ Many core plugins require the following Web scraping & parsing libraries:
 
 Web source and web services:
 
-* `Jinja <http://jinja.pocoo.org/>`_
+* `Jinja2 <http://jinja.pocoo.org/2/>`_
 
 Other sources:
 
@@ -264,7 +264,7 @@ dependencies installed in a virtualenv, you can skip this step::
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
      python-html5lib python-setuptools python-simplejson \
-     python-soappy python-jinja python-dateutil python-virtualenv
+     python-soappy python-jinja2 python-dateutil python-virtualenv
 
 Create a user to run your bot as::
 
