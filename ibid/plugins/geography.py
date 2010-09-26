@@ -189,7 +189,7 @@ class Weather(Processor):
 
         return forecasts
 
-    @match(r'^weather\s+(?:(?:for|at|in)\s+)?(.+)$')
+    @match(r'^weather (?:(?:for|at|in) )?(.+)$')
     def weather(self, event, place):
         try:
             values = self.remote_weather(place)
@@ -202,7 +202,7 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
-    @match(r'^forecast\s+(?:for\s+)?(.+)$')
+    @match(r'^(?:weather )forecast (?:for )?(.+)$')
     def forecast(self, event, place):
         try:
             event.addresponse(u', '.join(self.remote_forecast(place)))
