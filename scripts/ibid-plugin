@@ -2,6 +2,7 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+from locale import getpreferredencoding
 import logging
 from optparse import OptionParser
 from os import getenv
@@ -105,10 +106,7 @@ identity_id = identity.id
 
 session.close()
 
-try:
-    encoding = getenv("LANG").split(".")[1]
-except:
-    encoding = "ascii"
+encoding = getpreferredencoding()
 
 log = logging.getLogger('scripts.ibid-plugin')
 
