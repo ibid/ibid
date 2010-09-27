@@ -269,9 +269,9 @@ class MeetingLogger(Processor):
 
             meeting['log'].append(log_event)
 
-            for response in event.responses:
-                if response['target'] != event.channel:
-                    continue
+        for response in event.responses:
+            if (response['source'], response['channel']) in meetings:
+                meeting = meetings[(response['source'], response['channel'])]
 
                 type = 'message'
                 if response.get('action', False):
