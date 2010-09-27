@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2010, Stefano Rivera and Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime, timedelta
@@ -270,6 +270,9 @@ class MeetingLogger(Processor):
             meeting['log'].append(log_event)
 
             for response in event.responses:
+                if response['target'] != event.channel:
+                    continue
+
                 type = 'message'
                 if response.get('action', False):
                     type = 'action'
