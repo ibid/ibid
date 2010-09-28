@@ -100,7 +100,7 @@ class Manage(Processor):
     add feed <url> as <name>
     remove <name> feed
     list feeds
-    poll <name> feed notify <channel> on <source>
+    poll <name> feed notify ( <channel> | <user> ) on <source>
     stop polling <name> feed
     """
     features = ('feeds',)
