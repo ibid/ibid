@@ -189,8 +189,13 @@ class Weather(Processor):
 
         return forecasts
 
-    @match(r'^weather\s+(?:(?:for|at|in)\s+)?(.+)$')
+    @match(r'^weather (?:(?:for|at|in) )?(.+)$')
     def weather(self, event, place):
+        # The regex also matches "weather forecast..." which forecast should
+        # process. So ignore it when this happens
+        if place.lower().startswith('forecast'):
+            return
+
         try:
             values = self.remote_weather(place)
             event.addresponse(u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s', values)
@@ -202,7 +207,7 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
-    @match(r'^forecast\s+(?:for\s+)?(.+)$')
+    @match(r'^(?:weather )forecast (?:for )?(.+)$')
     def forecast(self, event, place):
         try:
             event.addresponse(u', '.join(self.remote_forecast(place)))
