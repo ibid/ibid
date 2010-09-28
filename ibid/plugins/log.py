@@ -5,6 +5,7 @@
 
 from datetime import datetime
 from errno import EEXIST
+from fnmatch import fnmatch
 from os.path import dirname, join, expanduser
 from os import chmod, makedirs
 from threading import Lock
@@ -14,7 +15,7 @@ from dateutil.tz import tzlocal, tzutc
 
 import ibid
 from ibid.plugins import Processor, handler
-from ibid.config import Option, BoolOption, IntOption
+from ibid.config import Option, BoolOption, IntOption, ListOption
 from ibid.event import Event
 
 class Log(Processor):
@@ -41,6 +42,9 @@ class Log(Processor):
     rename_format = Option('rename_format', 'Format string for rename events',
             u'%(timestamp)s %(sender_nick)s (%(sender_connection)s) has renamed to %(new_nick)s')
 
+    public_logs = ListOption('public_logs',
+            u'List of source:channel globs for channels which should have public logs',
+            [])
     public_mode = Option('public_mode',
             u'File Permissions mode for public channels, in octal', '644')
     private_mode = Option('private_mode',
@@ -84,10 +88,14 @@ class Log(Processor):
 
                 log = open(filename, 'a')
                 self.logs[filename] = log
-                if event.get('public', True):
-                    chmod(filename, int(self.public_mode, 8))
+
+                for glob in self.public_logs:
+                    if fnmatch(event.source + u':' + event.channel, glob):
+                        chmod(filename, int(self.public_mode, 8))
+                        break
                 else:
                     chmod(filename, int(self.private_mode, 8))
+
                 if len(self.recent_logs) > self.fd_cache:
                     self.recent_logs.pop()
             else:
