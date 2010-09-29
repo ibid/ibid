@@ -6,6 +6,7 @@
 from datetime import datetime
 from errno import EEXIST
 from fnmatch import fnmatch
+import logging
 from os.path import dirname, join, expanduser
 from os import chmod, makedirs
 from threading import Lock
@@ -17,6 +18,8 @@ import ibid
 from ibid.plugins import Processor, handler
 from ibid.config import Option, BoolOption, IntOption, ListOption
 from ibid.event import Event
+
+log = logging.getLogger('plugins.log')
 
 class Log(Processor):
 
@@ -59,6 +62,12 @@ class Log(Processor):
     # Ensures that recently used FDs are still available in logs:
     recent_logs = []
 
+    def setup(self):
+        for glob in self.public_logs:
+            if u':' not in glob:
+                log.warning(u"public_logs configuration values must contain a "
+                            "colon in every entry.")
+
     def get_logfile(self, event):
         self.lock.acquire()
         try:
@@ -90,7 +99,11 @@ class Log(Processor):
                 self.logs[filename] = log
 
                 for glob in self.public_logs:
-                    if fnmatch(event.source + u':' + event.channel, glob):
+                    if u':' not in glob:
+                        continue
+                    source_glob, channel_glob = glob.split(u':', 1)
+                    if (fnmatch(event.source, source_glob)
+                            and fnmatch(event.channel, channel_glob)):
                         chmod(filename, int(self.public_mode, 8))
                         break
                 else:
