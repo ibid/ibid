@@ -101,6 +101,7 @@ class NickServ(Processor):
 
     @match(r'^(?:This nickname is registered\. Please choose a different nickname'
             r'|This nickname is registered and protected\.\s+If it is your'
+            r'|This nickname is owned by someone else\.  Please choose another'
             r'|If this is your nickname, type \/msg NS)', simple=False)
     def auth(self, event):
         if self.is_nickserv(event):
