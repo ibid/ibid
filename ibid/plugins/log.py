@@ -65,8 +65,9 @@ class Log(Processor):
     def setup(self):
         for glob in self.public_logs:
             if u':' not in glob:
-                log.warning(u"public_logs configuration values must contain a "
-                            "colon in every entry.")
+                log.warning(u"public_logs configuration values must follow the "
+                            u"format source:channel. \"%s\" doesn't contain a "
+                            u"colon.", glob)
 
     def get_logfile(self, event):
         self.lock.acquire()
