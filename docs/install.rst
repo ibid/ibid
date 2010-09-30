@@ -3,18 +3,20 @@
 Installation
 ============
 
-.. attention::
-   Proper ``.deb`` packages will be provided for stable versions, but as there is
-   no release yet, follow the :ref:`from-source` installation instructions below.
+The preferred method of installing a production Ibid is to use the
+packages provided by your distro.
+Ibid is available in
+`Debian <http://packages.qa.debian.org/i/ibid.html>`_ (since squeeze)
+and `Ubuntu <http://launchpad.net/ubuntu/+source/ibid>`_ (since Lucid).
+Additionally, private backport repositories are available for supported
+stable releases of:
 
-The preferred method of installation is to use the provided :ref:`stable
-packages <package-managed>` [#yourdistro]_:
+* `Debian (lenny) <http://ibid.omnia.za.net/debian/>`_
+* `Ubuntu (hardy-karmic) <https://launchpad.net/~ibid-core/+archive/ppa>`_
 
-*  `Debian <http://ibid.omnia.za.net/debian/>`_
-*  `Ubuntu <https://launchpad.net/~ibid-core/+archive/ppa>`_
-
-Installing Ibid through your distribution's package-management system should
-give you the least hassles in the long run.
+Installing Ibid :ref:`through your distribution's package-management
+system <package-managed>` should give you the least hassles in the long
+run [#yourdistro]_.
 
 For plugin-development this will be sufficient, but for :ref:`interaction with the
 Ibid development community <contributing>` (i.e. contributing code) or
@@ -157,13 +159,16 @@ Package Managed Installation
 Add the APT source
 ^^^^^^^^^^^^^^^^^^
 
-Debian:
+These repositories are only necessary if you are using an old Debian /
+Ubuntu release that doesn't include Ibid.
+
+Debian (lenny):
    | ``deb http://ibid.omnia.za.net/debian/ lenny-backports main``
    | GPG Key: `0x5EB879CE
      <http://pgp.surfnet.nl:11371/pks/lookup?search=0x6EC0C1E39DEDE92FC8910161450ED9D55EB879CE&op=index>`_
 
-Ubuntu:
-   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu karmic main``  
+Ubuntu (pre-lucid):
+   | ``deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu karmic main``
    | If you are using a different release to ``karmic``, substitute its name.
    | GPG Key: `0xFD1C44BA
      <http://keyserver.ubuntu.com:11371/pks/lookup?search=0xC2D0F8531BBA37930C0D85E3D59F9E8DFD1C44BA&op=index>`_
