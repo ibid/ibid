@@ -58,7 +58,7 @@ class Twitter(Processor):
     }
     services = DictOption('services', 'Micro blogging services', default)
 
-    class NoSuchUserException(Exception):
+    class NoTweetsException(Exception):
         pass
 
     def setup(self):
@@ -79,6 +79,8 @@ class Twitter(Processor):
                     {'count': 1})
             tree = ElementTree.fromstring(statuses)
             latest = tree.find('{http://www.w3.org/2005/Atom}entry')
+            if latest is None:
+                raise self.NoTweetsException(user)
             return {
                 'text': latest.findtext('{http://www.w3.org/2005/Atom}content')
                         .split(': ', 1)[1],
@@ -95,7 +97,7 @@ class Twitter(Processor):
                     % (service['endpoint'], user.encode('utf-8')),
                     {'count': 1})
             if not statuses:
-                raise self.NoSuchUserException(user)
+                raise self.NoTweetsException(user)
             latest = statuses[0]
             url = '%s/notice/%i' % (service['endpoint'].split('/api/', 1)[0],
                                     latest['id'])
@@ -132,8 +134,12 @@ class Twitter(Processor):
                 event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
-        except self.NoSuchUserException, e:
-                event.addresponse(u'No such %s', service['user'])
+        except self.NoTweetsException, e:
+            event.addresponse(
+                u'It appears that %(user)s has never %(tweet)sed', {
+                    'user': user,
+                    'tweet': service['name'],
+                })
 
     @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
