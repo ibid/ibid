@@ -5,7 +5,7 @@
 
 from datetime import datetime
 from errno import EEXIST
-from fnmatch import fnmatch
+import fnmatch
 import logging
 from os.path import dirname, join, expanduser
 from os import chmod, makedirs
@@ -63,11 +63,19 @@ class Log(Processor):
     recent_logs = []
 
     def setup(self):
+        sources = list(set(ibid.config.sources.keys())
+                       | set(ibid.sources.keys()))
         for glob in self.public_logs:
             if u':' not in glob:
                 log.warning(u"public_logs configuration values must follow the "
                             u"format source:channel. \"%s\" doesn't contain a "
                             u"colon.", glob)
+                continue
+            source_glob = glob.split(u':', 1)[0]
+            if not fnmatch.filter(sources, source_glob):
+                log.warning(u'public_logs includes "%s", but there is no '
+                            u'configured source matching "%s"',
+                            glob, source_glob)
 
     def get_logfile(self, event):
         self.lock.acquire()
@@ -103,8 +111,8 @@ class Log(Processor):
                     if u':' not in glob:
                         continue
                     source_glob, channel_glob = glob.split(u':', 1)
-                    if (fnmatch(event.source, source_glob)
-                            and fnmatch(event.channel, channel_glob)):
+                    if (fnmatch.fnmatch(event.source, source_glob)
+                            and fnmatch.fnmatch(event.channel, channel_glob)):
                         chmod(filename, int(self.public_mode, 8))
                         break
                 else:
