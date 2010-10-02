@@ -8,16 +8,18 @@ from sqlalchemy import Column, Index, CheckConstraint, UniqueConstraint, \
                        MetaData, __version__ as _sqlalchemy_version
 from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
                                   ProgrammingError, InternalError
-if _sqlalchemy_version < '0.5':
-    NoResultFound = InvalidRequestError
-else:
-    from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 
 from ibid.db.types import Integer, IbidUnicodeText, IbidUnicode
 
 from ibid.db import metadata
 
 log = logging.getLogger('ibid.db.versioned_schema')
+
+if _sqlalchemy_version < '0.6':
+    pg_engine = 'postgres'
+else:
+    pg_engine = 'postgresql'
 
 class VersionedSchema(object):
     """For an initial table schema, set
@@ -127,7 +129,7 @@ class VersionedSchema(object):
 
         if session.bind.engine.name == 'sqlite':
             return 'ix_%s_%s' % (self.table.name, col.name)
-        elif session.bind.engine.name == 'postgres':
+        elif session.bind.engine.name == pg_engine:
             return '%s_%s_key' % (self.table.name, col.name)
         elif session.bind.engine.name == 'mysql':
             return col.name
@@ -249,7 +251,7 @@ class VersionedSchema(object):
             query = 'ALTER TABLE "%s" ADD %s INDEX "%s" ("%s"(%i));' % (
                     self.table.name, col.unique and 'UNIQUE' or '',
                     self._index_name(col), col.name, col.type.index_length)
-        elif engine == 'postgres':
+        elif engine == pg_engine:
             # SQLAlchemy hangs if it tries to do this, because it forgets the ;
             query = 'CREATE %s INDEX "%s" ON "%s" ("%s")' % (
                     col.unique and 'UNIQUE' or '',self._index_name(col),
@@ -272,7 +274,7 @@ class VersionedSchema(object):
                 return
             raise
         except ProgrammingError, e:
-            if engine == 'postgres' and u'already exists' in unicode(e):
+            if engine == pg_engine and u'already exists' in unicode(e):
                 return
             raise
 
@@ -297,21 +299,13 @@ class VersionedSchema(object):
             raise
 
         except ProgrammingError, e:
-            if engine == 'postgres' and u'does not exist' in unicode(e):
+            if engine == pg_engine and u'does not exist' in unicode(e):
                 return
-            # In SQLAlchemy 0.4, the InternalError below is a ProgrammingError
-            # and can't be executed in the upgrade transaction:
-            if engine == 'postgres' and u'requires' in unicode(e):
-                self.upgrade_session.bind.execute(
-                        'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
-                        self.table.name, self._index_name(col)))
-                return
-            raise
 
         # Postgres constraints can be attached to tables and can't be dropped
         # at DB level.
         except InternalError, e:
-            if engine == 'postgres':
+            if engine == pg_engine:
                 self.upgrade_session.execute(
                         'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (
                         self.table.name, self._index_name(col)))

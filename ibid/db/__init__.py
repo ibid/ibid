@@ -2,7 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import warnings as _warnings
 
-from ibid.db.types import TypeDecorator, Integer, DateTime, Boolean, \
+from ibid.db.types import Integer, DateTime, Boolean, \
                           IbidUnicode, IbidUnicodeText
 
 from sqlalchemy import Table, Column, ForeignKey, Index, UniqueConstraint, \
