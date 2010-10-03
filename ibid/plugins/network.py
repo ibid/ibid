@@ -354,6 +354,7 @@ class HTTP(Processor):
             event.addresponse(u"Sorry, it appears %s is never coming up. "
                               u"I'm not going to check any more.",
                               self._makeurl(url))
+            return
         delay *= self.whensitup_factor
         delay = max(delay, self.whensitup_maxdelay)
         ibid.dispatcher.call_later(delay, self._whensitup, event, url, delay,
