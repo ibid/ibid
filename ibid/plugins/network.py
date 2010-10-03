@@ -230,7 +230,7 @@ class HTTP(Processor):
             u'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', u'Mapping of site names to domains', {})
     max_hops = IntOption('max_hops',
-            u'Maximum hops in get/head when receiving a 30[12]', 3)
+            u'Maximum hops in get/head when receiving an http redirect', 5)
     whensitup_delay = IntOption('whensitup_delay',
             u'Initial delay between whensitup attempts in seconds', 60)
     whensitup_factor = FloatOption('whensitup_factor',
@@ -255,8 +255,7 @@ class HTTP(Processor):
             reply = u'%s %s' % (status, reason)
 
             hops = 0
-            while status in (301, 302) and self._get_header(headers,
-                                                            'location'):
+            while 300 <= status < 400 and self._get_header(headers, 'location'):
                 location = self._get_header(headers, 'location')
                 status, reason, data, headers = self._request(location, 'GET')
                 if hops >= self.max_hops:
@@ -293,7 +292,7 @@ class HTTP(Processor):
                 url += '/'
         return url
 
-    def _isitup(self, url):
+    def _isitup(self, url, return_status=False, redirects=0):
         valid_url = self._makeurl(url)
         if Resolver is not None:
             r = Resolver()
@@ -301,29 +300,33 @@ class HTTP(Processor):
             try:
                 r.query(host)
             except NoAnswer:
-                return False, u'No DNS A/CNAME-records for that domain'
+                return (False, valid_url,
+                        u'No DNS A/CNAME-records for that domain')
             except NXDOMAIN:
-                return False, u'No such domain'
+                return False, valid_url, u'No such domain'
 
         try:
             status, reason, data, headers = self._request(valid_url, 'HEAD')
-            # If the URL is only a hostname, we consider 400 series errors to
-            # mean up. Full URLs are checked for a sensible response code
-            if url == urlparse(url).path and '/' not in url:
-                up = status < 500
-            else:
-                up = status < 400
+            if 300 <= status < 400 and self._get_header(headers, 'location'):
+                if redirects > self.max_hops:
+                    return False, valid_url, 'Infinite redirect loop'
+                return self._isitup(self._get_header(headers, 'location'),
+                                    return_status, redirects + 1)
+
+            up = status < 300
+            if return_status:
                 reason = u'%(status)d %(reason)s' % {
                     u'status': status,
                     u'reason': reason,
                 }
-            return up, reason
+            return up, valid_url, reason
         except HTTPException:
             return False, u'Server is not responding'
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, url, type):
-        up, reason = self._isitup(url)
+        host_only = (url == urlparse(url).path and '/' not in url)
+        up, url, reason = self._isitup(url, return_status=not host_only)
         if up:
             if type.lower() == 'up':
                 event.addresponse(u'Yes, %s is up', url)
