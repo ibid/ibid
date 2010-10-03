@@ -96,29 +96,28 @@ class GoogleScrapeSearch(Processor):
         if country:
             params['cr'] = u'country' + country.upper()
 
-        soup = get_html_parse_tree(
+        return get_html_parse_tree(
                 'http://www.google.com/search?' + urlencode(params),
-                headers={'user-agent': self.user_agent})
-
-        return soup
+                headers={'user-agent': self.user_agent},
+                treetype='etree')
 
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
-        soup = self._google_scrape_search(expression)
+        tree = self._google_scrape_search(expression)
 
-        container = soup.find('h2', 'r')
-        if not container:
-            event.addresponse(u'No result')
+        nodes = [node for node in tree.findall('.//h2/b')]
+        if len(nodes) == 1:
+            event.addresponse(nodes[0].text)
         else:
-            event.addresponse(container.b.string)
+            event.addresponse(u'No result')
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
-        soup = self._google_scrape_search("define:%s" % term)
+        tree = self._google_scrape_search("define:%s" % term)
 
         definitions = []
-        for li in soup.findAll('li'):
-            definitions.append(decode_htmlentities(li.contents[0].strip()))
+        for li in tree.findall('.//li'):
+            definitions.append(li.text)
 
         if definitions:
             event.addresponse(u' :: '.join(definitions))
