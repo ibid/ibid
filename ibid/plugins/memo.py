@@ -109,14 +109,11 @@ class Tell(Processor):
             })
             return
 
-        response = True
         if not to and source_specified and source not in ibid.sources:
             to = event.session.query(Identity) \
                       .filter_by(identity=who, source=event.source).first()
             if to:
                 source = event.source
-                response = (u"OK. I'll assume that you want me to tell "
-                            u"that to %s on %s." % (who, event.source))
 
         if not to:
             if source not in ibid.sources:
@@ -148,7 +145,13 @@ class Tell(Processor):
         nomemos_cache.clear()
         notified_overlimit_cache.discard(to.id)
 
-        event.addresponse(response)
+        recipient = to.identity
+        if to.source != event.source:
+            recipient += u' on ' + to.source
+        event.addresponse(u"OK, I'll %(action)s %(recipient)s that.", {
+            'action': how.lower(),
+            'recipient': recipient
+        })
 
     @match(r'^(?:delete|forget)\s+(?:my\s+)?'
             r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
