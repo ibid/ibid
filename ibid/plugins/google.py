@@ -2,10 +2,12 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from httplib import BadStatusLine
+import re
 from urllib import urlencode
 
-from ibid.plugins import Processor, match
+from ibid.compat import ElementTree
 from ibid.config import Option
+from ibid.plugins import Processor, match
 from ibid.utils import decode_htmlentities, json_webservice
 from ibid.utils.html import get_html_parse_tree
 
@@ -107,7 +109,14 @@ class GoogleScrapeSearch(Processor):
 
         nodes = [node for node in tree.findall('.//h2/b')]
         if len(nodes) == 1:
-            event.addresponse(nodes[0].text)
+            # ElementTree doesn't support inline tags:
+            node = ElementTree.tostring(nodes[0], encoding='utf-8')
+            node = re.sub(r'^<b>(.*)</b>$', lambda x: x.group(1), node)
+            node = re.sub(r'<sup>(.*?)</sup>',
+                          lambda x: '^' + x.group(1), node)
+            node = node.decode('utf-8')
+            node = decode_htmlentities(node)
+            event.addresponse(node)
         else:
             event.addresponse(u'No result')
 
