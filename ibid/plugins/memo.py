@@ -3,6 +3,7 @@
 
 from datetime import datetime
 import logging
+from random import choice
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
@@ -145,12 +146,12 @@ class Tell(Processor):
         nomemos_cache.clear()
         notified_overlimit_cache.discard(to.id)
 
-        recipient = to.identity
-        if to.source != event.source:
-            recipient += u' on ' + to.source
-        event.addresponse(u"OK, I'll %(action)s %(recipient)s that.", {
+        event.addresponse(u"%(acknowledgement)s, I'll %(action)s "
+                          u"%(recipient)s on %(source)s", {
+            'acknowledgement': choice(('Okay', 'Righto', 'Sure', 'Got it')),
             'action': how.lower(),
-            'recipient': recipient
+            'recipient': to.identity,
+            'source': to.source,
         })
 
     @match(r'^(?:delete|forget)\s+(?:my\s+)?'
