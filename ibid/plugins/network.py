@@ -229,7 +229,7 @@ class HTTP(Processor):
     timeout = IntOption('timeout',
             u'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', u'Mapping of site names to domains', {})
-    max_hops = IntOption('max_hops',
+    redirect_limit = IntOption('redirect_limit',
             u'Maximum number of http redirects to follow', 5)
     whensitup_delay = IntOption('whensitup_delay',
             u'Initial delay between whensitup attempts in seconds', 60)
@@ -258,7 +258,7 @@ class HTTP(Processor):
             while 300 <= status < 400 and self._get_header(headers, 'location'):
                 location = self._get_header(headers, 'location')
                 status, reason, data, headers = self._request(location, 'GET')
-                if hops >= self.max_hops:
+                if hops >= self.redirect_limit:
                     reply += u' to %s' % location
                     break
                 hops += 1
@@ -308,7 +308,7 @@ class HTTP(Processor):
         try:
             status, reason, data, headers = self._request(valid_url, 'HEAD')
             if 300 <= status < 400 and self._get_header(headers, 'location'):
-                if redirects > self.max_hops:
+                if redirects > self.redirect_limit:
                     return False, valid_url, u'Redirect limit reached'
                 return self._isitup(self._get_header(headers, 'location'),
                                     return_status, redirects + 1)
