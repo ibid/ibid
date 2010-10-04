@@ -5,6 +5,9 @@ from unicodedata import normalize
 from random import choice, random, randrange
 import re
 
+from datetime import datetime
+from dateutil import parser
+
 from nickometer import nickometer
 from sqlalchemy.sql import not_, or_
 
@@ -16,6 +19,8 @@ from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article, identity_name, \
                         plural
+from ibid.utils import ago, format_date
+
 
 features = {}
 
@@ -110,6 +115,76 @@ class Coffee(Processor):
         else:
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
+
+features['remind'] = {
+    'description': u'Generic timed reminders',
+    'categories': ('fun', 'monitor',),
+}
+class Remind(Processor):
+    """
+    This is a timed reminder plugin. It allows you to make the bot ping
+    you (or somebody else), about something specific (if you want), in
+    the future.
+
+    Maybe this should be merged with the memo plugin.
+    """
+    usage = u'remind (me|someone else) in <delta> about something'
+    features = ('remind',)
+
+    def announce(self, event, who, what, from_who, from_when):
+        """handler that gets called after the timeout"""
+
+        # we keep this logic here to simplify the code on the other side
+        if who == from_who:
+            from_who = "you"
+        if what:
+            event.addresponse(u'%s: %s asked me to remind you %s, %s ago.' % (who, from_who, what, ago(datetime.now()-from_when)))
+        else:
+            event.addresponse(u'%s: %s asked me to ping you, %s ago.' % (who, from_who, ago(datetime.now()-from_when)))
+
+    @match(r'^(?:remind|ping)\s+(?:(me|\w+)\s+)?(at|on|in)\s+(.*?)(?:(about|of|to) (.*))?$')
+    def remind(self, event, who, at, when, how, what):
+        """main handler
+        
+        this parses the date and sets up the "announce" function to be
+        fired when the time is up."""
+
+        time = parser.parse(when)
+        if at == "in":
+            now = datetime.now()
+            midnight = now.replace(now.year,now.month,now.day,0,0,0,0)
+            delta = time - midnight
+        elif at == "at" or at == "on":
+            delta = time - datetime.now()
+
+        if what:
+            what = how + " " + what.strip()
+
+        from_who = event.sender['nick']
+        
+        if not who or who.strip() == "me":
+            who = from_who
+        who = who.strip()
+
+        # XXX: this is total_seconds() in 2.7
+        total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
+
+        if total_seconds < 0:
+            if what:
+                event.addresponse(u"I can't travel in time back to %s ago (yet) so I'll tell you now %s" % (ago(-delta), what))
+            else:
+                event.addresponse(u"I can't travel in time back to %s ago (yet)" % ago(-delta))
+        ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
+
+        # this logic needs to be after the callback setting because we
+        # want to ping the real nick, not "you"
+        if who == from_who:
+            who = "you"
+        if what:
+            event.addresponse(u"will remind %s %s in %s" % (who, what, ago(delta)), action=True)
+        else:
+            event.addresponse(u"will ping %s in %s" % (who, ago(delta)), action=True)
+
 
 features['insult'] = {
     'description': u'Slings verbal abuse at someone',
