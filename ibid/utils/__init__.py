@@ -8,6 +8,7 @@
 import codecs
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
+from locale import getpreferredencoding
 import logging
 import os
 import os.path
@@ -154,11 +155,7 @@ def file_in_path(program):
     return bool(path)
 
 def unicode_output(output, errors="strict"):
-    try:
-        encoding = os.getenv("LANG").split(".")[1]
-    except:
-        encoding = "ascii"
-    return unicode(output, encoding, errors)
+    return unicode(output, getpreferredencoding(), errors)
 
 def ibid_version():
     try:
