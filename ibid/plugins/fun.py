@@ -149,7 +149,12 @@ class Remind(Processor):
         this parses the date and sets up the "announce" function to be
         fired when the time is up."""
 
-        time = parser.parse(when)
+        try:
+            time = parser.parse(when)
+        except:
+            event.addresponse(u"I can't parse that time: %s", when)
+            return
+
         if at == "in":
             now = datetime.now()
             midnight = now.replace(now.year, now.month, now.day, 0, 0, 0, 0)
