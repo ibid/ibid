@@ -230,7 +230,7 @@ class HTTP(Processor):
             u'Timeout for HTTP connections in seconds', 15)
     sites = DictOption('sites', u'Mapping of site names to domains', {})
     max_hops = IntOption('max_hops',
-            u'Maximum hops in get/head when receiving an http redirect', 5)
+            u'Maximum number of http redirects to follow', 5)
     whensitup_delay = IntOption('whensitup_delay',
             u'Initial delay between whensitup attempts in seconds', 60)
     whensitup_factor = FloatOption('whensitup_factor',
@@ -309,7 +309,7 @@ class HTTP(Processor):
             status, reason, data, headers = self._request(valid_url, 'HEAD')
             if 300 <= status < 400 and self._get_header(headers, 'location'):
                 if redirects > self.max_hops:
-                    return False, valid_url, 'Infinite redirect loop'
+                    return False, valid_url, u'Redirect limit reached'
                 return self._isitup(self._get_header(headers, 'location'),
                                     return_status, redirects + 1)
 
@@ -321,7 +321,7 @@ class HTTP(Processor):
                 }
             return up, valid_url, reason
         except HTTPException:
-            return False, u'Server is not responding'
+            return False, valid_url, u'Server is not responding'
 
     @match(r'^is\s+(\S+)\s+(up|down)$')
     def isit(self, event, url, type):
