@@ -249,10 +249,11 @@ class Deliver(Processor):
                 message = u'By the way, you have a pile of memos waiting for ' \
                           u'you, too many to read out in public. PM me'
                 if public:
-                    event.addresponse(u'%s: ' + message, event.sender['nick'])
+                    event.addresponse(message)
                 else:
                     event.addresponse(message,
-                                      target=event.sender['connection'])
+                                      target=event.sender['connection'],
+                                      address=False)
                 notified_overlimit_cache.add(event.identity)
             return
 
@@ -261,23 +262,18 @@ class Deliver(Processor):
             if 'memo' in event and event.memo == memo.id:
                 continue
 
+            message = u'By the way, %(sender)s on %(source)s told me ' \
+                      u'"%(message)s" %(ago)s ago' % {
+                'sender': memo.sender.identity,
+                'source': memo.sender.source,
+                'message': memo.memo,
+                'ago': ago(event.time - memo.time),
+            }
             if memo.private:
-                message = u'By the way, %(sender)s on %(source)s told me ' \
-                          u'"%(message)s" %(ago)s ago' % {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                }
-                event.addresponse(message, target=event.sender['connection'])
+                event.addresponse(message, target=event.sender['connection'],
+                                  address=False)
             else:
-                event.addresponse(u'By the way, %(sender)s on %(source)s '
-                                  u'told me "%(message)s" %(ago)s ago', {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                })
+                event.addresponse(message)
 
             memo.delivered = True
             event.session.save_or_update(memo)
@@ -312,12 +308,12 @@ class Notify(Processor):
             event.addresponse(
                 u'You have %s messages, too many for me to tell you in public,'
                 u' so ask me in private.',
-                len(memos), target=event.sender['connection'])
+                len(memos), target=event.sender['connection'], address=False)
         elif len(memos) > 0:
             event.addresponse(u'You have %s messages. '
                     u"Would you like to read them now?",
                 len(memos),
-                target=event.sender['connection'])
+                target=event.sender['connection'], address=False)
         else:
             nomemos_cache.add(event.identity)
 
