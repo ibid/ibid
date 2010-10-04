@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-# This source requries Python >= 2.5:
+# This source requires Python >= 2.5:
 from __future__ import absolute_import
 
 from os.path import join, exists
