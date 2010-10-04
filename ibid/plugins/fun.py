@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Antoine Beaupre
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from unicodedata import normalize
@@ -128,7 +128,7 @@ class Remind(Processor):
 
     Maybe this should be merged with the memo plugin.
     """
-    usage = u'remind (me|someone else) in <delta> about something'
+    usage = u'remind <person> in <time> about <something>'
     features = ('remind',)
 
     def announce(self, event, who, what, from_who, from_when):
@@ -138,9 +138,9 @@ class Remind(Processor):
         if who == from_who:
             from_who = "you"
         if what:
-            event.addresponse(u'%s: %s asked me to remind you %s, %s ago.' % (who, from_who, what, ago(datetime.now()-from_when)))
+            event.addresponse(u'%s: %s asked me to remind you %s, %s ago.', (who, from_who, what, ago(datetime.now()-from_when)))
         else:
-            event.addresponse(u'%s: %s asked me to ping you, %s ago.' % (who, from_who, ago(datetime.now()-from_when)))
+            event.addresponse(u'%s: %s asked me to ping you, %s ago.', (who, from_who, ago(datetime.now()-from_when)))
 
     @match(r'^(?:remind|ping)\s+(?:(me|\w+)\s+)?(at|on|in)\s+(.*?)(?:(about|of|to) (.*))?$')
     def remind(self, event, who, at, when, how, what):
@@ -152,9 +152,9 @@ class Remind(Processor):
         time = parser.parse(when)
         if at == "in":
             now = datetime.now()
-            midnight = now.replace(now.year,now.month,now.day,0,0,0,0)
+            midnight = now.replace(now.year, now.month, now.day, 0, 0, 0, 0)
             delta = time - midnight
-        elif at == "at" or at == "on":
+        elif at in ("at", "on"):
             delta = time - datetime.now()
 
         if what:
@@ -171,19 +171,21 @@ class Remind(Processor):
 
         if total_seconds < 0:
             if what:
-                event.addresponse(u"I can't travel in time back to %s ago (yet) so I'll tell you now %s" % (ago(-delta), what))
+                event.addresponse(u"I can't travel in time back to %s ago (yet) so I'll tell you now %s", (ago(-delta), what))
             else:
-                event.addresponse(u"I can't travel in time back to %s ago (yet)" % ago(-delta))
+                event.addresponse(u"I can't travel in time back to %s ago (yet)", ago(-delta))
         ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
 
         # this logic needs to be after the callback setting because we
         # want to ping the real nick, not "you"
         if who == from_who:
             who = "you"
+        # we say "ping" here to let the user learn about "ping" instead
+        # of "remind"
         if what:
-            event.addresponse(u"will remind %s %s in %s" % (who, what, ago(delta)), action=True)
+            event.addresponse(u"okay, I will remind %s in %s", (who, ago(delta)))
         else:
-            event.addresponse(u"will ping %s in %s" % (who, ago(delta)), action=True)
+            event.addresponse(u"okay, I will ping %s in %s", (who, ago(delta)))
 
 
 features['insult'] = {
