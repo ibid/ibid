@@ -207,7 +207,7 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
-    @match(r'^(?:weather )forecast (?:for )?(.+)$')
+    @match(r'^(?:weather )?forecast (?:for )?(.+)$')
     def forecast(self, event, place):
         try:
             event.addresponse(u', '.join(self.remote_forecast(place)))
