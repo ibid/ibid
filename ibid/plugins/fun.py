@@ -131,7 +131,8 @@ class Remind(Processor):
     features = ('remind',)
 
     def announce(self, event, who, what, from_who, from_when):
-        """handler that gets called after the timeout"""
+        """This handler gets called after the timeout and will notice
+        the user."""
 
         # we keep this logic here to simplify the code on the other side
         if who == from_who:
@@ -145,11 +146,12 @@ class Remind(Processor):
         else:
             event.addresponse(u'%s%s asked me to ping you, %s ago.', (who, from_who, ago(datetime.now()-from_when)))
 
-    @match(r'^(?:remind|ping)\s+(?:(me|\w+)\s+)?(at|on|in)\s+(.*?)(?:(about|of|to) (.*))?$')
+    @match(r'(?:please )?(?:remind|ping) (?:(me|\w+) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
     def remind(self, event, who, at, when, how, what):
-        """main handler
+        """This is the main handler that gets called on the above
+        @match.
         
-        this parses the date and sets up the "announce" function to be
+        This parses the date and sets up the "announce" function to be
         fired when the time is up."""
 
         try:
