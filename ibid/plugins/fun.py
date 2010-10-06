@@ -158,12 +158,12 @@ class Remind(Processor):
             event.addresponse(u"Sorry, I couldn't understand the time you gave me")
             return
 
+        now = datetime.now()
         if at == "in":
-            now = datetime.now()
             midnight = now.replace(now.year, now.month, now.day, 0, 0, 0, 0)
             delta = time - midnight
         elif at in ("at", "on"):
-            delta = time - datetime.now()
+            delta = time - now
 
         if what:
             what = how + " " + what.strip()
