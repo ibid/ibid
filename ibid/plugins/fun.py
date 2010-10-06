@@ -18,8 +18,7 @@ from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article, identity_name, \
-                        plural
-from ibid.utils import ago, format_date
+                        plural, ago, format_date
 
 
 features = {}
@@ -137,10 +136,14 @@ class Remind(Processor):
         # we keep this logic here to simplify the code on the other side
         if who == from_who:
             from_who = "you"
-        if what:
-            event.addresponse(u'%s: %s asked me to remind you %s, %s ago.', (who, from_who, what, ago(datetime.now()-from_when)))
+        if event.public:
+            who = who + ": "
         else:
-            event.addresponse(u'%s: %s asked me to ping you, %s ago.', (who, from_who, ago(datetime.now()-from_when)))
+            who = ""
+        if what:
+            event.addresponse(u'%s%s asked me to remind you %s, %s ago.', (who, from_who, what, ago(datetime.now()-from_when)))
+        else:
+            event.addresponse(u'%s%s asked me to ping you, %s ago.', (who, from_who, ago(datetime.now()-from_when)))
 
     @match(r'^(?:remind|ping)\s+(?:(me|\w+)\s+)?(at|on|in)\s+(.*?)(?:(about|of|to) (.*))?$')
     def remind(self, event, who, at, when, how, what):
@@ -152,7 +155,7 @@ class Remind(Processor):
         try:
             time = parser.parse(when)
         except:
-            event.addresponse(u"I can't parse that time: %s", when)
+            event.addresponse(u"Sorry, I couldn't understand the time you gave me")
             return
 
         if at == "in":
