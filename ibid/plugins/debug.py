@@ -45,7 +45,7 @@ class LastException(Processor):
                     lines = [u'%(type)s event "%(message)s" triggered ' %
                              {'type': exc_event.type,
                               'message': exc_event.message['raw']}]
-                except KeyError:
+                except KeyError, TypeError:
                     lines = [u'%(type)s event triggered' % exc_event.type]
 
                 lines += format_exception_only(*exc_event['exc_info'][:2])
