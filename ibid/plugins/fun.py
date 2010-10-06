@@ -142,9 +142,18 @@ class Remind(Processor):
         else:
             who = ""
         if what:
-            event.addresponse(u'%s%s asked me to remind you %s, %s ago.', (who, from_who, what, ago(datetime.now()-from_when)))
+            event.addresponse(u'%(who)%(from_who) asked me to remind you %(what), %(ago) ago.', {
+                'who': who,
+                'from_who': from_who,
+                'what': what,
+                'ago': ago(datetime.now()-from_when)
+                })
         else:
-            event.addresponse(u'%s%s asked me to ping you, %s ago.', (who, from_who, ago(datetime.now()-from_when)))
+            event.addresponse(u'%(who)%(from_who) asked me to ping you, %(ago) ago.', {
+                'who': who,
+                'from_who': from_who,
+                'ago': ago(datetime.now()-from_when)
+                })
 
     @match(r'(?:please )?(?:remind|ping) (?:(me|\w+) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
     def remind(self, event, who, at, when, how, what):
@@ -181,9 +190,14 @@ class Remind(Processor):
 
         if total_seconds < 0:
             if what:
-                event.addresponse(u"I can't travel in time back to %s ago (yet) so I'll tell you now %s", (ago(-delta), what))
+                event.addresponse(u"I can't travel in time back to %(ago) ago (yet) so I'll tell you now %(what)", {
+                    'ago': ago(-delta),
+                    'what': what
+                })
             else:
-                event.addresponse(u"I can't travel in time back to %s ago (yet)", ago(-delta))
+                event.addresponse(u"I can't travel in time back to %(ago) ago (yet)", {
+                    'ago': ago(-delta)
+                })
         ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
 
         # this logic needs to be after the callback setting because we
@@ -193,9 +207,15 @@ class Remind(Processor):
         # we say "ping" here to let the user learn about "ping" instead
         # of "remind"
         if what:
-            event.addresponse(u"okay, I will remind %s in %s", (who, ago(delta)))
+            event.addresponse(u"okay, I will remind %(who) in %(time)", {
+                'who': who,
+                'time': ago(delta)
+            })
         else:
-            event.addresponse(u"okay, I will ping %s in %s", (who, ago(delta)))
+            event.addresponse(u"okay, I will ping %(who) in %(time)", {
+                'who': who,
+                'time': ago(delta)
+            })
 
 
 features['insult'] = {
