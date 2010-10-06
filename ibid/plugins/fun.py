@@ -142,14 +142,14 @@ class Remind(Processor):
         else:
             who = ""
         if what:
-            event.addresponse(u'%(who)%(from_who) asked me to remind you %(what), %(ago) ago.', {
+            event.addresponse(u'%(who)s%(from_who)s asked me to remind you %(what)s, %(ago)s ago.', {
                 'who': who,
                 'from_who': from_who,
                 'what': what,
                 'ago': ago(datetime.now()-from_when)
                 })
         else:
-            event.addresponse(u'%(who)%(from_who) asked me to ping you, %(ago) ago.', {
+            event.addresponse(u'%(who)s%(from_who)s asked me to ping you, %(ago)s ago.', {
                 'who': who,
                 'from_who': from_who,
                 'ago': ago(datetime.now()-from_when)
@@ -190,12 +190,12 @@ class Remind(Processor):
 
         if total_seconds < 0:
             if what:
-                event.addresponse(u"I can't travel in time back to %(ago) ago (yet) so I'll tell you now %(what)", {
+                event.addresponse(u"I can't travel in time back to %(ago)s ago (yet) so I'll tell you now %(what)s", {
                     'ago': ago(-delta),
                     'what': what
                 })
             else:
-                event.addresponse(u"I can't travel in time back to %(ago) ago (yet)", {
+                event.addresponse(u"I can't travel in time back to %(ago)s ago (yet)", {
                     'ago': ago(-delta)
                 })
         ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
@@ -207,12 +207,12 @@ class Remind(Processor):
         # we say "ping" here to let the user learn about "ping" instead
         # of "remind"
         if what:
-            event.addresponse(u"okay, I will remind %(who) in %(time)", {
+            event.addresponse(u"okay, I will remind %(who)s in %(time)s", {
                 'who': who,
                 'time': ago(delta)
             })
         else:
-            event.addresponse(u"okay, I will ping %(who) in %(time)", {
+            event.addresponse(u"okay, I will ping %(who)s in %(time)s", {
                 'who': who,
                 'time': ago(delta)
             })
