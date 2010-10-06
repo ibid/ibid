@@ -116,7 +116,7 @@ class Coffee(Processor):
             event.addresponse(True)
 
 features['remind'] = {
-    'description': u'Generic timed reminders',
+    'description': u'Programs reminders in the future for you or other people.',
     'categories': ('fun', 'monitor',),
 }
 class Remind(Processor):
