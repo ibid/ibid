@@ -110,11 +110,13 @@ class GoogleScrapeSearch(Processor):
         nodes = [node for node in tree.findall('.//h2/b')]
         if len(nodes) == 1:
             # ElementTree doesn't support inline tags:
+            # May return ASCII unless an encoding is specified.
+            # "utf8" will result in an xml header
             node = ElementTree.tostring(nodes[0], encoding='utf-8')
+            node = node.decode('utf-8')
             node = re.sub(r'^<b>(.*)</b>$', lambda x: x.group(1), node)
             node = re.sub(r'<sup>(.*?)</sup>',
-                          lambda x: '^' + x.group(1), node)
-            node = node.decode('utf-8')
+                          lambda x: u'^' + x.group(1), node)
             node = decode_htmlentities(node)
             event.addresponse(node)
         else:
