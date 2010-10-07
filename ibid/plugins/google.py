@@ -2,6 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from httplib import BadStatusLine
+from random import choice
 import re
 from urllib import urlencode
 
@@ -120,7 +121,9 @@ class GoogleScrapeSearch(Processor):
             node = decode_htmlentities(node)
             event.addresponse(node)
         else:
-            event.addresponse(u'No result')
+            event.addresponse(
+                u"%s, Google wasn't interested in calculating that",
+                choice(('Sorry', 'Whoops')))
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
