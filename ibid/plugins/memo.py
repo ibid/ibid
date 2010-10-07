@@ -4,6 +4,7 @@
 from datetime import datetime
 import logging
 from random import choice
+import re
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
@@ -72,14 +73,16 @@ class Tell(Processor):
     permissions = (u'recvmemo',)
 
     @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)'
-           r'\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$', version='deaddressed')
+           r'\s+(\S+)\s+(.+?)\s*$', version='deaddressed')
     @authorise(fallthrough=False)
-    def tell(self, event, how, who, source, memo):
-        source_specified = bool(source)
-        if not source:
-            source = event.source
+    def tell(self, event, how, who, memo):
+        m = re.match(r'^on\s+(\S+?)\s+(.+)$', memo, re.I | re.U)
+        source_specified = bool(m) and m.group(1).lower() in ibid.sources
+        if source_specified:
+            source = m.group(1).lower()
+            memo = m.group(2)
         else:
-            source = source.lower()
+            source = event.source
 
         if source.lower() == event.source and \
                 any(True for name in ibid.config.plugins['core']['names']
@@ -109,12 +112,6 @@ class Tell(Processor):
                     'source': source,
             })
             return
-
-        if not to and source_specified and source not in ibid.sources:
-            to = event.session.query(Identity) \
-                      .filter_by(identity=who, source=event.source).first()
-            if to:
-                source = event.source
 
         if not to:
             if source not in ibid.sources:
