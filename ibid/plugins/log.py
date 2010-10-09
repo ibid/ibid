@@ -117,12 +117,15 @@ class Log(Processor):
                         break
                 else:
                     chmod(filename, int(self.private_mode, 8))
-
-                if len(self.recent_logs) > self.fd_cache:
-                    self.recent_logs.pop()
             else:
-                self.recent_logs.remove(log)
-            self.recent_logs.insert(0, log)
+                # recent_logs is an LRU cache, we'll be moving log to the
+                # front of the queue, if it's in the queue.
+                # It might not be, GCs are fickle LP: 655645
+                try:
+                    self.recent_logs.remove(log)
+                except ValueError:
+                    pass
+            self.recent_logs = [log] + self.recent_logs[:self.fd_cache - 1]
             return log
         finally:
             self.lock.release()
