@@ -5,6 +5,7 @@
 from fnmatch import fnmatch
 from time import sleep
 import logging
+from threading import Lock
 
 from twisted.internet import reactor
 from twisted.words.protocols import irc
@@ -216,13 +217,17 @@ class Ircbot(irc.IRCClient):
         ibid.dispatcher.dispatch(event)
 
     def authenticate(self, nick, callback):
-        self.sendLine('WHOIS %s' % nick.encode('utf-8'))
-        self.auth_callbacks[nick] = callback
+        if nick in self.auth_callbacks:
+            self.auth_callbacks[nick].append(callback)
+        else:
+            self.auth_callbacks[nick] = [callback]
+            self.sendLine('WHOIS %s' % nick.encode('utf-8'))
 
     def do_auth_callback(self, nick, result):
         if nick in self.auth_callbacks:
             self.factory.log.debug(u"Authentication result for %s: %s", nick, result)
-            self.auth_callbacks[nick](nick, result)
+            for callback in self.auth_callbacks[nick]:
+                callback(result)
             del self.auth_callbacks[nick]
 
     def irc_unknown(self, prefix, command, params):
@@ -297,6 +302,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     def __init__(self, name):
         IbidSourceFactory.__init__(self, name)
         self._auth = {}
+        self._auth_ticket = 0
+        self._auth_ticket_lock = Lock()
         self.log = logging.getLogger('source.%s' % self.name)
 
     def setServiceParent(self, service):
@@ -371,19 +378,25 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             if fnmatch(event.sender['connection'], credential.credential):
                 return True
 
-    def _irc_auth_callback(self, nick, result):
-        self._auth[nick] = result
-
     def auth_nickserv(self, event, credential):
-        reactor.callFromThread(self.proto.authenticate, event.sender['nick'], self._irc_auth_callback)
+        self._auth_ticket_lock.acquire()
+        self._auth_ticket += 1
+        ticket = self._auth_ticket
+        self._auth_ticket_lock.release()
+
+        def callback(result):
+            self._auth[ticket] = result
+
+        reactor.callFromThread(self.proto.authenticate, event.sender['nick'],
+                               callback)
         for i in xrange(150):
-            if event.sender['nick'] in self._auth:
+            if ticket in self._auth:
                 break
             sleep(0.1)
 
-        if event.sender['nick'] in self._auth:
-            result = self._auth[event.sender['nick']]
-            del self._auth[event.sender['nick']]
+        if ticket in self._auth:
+            result = self._auth[ticket]
+            del self._auth[ticket]
             return result
 
 # vi: set et sta sw=4 ts=4:
