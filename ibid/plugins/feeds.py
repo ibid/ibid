@@ -9,7 +9,7 @@ from urlparse import urljoin
 import feedparser
 from html2text import html2text_file
 
-from ibid.config import IntOption
+from ibid.config import IntOption, FloatOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Integer, DateTime, \
                     Table, Column, ForeignKey, Base, VersionedSchema
 from ibid.plugins import Processor, match, authorise, periodic
@@ -205,12 +205,22 @@ class Manage(Processor):
                     event.sender['connection'])
             event.addresponse(True)
 
+# broken_feeds[name] = (last_exception, fetch_interval, time_since_fetch)
+# fetches_skipped is the number of intervals in which we *haven't* tried to
+# fetch this feed. Feeds are removed whenever they are successfully loaded.
+broken_feeds = {}
+
 class Retrieve(Processor):
     usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
     features = ('feeds',)
 
     interval = IntOption('interval', 'Feed Poll interval (in seconds)', 300)
+    max_interval = IntOption('max_interval',
+        'Maximum feed poll interval for broken feeds (in seconds)', 86400)
+    backoff_ratio = FloatOption('backoff',
+        'The slowdown ratio to back off from broken feeds', 2.0)
+
 
     @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?articles\s+from\s+(.+?)'
            r'(?:\s+start(?:ing)?\s+(?:at\s+|from\s+)?(\d+))?$')
@@ -289,11 +299,26 @@ class Retrieve(Processor):
                 .filter(Feed.target != None).all()
 
         for feed in feeds:
+            if feed.name in broken_feeds:
+                last_exc, interval, time_since_fetch = broken_feeds[feed.name]
+                time_since_fetch += self.interval
+                if time_since_fetch < interval:
+                    broken_feeds[feed.name] = \
+                            last_exc, interval, time_since_fetch
+                    continue
+            else:
+                last_exc = None
+                interval = time_since_fetch = self.interval
+
             try:
-                feed.update(max_age=self.interval)
-            except:
-                log.warning(u'Exception occured while polling feed %s.',
-                            feed, exc_info=True)
+                feed.update(max_age=time_since_fetch)
+            except Exception, e:
+                if e != last_exc:
+                    log.warning(u'Exception occured while polling feed %s.',
+                                feed, exc_info=True)
+                broken_feeds[feed.name] = e, self.backoff(interval), 0
+                continue
+
             if not feed.entries:
                 log.warning(u'Error polling feed %s', feed.name)
                 continue
@@ -321,6 +346,9 @@ class Retrieve(Processor):
                         },
                         source=feed.source, target=feed.target, adress=False)
             self.last_seen[feed.name] = seen
+
+    def backoff(self, interval):
+        return min(self.max_interval, interval*self.backoff_ratio)
 
 def get_link(entry):
     if hasattr(entry, 'link'):
