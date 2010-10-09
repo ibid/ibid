@@ -115,7 +115,7 @@ class Log(Processor):
                         continue
                     source_glob, channel_glob = glob.split(u':', 1)
                     if (fnmatch.fnmatch(event.source, source_glob)
-                            and fnmatch.fnmatch(event.channel, channel_glob)):
+                            and fnmatch.fnmatch(channel, channel_glob)):
                         chmod(filename, int(self.public_mode, 8))
                         break
                 else:
