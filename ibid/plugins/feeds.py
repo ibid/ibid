@@ -91,8 +91,11 @@ class Feed(Base):
 
     def __unicode__(self):
         if self.source is not None and self.target is not None:
-            return u'%s (Notify %s on %s)' % (
+            string = u'%s (notify %s on %s)' % (
                     self.name, self.target, self.source)
+            if self.name in broken_feeds:
+                string += ' [broken]'
+            return string
         else:
             return self.name
 
