@@ -1,9 +1,10 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-import re
 from datetime import datetime
 import logging
+import re
+from urllib2 import URLError
 from urlparse import urljoin
 
 import feedparser
