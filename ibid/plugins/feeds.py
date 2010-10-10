@@ -318,6 +318,9 @@ class Retrieve(Processor):
                                 feed, feed.url, exc_info=True)
                 broken_feeds[feed.name] = e, self.backoff(interval), 0
                 continue
+            else:
+                if feed.name in broken_feeds:
+                    del broken_feeds[feed.name]
 
             if not feed.entries:
                 log.warning(u'Error polling feed %s', feed.name)
