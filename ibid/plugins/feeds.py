@@ -314,8 +314,12 @@ class Retrieve(Processor):
                 feed.update(max_age=time_since_fetch)
             except Exception, e:
                 if type(e) != type(last_exc):
-                    log.warning(u'Exception occured while polling feed %s from %s',
-                                feed, feed.url, exc_info=True)
+                    if isinstance(e, URLError):
+                        log.warning(u'Exception "%s" occured while polling '
+                                    u'feed %s from %s', e, feed, feed.url)
+                    else:
+                        log.exception(u'Exception "%s" occured while polling '
+                                      u'feed %s from %s', e, feed, feed.url)
                 broken_feeds[feed.name] = e, self.backoff(interval), 0
                 continue
             else:
