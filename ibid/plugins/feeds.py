@@ -4,6 +4,7 @@
 from datetime import datetime
 import logging
 import re
+from threading import Lock
 from urllib2 import URLError
 from urlparse import urljoin
 
@@ -209,10 +210,19 @@ class Manage(Processor):
                     event.sender['connection'])
             event.addresponse(True)
 
+    @match(r'retry (?:broken )?feeds')
+    @authorise(fallthrough=False)
+    def unwedge(self, event):
+        broken_lock.acquire()
+        broken_feeds.clear()
+        broken_lock.release()
+        event.addresponse(True)
+
 # broken_feeds[name] = (last_exception, fetch_interval, time_since_fetch)
 # fetches_skipped is the number of intervals in which we *haven't* tried to
 # fetch this feed. Feeds are removed whenever they are successfully loaded.
 broken_feeds = {}
+broken_lock = Lock()
 
 class Retrieve(Processor):
     usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
@@ -303,32 +313,36 @@ class Retrieve(Processor):
                 .filter(Feed.target != None).all()
 
         for feed in feeds:
-            if feed.name in broken_feeds:
-                last_exc, interval, time_since_fetch = broken_feeds[feed.name]
-                time_since_fetch += self.interval
-                if time_since_fetch < interval:
-                    broken_feeds[feed.name] = \
-                            last_exc, interval, time_since_fetch
-                    continue
-            else:
-                last_exc = None
-                interval = time_since_fetch = self.interval
-
             try:
-                feed.update(max_age=time_since_fetch)
-            except Exception, e:
-                if type(e) != type(last_exc):
-                    if isinstance(e, URLError):
-                        log.warning(u'Exception "%s" occured while polling '
-                                    u'feed %s from %s', e, feed, feed.url)
-                    else:
-                        log.exception(u'Exception "%s" occured while polling '
-                                      u'feed %s from %s', e, feed, feed.url)
-                broken_feeds[feed.name] = e, self.backoff(interval), 0
-                continue
-            else:
+                broken_lock.acquire()
                 if feed.name in broken_feeds:
-                    del broken_feeds[feed.name]
+                    last_exc, interval, time_since_fetch = broken_feeds[feed.name]
+                    time_since_fetch += self.interval
+                    if time_since_fetch < interval:
+                        broken_feeds[feed.name] = \
+                                last_exc, interval, time_since_fetch
+                        continue
+                else:
+                    last_exc = None
+                    interval = time_since_fetch = self.interval
+
+                try:
+                    feed.update(max_age=time_since_fetch)
+                except Exception, e:
+                    if type(e) != type(last_exc):
+                        if isinstance(e, URLError):
+                            log.warning(u'Exception "%s" occured while polling '
+                                        u'feed %s from %s', e, feed, feed.url)
+                        else:
+                            log.exception(u'Exception "%s" occured while polling '
+                                          u'feed %s from %s', e, feed, feed.url)
+                    broken_feeds[feed.name] = e, self.backoff(interval), 0
+                    continue
+                else:
+                    if feed.name in broken_feeds:
+                        del broken_feeds[feed.name]
+            finally:
+                broken_lock.release()
 
             if not feed.entries:
                 log.warning(u'Error polling feed %s', feed.name)
