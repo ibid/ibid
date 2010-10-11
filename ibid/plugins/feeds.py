@@ -216,7 +216,7 @@ class Manage(Processor):
         broken_lock.acquire()
         broken_feeds.clear()
         broken_lock.release()
-        event.addresponse(True)
+        event.addresponse("I'll check them out next time I update my feeds")
 
 # broken_feeds[name] = (last_exception, fetch_interval, time_since_fetch)
 # fetches_skipped is the number of intervals in which we *haven't* tried to
