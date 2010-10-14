@@ -24,6 +24,19 @@ class SetLastException(Processor):
         if 'exc_info' in event:
             last_exc_event = event
 
+def get_message(event):
+    try:
+        message = event.message
+    except AttributeError:
+        return None
+
+    try:
+        message = message['raw']
+    except (KeyError, TypeError):
+        pass
+
+    return message
+
 class LastException(Processor):
     features = (u'debug',)
     usage = u"""last exception
@@ -41,12 +54,13 @@ class LastException(Processor):
                                       u"I'll make an exception for you.")))
         else:
             if kind.lower() == 'exception':
-                try:
-                    lines = [u'%(type)s event "%(message)s" triggered ' %
-                             {'type': exc_event.type,
-                              'message': exc_event.message['raw']}]
-                except (KeyError, TypeError):
+                message = get_message(exc_event)
+                if message is None:
                     lines = [u'%s event triggered' % exc_event.type]
+                else:
+                    lines = [u'%(type)s event %(message)r triggered ' %
+                             {'type': exc_event.type,
+                              'message': message}]
 
                 lines += format_exception_only(*exc_event['exc_info'][:2])
             elif 'event' in kind.lower():
