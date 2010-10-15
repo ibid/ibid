@@ -141,7 +141,7 @@ class Twitter(Processor):
                     'tweet': service['name'],
                 })
 
-    @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
+    @match(r'^https?://(?:www\.)?twitter\.com/(?:#!/)?[^/ ]+/statuse?s?/(\d+)$')
     def twitter(self, event, id):
         self.update(event, u'twitter', id)
 
