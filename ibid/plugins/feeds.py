@@ -313,8 +313,8 @@ class Retrieve(Processor):
                 .filter(Feed.target != None).all()
 
         for feed in feeds:
+            broken_lock.acquire()
             try:
-                broken_lock.acquire()
                 if feed.name in broken_feeds:
                     last_exc, interval, time_since_fetch = broken_feeds[feed.name]
                     time_since_fetch += self.interval
