@@ -3,6 +3,8 @@
 
 from datetime import datetime
 import logging
+from random import choice
+import re
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
@@ -71,14 +73,16 @@ class Tell(Processor):
     permissions = (u'recvmemo',)
 
     @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)'
-           r'\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$', version='deaddressed')
+           r'\s+(\S+)\s+(.+?)\s*$', version='deaddressed')
     @authorise(fallthrough=False)
-    def tell(self, event, how, who, source, memo):
-        source_specified = bool(source)
-        if not source:
-            source = event.source
+    def tell(self, event, how, who, memo):
+        m = re.match(r'^on\s+(\S+?)\s+(.+)$', memo, re.I | re.U)
+        source_specified = bool(m) and m.group(1).lower() in ibid.sources
+        if source_specified:
+            source = m.group(1).lower()
+            memo = m.group(2)
         else:
-            source = source.lower()
+            source = event.source
 
         if source.lower() == event.source and \
                 any(True for name in ibid.config.plugins['core']['names']
@@ -87,7 +91,7 @@ class Tell(Processor):
             return
 
         to = event.session.query(Identity) \
-                .filter_by(identity=who, source=source).first()
+                  .filter_by(identity=who, source=source).first()
 
         if not to and not source_specified:
             account = event.session.query(Account) \
@@ -139,7 +143,13 @@ class Tell(Processor):
         nomemos_cache.clear()
         notified_overlimit_cache.discard(to.id)
 
-        event.addresponse(True)
+        event.addresponse(u"%(acknowledgement)s, I'll %(action)s "
+                          u"%(recipient)s on %(source)s", {
+            'acknowledgement': choice(('Okay', 'Righto', 'Sure', 'Got it')),
+            'action': how.lower(),
+            'recipient': to.identity,
+            'source': to.source,
+        })
 
     @match(r'^(?:delete|forget)\s+(?:my\s+)?'
             r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
