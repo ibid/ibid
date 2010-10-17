@@ -250,7 +250,7 @@ class Retrieve(Processor):
 
         feed.update()
         if not feed.entries:
-            event.addresponse(u"I can't access that feed")
+            event.addresponse(u"I can't find any articles in that feed")
             return
 
         articles = feed.entries[start:number+start]
@@ -345,7 +345,6 @@ class Retrieve(Processor):
                 broken_lock.release()
 
             if not feed.entries:
-                log.warning(u'Error polling feed %s', feed.name)
                 continue
 
             if feed.name not in self.last_seen:
