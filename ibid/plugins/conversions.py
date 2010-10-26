@@ -12,7 +12,7 @@ from ibid.plugins import Processor, handler, match
 from ibid.compat import any, defaultdict
 from ibid.config import Option
 from ibid.utils import file_in_path, get_country_codes, human_join, \
-                       unicode_output
+                       unicode_output, generic_webservice
 from ibid.utils.html import get_html_parse_tree
 
 features = {}
@@ -308,12 +308,15 @@ class Currency(Processor):
 
     features = ('currency',)
 
-    headers = {'User-Agent': 'Mozilla/5.0', 'Referer': 'http://www.xe.com/'}
     currencies = {}
     country_codes = {}
 
     def _load_currencies(self):
-        etree = get_html_parse_tree('http://www.xe.com/iso4217.php', headers=self.headers, treetype='etree')
+        etree = get_html_parse_tree(
+                'http://www.xe.com/iso4217.php', headers = {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'http://www.xe.com/',
+                }, treetype='etree')
 
         tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
 
@@ -345,15 +348,14 @@ class Currency(Processor):
         self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
         self.currencies['XOF'][1] = u'Francs'
 
-    strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
-
     def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
 
         if name.upper() in self.currencies:
             return name.upper()
 
-        m = self.strip_currency_re.match(name)
+        strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
+        m = strip_currency_re.match(name)
 
         if m is None:
             return False
@@ -392,21 +394,34 @@ class Currency(Processor):
                 event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
             return
 
-        data = {'Amount': amount, 'From': canonical_frm, 'To': canonical_to}
-        etree = get_html_parse_tree('http://www.xe.com/ucc/convert.cgi', urlencode(data), self.headers, 'etree')
+        data = generic_webservice(
+                'http://download.finance.yahoo.com/d/quotes.csv', {
+                    'f': 'l1ba',
+                    'e': '.csv',
+                    's': canonical_frm + canonical_to + '=X',
+                })
+        last_trade_rate, bid, ask = data.strip().split(',')
+        if last_trade_rate == 0:
+            event.addresponse(
+                    u"Whoops, looks like I couldn't make that conversion")
+            return
 
-        result = [tag.text for tag in etree.getiterator('h2')]
-        if result:
-            event.addresponse(u'%(fresult)s (%(fcountry)s %(fcurrency)s) = %(tresult)s (%(tcountry)s %(tcurrency)s)', {
-                'fresult': result[0],
-                'tresult': result[2],
+        event.addresponse(
+            u'%(fresult)s %(fcode)s (%(fcountry)s %(fcurrency)s) = '
+            u'%(tresult)0.2f %(tcode)s (%(tcountry)s %(tcurrency)s) '
+            u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
+                'fresult': amount,
+                'tresult': float(amount) * float(last_trade_rate),
                 'fcountry': self.currencies[canonical_frm][0][0],
                 'fcurrency': self.currencies[canonical_frm][1],
                 'tcountry': self.currencies[canonical_to][0][0],
                 'tcurrency': self.currencies[canonical_to][1],
+                'fcode': canonical_frm,
+                'tcode': canonical_to,
+                'rate': last_trade_rate,
+                'bid': bid,
+                'ask': ask,
             })
-        else:
-            event.addresponse(u"The bureau de change appears to be closed for lunch")
 
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
@@ -582,7 +597,7 @@ class UnicodeData(Processor):
                 r'uni(?:code|han)\s+#?0?x)([0-9a-f]+)$|'
            r'^(?:unicode|unihan|ascii)\s+'
                 r'([0-9a-f]*(?:[0-9][a-f]|[a-f][0-9])[0-9a-f]*)$|'
-           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$')
+           r'^(?:unicode|unihan|ascii)\s+#?(\d{2,})$', simple=False)
     def unichr(self, event, hexcode, hexcode2, deccode):
         if hexcode or hexcode2:
             code = int(hexcode or hexcode2, 16)
@@ -606,7 +621,7 @@ class UnicodeData(Processor):
                           u"%(unihan)s",
                           info)
 
-    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed')
+    @match(r'^uni(?:code|han)\s+(.)$', 'deaddressed', simple=False)
     def ord(self, event, char):
         try:
             info = self.info(char)
@@ -623,7 +638,7 @@ class UnicodeData(Processor):
                               u"%(unihan)s",
                               info)
 
-    @match(r'^uni(?:code|han)\s+([a-z][a-z0-9 -]+)$')
+    @match(r'uni(?:code|han) ([a-z][a-z0-9 -]+)')
     def fromname(self, event, name):
         try:
             char = unicodedata.lookup(name.upper())
@@ -639,7 +654,7 @@ class UnicodeData(Processor):
                               info)
 
     # Match any string that can't be a character name or a number.
-    @match(r'^unicode\s+(.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)$', 'deaddressed')
+    @match(r'unicode (.*[^0-9a-z#+\s-].+|.+[^0-9a-z#+\s-].*)', 'deaddressed')
     def characters(self, event, string):
         event.addresponse(human_join('U+%(code)s %(name)s' % self.info(c)
                                         for c in string))

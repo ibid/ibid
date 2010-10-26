@@ -92,8 +92,15 @@ class FactoidName(Base):
                                      key='_name', nullable=False, unique=True,
                                      index=True), force_rebuild=True)
             self.add_index(self.table.c._name)
+        def upgrade_8_to_9(self):
+            for row in self.upgrade_session.query(FactoidName) \
+                    .filter_by(name=u'') \
+                    .all():
+                self.upgrade_session.delete(row)
+                if len(row.factoid.names) == 0:
+                    self.upgrade_session.delete(row.factoid)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 8)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 9)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -354,6 +361,10 @@ class Forget(Processor):
 
         target = strip_name(target)
 
+        if target == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
+
         if target.lower() == source.lower():
             event.addresponse(u"That makes no sense, they *are* the same")
             return
@@ -540,6 +551,10 @@ class Set(Processor):
         addition = addition1 or addition2
 
         name = strip_name(name)
+
+        if name == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
 
         if name.lower() in self.interrogatives:
             event.addresponse(choice((

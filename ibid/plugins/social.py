@@ -9,10 +9,11 @@ import logging
 
 import feedparser
 
-from ibid.compat import dt_strptime
+from ibid.compat import dt_strptime, ElementTree
 from ibid.config import DictOption
 from ibid.plugins import Processor, match, handler
-from ibid.utils import ago, decode_htmlentities, json_webservice
+from ibid.utils import ago, decode_htmlentities, generic_webservice, \
+                       json_webservice
 
 log = logging.getLogger('plugins.social')
 features = {}
@@ -57,7 +58,7 @@ class Twitter(Processor):
     }
     services = DictOption('services', 'Micro blogging services', default)
 
-    class NoSuchUserException(Exception):
+    class NoTweetsException(Exception):
         pass
 
     def setup(self):
@@ -71,23 +72,40 @@ class Twitter(Processor):
         return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
 
     def remote_latest(self, service, user):
-        statuses = json_webservice(
-                '%sstatuses/user_timeline/%s.json' % (service['endpoint'], user.encode('utf-8')),
-                {'count': 1})
-
-        if not statuses:
-            raise self.NoSuchUserException(user)
-
-        latest = statuses[0]
-
         if service['api'] == 'twitter':
-            url = '%s%s/status/%i' % (service['endpoint'], latest['user']['screen_name'], latest['id'])
+            # Twitter ommits retweets in the JSON and XML results:
+            statuses = generic_webservice('%sstatuses/user_timeline/%s.atom'
+                    % (service['endpoint'], user.encode('utf-8')),
+                    {'count': 1})
+            tree = ElementTree.fromstring(statuses)
+            latest = tree.find('{http://www.w3.org/2005/Atom}entry')
+            if latest is None:
+                raise self.NoTweetsException(user)
+            return {
+                'text': latest.findtext('{http://www.w3.org/2005/Atom}content')
+                        .split(': ', 1)[1],
+                'ago': ago(datetime.utcnow() - dt_strptime(
+                    latest.findtext('{http://www.w3.org/2005/Atom}published'),
+                    '%Y-%m-%dT%H:%M:%S+00:00')),
+                'url': [x for x
+                     in latest.getiterator('{http://www.w3.org/2005/Atom}link')
+                     if x.get('type') == 'text/html'
+                  ][0].get('href'),
+            }
         elif service['api'] == 'laconica':
-            url = '%s/notice/%i' % (service['endpoint'].split('/api/', 1)[0], latest['id'])
+            statuses = json_webservice('%sstatuses/user_timeline/%s.json'
+                    % (service['endpoint'], user.encode('utf-8')),
+                    {'count': 1})
+            if not statuses:
+                raise self.NoTweetsException(user)
+            latest = statuses[0]
+            url = '%s/notice/%i' % (service['endpoint'].split('/api/', 1)[0],
+                                    latest['id'])
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
+            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'],
+                   '%a %b %d %H:%M:%S +0000 %Y')),
             'url': url,
         }
 
@@ -116,10 +134,15 @@ class Twitter(Processor):
                 event.addresponse(u'No such %s', service['user'])
             else:
                 event.addresponse(u'I can only see the Fail Whale')
-        except self.NoSuchUserException, e:
-                event.addresponse(u'No such %s', service['user'])
+        except self.NoTweetsException, e:
+            event.addresponse(
+                u'It appears that %(user)s has never %(tweet)sed', {
+                    'user': user,
+                    'tweet': service['name'],
+                })
 
-    @match(r'^https?://(?:www\.)?twitter\.com/[^/ ]+/statuse?s?/(\d+)$')
+    @match(r'^https?://(?:www\.)?twitter\.com/(?:#!/)?[^/ ]+/statuse?s?/(\d+)$',
+           simple=False)
     def twitter(self, event, id):
         self.update(event, u'twitter', id)
 

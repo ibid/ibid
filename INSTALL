@@ -2,16 +2,16 @@ Installation Instructions for Debian/Ubuntu Systems:
 
 Supported releases:
 * Ubuntu hardy (with hardy-backports)
-* Ubuntu intrepid
 * Ubuntu jaunty
 * Ubuntu karmic
-* Ubuntu lucid
+* Ubuntu lucid (in the repositories)
+* Ubuntu maverick (in the repositories)
 * Debian lenny
-* Debian squeeze
+* Debian squeeze (in the repositories)
 * but it should work on any unixy system where you can get the required Python
   modules.
 
-Ubuntu: Add the Ibid PPA to your APT sources:
+If Ibid isn't available for your version of Ubuntu, add the PPA to your APT sources:
 # echo deb http://ppa.launchpad.net/ibid-core/ppa/ubuntu `lsb_release -cs` main > /etc/apt/sources.list.d/ibid.list
 # apt-key adv --recv-keys --keyserver keyserver.ubuntu.com c2d0f8531bba37930c0d85e3d59f9e8dfd1c44ba
 # aptitude update
@@ -50,7 +50,6 @@ Other things we recommend:
 * Install GNU units for the unit conversion plugin ("units")
 * Install bc for "bc" calculations ("bc")
 * Install ipcalc ("ipcalc")
-* Install and configure apt-file ("apt-file")
 * Install tracepath ("iputils-tracepath")
 * Install fortune ("fortunes-min")
 * Install man ("man-db")

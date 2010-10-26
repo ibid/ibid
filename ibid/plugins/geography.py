@@ -126,7 +126,6 @@ class Weather(Processor):
                }
     places = DictOption('places', 'Alternate names for places', defaults)
     labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
-    whitespace = re.compile('\s+')
 
     class WeatherException(Exception):
         pass
@@ -137,7 +136,7 @@ class Weather(Processor):
     def _text(self, string):
         if not isinstance(string, basestring):
             string = ''.join(string.findAll(text=True))
-        return self.whitespace.sub(' ', string).strip()
+        return re.sub('\s+', ' ', string).strip()
 
     def _get_page(self, place):
         if place.lower() in self.places:
@@ -190,8 +189,13 @@ class Weather(Processor):
 
         return forecasts
 
-    @match(r'^weather\s+(?:(?:for|at|in)\s+)?(.+)$')
+    @match(r'^weather (?:(?:for|at|in) )?(.+)$')
     def weather(self, event, place):
+        # The regex also matches "weather forecast..." which forecast should
+        # process. So ignore it when this happens
+        if place.lower().startswith('forecast'):
+            return
+
         try:
             values = self.remote_weather(place)
             event.addresponse(u'In %(place)s at %(time)s: %(temp)s; Humidity: %(humidity)s; Wind: %(wind)s; Conditions: %(conditions)s; Sunrise/set: %(sunrise)s/%(sunset)s; Moonrise/set: %(moonrise)s/%(moonset)s', values)
@@ -203,7 +207,7 @@ class Weather(Processor):
         except Weather.WeatherException, e:
             event.addresponse(unicode(e))
 
-    @match(r'^forecast\s+(?:for\s+)?(.+)$')
+    @match(r'^(?:weather )?forecast (?:for )?(.+)$')
     def forecast(self, event, place):
         try:
             event.addresponse(u', '.join(self.remote_forecast(place)))
@@ -333,7 +337,7 @@ class TimeZone(Processor):
             offset = timezone['rawOffset']
             return tzoffset('UTC%s%s' % (offset>=0 and '+' or '', offset), offset*3600)
 
-    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+in)?(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF))
+    @match(r'^when\s+is\s+((?:[0-9.:/hT -]|%s)+)(?:\s+in)?(?:\s+(.+))?\s+in\s+(.+)$' % '|'.join(MONTH_SHORT+MONTH_LONG+OTHER_STUFF), simple=False)
     def convert(self, event, time, from_, to):
         try:
             source = time and parse(time) or datetime.now()
@@ -611,7 +615,7 @@ class FlightSearch(Processor):
 
         return flights
 
-    @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE))
+    @match(r'^(?:(cheapest|quickest)\s+)?flights?\s+from\s+(.+)\s+to\s+(.+)\s+from\s+(%s)\s+to\s+(%s)$' % (DATE, DATE), simple=False)
     def flight_search(self, event, priority, dpt, to, dep_date, ret_date):
         try:
             flights = self._flight_search(event, dpt, to, dep_date, ret_date)

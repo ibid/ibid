@@ -1,7 +1,8 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2010, Stefano Rivera and Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime, timedelta
+from errno import EEXIST
 import logging
 from os import chmod, makedirs
 from os.path import dirname, expanduser, join
@@ -180,7 +181,7 @@ class Meeting(Processor):
             try:
                 makedirs(dirname(filename), int(self.dir_mode, 8))
             except OSError, e:
-                if e.errno != 17:
+                if e.errno != EEXIST:
                     raise e
             f = open(filename, 'w+')
             chmod(filename, int(self.file_mode, 8))
@@ -247,19 +248,31 @@ class MeetingLogger(Processor):
     features = ('meeting',)
 
     def process(self, event):
-        if 'channel' in event and 'source' in event \
-                and (event.source, event.channel) in meetings:
+        if ('channel' in event and 'source' in event
+                and (event.source, event.channel) in meetings):
             meeting = meetings[(event.source, event.channel)]
-            message = event.message
-            if isinstance(message, dict):
-                message = message['raw']
-            meeting['log'].append({
+
+            log_event = {
                 'nick': event.sender['nick'],
                 'type': event.type,
-                'message': message,
                 'time': event.time,
-            })
-            for response in event.responses:
+            }
+
+            if 'message' in event:
+                message = event.message
+                if isinstance(message, dict):
+                    message = message['raw']
+                log_event['message'] = message
+
+            if 'sender' in event:
+                log_event['nick'] = event.sender['nick']
+
+            meeting['log'].append(log_event)
+
+        for response in event.responses:
+            if (response['source'], response['target']) in meetings:
+                meeting = meetings[(response['source'], response['target'])]
+
                 type = 'message'
                 if response.get('action', False):
                     type = 'action'

@@ -36,7 +36,6 @@ class VersionedSchema(object):
     definition, it is better style to repeat the Column() specification as the
     column might be altered in a future version.
     """
-    foreign_key_re = re.compile(r'^FOREIGN KEY\(.*?\) (REFERENCES .*)$', re.I)
 
     def __init__(self, table, version):
         self.table = table
@@ -227,8 +226,10 @@ class VersionedSchema(object):
             sg.traverse_single(constraint)
 
         constraints = []
+        foreign_key_re = re.compile(r'^FOREIGN KEY\(.*?\) (REFERENCES .*)$',
+                                    re.I)
         for constraint in [x.strip() for x in sg.buffer.getvalue().split(',')]:
-            m = self.foreign_key_re.match(constraint)
+            m = foreign_key_re.match(constraint)
             if m:
                 constraints.append(m.group(1))
             else:

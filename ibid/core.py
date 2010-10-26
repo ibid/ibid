@@ -7,6 +7,7 @@ import re
 import logging
 import socket
 from os.path import join, expanduser
+import sys
 
 from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
@@ -33,6 +34,7 @@ def process(event, log):
                     processor.name,
                     event)
             event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
+            event.exc_info = sys.exc_info()
             event.processed = True
             if 'session' in event:
                 event.session.rollback()
@@ -46,6 +48,7 @@ def process(event, log):
                 log.exception(u"Exception occured committing session from the %s processor of %s plugin",
                         processor.__class__.__name__, processor.name)
                 event.complain = u'exception'
+                event.exc_info = sys.exc_info()
                 event.session.rollback()
                 event.session.close()
                 del event['session']
@@ -295,18 +298,22 @@ class Reloader(object):
 def regexp(pattern, item):
     return re.search(pattern, item, re.I) and True or False
 
-def sqlite_creator(database):
+def sqlite_creator(database, synchronous=True):
     from pysqlite2 import dbapi2 as sqlite
     def connect():
         connection = sqlite.connect(database)
         connection.create_function('regexp', 2, regexp)
+        if not synchronous:
+            connection.execute('PRAGMA synchronous = OFF')
+        connection.execute('PRAGMA foreign_keys=ON')
         return connection
     return connect
 
 class DatabaseManager(dict):
 
-    def __init__(self, check_schema_versions=True):
+    def __init__(self, check_schema_versions=True, sqlite_synchronous=True):
         self.log = logging.getLogger('core.databases')
+        self.sqlite_synchronous = sqlite_synchronous
         for database in ibid.config.databases.keys():
             self.load(database)
 
@@ -324,7 +331,8 @@ class DatabaseManager(dict):
         if uri.startswith('sqlite:///'):
             engine = create_engine('sqlite:///',
                 creator=sqlite_creator(join(ibid.options['base'],
-                    expanduser(uri.replace('sqlite:///', '', 1)))),
+                        expanduser(uri.replace('sqlite:///', '', 1))),
+                    self.sqlite_synchronous),
                 encoding='utf-8', convert_unicode=True,
                 assert_unicode=True, echo=echo
             )

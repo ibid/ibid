@@ -23,7 +23,7 @@ class ListPLugins(Processor):
     usage = u'list plugins'
     features = ('plugins',)
 
-    @match(r'^lsmod|list\s+plugins$')
+    @match(r'lsmod|list plugins')
     def handler(self, event):
         plugins = []
         for processor in ibid.processors:
@@ -43,7 +43,7 @@ class ReloadCoreModules(Processor):
     priority = -5
     permission = u'core'
 
-    @match(r'^reload\s+(reloader|dispatcher|databases|auth)$')
+    @match(r'reload (reloader|dispatcher|databases|auth)')
     @authorise()
     def reload(self, event, module):
         module = module.lower()
@@ -60,14 +60,14 @@ class LoadModules(Processor):
 
     permission = u'plugins'
 
-    @match(r'^(?:re)?load\s+(\S+)(?:\s+plugin)?$')
+    @match(r'(?:re)?load {chunk}(?: plugin)?')
     @authorise()
     def load(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
         result = ibid.reloader.load_processor(plugin)
         event.addresponse(result and u'%s reloaded' or u"Couldn't reload %s", plugin)
 
-    @match(r'^unload\s+(\S+)$')
+    @match(r'unload {chunk}')
     @authorise()
     def unload(self, event, plugin):
         result = ibid.reloader.unload_processor(plugin)
@@ -83,7 +83,7 @@ class Die(Processor):
 
     permission = u'admin'
 
-    @match(r'^die$')
+    @match(r'die')
     @authorise()
     def die(self, event):
         reactor.stop()
@@ -99,7 +99,7 @@ class Admin(Processor):
 
     permission = u'sources'
 
-    @match(r'^connect\s+(?:to\s+)?(\S+)$')
+    @match(r'connect (?:to )?{chunk}')
     @authorise()
     def connect(self, event, source):
         if source not in ibid.sources:
@@ -109,7 +109,7 @@ class Admin(Processor):
         else:
             event.addresponse(u"I couldn't connect to %s", source)
 
-    @match(r'^disconnect\s+(?:from\s+)?(\S+)$')
+    @match(r'disconnect (?:from )?{chunk}')
     @authorise()
     def disconnect(self, event, source):
         if source not in ibid.sources:
@@ -119,7 +119,7 @@ class Admin(Processor):
         else:
             event.addresponse(u"I couldn't disconnect from %s", source)
 
-    @match(r'^(?:re)?load\s+(\S+)\s+source$')
+    @match(r'(?:re)?load {chunk} source')
     @authorise()
     def load(self, event, source):
         if ibid.reloader.load_source(source, ibid.service):
@@ -131,7 +131,7 @@ class Info(Processor):
     usage = u'(sources|list configured sources)'
     features = ('sources',)
 
-    @match(r'^sources$')
+    @match(r'sources')
     def list(self, event):
         sources = []
         for name, source in ibid.sources.items():
@@ -139,7 +139,7 @@ class Info(Processor):
             sources.append(url and u'%s (%s)' % (name, url) or name)
         event.addresponse(u'Sources: %s', human_join(sorted(sources)) or u'none')
 
-    @match(r'^list\s+configured\s+sources$')
+    @match(r'list configured sources')
     def listall(self, event):
         event.addresponse(u'Configured sources: %s', human_join(sorted(ibid.config.sources.keys())) or u'none')
 
@@ -151,7 +151,7 @@ class Version(Processor):
     usage = u'version'
     features = ('version',)
 
-    @match(r'^version$')
+    @match(r'version')
     def show_version(self, event):
         if ibid_version():
             event.addresponse(u'I am version %s', ibid_version())
@@ -172,7 +172,7 @@ class Config(Processor):
     priority = -10
     permission = u'config'
 
-    @match(r'^reread\s+config$')
+    @match(r'reread config')
     @authorise()
     def reload(self, event):
         ibid.config.reload()
@@ -182,7 +182,7 @@ class Config(Processor):
         event.addresponse(True)
         log.info(u'Reread configuration file')
 
-    @match(r'^(?:set\s+config|config\s+set)\s+(\S+?)(?:\s+to\s+|\s*=\s*)(\S.*?)$')
+    @match(r'(?:set config|config set) (\S+?)(?: to |\s*=\s*)(\S.*?)')
     @authorise()
     def set(self, event, key, value):
         config = ibid.config
@@ -211,7 +211,7 @@ class Config(Processor):
 
         event.addresponse(True)
 
-    @match(r'^(?:get\s+config|config\s+get)\s+(\S+?)$')
+    @match(r'(?:get config|config get) (\S+?)')
     def get(self, event, key):
         if 'password' in key.lower() and not auth_responses(event, u'config'):
             return

@@ -8,6 +8,7 @@
 import codecs
 from gzip import GzipFile
 from htmlentitydefs import name2codepoint
+from locale import getpreferredencoding
 import logging
 import os
 import os.path
@@ -154,11 +155,7 @@ def file_in_path(program):
     return bool(path)
 
 def unicode_output(output, errors="strict"):
-    try:
-        encoding = os.getenv("LANG").split(".")[1]
-    except:
-        encoding = "ascii"
-    return unicode(output, encoding, errors)
+    return unicode(output, getpreferredencoding(), errors)
 
 def ibid_version():
     try:
@@ -243,8 +240,8 @@ def url_regex():
 def is_url(url):
     return re.match('^' + url_regex() + '$', url, re.I) is not None
 
-def json_webservice(url, params={}, headers={}):
-    "Request data from a JSON webservice, and deserialise"
+def generic_webservice(url, params={}, headers={}):
+    "Retreive data from a webservice"
 
     for key in params:
         if isinstance(params[key], unicode):
@@ -260,6 +257,12 @@ def json_webservice(url, params={}, headers={}):
     f = urllib2.urlopen(req)
     data = f.read()
     f.close()
+    return data
+
+def json_webservice(url, params={}, headers={}):
+    "Request data from a JSON webservice, and deserialise"
+
+    data = generic_webservice(url, params, headers)
     try:
         return json.loads(data)
     except ValueError, e:
@@ -374,5 +377,13 @@ def get_country_codes():
     f.close()
 
     return countries
+
+def identity_name (event, identity):
+    if event.identity == identity.id:
+        return u'you'
+    elif event.source == identity.source:
+        return identity.identity
+    else:
+        return u'%s on %s' % (identity.identity, identity.source)
 
 # vi: set et sta sw=4 ts=4:

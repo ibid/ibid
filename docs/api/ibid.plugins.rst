@@ -131,20 +131,43 @@ Decorators
       def handle(self, event):
          event.addresponse(u'Did you see that? I handled an event')
 
-.. function:: match(regex, version='clean')
+.. function:: match(regex, version='clean', simple=True)
 
    Decorator that makes a method receive message events matching
    regular expression string *regex*.
 
-   The *regex* will be matched, with ``re.I`` and ``re.DOTALL`` modes.
-   You should anchor both sides of it.
+   The *regex* will be matched, with ``re.I``, ``re.UNICODE`` and ``re.DOTALL`` modes.
+   You should anchor both sides of it. If *simple* is true (default), the regex
+   will be modified to match the whole string (``^`` and ``$`` are added), a space in
+   the regex will match any sequence of whitespace, and the following
+   shortcuts are available for common regex fragments (which are captured as
+   arguments):
 
-   Any match groups in the regex will be passed as parameters to the
+   ============ ==========================================
+   Selector     expands to
+   ============ ==========================================
+   ``{alpha}``  ``[a-zA-Z]+``
+   ``{any}``    ``.*``
+   ``{chunk}``  ``\S+``
+   ``{digits}`` ``\d+``
+   ``{number}`` ``\d*\.?\d+``
+   ``{url}``    :func:`url_regex() <ibid.utils.url_regex>`
+   ``{word}``   ``\w+``
+   ============ ==========================================
+
+   Using simple regexes where they are applicable can make them much more
+   readable.
+
+   Any match groups or selectors in the regex will be passed as parameters to the
    decorated method, after the event object::
 
-      @match(r'^(?:foo|bar)\s+(\S+)$')
+      @match(r'(?:foo|bar) {chunk}')
       def foo(self, event, parameter):
          event.addresponse(u'Foo: %s', parameter)
+
+   The above match is equivalent to this non-simple version::
+
+      @match(r'^(?:foo|bar)\s+(\S+)$', simple=False)
 
    *version* can be set to one of:
 

@@ -2,16 +2,20 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from unicodedata import normalize
-from random import choice, random
+from random import choice, random, randrange
 import re
-from threading import Lock
 
 from nickometer import nickometer
+from sqlalchemy.sql import not_, or_
 
 import ibid
+from ibid.db import IbidUnicodeText, Boolean, Integer, Table, Column, \
+                    ForeignKey, Base, VersionedSchema, relation
+from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
-from ibid.utils import human_join, indefinite_article
+from ibid.utils import human_join, indefinite_article, identity_name, \
+                        plural
 
 features = {}
 
@@ -48,11 +52,10 @@ class Choose(Processor):
     usage = u'choose <choice> or <choice>...'
     features = ('choose',)
 
-    choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
-
     @match(r'^(?:choose|choice|pick)\s+(.+)$')
     def choose(self, event, choices):
-        event.addresponse(u'I choose %s', choice(self.choose_re.split(choices)))
+        choose_re = re.compile(r'(?:\s*,\s*(?:or\s+)?)|(?:\s+or\s+)', re.I)
+        event.addresponse(u'I choose %s', choice(choose_re.split(choices)))
 
 features['coffee'] = {
     'description': u'Times coffee brewing and reserves cups for people',
@@ -248,54 +251,227 @@ class Insult(Processor):
 
         event.addresponse(u' '.join(swearage) + u'!', address=False)
 
-carrying = None
-carrying_lock = Lock()
-
-object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
-            r"the|a|an|this|these|that|those|some)\s+)?(.*)"
-
 features['bucket'] = {
     'description': u'Exchanges objects with people',
     'categories': ('fun',),
 }
+
+class EmptyBucketException(Exception): pass
+
+class Item(Base):
+    __table__ = Table('bucket_items',
+        Base.metadata,
+        Column('id', Integer, primary_key=True),
+        Column('description', IbidUnicodeText(case_insensitive=True),
+                nullable=False, index=True),
+        Column('determiner', IbidUnicodeText(case_insensitive=True),
+                index=True),
+        Column('carried', Boolean, nullable=False, index=True),
+        Column('giver_id', Integer, ForeignKey('identities.id'), nullable=False),
+        useexisting=True)
+
+    __table__.versioned_schema = VersionedSchema(__table__, 1)
+
+    giver = relation(Identity)
+
+    def __init__(self, description, determiner, giver):
+        self.description = description
+        self.determiner = determiner
+        self.carried = True
+        self.giver_id = giver
+
+    @classmethod
+    def carried_items(cls, session):
+        return session.query(cls).filter_by(carried=True)
+
+    @classmethod
+    def take_item(cls, session):
+        items = cls.carried_items(session)
+        num = items.count()
+        if num:
+            item = items[randrange(0, num)]
+        else:
+            raise EmptyBucketException
+
+        item.carried = False
+        session.save_or_update(item)
+
+        return item
+
+    def __unicode__(self):
+        if self.determiner:
+            return self.determiner + u' ' + self.description
+        else:
+            return self.description
+
+object_pat = r"(?:(his|her|their|its|my|our|\S+(?:'s|s')|" \
+            r"the|a|an|this|these|that|those|some) )?{any}"
+
 class ExchangeAction(Processor):
     features = ('bucket',)
     event_types = (u'action',)
 
     addressed = False
 
-    @match(r"^(?:gives|hands)\s+(\S+)\s+" + object_pat + "$")
+    bucket_size = IntOption('bucket_size',
+                            "The maximum number of objects in the bucket",
+                            5)
+
+    @match(r'(?:gives|hands) {chunk} ' + object_pat)
     def give(self, event, addressee, determiner, object):
         if addressee in ibid.config.plugins['core']['names']:
-            return exchange(event, determiner, object)
+            return exchange(event, determiner, object, self.bucket_size)
 
 class ExchangeMessage(Processor):
     usage = u"""(have|take) <object>
-    what are you carrying?"""
+    what are you carrying?
+    who gave you <object>?
+    give <person> <object>"""
     features = ('bucket',)
 
-    @match(r"^(?:have|take)\s+" + object_pat + "$")
+    bucket_size = IntOption('bucket_size',
+                            "The maximum number of objects in the bucket",
+                            5)
+
+    @match(r'(?:have|take) ' + object_pat)
     def have(self, event, determiner, object):
         if determiner in ('his', 'her', 'their', 'its'):
             event.addresponse("I don't know whose %s you're talking about",
                                 object)
         else:
-            return exchange(event, determiner, object)
+            return exchange(event, determiner, object, self.bucket_size)
 
-    @match(r'^(?:what\s+(?:are|do)\s+you\s+)?(?:carrying|have)$')
+    @match(r'(?:what (?:are|do) (?:yo)?u )?(?:carrying|have)')
     def query_carrying(self, event):
-        carrying_lock.acquire()
-
-        if carrying is None:
-            event.addresponse(u"I'm not carrying anything")
+        items = Item.carried_items(event.session).all()
+        if items:
+            event.addresponse(u"I'm carrying %s",
+                                human_join(map(unicode, items)))
         else:
-            event.addresponse(u"I'm carrying %s", carrying)
+            event.addresponse(u"I'm not carrying anything")
 
-        carrying_lock.release()
+    def find_items(self, session, determiner, object):
+        """Find items matching (determiner, object).
 
-def exchange(event, determiner, object):
-    global carrying
+        Return a tuple (kind, items).
 
+        If determiner is a genitive and there are matching objects with the
+        correct owner, return them with kind='owned'; if there are no matching
+        objects, find unowned objects and return with kind='unowned'. If the
+        determiner is *not* genitive, ignore determiners and set kind='all'."""
+
+        all_items = Item.carried_items(session) \
+                    .filter_by(description=object)
+
+        if "'" in determiner:
+            items = all_items.filter_by(determiner=determiner).all()
+            if items:
+                return ('owned', items)
+            else:
+                # find unowned items
+                clause = or_(not_(Item.determiner.contains(u"'")),
+                            Item.determiner == None)
+                return ('unowned', all_items.filter(clause).all())
+        else:
+            return ('all', all_items.all())
+
+    @match(r'give {chunk} ' + object_pat)
+    def give(self, event, receiver, determiner, object):
+        if determiner is None:
+            determiner = ''
+
+        who = event.sender['nick']
+        if determiner.lower() == 'our':
+            if who[-1] in 'sS':
+                determiner = who + "'"
+            else:
+                determiner = who + "'s"
+            yours = 'your'
+        elif determiner.lower() == 'my':
+            determiner = who + "'s"
+            yours = 'your'
+        elif determiner.lower() in ('his', 'her', 'their'):
+            yours = determiner.lower()
+            determiner = receiver + "'s"
+        else:
+            yours = False
+
+        if receiver.lower() == 'me':
+            receiver = who
+
+        kind, items = self.find_items(event.session, determiner, object)
+
+        if items:
+            item = choice(items)
+            item.carried = False
+            event.session.save_or_update(item)
+
+            if kind == 'owned' and yours and yours != 'your':
+                item.determiner = yours
+            event.addresponse(u'hands %(receiver)s %(item)s ',
+                                {'receiver': receiver,
+                                 'item': item},
+                                action=True)
+        else:
+            if yours:
+                object = yours + u' ' + object
+            elif determiner:
+                object = determiner + u' ' + object
+            event.addresponse(choice((
+                u"There's nothing like that in my bucket.",
+                u"I don't have %s" % object)))
+
+    @match(r'(?:who gave (?:yo)?u|where did (?:yo)?u get) ' + object_pat)
+    def query_giver(self, event, determiner, object):
+        if determiner is None:
+            determiner = ''
+
+        who = event.sender['nick']
+        if determiner.lower() == 'our':
+            if who[-1] in 'sS':
+                determiner = who + "'"
+            else:
+                determiner = who + "'s"
+            yours = True
+        elif determiner.lower() == 'my':
+            determiner = who + "'s"
+            yours = True
+        else:
+            yours = False
+
+        kind, items = self.find_items(event.session, determiner, object)
+
+        if items:
+            explanation = u''
+            if kind == 'unowned':
+                explanation = plural(len(items),
+                                     u". I didn't realise it was ",
+                                     u". I didn't realise they were ")
+                if yours:
+                    explanation += u"yours"
+                else:
+                    explanation += determiner
+                explanation += u"."
+                yours = False
+
+            event.addresponse(u'I got ' +
+                human_join(u'%(item)s from %(giver)s' %
+                                {'item':
+                                    [item, u'your ' + item.description][yours],
+                                'giver': identity_name(event, item.giver)}
+                            for item in items)
+                        + explanation)
+            return
+        else:
+            if yours:
+                object = u'your ' + object
+            elif determiner:
+                object = determiner + u' ' + object
+            event.addresponse(choice((
+                u"There's nothing like that in my bucket.",
+                u"I don't have %s" % object)))
+
+def exchange(event, determiner, object, bucket_size):
     who = event.sender['nick']
 
     if determiner is None:
@@ -317,18 +493,20 @@ def exchange(event, determiner, object):
     else:
         taken = genitive + u' ' + object
 
-    carrying_lock.acquire()
-
-    if carrying is None:
-        event.addresponse(u'takes %s but has nothing to give in exchange',
-                            taken, action=True)
+    count = Item.carried_items(event.session).count()
+    if count >= bucket_size:
+        try:
+            event.addresponse(u'hands %(who)s %(carrying)s '
+                                u'in exchange for %(taken)s',
+                                {'who': who,
+                                 'carrying': Item.take_item(event.session),
+                                 'taken': taken},
+                                action=True)
+        except EmptyBucketException:
+            event.addresponse(u'takes %s but has nothing to give in exchange',
+                                taken, action=True)
     else:
-        event.addresponse(u'hands %(who)s %(carrying)s '
-                            u'in exchange for %(taken)s',
-                            {'who': who,
-                             'carrying': carrying,
-                             'taken': taken},
-                            action=True)
+        event.addresponse(u'takes %s', taken, action=True)
 
     # determine which determiner we will use when talking about this object in
     # the future -- we only want to refer to it by the giver's name if the giver
@@ -342,10 +520,10 @@ def exchange(event, determiner, object):
         determiner = u'some'
 
     if determiner:
-        carrying = determiner + u' ' + object
+        item = Item(object, determiner, event.identity)
     else:
-        carrying = object
+        item = Item(object, None, event.identity)
 
-    carrying_lock.release()
+    event.session.save_or_update(item)
 
 # vi: set et sta sw=4 ts=4:

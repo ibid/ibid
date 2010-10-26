@@ -213,12 +213,12 @@ class DCClient(LineReceiver):
 
         self._sendMyINFO()
 
-    _myinfo_re = re.compile(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$')
     def dc_MyINFO(self, params):
         "Information about a user"
         self._state_Connected()
 
-        m = self._myinfo_re.match(params)
+        m = re.match(r'^\$ALL (\S*) (.*?)(?:<(\S*) ([A-Z0-9.:,/]*)>)?'
+                     r'\$(.)\$([^$]*)([^$])\$([^$]*)\$(\d*)\$$', params)
         if not m:
             log.error("Couldn't decode MyINFO: %s", params)
             return
@@ -351,10 +351,10 @@ class DCClient(LineReceiver):
         "I asked for an IP, here it is"
         #TODO
 
-    _to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$', re.DOTALL)
     def dc_To(self, params):
         "Received a private message"
-        m = self._to_re.match(params)
+        to_re = re.compile(r'^.*? From: ([^$]*?) \$<[^>]*?> (.*)$', re.DOTALL)
+        m = to_re.match(params)
 
         if m is None:
             log.error('Cannot parse message: %s', params)

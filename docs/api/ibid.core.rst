@@ -126,9 +126,10 @@ Reloader
 
       Load the plugin of name *name*.
       Individual Processors can be disabled by listing them in *noload*.
-      If they are marked with :attr:`autoload
-      <ibid.plugins.Processor.autoload> ` ``False``, then they are
-      skipped unless listed in *load* or *load_all* is ``True``.
+      If they are marked with
+      :attr:`~ibid.plugins.Processor.autoload` = ``False``, then
+      they are skipped unless listed in *load* or *load_all* is
+      ``True``.
 
    .. method:: unload_processor(name).
 

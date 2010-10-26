@@ -99,9 +99,10 @@ class NickServ(Processor):
                     source_cfg.get(u'nickserv_mask', '*')
         ))
 
-    @match(r'^(?:This nickname is registered\. Please choose a different nickname'
-            r'|This nickname is registered and protected\.  If it is your'
-            r'|If this is your nickname, type \/msg NS)')
+    @match(r'^(?:This nickname is registered\.\s+Please choose a different nickname'
+            r'|This nickname is registered and protected\.\s+If it is your'
+            r'|This nickname is owned by someone else\.\s+Please choose another'
+            r'|If this is your nickname, type \/msg NS)', simple=False)
     def auth(self, event):
         if self.is_nickserv(event):
             source_cfg = ibid.config['sources'][event.source]
@@ -109,7 +110,7 @@ class NickServ(Processor):
                 event.addresponse(u'IDENTIFY %s', source_cfg[u'nickserv_password'])
 
     @match(r'^(?:You are now identified for'
-            r'|Password accepted -+ you are now recognized)')
+            r'|Password accepted -+ you are now recognized)', simple=False)
     def success(self, event):
         if self.is_nickserv(event):
             log.info(u'Authenticated with NickServ')
