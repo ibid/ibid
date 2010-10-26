@@ -142,17 +142,19 @@ class PluginTestCase(unittest.TestCase):
 
         for response in event.responses:
             if regex.match(response['reply']):
-                return True
+                return (True, response['reply'])
         else:
-            return False
+            return (False, event.responses)
 
     def assertResponseMatches(self, event, regex):
-        if not self.responseMatches(event, regex):
-            self.fail("No response matches regex")
+        match, resp = self.responseMatches(event, regex)
+        if not match:
+            self.fail("No response in %r matches regex" % resp)
 
     def failIfResponseMatches(self, event, regex):
-        if self.responseMatches(event, regex):
-            self.fail("Response unexpectedly matches regex")
+        match, resp = self.responseMatches(event, regex)
+        if match:
+            self.fail("Response %r unexpectedly matches regex" % match)
 
     def assertSucceeds(self, event):
         if isinstance(event, basestring):
