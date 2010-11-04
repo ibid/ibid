@@ -5,7 +5,7 @@ from unicodedata import normalize
 from random import choice, random, randrange
 import re
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 
 from nickometer import nickometer
@@ -136,7 +136,7 @@ class Remind(Processor):
 
         # we keep this logic here to simplify the code on the other side
         if who == from_who:
-            from_who = "you"
+            from_who = "You"
         if event.public:
             who = who + ": "
         else:
@@ -188,16 +188,15 @@ class Remind(Processor):
         # XXX: this is total_seconds() in 2.7
         total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
 
-        if total_seconds < 0:
-            if what:
-                event.addresponse(u"I can't travel in time back to %(ago)s ago (yet) so I'll tell you now %(what)s", {
+        if total_seconds < -24*60*60:
+            event.addresponse(u"I can't travel in time back to %(ago)s ago (yet) so I'll tell you tomorrow instead", {
                     'ago': ago(-delta),
-                    'what': what
                 })
-            else:
-                event.addresponse(u"I can't travel in time back to %(ago)s ago (yet)", {
-                    'ago': ago(-delta)
-                })
+            return
+        elif total_seconds < 0:
+            delta += timedelta(days=1)
+            total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
+
         ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
 
         # this logic needs to be after the callback setting because we
@@ -206,17 +205,11 @@ class Remind(Processor):
             who = "you"
         # we say "ping" here to let the user learn about "ping" instead
         # of "remind"
-        if what:
-            event.addresponse(u"okay, I will remind %(who)s in %(time)s", {
+        event.addresponse(u"Okay, I will %(action)s %(who)s%(time)s", {
+                'action': 'remind' if what else 'ping',
                 'who': who,
-                'time': ago(delta)
+                'time': " in " + ago(delta) if delta else "",
             })
-        else:
-            event.addresponse(u"okay, I will ping %(who)s in %(time)s", {
-                'who': who,
-                'time': ago(delta)
-            })
-
 
 features['insult'] = {
     'description': u'Slings verbal abuse at someone',
