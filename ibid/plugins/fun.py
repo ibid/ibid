@@ -155,7 +155,7 @@ class Remind(Processor):
                 'ago': ago(datetime.now()-from_when)
                 })
 
-    @match(r'(?:please )?(?:remind|ping) (?:(me|\w+) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
+    @match(r'(?:please )?(?:remind|ping|alarm) (?:(me|\w+) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
     def remind(self, event, who, at, when, how, what):
         """This is the main handler that gets called on the above
         @match.
