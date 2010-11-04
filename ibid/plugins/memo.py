@@ -63,14 +63,14 @@ Identity.memos_recvd = relation(Memo, primaryjoin=Identity.id==Memo.to_id,
                                 backref='recipient')
 
 class Tell(Processor):
-    usage = u"""(tell|pm|privmsg|msg|ask) <person> [on <source>] <message>
+    usage = u"""(tell|pm|privmsg|msg|ask|remind) <person> [on <source>] <message>
     forget my (first|last|<n>th) message for <person> [on <source>]"""
     features = ('memo',)
 
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)'
+    @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask|remind)'
            r'\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$', version='deaddressed')
     @authorise(fallthrough=False)
     def tell(self, event, how, who, source, memo):
