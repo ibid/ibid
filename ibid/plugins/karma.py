@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Dominic Cleal
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
@@ -9,6 +9,7 @@ from ibid.config import BoolOption, IntOption, ListOption
 from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
                     VersionedSchema
 from ibid.plugins import Processor, match, handler, authorise
+from ibid.utils import plural
 
 features = {'karma': {
     'description': u'Keeps track of karma for people and things.',
@@ -125,7 +126,11 @@ class Set(Processor):
                 change, subject, event.account, event.identity, event.sender['connection'], reason)
 
         if self.reply:
-            event.addresponse(True)
+            event.addresponse(u'%(subject)s now has %(value)s %(points) of karma', {
+                'subject': subject,
+                'value': karma.value,
+                'points': plural(karma.value, "point", "points"),
+            })
         else:
             event.processed = True
 
