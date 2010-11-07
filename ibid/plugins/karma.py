@@ -72,8 +72,14 @@ class Set(Processor):
                            " which a karma won't be forgotten", 0)
 
     def setup(self):
+        # When not addressed, match karma changes in any text
+        if self.addressed:
+            matchpat = r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$'
+        else:
+            matchpat = r'(\S+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?'
+
         self.set.im_func.pattern = re.compile(
-                r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join(
+                matchpat % '|'.join(
                     re.escape(token) for token
                     in self.increase + self.decrease + self.neutral
                 ), re.I)
