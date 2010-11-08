@@ -226,7 +226,7 @@ class Retrieve(Processor):
 
         feed.update()
         if not feed.entries:
-            event.addresponse(u"I can't access that feed")
+            event.addresponse(u"I can't find any articles in that feed")
             return
 
         articles = feed.entries[start:number+start]
@@ -291,7 +291,6 @@ class Retrieve(Processor):
         for feed in feeds:
             feed.update(max_age=self.interval)
             if not feed.entries:
-                log.warning(u'Error polling feed %s', feed.name)
                 continue
 
             if feed.name not in self.last_seen:
