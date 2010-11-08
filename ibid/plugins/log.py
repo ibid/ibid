@@ -84,7 +84,10 @@ class Log(Processor):
             if not self.date_utc:
                 when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())
 
-            channel = ibid.sources[event.source].logging_name(event.channel)
+            if event.channel is not None:
+                channel = ibid.sources[event.source].logging_name(event.channel)
+            else:
+                channel = ibid.sources[event.source].logging_name(event.sender['id'])
             filename = self.log % {
                     'source': event.source.replace('/', '-'),
                     'channel': channel.replace('/', '-'),
@@ -112,7 +115,7 @@ class Log(Processor):
                         continue
                     source_glob, channel_glob = glob.split(u':', 1)
                     if (fnmatch.fnmatch(event.source, source_glob)
-                            and fnmatch.fnmatch(event.channel, channel_glob)):
+                            and fnmatch.fnmatch(channel, channel_glob)):
                         chmod(filename, int(self.public_mode, 8))
                         break
                 else:
