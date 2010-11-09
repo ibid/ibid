@@ -77,7 +77,7 @@ class Set(Processor):
         if self.addressed:
             matchpat = r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$'
         else:
-            matchpat = r'(\S+?)\s*(%s)'
+            matchpat = r'(\S+)\s*(%s)'
 
         self.set.im_func.pattern = re.compile(
                 matchpat % '|'.join(
@@ -87,7 +87,7 @@ class Set(Processor):
 
     @handler
     @authorise(fallthrough=False)
-    def set(self, event, subject, adjust, reason = None):
+    def set(self, event, subject, adjust, reason=None):
         if self.public and not event.public:
             event.addresponse(u'Karma must be done in public')
             return
