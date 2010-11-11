@@ -276,8 +276,8 @@ def human_join(items, separator=u',', conjunction=u'and'):
             .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
 
 def plural(count, singular, plural):
-    "Return sigular or plural depending on count"
-    if count == 1:
+    "Return singular or plural depending on count"
+    if abs(count) == 1:
         return singular
     return plural
 
