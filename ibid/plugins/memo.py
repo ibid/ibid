@@ -70,7 +70,7 @@ class Tell(Processor):
     permission = u'sendmemo'
     permissions = (u'recvmemo',)
 
-    @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask|remind)'
+    @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)'
            r'\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$', version='deaddressed')
     @authorise(fallthrough=False)
     def tell(self, event, how, who, source, memo):
