@@ -1,11 +1,11 @@
 # Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Antoine Beaupre
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+from datetime import datetime, timedelta
 from unicodedata import normalize
 from random import choice, random, randrange
 import re
 
-from datetime import datetime, timedelta
 from dateutil import parser
 
 from nickometer import nickometer
