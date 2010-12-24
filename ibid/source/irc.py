@@ -389,7 +389,10 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
 
         reactor.callFromThread(self.proto.authenticate, event.sender['nick'],
                                callback)
-        for i in xrange(150):
+        # We block in the plugin thread for up to this long, waiting for
+        # NickServ to reply
+        wait = 15
+        for i in xrange(wait * 10):
             if ticket in self._auth:
                 break
             sleep(0.1)
