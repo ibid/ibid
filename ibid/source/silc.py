@@ -1,10 +1,13 @@
 # Copyright (c) 2009-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+# This source requires Python >= 2.5:
+from __future__ import absolute_import
+
 from os.path import join, exists
 
 from twisted.application import internet
-from .. silc import SilcClient, create_key_pair, load_key_pair
+from silc import SilcClient, create_key_pair, load_key_pair
 
 import ibid
 from ibid.event import Event
