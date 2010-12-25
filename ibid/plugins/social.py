@@ -102,6 +102,8 @@ class Twitter(Processor):
             elif e.code == 404:
                 event.addresponse(u'No such %s', service['name'])
             else:
+                log.debug(u'%s returned HTTP code %i: %s', service['name'],
+                          e.code, e.reason)
                 event.addresponse(u'I can only see the Fail Whale')
 
     @handler
@@ -115,6 +117,8 @@ class Twitter(Processor):
             elif e.code == 404:
                 event.addresponse(u'No such %s', service['user'])
             else:
+                log.debug(u'%s returned HTTP code %i: %s', service['name'],
+                          e.code, e.reason)
                 event.addresponse(u'I can only see the Fail Whale')
         except self.NoSuchUserException, e:
                 event.addresponse(u'No such %s', service['user'])
