@@ -289,7 +289,17 @@ class Retrieve(Processor):
                 .filter(Feed.target != None).all()
 
         for feed in feeds:
-            feed.update(max_age=self.interval)
+            try:
+                feed.update(max_age=self.interval)
+            except Exception, e:
+                if isinstance(e, URLError):
+                    log.warning(u'Exception "%s" occured while polling '
+                                u'feed %s from %s', e, feed, feed.url)
+                else:
+                    log.exception(u'Exception "%s" occured while polling '
+                                  u'feed %s from %s', e, feed, feed.url)
+                continue
+
             if not feed.entries:
                 continue
 
