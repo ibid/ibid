@@ -56,10 +56,10 @@ class Log(Processor):
             u'Directory Permissions mode, in octal', '755')
 
     blacklist = ListOption('blacklist',
-            u'List of source:channel globs for channels which should not be logged',
+            u'List of source:channel globs for channels which should not be logged (the whitelist overrides the blacklist)',
             [])
     whitelist = ListOption('whitelist',
-            u'List of source:channel globs for channels which should be logged',
+            u'List of source:channel globs for channels which should be logged (the whitelist overrides the blacklist)',
             [])
 
     fd_cache = IntOption('fd_cache', 'Number of log files to keep open.', 5)
