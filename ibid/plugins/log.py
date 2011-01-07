@@ -86,9 +86,9 @@ class Log(Processor):
                                 globlistname, glob, source_glob)
 
     def get_channel(self, event):
-            if event.channel is not None:
-                return ibid.sources[event.source].logging_name(event.channel)
-            return ibid.sources[event.source].logging_name(event.sender['id'])
+        if event.channel is not None:
+            return ibid.sources[event.source].logging_name(event.channel)
+        return ibid.sources[event.source].logging_name(event.sender['id'])
 
     def matches(self, event, globlist):
         channel = self.get_channel(event)
