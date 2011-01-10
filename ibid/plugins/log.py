@@ -1,4 +1,5 @@
-# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# -*- coding: utf-8 -*-
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Adrianna Pińska
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 """Logs messages sent and received."""
