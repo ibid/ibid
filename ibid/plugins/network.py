@@ -272,7 +272,7 @@ class HTTP(Processor):
             if action.upper() == 'GET':
                 got_title = False
                 content_type = self._get_header(headers, 'content-type')
-                if (content_type.startswith('text/html') or
+                if content_type and (content_type.startswith('text/html') or
                         content_type.startswith('application/xhtml+xml')):
                     match = re.search(r'<title>(.*)<\/title>', data,
                                       re.I | re.DOTALL)
