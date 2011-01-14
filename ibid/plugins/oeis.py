@@ -27,8 +27,9 @@ class OEIS(Processor):
         f = urlopen('http://oeis.org/search?n=1&fmt=text&q='
                     + query)
 
-        f.next() # the first line is uninteresting
-        results_m = re.search(r'(\d+) results found', f.next())
+        for i in range(3):
+            f.next() # the first lines are uninteresting
+        results_m = re.search(r'Showing .* of (\d+)', f.next())
         if results_m:
             f.next()
             sequence = Sequence(f)
