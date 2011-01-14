@@ -24,7 +24,7 @@ class OEIS(Processor):
     @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
     def oeis (self, event, query):
         query = re.sub(r'(,|\s)+', ',', query)
-        f = urlopen('http://www.research.att.com/~njas/sequences/?n=1&fmt=3&q='
+        f = urlopen('http://oeis.org/search?n=1&fmt=text&q='
                     + query)
 
         f.next() # the first line is uninteresting
