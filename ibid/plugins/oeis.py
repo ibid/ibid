@@ -45,8 +45,7 @@ class OEIS(Processor):
                     {'was': plural(results-1, 'was', 'were'),
                      'count': results-1,
                      'results': plural(results-1, 'result', 'results'),
-                     'url':
-                      'http://www.research.att.com/~njas/sequences/?fmt=1&q=',
+                     'url': 'http://oeis.org/search?&q=',
                      'query': query})
         else:
             event.addresponse(u"I couldn't find that sequence.")
@@ -74,6 +73,6 @@ class Sequence(object):
         self.name = ''.join(cmds['N'])
 
     def url (self):
-        return 'http://www.research.att.com/~njas/sequences/' + self.catalog_num
+        return 'http://oeis.org/' + self.catalog_num
 
 # vi: set et sta sw=4 ts=4:
