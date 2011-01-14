@@ -4,6 +4,7 @@
 import re
 from datetime import datetime
 import logging
+from urllib2 import URLError
 from urlparse import urljoin
 
 import feedparser
