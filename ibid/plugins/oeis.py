@@ -45,7 +45,7 @@ class OEIS(Processor):
                     {'was': plural(results-1, 'was', 'were'),
                      'count': results-1,
                      'results': plural(results-1, 'result', 'results'),
-                     'url': 'http://oeis.org/search?&q=',
+                     'url': 'http://oeis.org/search?q=',
                      'query': query})
         else:
             event.addresponse(u"I couldn't find that sequence.")
