@@ -117,8 +117,7 @@ class GoogleScrapeSearch(Processor):
             node = re.sub(r'^<b>(.*)</b>$', lambda x: x.group(1), node)
             node = re.sub(r'<sup>(.*?)</sup>',
                           lambda x: u'^' + x.group(1), node)
-            node = re.sub(r'<font[^>]*?>(.*?)</font>',
-                          lambda x: x.group(1), node)
+            node = re.sub(r'<[^>]*?>', '', node)
             node = decode_htmlentities(node)
             event.addresponse(node)
         else:
