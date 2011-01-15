@@ -38,7 +38,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Ibid'
-copyright = u'2008-2010, The Ibid Developers'
+copyright = u'2008-2011, The Ibid Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
