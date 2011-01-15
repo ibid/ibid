@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2008-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from httplib import BadStatusLine
@@ -117,6 +117,8 @@ class GoogleScrapeSearch(Processor):
             node = re.sub(r'^<b>(.*)</b>$', lambda x: x.group(1), node)
             node = re.sub(r'<sup>(.*?)</sup>',
                           lambda x: u'^' + x.group(1), node)
+            node = re.sub(r'<font[^>]*?>(.*?)</font>',
+                          lambda x: x.group(1), node)
             node = decode_htmlentities(node)
             event.addresponse(node)
         else:
