@@ -48,7 +48,7 @@ String Functions
 
 .. function:: parse_timestamp(timestamp)
 
-   Paarse string *timestamp*, convert it to UTC, and strip the timezone.
+   Parse string *timestamp*, convert it to UTC, and strip the timezone.
 
    Return a naive :class:`datetime.datetime`.
 
