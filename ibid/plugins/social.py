@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Jonathan Hitchcock
+# Copyright (c) 2008-2011, Michael Gorven, Stefano Rivera, Jonathan Hitchcock
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from urllib2 import HTTPError
