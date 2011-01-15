@@ -7,13 +7,14 @@ from datetime import datetime
 import re
 import logging
 
+import dateutil.parser
 import feedparser
 
-from ibid.compat import dt_strptime, ElementTree
+from ibid.compat import ElementTree
 from ibid.config import DictOption
 from ibid.plugins import Processor, match, handler
 from ibid.utils import ago, decode_htmlentities, generic_webservice, \
-                       json_webservice
+                       json_webservice, parse_timestamp
 
 log = logging.getLogger('plugins.social')
 features = {}
@@ -35,7 +36,7 @@ class LastFm(Processor):
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (
                     e.title,
-                    ago(event.time - dt_strptime(e.updated, '%a, %d %b %Y %H:%M:%S +0000'), 1)
+                    ago(event.time - parse_timestamp(e.updated))
                 ) for e in songs['entries']))
 
 features['microblog'] = {
@@ -84,9 +85,8 @@ class Twitter(Processor):
             return {
                 'text': latest.findtext('{http://www.w3.org/2005/Atom}content')
                         .split(': ', 1)[1],
-                'ago': ago(datetime.utcnow() - dt_strptime(
-                    latest.findtext('{http://www.w3.org/2005/Atom}published'),
-                    '%Y-%m-%dT%H:%M:%S+00:00')),
+                'ago': ago(datetime.utcnow() - parse_timestamp(
+                    latest.findtext('{http://www.w3.org/2005/Atom}published'))),
                 'url': [x for x
                      in latest.getiterator('{http://www.w3.org/2005/Atom}link')
                      if x.get('type') == 'text/html'
@@ -104,8 +104,8 @@ class Twitter(Processor):
 
         return {
             'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow() - dt_strptime(latest['created_at'],
-                   '%a %b %d %H:%M:%S +0000 %Y')),
+            'ago': ago(datetime.utcnow()
+                       - parse_timestmap(latest['created_at'])),
             'url': url,
         }
 
