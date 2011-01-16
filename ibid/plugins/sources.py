@@ -20,13 +20,13 @@ features['actions'] = {
 }
 
 class Actions(Processor):
-    usage = u"""(join|part|leave) [<channel> [on <source>]]
+    usage = u"""(join|part|leave) [<channel> [on <source>] [using key <key>]]
     change nick to <nick> [on <source>]"""
     features = ('actions',)
 
     permission = 'sources'
 
-    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:\s+(?:key\s+)?(\S+))?$')
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:\s+(?:(?:using|with)?\s+(?:key\s+)?(\S+))?$')
     @authorise()
     def channel(self, event, action, channel, source, key):
         action = action.lower()
