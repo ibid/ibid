@@ -257,6 +257,8 @@ class HTTP(Processor):
             hops = 0
             while 300 <= status < 400 and self._get_header(headers, 'location'):
                 location = self._get_header(headers, 'location')
+                if not location:
+                    break
                 status, reason, data, headers = self._request(location, 'GET')
                 if hops >= self.redirect_limit:
                     reply += u' to %s' % location
