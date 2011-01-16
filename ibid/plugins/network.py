@@ -280,7 +280,7 @@ class HTTP(Processor):
                         got_title = True
                         reply += u' "%s"' % match.groups()[0].strip()
 
-                if not got_title:
+                if not got_title and content_type:
                     reply += u' ' + content_type
 
             event.addresponse(reply)
