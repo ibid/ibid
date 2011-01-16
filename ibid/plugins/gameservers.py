@@ -114,8 +114,7 @@ class Teeworlds(Processor):
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.settimeout(5)
         server.sendto(chr(255) * 10 + 'gief', (tw_host, int(tw_port)))
-        data, _ = server.recvfrom(1024)
-        data = data.split(chr(0))
+        data = server.recv(1024).split(chr(0))
         data[0] = data[0][data[0].find('info') + 4:]
         data = [d.decode('utf-8', 'ignore') for d in data]
 
