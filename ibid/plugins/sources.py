@@ -45,13 +45,13 @@ class Actions(Processor):
         source = ibid.sources[source]
 
         if not hasattr(source, 'join'):
-            event.addresponse(u'%s cannot join/part channels', source.name)
+            event.addresponse(u'I cannot join/part channels on %s', source.name)
             return
 
         if action == 'join':
             if key:
                 if not hasattr(source, 'join_with_key'):
-                    event.addresponse(u'%s cannot join key-protected channels',
+                    event.addresponse(u'I cannot join key-protected channels on %s',
                             source.name)
                     return
                 source.join_with_key(channel, key)
@@ -76,7 +76,7 @@ class Actions(Processor):
         source = ibid.sources[source]
 
         if not hasattr(source, 'change_nick'):
-            event.addresponse(u'%s cannot change nicks', source)
+            event.addresponse(u'I cannot change nicks on %s', source)
         else:
             source.change_nick(nick)
             event.addresponse(u'Changing nick to %s', nick)
