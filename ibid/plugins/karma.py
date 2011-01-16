@@ -51,7 +51,7 @@ class Karma(Base):
         self.time = datetime.utcnow()
 
 class Set(Processor):
-    usage = u'<subject> (++|--|==|ftw|ftl) [[reason]]'
+    usage = u'<subject>(++|--|==| ftw| ftl) [[reason]]'
     features = ('karma',)
 
     # Clashes with morse & math
@@ -61,9 +61,9 @@ class Set(Processor):
 
     increase = ListOption('increase',
                           'Suffixes which indicate increased karma',
-                          ('++', 'ftw'))
+                          ('++', ' ftw'))
     decrease = ListOption('decrease', 'Suffixes which indicate decreased karma',
-                          ('--', 'ftl'))
+                          ('--', ' ftl'))
     neutral = ListOption('neutral', 'Suffixes which indicate neutral karma',
                          ('==',))
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
@@ -77,13 +77,35 @@ class Set(Processor):
         if self.addressed:
             matchpat = r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$'
         else:
-            matchpat = r'(\S+)\s*(%s)'
+            matchpat = r'(\S*\w\S*)(%s)(?:$|\s)'
+
+        self.increase_reg = self.regex_tokens(self.increase)
+        self.decrease_reg = self.regex_tokens(self.decrease)
+        self.neutral_reg = self.regex_tokens(self.neutral)
 
         self.set.im_func.pattern = re.compile(
                 matchpat % '|'.join(
-                    re.escape(token) for token
-                    in self.increase + self.decrease + self.neutral
+                    self.increase_reg + self.decrease_reg + self.neutral_reg
                 ), re.I)
+
+    def regex_tokens(self, tokens):
+        """ Turn configured tokens into regex versions """
+        regtokens = []
+        for token in tokens:
+            stoken = token.lstrip()
+            if token == stoken:
+                token = "%s" % re.escape(token)
+            else:
+                # When whitespace is present, use \s+ instead
+                token = "\s+%s" % re.escape(stoken)
+            regtokens.append(token)
+        return regtokens
+
+    def match_operators(self, roperators, adjust):
+        for reg in roperators:
+            if re.match(reg, adjust):
+                return True
+        return False
 
     @handler
     @authorise(fallthrough=False)
@@ -99,14 +121,14 @@ class Set(Processor):
         if not karma:
             karma = Karma(subject)
 
-        if adjust.lower() in self.increase:
+        if self.match_operators(self.increase_reg, adjust.lower()):
             if subject.lower() == event.sender['nick'].lower():
                 event.addresponse(u"You can't karma yourself!")
                 return
             karma.changes += 1
             karma.value += 1
             change = u'Increased'
-        elif adjust.lower() in self.decrease:
+        elif self.match_operators(self.decrease_reg, adjust.lower()):
             karma.changes += 1
             karma.value -= 1
             change = u'Decreased'
