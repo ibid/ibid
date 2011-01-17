@@ -105,11 +105,11 @@ class CounterStrike(Processor):
         })
 
 class Teeworlds(Processor):
-    usage = u'how many teeworlds players on <server>:<port>'
+    usage = u'how many teeworlds players are on <server>:<port>'
     features = ('gameservers',)
     autoload = False
 
-    @match(r'(?:how many )?(?:tw|teeworlds) players(?: on)? ([\d\D.]+):(\d+)')
+    @match(r'(?:how many )?(?:tw|teeworlds) players(?:(?: are)? on)? ([\d\D.]+):(\d+)')
     def tw_players(self, event, tw_host, tw_port):
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.settimeout(5)
