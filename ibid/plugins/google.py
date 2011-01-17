@@ -114,10 +114,11 @@ class GoogleScrapeSearch(Processor):
             # "utf8" will result in an xml header
             node = ElementTree.tostring(nodes[0], encoding='utf-8')
             node = node.decode('utf-8')
-            node = re.sub(r'^<b>(.*)</b>$', lambda x: x.group(1), node)
             node = re.sub(r'<sup>(.*?)</sup>',
                           lambda x: u'^' + x.group(1), node)
             node = re.sub(r'<.*?>', '', node)
+            node = re.sub(r'(\d)\s+(\d)', lambda x: x.group(1) + x.group(2),
+                          node)
             node = decode_htmlentities(node)
             event.addresponse(node)
         else:
