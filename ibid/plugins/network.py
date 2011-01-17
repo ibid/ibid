@@ -257,6 +257,8 @@ class HTTP(Processor):
             hops = 0
             while 300 <= status < 400 and self._get_header(headers, 'location'):
                 location = self._get_header(headers, 'location')
+                if not location:
+                    break
                 status, reason, data, headers = self._request(location, 'GET')
                 if hops >= self.redirect_limit:
                     reply += u' to %s' % location
@@ -272,7 +274,7 @@ class HTTP(Processor):
             if action.upper() == 'GET':
                 got_title = False
                 content_type = self._get_header(headers, 'content-type')
-                if (content_type.startswith('text/html') or
+                if content_type and (content_type.startswith('text/html') or
                         content_type.startswith('application/xhtml+xml')):
                     match = re.search(r'<title>(.*)<\/title>', data,
                                       re.I | re.DOTALL)
@@ -280,7 +282,7 @@ class HTTP(Processor):
                         got_title = True
                         reply += u' "%s"' % match.groups()[0].strip()
 
-                if not got_title:
+                if not got_title and content_type:
                     reply += u' ' + content_type
 
             event.addresponse(reply)
