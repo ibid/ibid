@@ -26,7 +26,7 @@ class Actions(Processor):
 
     permission = 'sources'
 
-    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:\s+(?:(?:using|with)?\s+(?:key\s+)?(\S+))?$')
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:\s+(?:using|with)?\s+(?:key\s+)?(\S+))?$')
     @authorise()
     def channel(self, event, action, channel, source, key):
         action = action.lower()
