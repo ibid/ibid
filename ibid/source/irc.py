@@ -211,7 +211,7 @@ class Ircbot(irc.IRCClient):
         self.factory.log.info(u"Joining %s", channel)
         irc.IRCClient.join(self, channel.encode('utf-8'))
 
-    def join_with_key(self, channel, key=None):
+    def join_with_key(self, channel, key):
         self.factory.log.info(u"Joining %s with key %s", channel, key)
         irc.IRCClient.join(self, channel.encode('utf-8'), key.encode('utf-8'))
 
