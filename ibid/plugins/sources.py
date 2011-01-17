@@ -49,11 +49,11 @@ class Actions(Processor):
             return
 
         if action == 'join':
-            if key:
-                if not hasattr(source, 'join_with_key'):
-                    event.addresponse(u'I cannot join key-protected channels on %s',
-                            source.name)
-                    return
+            if key and not hasattr(source, 'join_with_key'):
+                event.addresponse(u'I cannot join key-protected channels on %s',
+                        source.name)
+                return
+            if hasattr(source, 'join_with_key'):
                 source.join_with_key(channel, key)
             else:
                 source.join(channel)

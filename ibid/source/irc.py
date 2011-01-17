@@ -207,13 +207,13 @@ class Ircbot(irc.IRCClient):
             self.msg(raw_target, raw_message)
             self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
-    def join(self, channel):
-        self.factory.log.info(u"Joining %s", channel)
-        irc.IRCClient.join(self, channel.encode('utf-8'))
-
-    def join_with_key(self, channel, key):
-        self.factory.log.info(u"Joining %s with key %s", channel, key)
-        irc.IRCClient.join(self, channel.encode('utf-8'), key.encode('utf-8'))
+    def join_with_key(self, channel, key=None):
+        if key:
+            self.factory.log.info(u"Joining %s with key %s", channel, key)
+            key = key.encode('utf-8')
+        else:
+            self.factory.log.info(u"Joining %s", channel)
+        irc.IRCClient.join(self, channel.encode('utf-8'), key)
 
     def joined(self, channel):
         event = Event(self.factory.name, u'source')
