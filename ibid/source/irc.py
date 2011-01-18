@@ -207,7 +207,7 @@ class Ircbot(irc.IRCClient):
             self.msg(raw_target, raw_message)
             self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
-    def join_with_key(self, channel, key=None):
+    def join(self, channel, key=None):
         if key:
             self.factory.log.info(u"Joining %s with key %s", channel, key)
             key = key.encode('utf-8')
@@ -342,11 +342,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             self.proto.transport.loseConnection()
         return True
 
-    def join(self, channel):
-        return self.proto.join(channel)
-
-    def join_with_key(self, channel, key):
-        return self.proto.join_with_key(channel, key)
+    def join(self, channel, key=None):
+        return self.proto.join(channel, key)
 
     def leave(self, channel):
         return self.proto.leave(channel)
