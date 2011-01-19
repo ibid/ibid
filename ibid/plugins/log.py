@@ -84,7 +84,10 @@ class Log(Processor):
             if not self.date_utc:
                 when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())
 
-            channel = ibid.sources[event.source].logging_name(event.channel)
+            if event.channel is not None:
+                channel = ibid.sources[event.source].logging_name(event.channel)
+            else:
+                channel = ibid.sources[event.source].logging_name(event.sender['id'])
             filename = self.log % {
                     'source': event.source.replace('/', '-'),
                     'channel': channel.replace('/', '-'),
@@ -112,17 +115,21 @@ class Log(Processor):
                         continue
                     source_glob, channel_glob = glob.split(u':', 1)
                     if (fnmatch.fnmatch(event.source, source_glob)
-                            and fnmatch.fnmatch(event.channel, channel_glob)):
+                            and fnmatch.fnmatch(channel, channel_glob)):
                         chmod(filename, int(self.public_mode, 8))
                         break
                 else:
                     chmod(filename, int(self.private_mode, 8))
-
-                if len(self.recent_logs) > self.fd_cache:
-                    self.recent_logs.pop()
             else:
-                self.recent_logs.remove(log)
-            self.recent_logs.insert(0, log)
+                # recent_logs is an LRU cache, we'll be moving log to the
+                # front of the queue, if it's in the queue.
+                # It might not be, GCs are fickle LP: 655645
+                try:
+                    self.recent_logs.remove(log)
+                except ValueError:
+                    pass
+
+            self.recent_logs = [log] + self.recent_logs[:self.fd_cache - 1]
             return log
         finally:
             self.lock.release()
