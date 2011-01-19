@@ -93,7 +93,6 @@ class Log(Processor):
 
     def matches(self, event, globlist):
         channel = self.get_channel(event)
-        in_glob = False
 
         for glob in globlist:
             if u':' not in glob:
@@ -101,10 +100,9 @@ class Log(Processor):
             source_glob, channel_glob = glob.split(u':', 1)
             if (fnmatch.fnmatch(event.source, source_glob)
                     and fnmatch.fnmatch(channel, channel_glob)):
-                in_glob = True
-                break
+                return True
 
-        return in_glob
+        return False
 
     def get_logfile(self, event):
         self.lock.acquire()
