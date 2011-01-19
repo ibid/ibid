@@ -152,8 +152,10 @@ class Help(Processor):
     @match(r'^(?:help|features|what\s+(?:can|do)\s+you\s+do)$')
     def intro(self, event):
         categories, features = self._get_features()
-        categories = filter(lambda c: c['weight'] is not None,
-                            categories.itervalues())
+        categories = categories.itervalues()
+        if not ibid.auth.authorise(event, 'admin'):
+            categories = filter(lambda c: c['weight'] is not None,
+                                categories)
         categories = sorted(categories, key=lambda c: c['weight'])
         event.addresponse(u'I can help you with: %s.\n'
                           u'Ask me "help me with ..." for more details.',
