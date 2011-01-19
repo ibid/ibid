@@ -10,8 +10,9 @@ from twisted.python import log
 from twisted.trial import unittest
 
 import ibid
-from ibid.core import process
+from ibid.core import process, DatabaseManager
 from ibid.event import Event
+from ibid.db import upgrade_schemas
 from ibid.db.models import Identity
 from ibid.config import FileConfig
 from ibid.utils import locate_resource
@@ -80,12 +81,13 @@ class PluginTestCase(unittest.TestCase):
 
         ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
 
-        # Make a temporary copy of the test database.
+        # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
         self.dbfile = mkstemp('.db', 'ibid-test-')[1]
         ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
-        copyfile(locate_resource('ibid.test', 'test.db'), self.dbfile)
+        db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
+        upgrade_schemas(db['ibid'])
 
         ibid.reload_reloader()
         ibid.reloader.reload_databases()
