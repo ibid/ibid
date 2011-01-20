@@ -9,97 +9,99 @@ End-to-end testing
 ------------------
 
 .. class:: PluginTestCase
-    A subclass of Twisted Trial's :class`unittest.TestCase
-    <twisted.trial.unittest.TestCase`. It sets up an environment much like a
-    running Ibid including a clean database, and loads the specified plugins.
 
-    The clean database is a SQLite database at ``ibid/test/test.db`` (which needs to
-    be updated when the schema changes). The tests also use the config at
-    ``ibid/test/test.ini``.
+   A subclass of Twisted Trial's
+   :class:`unittest.TestCase<twisted.trial.unittest.TestCase`. It sets up an
+   environment much like a running Ibid including a clean database, and loads
+   the specified plugins.
 
-    .. attribute:: load
+   The clean database is a SQLite database at ``ibid/test/test.db`` (which needs to
+   be updated when the schema changes). The tests also use the config at
+   ``ibid/test/test.ini``.
 
-        List: strings naming plugins to be loaded before running tests.
+   .. attribute:: load
 
-        Default: empty
+      List: strings naming plugins to be loaded before running tests.
 
-    .. attribute:: noload
+      Default: empty
 
-        List: strings naming plugins *not* to be loaded.
+   .. attribute:: noload
 
-        Default: empty
+      List: strings naming plugins *not* to be loaded.
 
-    .. attribute:: load_base
+      Default: empty
 
-        Boolean: whether to load a small set of base plugins (currently, just core).
+   .. attribute:: load_base
 
-        Default: ``True``
+      Boolean: whether to load a small set of base plugins (currently, just core).
 
-    .. attribute:: load_configured
+      Default: ``True``
 
-        Boolean: load all configured modules (excluding :attr:`noload`).
+   .. attribute:: load_configured
 
-        Default: if :attr:`load` is empty, ``True``; otherwise, ``False``.
+      Boolean: load all configured modules (excluding :attr:`noload`).
 
-    .. attribute:: username
+      Default: if :attr:`load` is empty, ``True``; otherwise, ``False``.
 
-        String: the default username/nick in events created by the
-        :func:`make_event` method.
+   .. attribute:: username
 
-        Default: ``u'user'``
+      String: the default username/nick in events created by the
+      :func:`make_event` method.
 
-    .. attribute:: public
+      Default: ``u'user'``
 
-        Boolean: whether or not the events created by :func:`make_event` are
-        public.
+   .. attribute:: public
 
-        Default: ``False``
+      Boolean: whether or not the events created by :func:`make_event` are
+      public.
 
-    .. attribute:: network
+      Default: ``False``
 
-        Boolean: whether or not the test uses the external network. Used to
-        skip tests in networkless environments (where the environment variable
-        `IBID_NETWORKLESS_TEST` is defined).
+   .. attribute:: network
 
-        Default: ``False``
+      Boolean: whether or not the test uses the external network. Used to
+      skip tests in networkless environments (where the environment variable
+      `IBID_NETWORKLESS_TEST` is defined).
 
-    .. method:: setUp()
+      Default: ``False``
 
-        If you override this method, make sure you call
-        :meth:`PluginTestCase.setUp()`.
+   .. method:: setUp()
 
-    .. method:: tearDown()
+      If you override this method, make sure you call
+      :meth:`PluginTestCase.setUp()`.
 
-        If you override this method, make sure you call
-        :meth:`PluginTestCase.tearDown()`.
+   .. method:: tearDown()
+
+      If you override this method, make sure you call
+      :meth:`PluginTestCase.tearDown()`.
 
 
-    .. method:: make_event(message=None, type=u'message')
+   .. method:: make_event(message=None, type=u'message')
 
-        Create and return an event on the test source, from the test user, of
-        type *type*.
+      Create and return an event on the test source, from the test user, of
+      type *type*.
 
-    .. method:: responseMatches(event, regex)
+   .. method:: responseMatches(event, regex)
 
-        Process *event* (either an event or a string to be treated as a
-        message from the test user on the test source), and return whether the
-        response matches *regex* (either a regex string or a compiled regex).
+      Process *event* (either an event or a string to be treated as a
+      message from the test user on the test source), and return whether the
+      response matches *regex* (either a regex string or a compiled regex).
 
-    .. method:: assertResponseMatches(event, regex)
+   .. method:: assertResponseMatches(event, regex)
 
-        Assert that :meth:`responseMatches` returns true.
+      Assert that :meth:`responseMatches` returns true.
 
-    .. method:: failIfResponseMatches(event, regex)
-    
-        The opposite of :meth:`assertResponseMatches`.
+   .. method:: failIfResponseMatches(event, regex)
 
-    .. method:: assertSucceeds(event)
+      The opposite of :meth:`assertResponseMatches`.
 
-        Process *event* (either an event or a string to be treated as a
-        message from the test user on the test source), and check that it is
-        processed by some :class:`Processor <ibid.plugins.Processor>` and no
-        complaint is set.
+   .. method:: assertSucceeds(event)
 
-    .. method:: assertFails(event)
+      Process *event* (either an event or a string to be treated as a
+      message from the test user on the test source), and check that it is
+      processed by some :class:`Processor <ibid.plugins.Processor>` and no
+      complaint is set.
 
-        The opposite of :meth:`assertSucceeds`.
+   .. method:: assertFails(event)
+
+      The opposite of :meth:`assertSucceeds`.
