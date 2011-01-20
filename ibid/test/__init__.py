@@ -3,7 +3,7 @@
 import logging
 from shutil import copyfile
 import os
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 import re
 
 from twisted.python import log
@@ -84,8 +84,8 @@ class PluginTestCase(unittest.TestCase):
         # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
-        self.dbfile = mkstemp('.db', 'ibid-test-')[1]
-        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
+        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
         db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
         upgrade_schemas(db['ibid'])
 
@@ -180,6 +180,6 @@ class PluginTestCase(unittest.TestCase):
 
     def tearDown(self):
         del ibid.sources[self.source]
-        os.remove(self.dbfile)
+        self.dbfile.close()
 
 # vi: set et sta sw=4 ts=4:
