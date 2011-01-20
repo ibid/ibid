@@ -1,4 +1,5 @@
-# Copyright (c) 2008-2010, Michael Gorven, Jonathan Hitchcock, Stefano Rivera
+# Copyright (c) 2008-2011, Michael Gorven, Jonathan Hitchcock, Stefano Rivera,
+# Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from cgi import parse_qs
