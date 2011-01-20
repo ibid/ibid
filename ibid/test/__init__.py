@@ -107,15 +107,11 @@ class PluginTestCase(unittest.TestCase):
 
         session = ibid.databases.ibid()
 
-        identity = session.query(Identity).filter_by(identity=self.username,
-                                                     source=self.source).first()
-        if not identity:
-            identity = Identity(self.source, self.username)
-            session.save(identity)
-            session.commit()
-            self.identity = session.query(Identity) \
-                                .filter_by(identity=self.username).first()
-        self.identity_id = self.identity.id
+        self.identity = Identity(self.source, self.username)
+        session.save(self.identity)
+        session.commit()
+        self.identity = session.query(Identity) \
+            .filter_by(identity=self.username).one()
 
         session.close()
 
@@ -123,7 +119,7 @@ class PluginTestCase(unittest.TestCase):
         event = Event(self.source, type)
         event.sender['id'] = event.sender['connection'] = \
             event.sender['nick'] = self.username
-        event.identity = self.identity_id
+        event.identity = self.identity.id
         event.account = None
         event.addressed = not self.public
         event.public = self.public
