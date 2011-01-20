@@ -50,9 +50,9 @@ class Actions(Processor):
 
         if action == 'join':
             if key:
-                try:
+                if 'channel key' in source.supports:
                     source.join(channel, key)
-                except TypeError:
+                else:
                     event.addresponse(u'I cannot use keys on %s', source.name)
                     return
             else:
