@@ -11,7 +11,7 @@ End-to-end testing
 .. class:: PluginTestCase
 
    A subclass of Twisted Trial's
-   :class:`unittest.TestCase<twisted.trial.unittest.TestCase`. It sets up an
+   `unittest.TestCase <http://twistedmatrix.com/documents/8.2.0/api/twisted.trial.unittest.TestCase.html>`_. It sets up an
    environment much like a running Ibid including a clean database, and loads
    the specified plugins.
 
@@ -61,7 +61,7 @@ End-to-end testing
 
       Boolean: whether or not the test uses the external network. Used to
       skip tests in networkless environments (where the environment variable
-      `IBID_NETWORKLESS_TEST` is defined).
+      :envvar:`IBID_NETWORKLESS_TEST` is defined).
 
       Default: ``False``
 
