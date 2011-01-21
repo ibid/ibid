@@ -189,7 +189,7 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
 def parse_timestamp(timestamp):
-    "Parse a timestamp, convert to UTC, strip timezone"
+    "Parse a machine timestamp, convert to UTC, strip timezone"
     dt = dateutil.parser.parse(timestamp)
     if dt.tzinfo:
         dt = dt.astimezone(tzutc())
