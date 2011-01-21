@@ -208,9 +208,13 @@ class Ircbot(irc.IRCClient):
             self.msg(raw_target, raw_message)
             self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
-    def join(self, channel):
-        self.factory.log.info(u"Joining %s", channel)
-        irc.IRCClient.join(self, channel.encode('utf-8'))
+    def join(self, channel, key=None):
+        if key:
+            self.factory.log.info(u"Joining %s with key %s", channel, key)
+            key = key.encode('utf-8')
+        else:
+            self.factory.log.info(u"Joining %s", channel)
+        irc.IRCClient.join(self, channel.encode('utf-8'), key)
 
     def joined(self, channel):
         event = Event(self.factory.name, u'source')
@@ -300,7 +304,7 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
     protocol = Ircbot
 
     auth = ('hostmask', 'nickserv')
-    supports = ('action', 'notice', 'topic')
+    supports = ('action', 'notice', 'topic', 'channel key')
 
     port = IntOption('port', 'Server port number', 6667)
     ssl = BoolOption('ssl', 'Use SSL', False)
@@ -345,8 +349,8 @@ class SourceFactory(protocol.ReconnectingClientFactory, IbidSourceFactory):
             self.proto.transport.loseConnection()
         return True
 
-    def join(self, channel):
-        return self.proto.join(channel)
+    def join(self, channel, key=None):
+        return self.proto.join(channel, key)
 
     def leave(self, channel):
         return self.proto.leave(channel)
