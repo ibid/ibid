@@ -130,7 +130,7 @@ class Complain(Processor):
 
     priority = 950
     processed = True
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action', u'invite')
 
     complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (
