@@ -15,7 +15,7 @@ from ibid.db import IbidUnicodeText, Boolean, Integer, DateTime, \
 from ibid.db.models import Identity, Account
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
-from ibid.utils import ago, format_date
+from ibid.utils import ago, format_date, plural
 
 features = {'memo': {
     'description': u'Keeps messages for people.',
@@ -320,10 +320,15 @@ class Notify(Processor):
                 u' so ask me in private.',
                 len(memos), target=event.sender['connection'], address=False)
         elif len(memos) > 0:
-            event.addresponse(u'You have %s messages. '
-                    u"Would you like to read them now?",
-                len(memos),
-                target=event.sender['connection'], address=False)
+            event.addresponse(
+                plural(
+                    len(memos),
+                    u'You have %(memo_count)d message. '
+                    u'Would you like to read it now?',
+                    u'You have %(memo_count)d messages. '
+                    u'Would you like to read them now?'),
+                { 'memo_count' : len(memos) },
+                target=event.sender['connection'])
         else:
             nomemos_cache.add(event.identity)
 
