@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import codecs
@@ -19,6 +19,7 @@ from urlparse import urlparse, urlunparse
 import zlib
 from subprocess import Popen, PIPE
 
+import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
 from pkg_resources import resource_exists, resource_filename
 
@@ -186,6 +187,14 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
         timestamp = timestamp.astimezone(tzlocal())
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
+
+def parse_timestamp(timestamp):
+    "Parse a machine timestamp, convert to UTC, strip timezone"
+    dt = dateutil.parser.parse(timestamp)
+    if dt.tzinfo:
+        dt = dt.astimezone(tzutc())
+        dt = dt.replace(tzinfo=None)
+    return dt
 
 class JSONException(Exception):
     pass
