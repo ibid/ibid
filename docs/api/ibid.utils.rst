@@ -46,6 +46,15 @@ String Functions
       >>> format_date(datetime.utcnow())
       u'2009-12-14 12:41:55 SAST'
 
+.. function:: parse_timestamp(timestamp)
+
+   Parse string *timestamp*, convert it to UTC, and strip the timezone.
+
+   This function is good at parsing machine timestamps, but can't handle
+   "human" times very well. (It uses :mod:`dateutil.parser`)
+
+   Return a naive :class:`datetime.datetime`.
+
 .. function:: human_join(items, [separator=u',', conjunction=u'and'])
 
    Turn iterable *items* into a unicode list in the format ``a, b, c
