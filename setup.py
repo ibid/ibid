@@ -7,7 +7,7 @@ from sys import version_info, argv
 from setuptools import setup
 
 install_requires=[
-    'BeautifulSoup',
+    'BeautifulSoup<3.2a', # 3.2 is actually 3.0. We use 3.1
     'configobj>=4.7.0',
     'dnspython',
     'feedparser',
