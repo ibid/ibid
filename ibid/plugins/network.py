@@ -296,11 +296,11 @@ class HTTP(Processor):
         else:
             if not urlparse(url).netloc:
                 if '.' not in url:
-                    split_url = url.split(':')
+                    split_url = url.split(':', 1)
                     if len(split_url) <= 1:
                         url += '.com'
                     else:
-                        url = '%s.com%s%s' % (split_url[0], ':', ':'.join(split_url[1:]))
+                        url = '%s.com%s%s' % (split_url[0], ':', split_url[1])
                 url = 'http://' + url
             if not urlparse(url).path:
                 url += '/'
