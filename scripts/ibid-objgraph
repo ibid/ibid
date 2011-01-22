@@ -13,8 +13,8 @@ try:
     import numpy
 except ImportError:
     print >> sys.stderr, ('This script requires matplotlib '
-                          '(python-matplotlib on Debian/Ubuntu), '
-                          'please install it and try again.')
+                          '(python-matplotlib on Debian/Ubuntu).\n'
+                          'Please install it and try again.')
     sys.exit(1)
 
 from ibid.compat import json

@@ -13,8 +13,8 @@ try:
     from chardet import detect
 except ImportError:
     print >> stderr, ('This script requires chardet '
-                      '(python-chardet on Debian/Ubuntu), '
-                      'please install it and try again.')
+                      '(python-chardet on Debian/Ubuntu).\n'
+                      'Please install it and try again.')
     exit(1)
 
 path.insert(0, '.')
