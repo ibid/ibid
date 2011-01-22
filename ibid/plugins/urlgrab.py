@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Jonathan Groll
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Jonathan Groll
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
