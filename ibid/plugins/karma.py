@@ -5,6 +5,7 @@ from datetime import datetime
 import re
 import logging
 
+from ibid.compat import any
 from ibid.config import BoolOption, IntOption, ListOption
 from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
                     VersionedSchema
@@ -77,7 +78,7 @@ class Set(Processor):
         if self.addressed:
             matchpat = r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$'
         else:
-            matchpat = r'(\S*\w\S*)(%s)(?:$|\s)'
+            matchpat = r'(\S*\w\S*)(%s)(?:$|[\s,;\.\?!])'
 
         self.increase_reg = self.regex_tokens(self.increase)
         self.decrease_reg = self.regex_tokens(self.decrease)
@@ -90,26 +91,17 @@ class Set(Processor):
 
     def regex_tokens(self, tokens):
         """ Turn configured tokens into regex versions """
-        regtokens = []
-        for token in tokens:
-            stoken = token.lstrip()
-            if token == stoken:
-                token = "%s" % re.escape(token)
-            else:
-                # When whitespace is present, use \s+ instead
-                token = "\s+%s" % re.escape(stoken)
-            regtokens.append(token)
-        return regtokens
+        return [re.escape(t).replace(r'\ ', r'\s+') for t in tokens]
 
     def match_operators(self, roperators, adjust):
-        for reg in roperators:
-            if re.match(reg, adjust):
-                return True
-        return False
+        return any(re.match(r, adjust) for r in roperators)
 
     @handler
     @authorise(fallthrough=False)
     def set(self, event, subject, adjust, reason=None):
+        if reason is None:
+            reason = event['message']['clean']
+
         if self.public and not event.public:
             event.addresponse(u'Karma must be done in public')
             return
