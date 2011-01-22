@@ -300,7 +300,8 @@ class HTTP(Processor):
                     if len(split_url) <= 1:
                         url += '.com'
                     else:
-                        url = '%s.com%s%s' % (split_url[0], ':', split_url[1])
+                        url = '%s.com:%s' % tuple(split_url)
+                    print url
                 url = 'http://' + url
             if not urlparse(url).path:
                 url += '/'
