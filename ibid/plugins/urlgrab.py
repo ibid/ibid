@@ -85,10 +85,7 @@ class Grab(Processor):
         "Posts a URL to delicious.com"
 
         date = datetime.utcnow()
-        try:
-            title = self._get_title(url)
-        except HTTPError:
-            return
+        title = self._get_title(url)
 
         con_re = re.compile(r'!n=|!')
         connection_body = con_re.split(event.sender['connection'])
@@ -159,8 +156,6 @@ class Grab(Processor):
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title or url
-        except HTTPError, e:
-            raise
         except Exception, e:
             log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url
