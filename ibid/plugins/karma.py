@@ -87,7 +87,7 @@ class Set(Processor):
         self.set.im_func.pattern = re.compile(
                 matchpat % '|'.join(
                     self.increase_reg + self.decrease_reg + self.neutral_reg
-                ), re.I)
+                ), re.I | re.UNICODE | re.DOTALL)
 
     def regex_tokens(self, tokens):
         """ Turn configured tokens into regex versions """
