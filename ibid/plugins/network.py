@@ -296,7 +296,8 @@ class HTTP(Processor):
         else:
             if not urlparse(url).netloc:
                 split_url = url.split(':', 1)
-                if '.' not in url and len(split_url) <= 1:
+                if '.' not in url and '/' not in url and len(split_url) <= 1:
+                    # Only append .com for url's like "example"
                     url += '.com'
                 url = 'http://' + url
             if not urlparse(url).path:
