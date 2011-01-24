@@ -295,12 +295,9 @@ class HTTP(Processor):
             url = self.sites[url]
         else:
             if not urlparse(url).netloc:
-                if '.' not in url:
-                    split_url = url.split(':', 1)
-                    if len(split_url) <= 1:
-                        url += '.com'
-                    else:
-                        url = '%s.com:%s' % tuple(split_url)
+                split_url = url.split(':', 1)
+                if '.' not in url and len(split_url) <= 1:
+                    url += '.com'
                 url = 'http://' + url
             if not urlparse(url).path:
                 url += '/'
