@@ -78,11 +78,8 @@ class FactoidName(Base):
         def upgrade_6_to_7(self):
             self.add_column(Column('wild', Boolean, PassiveDefault('0'),
                                    nullable=False, index=True, default=False))
-            # http://www.sqlalchemy.org/trac/ticket/1400:
-            # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
-                    .filter('lower(name) LIKE lower(:pattern) ESCAPE :escape') \
-                    .params(pattern='%\\_\\%%', escape='\\') \
+                    .filter(FactoidName.name.like('%#_#%%', escape='#')) \
                     .all():
                 row.wild = True
                 self.upgrade_session.save_or_update(row)
@@ -203,7 +200,7 @@ class Factpack(Base):
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
-escape_like_re = re.compile(r'([%_\\])')
+escape_like_re = re.compile(r'([%_#])')
 
 def get_factoid(session, name, number, pattern, is_regex, all=False,
                 literal=False):
@@ -242,12 +239,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
                 op = get_regexp_op(session)
                 query = query.filter(op(FactoidValue.value, pattern))
             else:
-                pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
-                # http://www.sqlalchemy.org/trac/ticket/1400:
-                # We can't use .like() in MySQL
-                query = query.filter(
-                        'lower(value) LIKE lower(:pattern) ESCAPE :escape'
-                    ).params(pattern=pattern, escape='\\')
+                pattern = '%%%s%%' % escape_like_re.sub(r'#\1', pattern)
+                query = query.filter(func.lower(FactoidValue.value)
+                                     .like(pattern, escape='#'))
 
         if number:
             try:
@@ -422,8 +416,8 @@ class Search(Processor):
         if is_regex:
             filter_op = get_regexp_op(event.session)
         else:
-            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            filter_op = lambda x, y: x.like(y)
+            pattern = "%%%s%%" % escape_like_re.sub(r'#\1', pattern)
+            filter_op = lambda x, y: x.like(y, escape='#')
 
         if len(filter_on) == 1:
             query = query.filter(filter_op(filter_on[0], pattern))
