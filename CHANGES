@@ -13,7 +13,7 @@ Remote Execution
   This allowed users to perform actions they were not authorised to.
 
   However, no included plugins were exposed by this, all
-  access-restricted handlers used :func:`@match <ibid.plugins.match>`.
+  access-restricted handlers had match patterns.
 
 Information Disclosure
 ^^^^^^^^^^^^^^^^^^^^^^
