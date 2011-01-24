@@ -427,35 +427,41 @@ class Search(Processor):
             pattern = m.group(1)
             is_regex = bool(m.group(2))
 
-        query = event.session.query(Factoid)\
-                .join(Factoid.names).add_entity(FactoidName)\
-                .join(Factoid.values)
-
-        if search_type.startswith('fact'):
-            filter_on = (FactoidName.name,)
-        elif search_type.startswith('value'):
-            filter_on = (FactoidValue.value,)
-        else:
-            filter_on = (FactoidName.name, FactoidValue.value)
-
+        # Hack: We replace $arg with _%, but this won't match a partial
+        # "$args" string
         if is_regex:
             filter_op = get_regexp_op(event.session)
+            name_pattern = pattern.replace(r'\$arg', '_%')
         else:
-            pattern = "%%%s%%" % escape_like_re.sub(r'#\1', pattern)
             filter_op = lambda x, y: x.like(y, escape='#')
+            pattern = '%%%s%%' % escape_like_re.sub(r'#\1', pattern)
+            name_pattern = pattern.replace('$arg', '#_#%')
 
-        if len(filter_on) == 1:
-            query = query.filter(filter_op(filter_on[0], pattern))
+        query = event.session.query(Factoid)\
+                             .join(Factoid.names).add_entity(FactoidName)\
+                             .join(Factoid.values)
+
+        if search_type.startswith('fact'):
+            query = query.filter(filter_op(FactoidName.name, name_pattern))
+        elif search_type.startswith('value'):
+            query = query.filter(filter_op(FactoidValue.value, pattern))
         else:
-            query = query.filter(or_(filter_op(filter_on[0], pattern), filter_op(filter_on[1], pattern)))
+            query = query.filter(or_(filter_op(FactoidName.name, name_pattern),
+                                     filter_op(FactoidValue.value, pattern)))
 
-        # Pre-evalute the iterable or the if statement will be True in SQLAlchemy 0.4 [Bug #383286]
-        matches = [match for match in query[start:start+limit]]
+        # Pre-evalute the iterable or the if statement will be True in SQLAlchemy 0.4. LP: #383286
+        matches = [match for match in query.all()]
 
-        if matches:
+        bounded_matches = matches[start:start+limit]
+        if bounded_matches:
             event.addresponse(u'; '.join(
                 u'%s [%s]' % (fname.name, len(factoid.values))
                 for factoid, fname in matches))
+        elif len(matches):
+            event.addresponse(u"I could only find %(number)d things that matched '%(pattern)s'", {
+                u'number': len(matches),
+                u'pattern': origpattern,
+            })
         else:
             event.addresponse(u"I couldn't find anything that matched '%s'" % origpattern)
 
