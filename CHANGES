@@ -44,158 +44,137 @@ Information Disclosure
 All Changes
 -----------
 
-2010-03-10  Stefano Rivera  <stefano@rivera.za.net>
+2011-01-22  Keegan Carruthers-Smith  <keegan.csmith@gmail.com>
 
-   Add placeholder to force ibid/static to be distributed.
+   Use correct plurality in pending memos message
 
-2010-03-23  Max Rabkin  <max.rabkin@gmail.com>
+   Fixes :bug:`634257`.
 
-   Python 2.5 compatibility update for unicode lookup. Exception for unknown character changed in 2.6.
+2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`542593`.
+   Add parse_timestamp function to ibid.utils, use for parsing
+   timestamps from Twitter.
 
-2010-03-23  Marco Gallotta  <marco@gallotta.co.za>
+   Fixes :bug:`702815`.
 
-   Add username=ibid parameter to geonames API calls. Some calls now require it.
+2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`543989`.
+   URLErrors have reasons, but there are other HTTPErrors
 
-2010-03-26  Marco Gallotta  <marco@gallotta.co.za>
+   Fixes :bug:`670855`.
 
-   Allow trailing punctuation in tea-style addressing.
+2011-01-21  Max Rabkin  <max.rabkin@gmail.com>
 
-   Fixes :bug:`545186`.
+   Enforce permissions on non-@match handlers.
 
-2010-03-27  Max Rabkin  <max.rabkin@gmail.com>
+   Fixes :bug:`705860`.
 
-   Respond with unicode in bible error handlers.
+2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`544260`.
+   Handle non-500 error codes from twitter.
 
-2010-03-27  Michael Gorven  <michael@gorven.za.net>
+   Fixes :bug:`670855`.
 
-   Treat the Processor's first feature as the primary feature in RPC.
+2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`545168`.
+   Strip tags from gcalc response.
 
-2010-04-09  Max Rabkin  <max.rabkin@gmail.com>
+   Fixes :bug:`702371`.
 
-   Use unicode case-insensitive matching in factoid.
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
 
-   Fixes :bug:`542707`.
+   Check content_type is set before checking its value.
 
-2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
+   Fixes :bug:`701900`.
 
-   HTTP GET: Don't assume everything is utf-8, decode according to
-   provided charset, fall back to utf-8 for text, and guess with chardet
-   if either of those was wrong.
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
 
-   Fixes :bug:`560973`.
+   Catch exceptions when polling feeds so that one broken feed doesn't
+   stop all feeds.
 
-2010-04-13  Max Rabkin  <max.rabkin@gmail.com>
+   Fixes :bug:`578396`.
 
-   Allow digits in Unicode character names.
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
 
-2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
+   Use new OEIS API at oeis.org
 
-   Update youtube plugin to cope with site redesign.
+   Fixes :bug:`700475`.
 
-   Fixes :bug:`561684`.
+2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-04-26  Stefano Rivera  <stefano@rivera.za.net>
+   Fix for the logging open file cache: Logs in logs might not be in
+   recent_logs.
 
-   Increase default HTTP GET size from 500 bytes to 2kiB.
+   Fixes :bug:`655645`.
 
-   Fixes :bug:`563928`.
+2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
+   Support toilet fonts, correctly decode utf-8 figlet output, handle
+   font choice edge cases.
 
-   Change administrative user & identity linking syntax to be less
-   problematically broad.
+   Fixes :bug:`607743`.
 
-   Fixes :bug:`567510`.
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
+   Follow redirects in "is it up"
 
-   Incorrect substitution in SQLite indexing warning.
+   Fixes :bug:`599410`.
 
-2010-05-05  Max Rabkin  <max.rabkin@gmail.com>
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
 
-   Escape query url in google scrape.
+   Rework nickserv auth to allow simultaneous authentications for the
+   same nick (although Nickserv will only be bothered once).
 
-   Fixes :bug:`572308`.
+   Fixes :bug:`655647`.
 
-2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
 
-   Use explicit lower() on each side of LIKE so factoids with arguments
-   can be case-insensitive on Postgres.
+   Use absolute imports to import SILC correctly
 
-   Fixes :bug:`574427`.
+   Fixes :bug:`654202`.
 
-2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
+2010-12-20  Stefano Rivera  <stefano@rivera.za.net>
 
-   Google is also a calculator.
+   Country Code list parsing: Check for ; in a line before splitting by
+   semi-colons.
 
-   Fixes :bug:`574300`.
+   Fixes :bug:`692347`.
 
-2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
+2010-12-20  Max Rabkin  <max.rabkin@gmail.com>
 
-   Limit the size of the file-descriptor pool in log.
+   Don't treat feeds with no messages as errors.
 
-   Fixes :bug:`567571`.
+   Fixes :bug:`661187`.
 
-2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
+2010-11-08  Stefano Rivera  <stefano@rivera.za.net>
 
-   Switch from XE.com to Yahoo for currency conversions.
+   Correctly handle state events that have no channel.
 
-2010-06-07  Stefano Rivera  <stefano@rivera.za.net>
+   Fixes :bug:`656349`.
 
-   NickServ support for rizon.
+2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-06-13  Michael Gorven  <michael@gorven.za.net>
+   Port google scrape search to get_html_parse_tree + etree. Handle
+   superscript in gcalc.
 
-   Fix real JID detection when more than one 'x' element is received.
+   Fixes :bug:`580696`.
 
-2010-07-04  Stefano Rivera  <stefano@rivera.za.net>
+2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
 
-   Display latest tweets from retweeting-twits instead of thinking they
-   don't exist.
+   Put periodic lock-using code in a try...finally block.
 
-   Fixes :bug:`554906`.
+2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-07-10  Stefano Rivera  <stefano@rivera.za.net>
+   Support twitter's new AJAX URLs.
 
-   Correct abbreviated cross-ref format, shown up by Sphinx 1.0b1.
+   Fixes :bug:`654535`.
 
-2010-08-14  Stefano Rivera  <stefano@rivera.za.net>
+2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
 
-   Don't try to process() events without a message in meeting.
+   Always respond to memo sending with confirmation of recipient. Allow
+   memos to begin with "on ..." when not naming a known source.
 
-   Fixes :bug:`598094`.
-
-2010-09-29  Max Rabkin  <max.rabkin@gmail.com>
-
-   [SECURITY] Don't leak private messages to meeting logs.
-
-   Fixes :bug:`649383`.
-
-2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
-
-   Handle 0 tweets in Twitter Atom feed parsing, correctly handle it
-   elsewhere instead of treating it as no such twit.
-
-   Fixes :bug:`646989`.
-
-2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
-
-   Docs: Be clear that ibid is in Debian & Ubuntu.
-
-2010-10-03  Stefano Rivera  <stefano@rivera.za.net>
-
-   [SECURITY] Add a configuration glob-list of channels which should
-   have public logs, rather than attempting to guess.
-
-   Fixes :bug:`567576`.
+   Fixes :bug:`634253`.
 
 2010-10-04  Stefano Rivera  <stefano@rivera.za.net>
 
@@ -209,137 +188,158 @@ All Changes
 
    Fixes :bug:`652000`.
 
-2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
+2010-10-03  Stefano Rivera  <stefano@rivera.za.net>
 
-   Always respond to memo sending with confirmation of recipient. Allow
-   memos to begin with "on ..." when not naming a known source.
+   [SECURITY] Add a configuration glob-list of channels which should
+   have public logs, rather than attempting to guess.
 
-   Fixes :bug:`634253`.
+   Fixes :bug:`567576`.
 
-2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
+2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
 
-   Support twitter's new AJAX URLs.
+   Docs: Be clear that ibid is in Debian & Ubuntu.
 
-   Fixes :bug:`654535`.
+2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
+   Handle 0 tweets in Twitter Atom feed parsing, correctly handle it
+   elsewhere instead of treating it as no such twit.
 
-   Put periodic lock-using code in a try...finally block.
+   Fixes :bug:`646989`.
 
-2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
+2010-09-29  Max Rabkin  <max.rabkin@gmail.com>
 
-   Port google scrape search to get_html_parse_tree + etree. Handle
-   superscript in gcalc.
+   [SECURITY] Don't leak private messages to meeting logs.
 
-   Fixes :bug:`580696`.
+   Fixes :bug:`649383`.
 
-2010-11-08  Stefano Rivera  <stefano@rivera.za.net>
+2010-08-14  Stefano Rivera  <stefano@rivera.za.net>
 
-   Correctly handle state events that have no channel.
+   Don't try to process() events without a message in meeting.
 
-   Fixes :bug:`656349`.
+   Fixes :bug:`598094`.
 
-2010-12-20  Max Rabkin  <max.rabkin@gmail.com>
+2010-07-10  Stefano Rivera  <stefano@rivera.za.net>
 
-   Don't treat feeds with no messages as errors.
+   Correct abbreviated cross-ref format, shown up by Sphinx 1.0b1.
 
-   Fixes :bug:`661187`.
+2010-07-04  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-12-20  Stefano Rivera  <stefano@rivera.za.net>
+   Display latest tweets from retweeting-twits instead of thinking they
+   don't exist.
 
-   Country Code list parsing: Check for ; in a line before splitting by
-   semi-colons.
+   Fixes :bug:`554906`.
 
-   Fixes :bug:`692347`.
+2010-06-13  Michael Gorven  <michael@gorven.za.net>
 
-2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+   Fix real JID detection when more than one 'x' element is received.
 
-   Use absolute imports to import SILC correctly
+2010-06-07  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`654202`.
+   NickServ support for rizon.
 
-2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
 
-   Rework nickserv auth to allow simultaneous authentications for the
-   same nick (although Nickserv will only be bothered once).
+   Switch from XE.com to Yahoo for currency conversions.
 
-   Fixes :bug:`655647`.
+2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+   Limit the size of the file-descriptor pool in log.
 
-   Follow redirects in "is it up"
+   Fixes :bug:`567571`.
 
-   Fixes :bug:`599410`.
+2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
+   Google is also a calculator.
 
-   Support toilet fonts, correctly decode utf-8 figlet output, handle
-   font choice edge cases.
+   Fixes :bug:`574300`.
 
-   Fixes :bug:`607743`.
+2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
 
-2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
+   Use explicit lower() on each side of LIKE so factoids with arguments
+   can be case-insensitive on Postgres.
 
-   Fix for the logging open file cache: Logs in logs might not be in
-   recent_logs.
+   Fixes :bug:`574427`.
 
-   Fixes :bug:`655645`.
+2010-05-05  Max Rabkin  <max.rabkin@gmail.com>
 
-2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+   Escape query url in google scrape.
 
-   Use new OEIS API at oeis.org
+   Fixes :bug:`572308`.
 
-   Fixes :bug:`700475`.
+2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
 
-2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+   Incorrect substitution in SQLite indexing warning.
 
-   Catch exceptions when polling feeds so that one broken feed doesn't
-   stop all feeds.
+2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`578396`.
+   Change administrative user & identity linking syntax to be less
+   problematically broad.
 
-2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+   Fixes :bug:`567510`.
 
-   Check content_type is set before checking its value.
+2010-04-26  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`701900`.
+   Increase default HTTP GET size from 500 bytes to 2kiB.
 
-2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
+   Fixes :bug:`563928`.
 
-   Strip tags from gcalc response.
+2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
 
-   Fixes :bug:`702371`.
+   Update youtube plugin to cope with site redesign.
 
-2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
+   Fixes :bug:`561684`.
 
-   Handle non-500 error codes from twitter.
+2010-04-13  Max Rabkin  <max.rabkin@gmail.com>
 
-   Fixes :bug:`670855`.
+   Allow digits in Unicode character names.
 
-2011-01-21  Max Rabkin  <max.rabkin@gmail.com>
+2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
 
-   Enforce permissions on non-@match handlers.
+   HTTP GET: Don't assume everything is utf-8, decode according to
+   provided charset, fall back to utf-8 for text, and guess with chardet
+   if either of those was wrong.
 
-   Fixes :bug:`705860`.
+   Fixes :bug:`560973`.
 
-2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
+2010-04-09  Max Rabkin  <max.rabkin@gmail.com>
 
-   URLErrors have reasons, but there are other HTTPErrors
+   Use unicode case-insensitive matching in factoid.
 
-   Fixes :bug:`670855`.
+   Fixes :bug:`542707`.
 
-2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
+2010-03-27  Michael Gorven  <michael@gorven.za.net>
 
-   Add parse_timestamp function to ibid.utils, use for parsing
-   timestamps from Twitter.
+   Treat the Processor's first feature as the primary feature in RPC.
 
-   Fixes :bug:`702815`.
+   Fixes :bug:`545168`.
 
-2011-01-22  Keegan Carruthers-Smith  <keegan.csmith@gmail.com>
+2010-03-27  Max Rabkin  <max.rabkin@gmail.com>
 
-   Use correct plurality in pending memos message
+   Respond with unicode in bible error handlers.
 
-   Fixes :bug:`634257`.
+   Fixes :bug:`544260`.
+
+2010-03-26  Marco Gallotta  <marco@gallotta.co.za>
+
+   Allow trailing punctuation in tea-style addressing.
+
+   Fixes :bug:`545186`.
+
+2010-03-23  Marco Gallotta  <marco@gallotta.co.za>
+
+   Add username=ibid parameter to geonames API calls. Some calls now require it.
+
+   Fixes :bug:`543989`.
+
+2010-03-23  Max Rabkin  <max.rabkin@gmail.com>
+
+   Python 2.5 compatibility update for unicode lookup. Exception for unknown character changed in 2.6.
+
+   Fixes :bug:`542593`.
+
+2010-03-10  Stefano Rivera  <stefano@rivera.za.net>
+
+   Add placeholder to force ibid/static to be distributed.
 
 Release 0.1.0 (2010-03-10)
 ==========================
