@@ -8,38 +8,38 @@ Remote Execution
 ^^^^^^^^^^^^^^^^
 
 :bug:`705860`:
-  Permissions were ignored for handlers not using :func:`@match
-  <ibid.plugins.match>`.
-  This allowed users to perform actions they were not authorised to.
+   Permissions were ignored for handlers not using :func:`@match
+   <ibid.plugins.match>`.
+   This allowed users to perform actions they were not authorised to.
 
-  However, no included plugins were exposed by this, all
-  access-restricted handlers had match patterns.
+   However, no included plugins were exposed by this, all
+   access-restricted handlers had match patterns.
 
 Information Disclosure
 ^^^^^^^^^^^^^^^^^^^^^^
 
 :bug:`567576`:
-  Occasionally insecure permissions on log files.
-  When the bot spoke first (creating a new log file), the log file would
-  be publicly readable, even if the message was sent in private.
+   Occasionally insecure permissions on log files.
+   When the bot spoke first (creating a new log file), the log file
+   would be publicly readable, even if the message was sent in private.
 
-  Example:
-  If the bot delivered a *privmsg* memo to a user at the beginning of
-  the month, it would create the logfile with public readable
-  permissions.
-  If the logfile directory was published by a web server, this would
-  make this private conversation log accessible to the public.
+   Example:
+   If the bot delivered a *privmsg* memo to a user at the beginning of
+   the month, it would create the logfile with public readable
+   permissions.
+   If the logfile directory was published by a web server, this would
+   make this private conversation log accessible to the public.
 
-  Resolution: Now channels must be explicitly configured to have
-  publicly readable logs.
+   Resolution: Now channels must be explicitly configured to have
+   publicly readable logs.
 
 :bug:`649383`:
-  If someone received a private message from the bot
-  during a public meeting, the message could appear in the meeting
-  minutes.
+   If someone received a private message from the bot
+   during a public meeting, the message could appear in the meeting
+   minutes.
 
-  Example: a *privmsg* memo received during a meeting would appear in
-  the minutes.
+   Example: a *privmsg* memo received during a meeting would appear in
+   the minutes.
 
 All Changes
 -----------
@@ -334,13 +334,15 @@ All Changes
 
 2010-03-23  Marco Gallotta  <marco@gallotta.co.za>
 
-   Add username=ibid parameter to geonames API calls. Some calls now require it.
+   Add username=ibid parameter to geonames API calls. Some calls now
+   require it.
 
    Fixes :bug:`543989`.
 
 2010-03-23  Max Rabkin  <max.rabkin@gmail.com>
 
-   Python 2.5 compatibility update for unicode lookup. Exception for unknown character changed in 2.6.
+   Python 2.5 compatibility update for unicode lookup. Exception for
+   unknown character changed in 2.6.
 
    Fixes :bug:`542593`.
 
@@ -351,6 +353,6 @@ All Changes
 Release 0.1.0 (2010-03-10)
 ==========================
 
-* First public release.
+*  First public release.
 
 .. vi: set ft=rst et sta sw=3 ts=3:
