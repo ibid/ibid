@@ -286,7 +286,7 @@ def human_join(items, separator=u',', conjunction=u'and'):
 
 def plural(count, singular, plural):
     "Return singular or plural depending on count"
-    if count == 1:
+    if abs(count) == 1:
         return singular
     return plural
 
