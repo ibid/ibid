@@ -1,6 +1,13 @@
 Release 0.1.1 (in development)
 ==============================
 
+Bug fix release, including a couple of security issues.
+
+Several plugins that consume Web services or scrape Web sites have been
+updated to cope with changes since the last release.
+
+There were no DB schema changes between 0.1.0 and 0.1.1.
+
 Resolved Security Issues
 ------------------------
 
@@ -40,6 +47,30 @@ Information Disclosure
 
    Example: a *privmsg* memo received during a meeting would appear in
    the minutes.
+
+Major User Visible Changes
+--------------------------
+
+*  New configuration option ``plugins.log.public_logs``, a list of
+   ``source:channel`` globs of channels to log in files with publically
+   readable permissions.
+
+*  New configuration option ``plugins.ascii.preferred_fonts``, a list of
+   figlet fonts, the first one found is the default.
+
+*  Currency exchange now uses Yahoo instead of XE.com.
+
+API Changes
+-----------
+
+*  New Function: :func:`ibid.utils.parse_timestamp` for parsing
+   well-formatted timestamps.
+
+*  New Function: :func:`ibid.utils.generic_webservice` for retrieving
+   arbitrary data from a web-service.
+
+*  New Function: :func:`ibid.db.get_regexp_op` which returns a REGEXP
+   SqlAlchemy operator for the DBMS in use.
 
 All Changes
 -----------
