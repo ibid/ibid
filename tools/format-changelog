@@ -3,11 +3,11 @@
 import optparse
 import re
 import subprocess
-import sys
+import textwrap
 
 def process_block(block):
     "Reformat a block into nice rst"
-    block = ''.join(block).decode('utf-8')
+    block = ''.join(block).decode('utf-8').strip()
 
     template_re = re.compile(r'^\tAuthor: .*\n'
                              r'\tApproved by: .*\n'
@@ -17,11 +17,30 @@ def process_block(block):
         bugs = [int(bug) for bug in m.group(1).split(',')]
         if bugs:
             bugs = [u':bug:`%i`' % bug for bug in bugs]
-            return u'\n\tFixes: %s' % u', '.join(bugs)
+            return u'\n\tFixes: %s.' % u', '.join(bugs)
         return u''
     block = template_re.sub(repl, block)
 
-    sys.stdout.write(block.encode('utf-8'))
+    block = block.splitlines()
+
+    wrapper = textwrap.TextWrapper(subsequent_indent=u'   ')
+    for i, line in enumerate(block):
+        if not line.strip():
+            line = u''
+
+        if line.startswith(u'\t'):
+            line = u'   ' + line[1:]
+            if i + 1 == len(block) or not block[i+1].strip():
+                if not line.endswith(u'.'):
+                    line += u'.'
+
+            line = u'\n'.join(wrapper.wrap(line))
+
+        block[i] = line
+
+    block.append(u'')
+    block = u'\n'.join(block)
+    print block.encode('utf-8')
 
 def main():
     parser = optparse.OptionParser()
