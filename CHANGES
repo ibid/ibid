@@ -44,9 +44,16 @@ Information Disclosure
 All Changes
 -----------
 
+2011-01-25  Stefano Rivera  <stefano@rivera.za.net>
+
+   Add function get_regexp_op to ibid.db that returns a REGEXP op that
+   works on Postgres too.
+
+   Fixes: :bug:`595423`.
+
 2011-01-22  Keegan Carruthers-Smith  <keegan.csmith@gmail.com>
 
-   Use correct plurality in pending memos message
+   Use correct plurality in pending memos message.
 
    Fixes :bug:`634257`.
 
