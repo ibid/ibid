@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
@@ -14,7 +14,8 @@ from ibid.config import Option, IntOption, ListOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
                     Table, Column, ForeignKey, PassiveDefault, \
                     relation, synonym, func, or_, \
-                    Base, VersionedSchema
+                    Base, VersionedSchema, \
+                    get_regexp_op
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
 
@@ -245,7 +246,8 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
 
         if pattern:
             if is_regex:
-                query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+                op = get_regexp_op(session)
+                query = query.filter(op(FactoidValue.value, pattern))
             else:
                 pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
                 # http://www.sqlalchemy.org/trac/ticket/1400:
@@ -425,7 +427,7 @@ class Search(Processor):
             filter_on = (FactoidName.name, FactoidValue.value)
 
         if is_regex:
-            filter_op = lambda x, y: x.op('REGEXP')(y)
+            filter_op = get_regexp_op(event.session)
         else:
             pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
             filter_op = lambda x, y: x.like(y)
