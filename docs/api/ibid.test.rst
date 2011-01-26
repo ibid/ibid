@@ -11,13 +11,9 @@ End-to-end testing
 .. class:: PluginTestCase
 
    A subclass of Twisted Trial's
-   `unittest.TestCase <http://twistedmatrix.com/documents/8.2.0/api/twisted.trial.unittest.TestCase.html>`_. It sets up an
-   environment much like a running Ibid including a clean database, and loads
-   the specified plugins.
-
-   The clean database is a SQLite database at ``ibid/test/test.db`` (which needs to
-   be updated when the schema changes). The tests also use the config at
-   ``ibid/test/test.ini``.
+   `unittest.TestCase <http://twistedmatrix.com/documents/8.2.0/api/twisted.trial.unittest.TestCase.html>`_.
+   It sets up an environment much like a running Ibid including a clean SQLite
+   database, and loads the specified plugins,
 
    .. attribute:: load
 
