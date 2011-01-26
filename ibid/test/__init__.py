@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2011, Jeremy Thurgood, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import logging
-from shutil import copyfile
 import os
 from tempfile import NamedTemporaryFile
 import re

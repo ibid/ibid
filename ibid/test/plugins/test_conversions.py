@@ -1,8 +1,6 @@
 # Copyright (c) 2010-2011, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-import re
-
 from ibid.test import PluginTestCase
 
 class UnihanTest(PluginTestCase):
