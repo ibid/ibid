@@ -84,7 +84,6 @@ class Grab(Processor):
     def _post_url(self, event, url=None):
         "Posts a URL to delicious.com"
 
-        date = datetime.utcnow()
         title = self._get_title(url)
 
         con_re = re.compile(r'!n=|!')
@@ -112,7 +111,7 @@ class Grab(Processor):
             'description' : title.encode('utf-8'),
             'tags' : tags.encode('utf-8'),
             'replace' : 'yes',
-            'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'dt' : event.time.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'extended' : event.message['raw'].encode('utf-8'),
             }
 
