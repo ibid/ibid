@@ -129,6 +129,11 @@ class PluginTestCase(unittest.TestCase):
 
         return event
 
+    def fail(self, message, event=None):
+        if event is not None:
+            message += '\n' + repr(event)
+        unittest.TestCase.fail(self, message)
+
     def responseMatches(self, event, regex):
         if isinstance(event, basestring):
             event = self.make_event(event)
@@ -139,19 +144,19 @@ class PluginTestCase(unittest.TestCase):
 
         for response in event.responses:
             if regex.match(response['reply']):
-                return (True, response['reply'])
+                return (True, event, response['reply'])
         else:
-            return (False, event.responses)
+            return (False, event, event.responses)
 
     def assertResponseMatches(self, event, regex):
-        match, resp = self.responseMatches(event, regex)
+        match, event, resp = self.responseMatches(event, regex)
         if not match:
-            self.fail("No response in %r matches regex" % resp)
+            self.fail("No response in matches regex %r" % regex, event)
 
     def failIfResponseMatches(self, event, regex):
-        match, resp = self.responseMatches(event, regex)
+        match, event, resp = self.responseMatches(event, regex)
         if match:
-            self.fail("Response %r unexpectedly matches regex" % match)
+            self.fail("Response %r unexpectedly matches regex" % match, event)
 
     def assertSucceeds(self, event):
         if isinstance(event, basestring):
@@ -161,7 +166,7 @@ class PluginTestCase(unittest.TestCase):
         self.assert_(event.get('processed', False))
 
         if 'complain' in event:
-            self.fail("Event has complain set to %s" % event['complain'])
+            self.fail("Event has complain set to %s" % event['complain'], event)
 
     def assertFails(self, event):
         if isinstance(event, basestring):
@@ -171,7 +176,7 @@ class PluginTestCase(unittest.TestCase):
         self.assert_(event.get('processed', False))
 
         if event.get('processed', False) and 'complain' not in event:
-            self.fail("Event was expected to fail")
+            self.fail("Event was expected to fail", event)
 
     def tearDown(self):
         for processor in ibid.processors:
