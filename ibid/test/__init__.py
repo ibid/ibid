@@ -174,6 +174,10 @@ class PluginTestCase(unittest.TestCase):
             self.fail("Event was expected to fail")
 
     def tearDown(self):
+        for processor in ibid.processors:
+            processor.shutdown()
+        del ibid.processors[:]
+
         del ibid.sources[self.source]
         ibid.databases.ibid().bind.engine.dispose()
         self.dbfile.close()
