@@ -176,6 +176,7 @@ class PluginTestCase(unittest.TestCase):
 
     def tearDown(self):
         del ibid.sources[self.source]
+        ibid.databases.ibid().bind.engine.dispose()
         self.dbfile.close()
 
 # vi: set et sta sw=4 ts=4:
