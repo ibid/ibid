@@ -80,8 +80,13 @@ End-to-end testing
    .. method:: responseMatches(event, regex)
 
       Process *event* (either an event or a string to be treated as a
-      message from the test user on the test source), and return whether the
+      message from the test user on the test source), and return a 3-tuple of
+      (result, event, responses); result is a bool indicating whether the
       response matches *regex* (either a regex string or a compiled regex).
+
+      The other two elements give more information: *event* is the processed
+      event; *responses* is a single matching response if result is ``True``, or
+      a list of all responses otherwise.
 
    .. method:: assertResponseMatches(event, regex)
 
