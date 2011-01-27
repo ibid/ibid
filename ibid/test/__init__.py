@@ -3,9 +3,11 @@
 import logging
 import os
 from tempfile import NamedTemporaryFile
+from traceback import format_exception
 import re
 
 from twisted.python import log
+from twisted.python.modules import getModule
 from twisted.trial import unittest
 
 import ibid
@@ -76,33 +78,25 @@ class PluginTestCase(unittest.TestCase):
         if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
             raise unittest.SkipTest('test uses network')
 
-        ibid.auth = TestAuth()
-
         ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
-
-        # Make a temporary test database.
-        # This assumes SQLite, both in the fact that the database is a single
-        # file and in forming the URL.
-        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
-        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
-        db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
-        upgrade_schemas(db['ibid'])
-
-        ibid.reload_reloader()
-        ibid.reloader.reload_databases()
-        ibid.reloader.reload_dispatcher()
-
-        self.source = u'test_source_' + unicode(id(self))
-        ibid.sources[self.source] = TestSource()
 
         if self.load_configured is None:
             self.load_configured = not self.load
 
-        load = self.load
         if self.load_base:
-            load += ['core']
+            self.load += ['core']
+            self.noload += ['core.RateLimit']
 
-        ibid.reloader.load_processors(load, self.noload, self.load_configured)
+        self._create_database()
+
+        ibid.reload_reloader()
+        ibid.reloader.reload_databases()
+        ibid.reloader.reload_dispatcher()
+        ibid.reloader.load_processors(self.load, self.noload, self.load_configured)
+
+        ibid.auth = TestAuth()
+        self.source = u'test_source_' + unicode(id(self))
+        ibid.sources[self.source] = TestSource()
 
         session = ibid.databases.ibid()
 
@@ -113,6 +107,27 @@ class PluginTestCase(unittest.TestCase):
             .filter_by(identity=self.username).one()
 
         session.close()
+
+    def _create_database(self):
+        # Make a temporary test database.
+        # This assumes SQLite, both in the fact that the database is a single
+        # file and in forming the URL.
+        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
+        db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
+        if self.load_configured:
+            for module in getModule('ibid.plugins').iterModules():
+                try:
+                    __import__(module.name)
+                except Exception, e:
+                    print >> stderr, u"Couldn't load %s plugin: %s" % (
+                            module.name.replace('ibid.plugins.', ''), unicode(e))
+        else:
+            for plugin in self.load:
+                if plugin not in self.noload:
+                    module = 'ibid.plugins.' + plugin
+                    __import__(module)
+        upgrade_schemas(db['ibid'])
 
     def make_event(self, message=None, type=u'message'):
         event = Event(self.source, type)
