@@ -84,8 +84,8 @@ class PluginTestCase(unittest.TestCase):
             self.load_configured = not self.load
 
         if self.load_base:
-            self.load += ['core']
-            self.noload += ['core.RateLimit']
+            self.load = self.load + ['core']
+            self.noload = self.noload + ['core.RateLimit']
 
         self._create_database()
 
