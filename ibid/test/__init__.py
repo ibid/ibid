@@ -147,6 +147,8 @@ class PluginTestCase(unittest.TestCase):
     def fail(self, message, event=None):
         if event is not None:
             message += '\n' + repr(event)
+            if 'exc_info' in event:
+                message += ''.join(format_exception(*event['exc_info']))
         unittest.TestCase.fail(self, message)
 
     def responseMatches(self, event, regex):
