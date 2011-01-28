@@ -147,7 +147,7 @@ class PluginTestCase(unittest.TestCase):
         event.channel = u'testchan'
 
         if message is not None:
-            event.message = message
+            event.message = unicode(message)
 
         return event
 
@@ -180,7 +180,8 @@ class PluginTestCase(unittest.TestCase):
     def failIfResponseMatches(self, event, regex):
         match, event, resp = self.responseMatches(event, regex)
         if match:
-            self.fail("Response %r unexpectedly matches regex" % match, event)
+            self.fail("Response %r unexpectedly matches regex %r" %
+                (resp, regex), event)
 
     def assertSucceeds(self, event):
         if isinstance(event, basestring):
