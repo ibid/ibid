@@ -5,6 +5,8 @@ import os
 from tempfile import NamedTemporaryFile
 from traceback import format_exception
 import re
+from shutil import copyfile
+import sys
 
 from twisted.python import log
 from twisted.python.modules import getModule
@@ -73,6 +75,7 @@ class PluginTestCase(unittest.TestCase):
     username = u'user'
     public = False
     network = False
+    empty_dbfile = None
 
     def setUp(self):
         if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
@@ -108,26 +111,30 @@ class PluginTestCase(unittest.TestCase):
 
         session.close()
 
-    def _create_database(self):
+    @classmethod
+    def _create_empty_database(cls):
         # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
-        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
-        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
+        PluginTestCase.empty_dbfile = NamedTemporaryFile(suffix='.db',
+                                                        prefix='ibid-skeleton')
+        ibid.config['databases']['ibid'] = 'sqlite:///' + cls.empty_dbfile.name
         db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
-        if self.load_configured:
-            for module in getModule('ibid.plugins').iterModules():
-                try:
-                    __import__(module.name)
-                except Exception, e:
-                    print >> stderr, u"Couldn't load %s plugin: %s" % (
-                            module.name.replace('ibid.plugins.', ''), unicode(e))
-        else:
-            for plugin in self.load:
-                if plugin not in self.noload:
-                    module = 'ibid.plugins.' + plugin
-                    __import__(module)
+        for module in getModule('ibid.plugins').iterModules():
+            try:
+                __import__(module.name)
+            except Exception, e:
+                print >> sys.stderr, u"Couldn't load %s plugin for skeleton DB: %s" % (
+                        module.name.replace('ibid.plugins.', ''), unicode(e))
         upgrade_schemas(db['ibid'])
+        del ibid.config['databases']['ibid']
+
+    def _create_database(self):
+        if self.empty_dbfile is None:
+            self._create_empty_database()
+        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
+        copyfile(self.empty_dbfile.name, self.dbfile.name)
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
 
     def make_event(self, message=None, type=u'message'):
         event = Event(self.source, type)
