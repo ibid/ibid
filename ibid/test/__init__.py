@@ -3,7 +3,6 @@
 import atexit
 import logging
 import os
-from tempfile import NamedTemporaryFile
 from traceback import format_exception
 import re
 from shutil import copyfile
@@ -114,15 +113,12 @@ class PluginTestCase(unittest.TestCase):
 
         session.close()
 
-    @classmethod
-    def _create_empty_database(cls):
+    def _create_empty_database(self):
         # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
-        PluginTestCase.empty_dbfile = NamedTemporaryFile(suffix='.db',
-                                                        prefix='ibid-skeleton')
-        atexit.register(PluginTestCase.empty_dbfile.close)
-        ibid.config['databases']['ibid'] = 'sqlite:///' + cls.empty_dbfile.name
+        PluginTestCase.empty_dbfile = self.mktemp()
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.empty_dbfile
         db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
         for module in getModule('ibid.plugins').iterModules():
             try:
@@ -136,9 +132,9 @@ class PluginTestCase(unittest.TestCase):
     def _create_database(self):
         if self.empty_dbfile is None:
             self._create_empty_database()
-        self.dbfile = NamedTemporaryFile(suffix='.db', prefix='ibid-test-')
-        copyfile(self.empty_dbfile.name, self.dbfile.name)
-        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile.name
+        self.dbfile = self.mktemp()
+        copyfile(self.empty_dbfile, self.dbfile)
+        ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
 
     def make_event(self, message=None, type=u'message'):
         event = Event(self.source, type)
@@ -214,6 +210,6 @@ class PluginTestCase(unittest.TestCase):
 
         del ibid.sources[self.source]
         ibid.databases.ibid().bind.engine.dispose()
-        self.dbfile.close()
+        os.unlink(self.dbfile)
 
 # vi: set et sta sw=4 ts=4:
