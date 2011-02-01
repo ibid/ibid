@@ -73,7 +73,8 @@ class FactoidTest(PluginTestCase):
         for name in names:
             self.assertSucceeds('%s is $1' % name)
             self.failIfResponseMatches('forget %s' % name, ".*didn't know")
-            self.assertFails(name.replace('$arg', 'foo'))
+            self.failIfResponseMatches(name.replace('$arg', 'foo'),
+                name.replace('$arg', 'foo') + 'is foo')
 
     def test_unicode_name(self):
         names = [u'ascii', u'ü' , u'Ü', u'よし']
