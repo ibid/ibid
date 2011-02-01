@@ -32,12 +32,6 @@ class FactoidTest(PluginTestCase):
                 self.assertResponseMatches(name,
                     '%s is %s' % (name, value.replace(needle, subst)))
 
-                self.assertSucceeds('no, %s is %s' % (name, value))
-                self.assertSucceeds('%s ~= s/%s/%s/i' %
-                    (name, needle.upper(), subst))
-                self.assertResponseMatches(name,
-                    '%s is %s' % (name, value.replace(needle, subst, 1)))
-
     def test_string_transliterate(self):
         self.assertSucceeds('foo is bar quux')
         self.assertSucceeds('foo ~= y/a x/ ay/')
@@ -93,7 +87,7 @@ class FactoidTest(PluginTestCase):
 
     def test_same_as_nothing(self):
         self.assertSucceeds('foo is the same as bar')
-        self.assertResponseMatches('foo', "I don't know about bar")
+        self.failIfResponseMatches('what is foo?', ".*(foo|bar)")
 
     def test_multiple_copula(self):
         self.assertSucceeds('a is b =is= c')
