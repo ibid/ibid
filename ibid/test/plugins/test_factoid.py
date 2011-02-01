@@ -89,3 +89,52 @@ class FactoidTest(PluginTestCase):
         self.assertSucceeds('slap $arg is <action>slaps $1')
         self.assertResponseMatches('search for slap',
             re.escape('slap $arg [1]'))
+
+    def test_same_as_nothing(self):
+        self.assertSucceeds('foo is the same as bar')
+        self.assertResponseMatches('foo', "I don't know about bar")
+
+    def test_multiple_copula(self):
+        self.assertSucceeds('a is b =is= c')
+        self.assertResponseMatches('a is b', 'a is b is c')
+        self.assertSucceeds('a =is= b is c')
+        self.assertResponseMatches('a', 'a is b is c')
+
+    def test_name_punctuation(self):
+        self.assertSucceeds('feegle? is fagle')
+        self.assertResponseMatches('feegle?', 'feegle is fagle')
+        self.assertResponseMatches('feegle', 'feegle is fagle')
+
+    def test_duplicate_names(self):
+        self.assertSucceeds('feegle is fagle')
+        self.assertSucceeds('beagle is the same as feegle')
+        self.assertResponseMatches('beagle is the same as feegle', '.*already')
+
+    def test_also(self):
+        self.assertSucceeds('foo is also bar')
+        self.assertSucceeds('foo is also baz')
+        self.assertSucceeds('foo also is quux')
+        self.assertResponseMatches('literal foo', '.*bar.*baz.*quux')
+
+    def test_wildcard_tamecard(self):
+        self.assertSucceeds('foo a is bar')
+        self.assertSucceeds('foo $arg is baz')
+        self.assertResponseMatches('foo a', 'foo a is bar')
+        self.assertResponseMatches('foo ack', 'foo ack is baz')
+
+    def test_forget_multiple(self):
+        self.assertSucceeds('foo is bar')
+        self.assertSucceeds('foo is also baz')
+        self.assertSucceeds('forget foo #2')
+        self.assertResponseMatches('literal foo', '1: is bar')
+
+    def test_get_case(self):
+        self.assertSucceeds('Foo is bar')
+        self.assertSucceeds('FoO $arg is lol')
+        self.assertResponseMatches('foo', 'foo is bar')
+        self.assertResponseMatches('foo lol', 'foo lol is lol')
+
+    def test_empty(self):
+        self.assertResponseMatches('. is foo', '.*empty')
+        self.failIfResponseMatches('', '.*foo')
+        self.failIfResponseMatches('.', '.*foo')
