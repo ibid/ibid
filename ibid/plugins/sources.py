@@ -90,9 +90,9 @@ class Invited(Processor):
     @handler
     @authorise()
     def invited(self, event):
-        event.addresponse(u'Joining %s', event.channel,
+        event.addresponse(u'Joining %s', event.target_channel,
                             target=event.sender['nick'])
-        ibid.sources[event.source].join(event.channel)
+        ibid.sources[event.source].join(event.target_channel)
 
 class NickServ(Processor):
     event_types = (u'notice',)
