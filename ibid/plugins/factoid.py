@@ -435,7 +435,7 @@ class Search(Processor):
             is_regex = bool(m.group(2))
 
         # Hack: We replace $arg with _%, but this won't match a partial
-        # "$args" string
+        # "$arg" string
         if is_regex:
             filter_op = get_regexp_op(event.session)
             name_pattern = pattern.replace(r'\$arg', '_%')
