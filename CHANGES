@@ -75,6 +75,52 @@ API Changes
 All Changes
 -----------
 
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Filter out empty definitions in gdefine.
+
+   Fixes: :bug:`719851`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   We don't support SQLAlchemy 0.6 yet.
+
+   Fixes: :bug:`651992`.
+
+2011-02-20  Marco Gallotta  <marco@gallotta.co.za>
+
+   Only append .com for url's like "example".
+
+   Fixes: :bug:`702062`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Use escape=# for LIKEs.
+   Perform literal queries on all non-get Factoid operations. Return
+   useful error if start index is too high.
+   Substitute $arg for _% in search.
+
+   Fixes: :bug:`544493`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   HTTPErrors should result in using url as title, not abandoning the
+   grab.
+
+   Fixes: :bug:`702798`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Catch ImportErrors for packages we don't require in setup.py.
+
+   Fixes: :bug:`651990`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   pysqlite is only necessary on ancient Pythons.
+
+   Fixes: :bug:`708302`.
+
 2011-01-25  Stefano Rivera  <stefano@rivera.za.net>
 
    Add function get_regexp_op to ibid.db that returns a REGEXP op that
