@@ -263,9 +263,8 @@ dependencies installed in a virtualenv, you can skip this step::
 
    user@box $ sudo aptitude install bzr python-configobj python-sqlalchemy \
      python-twisted python-beautifulsoup python-celementtree \
-     python-html5lib python-pysqlite2 python-setuptools \
-     python-simplejson python-soappy python-jinja \
-     python-dateutil python-virtualenv
+     python-html5lib python-setuptools python-simplejson \
+     python-soappy python-jinja python-dateutil python-virtualenv
 
 Create a user to run your bot as::
 

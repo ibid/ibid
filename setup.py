@@ -15,7 +15,6 @@ install_requires=[
     'html5lib',
     'jinja',
     'pyopenssl',
-    'pysqlite',
     'PyStemmer',
     'python-dateutil',
     'SOAPpy',
@@ -28,6 +27,7 @@ if version_info[0] == 2 and version_info[1] < 6:
     install_requires.append('simplejson')
 if version_info[0] == 2 and version_info[1] < 5:
     install_requires.append('cElementTree')
+    install_requires.append('pysqlite')
 
 if argv[1:] == ['install', '--no-dependencies']:
     argv.pop()
