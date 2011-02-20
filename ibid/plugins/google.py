@@ -133,7 +133,8 @@ class GoogleScrapeSearch(Processor):
 
         definitions = []
         for li in tree.findall('.//li'):
-            definitions.append(li.text)
+            if li.text:
+                definitions.append(li.text)
 
         if definitions:
             event.addresponse(u' :: '.join(definitions))
