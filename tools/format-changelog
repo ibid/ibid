@@ -10,6 +10,7 @@ def process_block(block):
     block = ''.join(block).decode('utf-8').strip()
 
     template_re = re.compile(r'^\tAuthor: .*\n'
+                             r'(?:\tMerge Request: .*\n)?'
                              r'\tApproved by: .*\n'
                              r'\tFixes LP: #(.*)$',
                              re.MULTILINE | re.UNICODE)
