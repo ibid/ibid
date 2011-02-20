@@ -293,7 +293,10 @@ def regexp(pattern, item):
     return re.search(pattern, item, re.I) and True or False
 
 def sqlite_creator(database):
-    from pysqlite2 import dbapi2 as sqlite
+    try:
+        from pysqlite2 import dbapi2 as sqlite
+    except ImportError:
+        from sqlite3 import dbapi2 as sqlite
     def connect():
         connection = sqlite.connect(database)
         connection.create_function('regexp', 2, regexp)
