@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2008-2010, Michael Gorven
+# Copyright (c) 2008-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from sys import version_info, argv
@@ -18,7 +18,7 @@ install_requires=[
     'PyStemmer',
     'python-dateutil',
     'SOAPpy',
-    'SQLAlchemy>=0.5', # Works with >=0.4.6 except on OS X
+    'SQLAlchemy>=0.5,<0.6a', # Works with >=0.4.6 except on OS X
     'Twisted',
     'wokkel>=0.6.3',
 ]
