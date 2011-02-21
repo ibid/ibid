@@ -456,7 +456,7 @@ class Search(Processor):
         if bounded_matches:
             event.addresponse(u'; '.join(
                 u'%s [%s]' % (fname.name, len(factoid.values))
-                for factoid, fname in matches))
+                for factoid, fname in bounded_matches))
         elif len(matches):
             event.addresponse(u"I could only find %(number)d things that matched '%(pattern)s'", {
                 u'number': len(matches),
