@@ -1,0 +1,435 @@
+Release 0.1.1 (2011-02-24)
+==============================
+
+Bug fix release, including a couple of security issues.
+
+Several plugins that consume Web services or scrape Web sites have been
+updated to cope with changes since the last release.
+
+There were no DB schema changes between 0.1.0 and 0.1.1.
+
+Resolved Security Issues
+------------------------
+
+Remote Execution
+^^^^^^^^^^^^^^^^
+
+:bug:`705860`:
+   Permissions were ignored for handlers not using :func:`@match
+   <ibid.plugins.match>`.
+   This allowed users to perform actions they were not authorised to.
+
+   However, no included plugins were exposed by this, all
+   access-restricted handlers had match patterns.
+
+Information Disclosure
+^^^^^^^^^^^^^^^^^^^^^^
+
+:bug:`567576`:
+   Occasionally insecure permissions on log files.
+   When the bot spoke first (creating a new log file), the log file
+   would be publicly readable, even if the message was sent in private.
+
+   Example:
+   If the bot delivered a *privmsg* memo to a user at the beginning of
+   the month, it would create the logfile with public readable
+   permissions.
+   If the logfile directory was published by a web server, this would
+   make this private conversation log accessible to the public.
+
+   Resolution: Now channels must be explicitly configured to have
+   publicly readable logs.
+
+:bug:`649383`:
+   If someone received a private message from the bot
+   during a public meeting, the message could appear in the meeting
+   minutes.
+
+   Example: a *privmsg* memo received during a meeting would appear in
+   the minutes.
+
+Major User Visible Changes
+--------------------------
+
+*  New configuration option ``plugins.log.public_logs``, a list of
+   ``source:channel`` globs of channels to log in files with publically
+   readable permissions.
+
+*  New configuration option ``plugins.ascii.preferred_fonts``, a list of
+   figlet fonts, the first one found is the default.
+
+*  Currency exchange now uses Yahoo instead of XE.com.
+
+API Changes
+-----------
+
+*  New Function: :func:`ibid.utils.parse_timestamp` for parsing
+   well-formatted timestamps.
+
+*  New Function: :func:`ibid.utils.generic_webservice` for retrieving
+   arbitrary data from a web-service.
+
+*  New Function: :func:`ibid.db.get_regexp_op` which returns a REGEXP
+   SqlAlchemy operator for the DBMS in use.
+
+All Changes
+-----------
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Filter out empty definitions in gdefine.
+
+   Fixes: :bug:`719851`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   We don't support SQLAlchemy 0.6 yet.
+
+   Fixes: :bug:`651992`.
+
+2011-02-20  Marco Gallotta  <marco@gallotta.co.za>
+
+   Only append .com for url's like "example".
+
+   Fixes: :bug:`702062`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Use escape=# for LIKEs.
+   Perform literal queries on all non-get Factoid operations. Return
+   useful error if start index is too high.
+   Substitute $arg for _% in search.
+
+   Fixes: :bug:`544493`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   HTTPErrors should result in using url as title, not abandoning the
+   grab.
+
+   Fixes: :bug:`702798`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Catch ImportErrors for packages we don't require in setup.py.
+
+   Fixes: :bug:`651990`.
+
+2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   pysqlite is only necessary on ancient Pythons.
+
+   Fixes: :bug:`708302`.
+
+2011-01-25  Stefano Rivera  <stefano@rivera.za.net>
+
+   Add function get_regexp_op to ibid.db that returns a REGEXP op that
+   works on Postgres too.
+
+   Fixes: :bug:`595423`.
+
+2011-01-22  Keegan Carruthers-Smith  <keegan.csmith@gmail.com>
+
+   Use correct plurality in pending memos message.
+
+   Fixes :bug:`634257`.
+
+2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
+
+   Add parse_timestamp function to ibid.utils, use for parsing
+   timestamps from Twitter.
+
+   Fixes :bug:`702815`.
+
+2011-01-22  Stefano Rivera  <stefano@rivera.za.net>
+
+   URLErrors have reasons, but there are other HTTPErrors
+
+   Fixes :bug:`670855`.
+
+2011-01-21  Max Rabkin  <max.rabkin@gmail.com>
+
+   Enforce permissions on non-@match handlers.
+
+   Fixes :bug:`705860`.
+
+2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
+
+   Handle non-500 error codes from twitter.
+
+   Fixes :bug:`670855`.
+
+2011-01-19  Stefano Rivera  <stefano@rivera.za.net>
+
+   Strip tags from gcalc response.
+
+   Fixes :bug:`702371`.
+
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+
+   Check content_type is set before checking its value.
+
+   Fixes :bug:`701900`.
+
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+
+   Catch exceptions when polling feeds so that one broken feed doesn't
+   stop all feeds.
+
+   Fixes :bug:`578396`.
+
+2011-01-19  Max Rabkin  <max.rabkin@gmail.com>
+
+   Use new OEIS API at oeis.org
+
+   Fixes :bug:`700475`.
+
+2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
+
+   Fix for the logging open file cache: Logs in logs might not be in
+   recent_logs.
+
+   Fixes :bug:`655645`.
+
+2010-12-25  Stefano Rivera  <stefano@rivera.za.net>
+
+   Support toilet fonts, correctly decode utf-8 figlet output, handle
+   font choice edge cases.
+
+   Fixes :bug:`607743`.
+
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+
+   Follow redirects in "is it up"
+
+   Fixes :bug:`599410`.
+
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+
+   Rework nickserv auth to allow simultaneous authentications for the
+   same nick (although Nickserv will only be bothered once).
+
+   Fixes :bug:`655647`.
+
+2010-12-24  Stefano Rivera  <stefano@rivera.za.net>
+
+   Use absolute imports to import SILC correctly
+
+   Fixes :bug:`654202`.
+
+2010-12-20  Stefano Rivera  <stefano@rivera.za.net>
+
+   Country Code list parsing: Check for ; in a line before splitting by
+   semi-colons.
+
+   Fixes :bug:`692347`.
+
+2010-12-20  Max Rabkin  <max.rabkin@gmail.com>
+
+   Don't treat feeds with no messages as errors.
+
+   Fixes :bug:`661187`.
+
+2010-11-08  Stefano Rivera  <stefano@rivera.za.net>
+
+   Correctly handle state events that have no channel.
+
+   Fixes :bug:`656349`.
+
+2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
+
+   Port google scrape search to get_html_parse_tree + etree. Handle
+   superscript in gcalc.
+
+   Fixes :bug:`580696`.
+
+2010-11-07  Stefano Rivera  <stefano@rivera.za.net>
+
+   Put periodic lock-using code in a try...finally block.
+
+2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
+
+   Support twitter's new AJAX URLs.
+
+   Fixes :bug:`654535`.
+
+2010-10-15  Stefano Rivera  <stefano@rivera.za.net>
+
+   Always respond to memo sending with confirmation of recipient. Allow
+   memos to begin with "on ..." when not naming a known source.
+
+   Fixes :bug:`634253`.
+
+2010-10-04  Stefano Rivera  <stefano@rivera.za.net>
+
+   Disallow empty factoid names.
+
+   Fixes :bug:`606065`.
+
+2010-10-05  Guy Halse
+
+   Allow bot to identify with zanet.net's NickServ.
+
+   Fixes :bug:`652000`.
+
+2010-10-03  Stefano Rivera  <stefano@rivera.za.net>
+
+   [SECURITY] Add a configuration glob-list of channels which should
+   have public logs, rather than attempting to guess.
+
+   Fixes :bug:`567576`.
+
+2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
+
+   Docs: Be clear that ibid is in Debian & Ubuntu.
+
+2010-09-30  Stefano Rivera  <stefano@rivera.za.net>
+
+   Handle 0 tweets in Twitter Atom feed parsing, correctly handle it
+   elsewhere instead of treating it as no such twit.
+
+   Fixes :bug:`646989`.
+
+2010-09-29  Max Rabkin  <max.rabkin@gmail.com>
+
+   [SECURITY] Don't leak private messages to meeting logs.
+
+   Fixes :bug:`649383`.
+
+2010-08-14  Stefano Rivera  <stefano@rivera.za.net>
+
+   Don't try to process() events without a message in meeting.
+
+   Fixes :bug:`598094`.
+
+2010-07-10  Stefano Rivera  <stefano@rivera.za.net>
+
+   Correct abbreviated cross-ref format, shown up by Sphinx 1.0b1.
+
+2010-07-04  Stefano Rivera  <stefano@rivera.za.net>
+
+   Display latest tweets from retweeting-twits instead of thinking they
+   don't exist.
+
+   Fixes :bug:`554906`.
+
+2010-06-13  Michael Gorven  <michael@gorven.za.net>
+
+   Fix real JID detection when more than one 'x' element is received.
+
+2010-06-07  Stefano Rivera  <stefano@rivera.za.net>
+
+   NickServ support for rizon.
+
+2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
+
+   Switch from XE.com to Yahoo for currency conversions.
+
+2010-06-04  Stefano Rivera  <stefano@rivera.za.net>
+
+   Limit the size of the file-descriptor pool in log.
+
+   Fixes :bug:`567571`.
+
+2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
+
+   Google is also a calculator.
+
+   Fixes :bug:`574300`.
+
+2010-05-12  Stefano Rivera  <stefano@rivera.za.net>
+
+   Use explicit lower() on each side of LIKE so factoids with arguments
+   can be case-insensitive on Postgres.
+
+   Fixes :bug:`574427`.
+
+2010-05-05  Max Rabkin  <max.rabkin@gmail.com>
+
+   Escape query url in google scrape.
+
+   Fixes :bug:`572308`.
+
+2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
+
+   Incorrect substitution in SQLite indexing warning.
+
+2010-05-05  Stefano Rivera  <stefano@rivera.za.net>
+
+   Change administrative user & identity linking syntax to be less
+   problematically broad.
+
+   Fixes :bug:`567510`.
+
+2010-04-26  Stefano Rivera  <stefano@rivera.za.net>
+
+   Increase default HTTP GET size from 500 bytes to 2kiB.
+
+   Fixes :bug:`563928`.
+
+2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
+
+   Update youtube plugin to cope with site redesign.
+
+   Fixes :bug:`561684`.
+
+2010-04-13  Max Rabkin  <max.rabkin@gmail.com>
+
+   Allow digits in Unicode character names.
+
+2010-04-13  Stefano Rivera  <stefano@rivera.za.net>
+
+   HTTP GET: Don't assume everything is utf-8, decode according to
+   provided charset, fall back to utf-8 for text, and guess with chardet
+   if either of those was wrong.
+
+   Fixes :bug:`560973`.
+
+2010-04-09  Max Rabkin  <max.rabkin@gmail.com>
+
+   Use unicode case-insensitive matching in factoid.
+
+   Fixes :bug:`542707`.
+
+2010-03-27  Michael Gorven  <michael@gorven.za.net>
+
+   Treat the Processor's first feature as the primary feature in RPC.
+
+   Fixes :bug:`545168`.
+
+2010-03-27  Max Rabkin  <max.rabkin@gmail.com>
+
+   Respond with unicode in bible error handlers.
+
+   Fixes :bug:`544260`.
+
+2010-03-26  Marco Gallotta  <marco@gallotta.co.za>
+
+   Allow trailing punctuation in tea-style addressing.
+
+   Fixes :bug:`545186`.
+
+2010-03-23  Marco Gallotta  <marco@gallotta.co.za>
+
+   Add username=ibid parameter to geonames API calls. Some calls now
+   require it.
+
+   Fixes :bug:`543989`.
+
+2010-03-23  Max Rabkin  <max.rabkin@gmail.com>
+
+   Python 2.5 compatibility update for unicode lookup. Exception for
+   unknown character changed in 2.6.
+
+   Fixes :bug:`542593`.
+
+2010-03-10  Stefano Rivera  <stefano@rivera.za.net>
+
+   Add placeholder to force ibid/static to be distributed.
+
+Release 0.1.0 (2010-03-10)
+==========================
+
+*  First public release.
+
+.. vi: set ft=rst et sta sw=3 ts=3:

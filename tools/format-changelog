@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import optparse
+import re
+import subprocess
+import textwrap
+
+def process_block(block):
+    "Reformat a block into nice rst"
+    block = ''.join(block).decode('utf-8').strip()
+
+    template_re = re.compile(r'^\tAuthor: .*\n'
+                             r'(?:\tMerge Request: .*\n)?'
+                             r'\tApproved by: .*\n'
+                             r'\tFixes LP: #(.*)$',
+                             re.MULTILINE | re.UNICODE)
+    def repl(m):
+        bugs = [int(bug) for bug in m.group(1).split(',')]
+        if bugs:
+            bugs = [u':bug:`%i`' % bug for bug in bugs]
+            return u'\n\tFixes: %s.' % u', '.join(bugs)
+        return u''
+    block = template_re.sub(repl, block)
+
+    block = block.splitlines()
+
+    wrapper = textwrap.TextWrapper(subsequent_indent=u'   ')
+    for i, line in enumerate(block):
+        if not line.strip():
+            line = u''
+
+        if line.startswith(u'\t'):
+            line = u'   ' + line[1:]
+            if i + 1 == len(block) or not block[i+1].strip():
+                if not line.endswith(u'.'):
+                    line += u'.'
+
+            line = u'\n'.join(wrapper.wrap(line))
+
+        block[i] = line
+
+    block.append(u'')
+    block = u'\n'.join(block)
+    print block.encode('utf-8')
+
+def main():
+    parser = optparse.OptionParser()
+    parser.add_option('-r', '--revision', metavar='REVSPEC',
+                      help='Passed to bzr')
+    opts, args = parser.parse_args()
+
+    cmd = ['bzr', 'log', '--gnu', '-n1']
+    if opts.revision:
+        cmd.append('-r' + opts.revision)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+    head_re = re.compile(r'^\d{4}-\d{2}-\d{2}  .+  <.+>$')
+    block = []
+    for line in p.stdout:
+        if head_re.match(line):
+            process_block(block)
+            block = []
+        block.append(line)
+
+    process_block(block)
+
+    assert p.wait() == 0
+
+if __name__ == '__main__':
+    main()
