@@ -7,7 +7,6 @@ from datetime import datetime
 import re
 import logging
 
-import dateutil.parser
 import feedparser
 
 from ibid.compat import ElementTree
