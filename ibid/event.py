@@ -49,7 +49,7 @@ class Event(dict):
                 u'difficulties with translation later.',
                 SyntaxWarning, stacklevel=2)
 
-        if isinstance(response, basestring) and params:
+        if isinstance(response, basestring) and params != {}:
             response = response % params
 
         if isinstance(response, str):
