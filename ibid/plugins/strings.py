@@ -101,7 +101,7 @@ class ReTest(Processor):
     feature = ('retest',)
     permission = 'regex'
 
-    @match('^does\s+(.+?)\s+match\s+(.+?)$')
+    @match(r'^does\s+(.+?)\s+match\s+(.+?)$')
     @authorise(fallthrough=False)
     def retest(self, event, regex, string):
         event.addresponse(re.search(regex, string) and u'Yes' or u'No')

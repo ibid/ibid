@@ -214,7 +214,7 @@ class Random(Processor):
     usage = u'random [ <max> | <min> <max> ]'
     feature = ('random',)
 
-    @match('^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
+    @match(r'^rand(?:om)?(?:\s+(\d+)(?:\s+(\d+))?)?$')
     def random(self, event, begin, end):
         if not begin and not end:
             event.addresponse(u'I always liked %f', random())
