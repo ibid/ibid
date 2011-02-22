@@ -15,7 +15,7 @@ def process_block(block):
                              r'\tFixes LP: #(.*)$',
                              re.MULTILINE | re.UNICODE)
     def repl(m):
-        bugs = [int(bug) for bug in m.group(1).split(',')]
+        bugs = [int(bug) for bug in m.group(1).split(',') if bug]
         if bugs:
             bugs = [u':bug:`%i`' % bug for bug in bugs]
             return u'\n\tFixes: %s.' % u', '.join(bugs)
