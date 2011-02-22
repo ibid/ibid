@@ -1,5 +1,5 @@
-Release 0.1.1 (2011-02-24)
-==============================
+Release 0.1.1 "Pimpernel" (2011-02-24)
+======================================
 
 Bug fix release, including a couple of security issues.
 
@@ -74,6 +74,37 @@ API Changes
 
 All Changes
 -----------
+
+2011-02-23  Stefano Rivera  <stefano@rivera.za.net>
+
+   Remove MyLifeIsG.com support from MyLifeIsAverage Processor. The
+   site has been down for around a year.
+
+   Fixes: :bug:`722675`.
+
+2011-02-22  Stefano Rivera  <stefano@rivera.za.net>
+
+   Use bounded_matches when returning search results.
+
+   Fixes: :bug:`722655`.
+
+2011-02-22  Stefano Rivera  <stefano@rivera.za.net>
+
+   Typo: parse_timestmap -> parse_timestamp (and remove an unnecessary
+   import).
+
+   Fixes: :bug:`722682`.
+
+2011-02-22  Stefano Rivera  <stefano@rivera.za.net>
+
+   Allow addresponse() to take the param 0.
+
+   Fixes: :bug:`723132`.
+
+2011-02-21  Stefano Rivera  <stefano@rivera.za.net>
+
+   Added CHANGES and tool for generating changelog entries.
+   Set version to 0.1.1.
 
 2011-02-20  Stefano Rivera  <stefano@rivera.za.net>
 
@@ -427,8 +458,8 @@ All Changes
 
    Add placeholder to force ibid/static to be distributed.
 
-Release 0.1.0 (2010-03-10)
-==========================
+Release 0.1.0 "Hazel" (2010-03-10)
+==================================
 
 *  First public release.
 
