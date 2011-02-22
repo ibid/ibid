@@ -124,8 +124,6 @@ class Remind(Processor):
     This is a timed reminder plugin. It allows you to make the bot ping
     you (or somebody else), about something specific (if you want), in
     the future.
-
-    Maybe this should be merged with the memo plugin.
     """
     usage = u'remind <person> in <time> about <something>'
     features = ('remind',)
@@ -138,24 +136,21 @@ class Remind(Processor):
         if who == from_who:
             from_who = "You"
         if event.public:
-            who = who + ": "
+            who += ": "
         else:
             who = ""
         if what:
-            event.addresponse(u'%(who)s%(from_who)s asked me to remind you %(what)s, %(ago)s ago.', {
+            what = "remind you " + what
+        else:
+            what = "ping you"
+        event.addresponse(u'%(who)s%(from_who)s asked me to %(what)s, %(ago)s ago.', {
                 'who': who,
                 'from_who': from_who,
                 'what': what,
                 'ago': ago(datetime.now()-from_when)
                 })
-        else:
-            event.addresponse(u'%(who)s%(from_who)s asked me to ping you, %(ago)s ago.', {
-                'who': who,
-                'from_who': from_who,
-                'ago': ago(datetime.now()-from_when)
-                })
 
-    @match(r'(?:please )?(?:remind|ping|alarm) (?:(me|\w+) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
+    @match(r'(?:please )?(?:remind|ping|alarm) (?:(me|[A-za-z\\`_^{|}\[\]][A-za-z0-9\\`_^{|}\[\]\-]{1,8}) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
     def remind(self, event, who, at, when, how, what):
         """This is the main handler that gets called on the above
         @match.
@@ -179,13 +174,10 @@ class Remind(Processor):
         if what:
             what = how + " " + what.strip()
 
-        from_who = event.sender['nick']
-        
-        if not who or who.strip() == "me":
-            who = from_who
-        who = who.strip()
+        if not who or who == "me":
+            who = event.sender['nick']
 
-        # XXX: this is total_seconds() in 2.7
+        # this is total_seconds() in 2.7, it can be replaced when we require that version or above
         total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
 
         if total_seconds < -24*60*60:
@@ -197,18 +189,26 @@ class Remind(Processor):
             delta += timedelta(days=1)
             total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
 
-        ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, from_who, now)
+        ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, event.sender['nick'], now)
 
         # this logic needs to be after the callback setting because we
         # want to ping the real nick, not "you"
-        if who == from_who:
+        if who == event.sender['nick']:
             who = "you"
         # we say "ping" here to let the user learn about "ping" instead
         # of "remind"
+        if what:
+            action = 'remind'
+        else:
+            action = 'ping'
+        if delta:
+            time = " in " + ago(delta)
+        else:
+            time = ""
         event.addresponse(u"Okay, I will %(action)s %(who)s%(time)s", {
-                'action': 'remind' if what else 'ping',
+                'action': action,
                 'who': who,
-                'time': " in " + ago(delta) if delta else "",
+                'time': time,
             })
 
 features['insult'] = {
