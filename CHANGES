@@ -1,5 +1,5 @@
-Release 0.1.1 (2011-02-24)
-==============================
+Release 0.1.1 "Pimpernel" (2011-02-24)
+======================================
 
 Bug fix release, including a couple of security issues.
 
@@ -427,8 +427,8 @@ All Changes
 
    Add placeholder to force ibid/static to be distributed.
 
-Release 0.1.0 (2010-03-10)
-==========================
+Release 0.1.0 "Hazel" (2010-03-10)
+==================================
 
 *  First public release.
 
