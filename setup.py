@@ -49,10 +49,6 @@ setup(
         'memory': ['objgraph'],
         'asciiart': ['python-aalib'],
     },
-    dependency_links=[
-        'http://ibid.omnia.za.net/eggs/',
-        'http://wokkel.ik.nu/downloads',
-    ],
     packages=['ibid', 'tracibid', 'twisted', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
