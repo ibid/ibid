@@ -142,10 +142,17 @@ class Processor(object):
                         event.message[method.message_version])
                 if match is not None:
                     args = match.groups()
+                    kwargs = match.groupdict()
+                    if kwargs:
+                        assert len(args) == len(kwargs), "Can't intermix keyword and positional arguments."
+                        args = kwargs
             if args is not None:
                 if (not getattr(method, 'auth_required', False)
                         or auth_responses(event, self.permission)):
-                    method(event, *args)
+                    if isinstance(args, dict):
+                        method(event, **args)
+                    else:
+                        method(event, *args)
                 elif not getattr(method, 'auth_fallthrough', True):
                     event.processed = True
 
@@ -224,11 +231,18 @@ def _match_sub_selectors(regex):
 
     regex = regex.replace(' ', r'(?:\s+)')
 
-    for pattern in re.finditer('{(%s)}' % '|'.join(selector_patterns.keys()),
-                               regex):
-        pattern = pattern.group(1)
-        old = '{%s}' % pattern
-        new = '(%s)' % selector_patterns[pattern]
+    patterns_re = r'{(\S+:)?(%s)}' % '|'.join(selector_patterns.keys())
+    for pattern in re.finditer(patterns_re, regex):
+        keyword = pattern.group(1)
+        pattern = pattern.group(2)
+
+        if keyword is None:
+            old = '{%s}' % pattern
+            new = '(%s)' % selector_patterns[pattern]
+        else:
+            old = '{%s:%s}' % (keyword[:-1], pattern)
+            new = '(?P<%s>%s)' % (keyword[:-1], selector_patterns[pattern])
+
         regex = regex.replace(old, new)
 
     if not regex.startswith('^'):

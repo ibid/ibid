@@ -27,7 +27,7 @@ class LastFm(Processor):
 
     features = ('lastfm',)
 
-    @match(r'^last\.?fm\s+for\s+(\S+?)\s*$')
+    @match(r'last\.?fm for {username:chunk}')
     def listsongs(self, event, username):
         songs = feedparser.parse('http://ws.audioscrobbler.com/1.0/user/%s/recenttracks.rss?%s' % (username, time()))
         if songs['bozo']:
@@ -147,7 +147,7 @@ class Twitter(Processor):
     def twitter(self, event, id):
         self.update(event, u'twitter', id)
 
-    @match(r'^https?://(?:www\.)?identi.ca/notice/(\d+)$')
+    @match(r'https?://(?:www\.)?identi.ca/notice/{id:digits}')
     def identica(self, event, id):
         self.update(event, u'identica', id)
 
