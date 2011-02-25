@@ -104,6 +104,7 @@ source like 'jabber'.
             source['channels'] = [c.strip() for c in channels.split(u',')]
         source['auth'] = ['hostmask', 'nickserv']
     elif type_ == u'jabber':
+        source['type'] = u'jabber'
         source['jid'] = prompt(u'JID (Jabber address): ')
         source['password'] = prompt(u'Password: ', secret=True)
         rooms = prompt(
