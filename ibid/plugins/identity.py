@@ -582,6 +582,10 @@ class Permissions(Processor):
 
         else:
             if not permission:
+                if permission not in self.all_perms():
+                    event.addresponse(u"I don't know about a permission "
+                                      u"called '%s'", name)
+                    return
                 permission = Permission(name)
                 account.permissions.append(permission)
 
@@ -629,18 +633,19 @@ class Permissions(Processor):
         permissions = sorted(u'%s%s' % (permission_values[perm.value], perm.name) for perm in account.permissions)
         event.addresponse(u'Permissions: %s', human_join(permissions) or u'none')
 
+    def all_perms(self):
+        permissions = set()
+        for processor in ibid.processors:
+            if hasattr(processor, 'permission'):
+                permissions.add(processor.permission)
+            if hasattr(processor, 'permissions'):
+                for permission in processor.permissions:
+                    permissions.add(permission)
+        return permissions
+
     @match(r'^list\s+permissions$')
     def list_permissions(self, event):
-        permissions = []
-        for processor in ibid.processors:
-            if hasattr(processor, 'permission') and getattr(processor, 'permission') not in permissions:
-                permissions.append(getattr(processor, 'permission'))
-            if hasattr(processor, 'permissions'):
-                for permission in getattr(processor, 'permissions'):
-                    if permission not in permissions:
-                        permissions.append(permission)
-
-        event.addresponse(u'Permissions: %s', human_join(sorted(permissions)) or u'none')
+        event.addresponse(u'Permissions: %s', human_join(sorted(self.all_perms())) or u'none')
 
 class Auth(Processor):
     usage = u'auth <credential>'
