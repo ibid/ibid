@@ -231,7 +231,7 @@ def handler(function):
 def _match_sub_selectors(regex):
     selector_patterns = {
         'alpha'   : r'[a-zA-Z]+',
-        'any'     : r'.*',
+        'any'     : r'.+',
         'chunk'   : r'\S+',
         'digits'  : r'\d+',
         'number'  : r'\d*\.?\d+',
@@ -255,7 +255,7 @@ def _match_sub_selectors(regex):
 
         return '(?P<%s>%s)' % (name, selector_patterns[pattern])
 
-    regex = re.sub(r'{(?:(\S+):)?(%s)}' % '|'.join(selector_patterns.keys()),
+    regex = re.sub(r'{(?:(\w+):)?(%s)}' % '|'.join(selector_patterns.keys()),
                    selector_to_re, regex)
 
     if not regex.startswith('^'):
@@ -268,6 +268,7 @@ def _match_sub_selectors(regex):
 def match(regex, version='clean', simple=True):
     "Wrapper: Handle all events where the message matches the regex"
     if simple:
+        r = regex
         regex = _match_sub_selectors(regex)
 
     pattern = re.compile(regex, re.I | re.UNICODE | re.DOTALL)
