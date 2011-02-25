@@ -23,7 +23,7 @@ except ImportError:
             if not os.path.exists(os.path.join(x, *package + ['__init__.py']))]
 
 import ibid
-from ibid.compat import json
+from ibid.compat import json, defaultdict
 from ibid.utils import url_regex
 
 __path__ = pluginPackagePaths(__name__) + __path__
@@ -144,8 +144,18 @@ class Processor(object):
                     args = match.groups()
                     kwargs = match.groupdict()
                     if kwargs:
-                        assert len(args) == len(kwargs), "Can't intermix keyword and positional arguments."
-                        args = kwargs
+                        assert len(args) == len(kwargs), (
+                            "Can't intermix named and positional arguments.")
+                        # Convert the names from the %s__%d_ format to %s
+                        args = {}
+                        for name, value in kwargs.iteritems():
+                            name = re.match(r'^(\S+)__\d+_$', name).group(1)
+                            if args.get(name, None) is None:
+                                args[name] = value
+                            else:
+                                assert value is None, (
+                                    'named argument %s was matched more '
+                                    'than once.' % name)
             if args is not None:
                 if (not getattr(method, 'auth_required', False)
                         or auth_responses(event, self.permission)):
@@ -231,19 +241,22 @@ def _match_sub_selectors(regex):
 
     regex = regex.replace(' ', r'(?:\s+)')
 
-    patterns_re = r'{(\S+:)?(%s)}' % '|'.join(selector_patterns.keys())
-    for pattern in re.finditer(patterns_re, regex):
-        keyword = pattern.group(1)
-        pattern = pattern.group(2)
+    name_count = defaultdict(int)
+    def selector_to_re(match):
+        name    = match.group(1)
+        pattern = match.group(2)
 
-        if keyword is None:
-            old = '{%s}' % pattern
-            new = '(%s)' % selector_patterns[pattern]
-        else:
-            old = '{%s:%s}' % (keyword[:-1], pattern)
-            new = '(?P<%s>%s)' % (keyword[:-1], selector_patterns[pattern])
+        if name is None:
+            return '(%s)' % selector_patterns[pattern]
 
-        regex = regex.replace(old, new)
+        # Prevent conflicts when reusing a name
+        name_count[name] += 1
+        name = '%s__%d_' % (name, name_count[name])
+
+        return '(?P<%s>%s)' % (name, selector_patterns[pattern])
+
+    regex = re.sub(r'{(?:(\S+):)?(%s)}' % '|'.join(selector_patterns.keys()),
+                   selector_to_re, regex)
 
     if not regex.startswith('^'):
         regex = '^' + regex
