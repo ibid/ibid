@@ -129,7 +129,7 @@ class Remind(Processor):
     features = ('remind',)
 
     def announce(self, event, who, what, from_who, from_when):
-        """This handler gets called after the timeout and will notice
+        """This handler gets called after the timeout and will notify
         the user."""
 
         # we keep this logic here to simplify the code on the other side
@@ -176,6 +176,9 @@ class Remind(Processor):
 
         if not who or who == "me":
             who = event.sender['nick']
+        elif not event.public:
+            event.addresponse(u"It's just you and me in here")
+            return
 
         # this is total_seconds() in 2.7, it can be replaced when we require that version or above
         total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
