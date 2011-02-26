@@ -1,4 +1,5 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Antoine Beaupre
+# -*- coding: utf-8 -*-
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Antoine Beaupré
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime, timedelta
