@@ -118,7 +118,7 @@ class Coffee(Processor):
 
 features['remind'] = {
     'description': u'Programs reminders in the future for you or other people.',
-    'categories': ('fun', 'monitor',),
+    'categories': ('fun', 'monitor', 'remember', 'message',),
 }
 class Remind(Processor):
     """
