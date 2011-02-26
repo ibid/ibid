@@ -150,11 +150,11 @@ class Remind(Processor):
                 'ago': ago(datetime.now()-from_when)
                 })
 
-    @match(r'(?:please )?(?:remind|ping|alarm) (?:(me|[A-za-z\\`_^{|}\[\]][A-za-z0-9\\`_^{|}\[\]\-]{1,8}) )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
+    @match(r'(?:please )?(?:remind|ping|alarm) (?:{chunk} )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
     def remind(self, event, who, at, when, how, what):
         """This is the main handler that gets called on the above
         @match.
-        
+
         This parses the date and sets up the "announce" function to be
         fired when the time is up."""
 
