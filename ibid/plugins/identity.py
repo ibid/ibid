@@ -582,7 +582,7 @@ class Permissions(Processor):
 
         else:
             if not permission:
-                if permission not in self.all_perms():
+                if name.lower() not in self.all_perms():
                     event.addresponse(u"I don't know about a permission "
                                       u"called '%s'", name)
                     return
