@@ -149,7 +149,7 @@ class Processor(object):
                         # Convert the names from the %s__%d_ format to %s
                         args = {}
                         for name, value in kwargs.iteritems():
-                            name = re.match(r'^(\S+)__\d+_$', name).group(1)
+                            name = re.match(r'^(\S+?)(?:__\d+_)?$', name).group(1)
                             if args.get(name, None) is None:
                                 args[name] = value
                             else:
@@ -268,7 +268,6 @@ def _match_sub_selectors(regex):
 def match(regex, version='clean', simple=True):
     "Wrapper: Handle all events where the message matches the regex"
     if simple:
-        r = regex
         regex = _match_sub_selectors(regex)
 
     pattern = re.compile(regex, re.I | re.UNICODE | re.DOTALL)
