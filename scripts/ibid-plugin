@@ -54,6 +54,9 @@ class FakeAuth(object):
     def authenticate(self, event, credential=None):
         return True
 
+    def drop_caches(self):
+        return
+
 ibid.auth = FakeAuth()
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
