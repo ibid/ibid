@@ -51,6 +51,9 @@ class FakeAuth(object):
     def authorise(self, event, permission):
         return True
 
+    def authenticate(self, event, credential=None):
+        return True
+
 ibid.auth = FakeAuth()
 logging.basicConfig(level=logging.DEBUG)
 ibid.config = FileConfig("ibid.ini")
