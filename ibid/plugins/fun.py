@@ -8,7 +8,6 @@ from random import choice, random, randrange
 import re
 
 from dateutil import parser
-
 from nickometer import nickometer
 from sqlalchemy.sql import not_, or_
 
@@ -19,7 +18,7 @@ from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article, identity_name, \
-                        plural, ago, format_date
+                        plural, ago
 
 
 features = {}
