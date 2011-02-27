@@ -69,6 +69,7 @@ setup(
         'scripts/ibid-setup',
         'scripts/ibid.tac',
     ],
+    test_suite='ibid.test.run',
 
     include_package_data=True,
     zip_safe=False,

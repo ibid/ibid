@@ -1,4 +1,4 @@
-# Copyright (c) 2009, Jeremy Thurgood
+# Copyright (c) 2009-2011, Jeremy Thurgood, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import logging
 
@@ -32,5 +32,13 @@ class FakeConfig(dict):
 
 def set_config(config):
     ibid.config = FakeConfig(config)
+
+
+def run():
+    "Run the Ibid test suite. Bit of a hack"
+    from twisted.scripts.trial import run
+    import sys
+    sys.argv.append('ibid')
+    run()
 
 # vi: set et sta sw=4 ts=4:
