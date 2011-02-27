@@ -295,7 +295,8 @@ class HTTP(Processor):
             url = self.sites[url]
         else:
             if not urlparse(url).netloc:
-                if '.' not in url:
+                if '.' not in url and '/' not in url and ':' not in url:
+                    # Only append .com for url's like "example"
                     url += '.com'
                 url = 'http://' + url
             if not urlparse(url).path:

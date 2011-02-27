@@ -132,19 +132,22 @@ class Processor(object):
 
         found = False
         for method in self._get_event_handlers():
+            args = None
             if not hasattr(method, 'pattern'):
                 found = True
-                method(event)
+                args = ()
             elif hasattr(event, 'message'):
                 found = True
                 match = method.pattern.search(
                         event.message[method.message_version])
                 if match is not None:
-                    if (not getattr(method, 'auth_required', False)
-                            or auth_responses(event, self.permission)):
-                        method(event, *match.groups())
-                    elif not getattr(method, 'auth_fallthrough', True):
-                        event.processed = True
+                    args = match.groups()
+            if args is not None:
+                if (not getattr(method, 'auth_required', False)
+                        or auth_responses(event, self.permission)):
+                    method(event, *args)
+                elif not getattr(method, 'auth_fallthrough', True):
+                    event.processed = True
 
         if not found:
             raise RuntimeError(u'No handlers found in %s' % self)
