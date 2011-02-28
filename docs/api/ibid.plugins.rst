@@ -146,13 +146,13 @@ Decorators
    ============ ==========================================
    Selector     expands to
    ============ ==========================================
-   ``{alpha}``  ``([a-zA-Z]+)``
-   ``{any}``    ``(.+)``
-   ``{chunk}``  ``(\S+)``
-   ``{digits}`` ``(\d+)``
-   ``{number}`` ``(\d*\.?\d+)``
+   ``{alpha}``  ``[a-zA-Z]+``
+   ``{any}``    ``.+``
+   ``{chunk}``  ``\S+``
+   ``{digits}`` ``\d+``
+   ``{number}`` ``\d*\.?\d+``
    ``{url}``    :func:`url_regex() <ibid.utils.url_regex>`
-   ``{word}``   ``(\w+)``
+   ``{word}``   ``\w+``
    ============ ==========================================
 
    Using simple regexes where they are applicable can make them much more
