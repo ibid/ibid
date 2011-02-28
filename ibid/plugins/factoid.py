@@ -684,9 +684,12 @@ class Modify(Processor):
                     event.identity, event.sender['connection'])
             event.addresponse(True)
 
-    @match(r'^(.+?)(?:\s+#(\d+)|\s+/(.+?)/(r?))?\s*(?:~=|=~)\s*([sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
+    @match(r'(?P<name>.+?)'
+           r'(?: #{number:digits}| /(?P<pattern>.+?)/(?P<is_regex>r?))?'
+           r'\s*(?:~=|=~)\s*'
+           r'(?P<operation>[sy](?P<sep>.).+(?P=sep).*(?P=sep)[gir]*)$')
     @authorise(fallthrough=False)
-    def modify(self, event, name, number, pattern, is_regex, operation, separator):
+    def modify(self, event, name, number, pattern, is_regex, operation, sep):
         factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
         if len(factoids) == 0:
             if pattern:
@@ -707,6 +710,7 @@ class Modify(Processor):
                 return
 
             # Not very pythonistic, but escaping is a nightmare.
+            seperator = sep
             parts = [[]]
             pos = 0
             while pos < len(operation):
