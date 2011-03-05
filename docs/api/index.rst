@@ -11,6 +11,7 @@ Note that the API reference is still incomplete.
    ibid.core
    ibid.event
    ibid.plugins
+   ibid.test
    ibid.utils
 
 .. vi: set et sta sw=3 ts=3:
