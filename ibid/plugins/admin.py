@@ -213,30 +213,44 @@ class Config(Processor):
 
         event.addresponse(True)
 
+    def find_option(self, key):
+        """
+        Find the Option object for a config key.
+
+        Returns None if the key does not correspond to an Option object.
+        Otherwise, returns (option, object) where option is an Option instance,
+        and object is either a Processor or Source object through which the
+        option is accessed.
+        """
+        m = re.match('^(plugins|sources).([^.]+).([^.]+)$', key)
+        if m is None:
+            return None
+
+        kind, plugin, name = m.groups()
+        if kind == 'sources':
+            if plugin in ibid.sources:
+                things = [ibid.sources[plugin]]
+            else:
+                return None
+        else:
+            things = [p for p in ibid.processors if p.name == plugin]
+        for thing in things:
+            options = thing.__dict__.values() + \
+                        type(thing).__dict__.values()
+            for option in options:
+                if isinstance(option, Option) and option.name == name:
+                    return option, thing
+        return None
+
     @match(r'(?:get config|config get) (\S+?)')
     def get(self, event, key):
         if 'password' in key.lower() and not auth_responses(event, u'config'):
             return
 
-        found = False
-        m = re.match('^(plugins|sources).([^.]+).([^.]+)$', key)
-        if m:
-            kind, plugin, name = m.groups()
-            if kind == 'sources':
-                if plugin in ibid.sources:
-                    things = [ibid.sources[plugin]]
-                else:
-                    things = []
-            else:
-                things = [p for p in ibid.processors if p.name == plugin]
-            for thing in things:
-                options = thing.__dict__.values() + \
-                            type(thing).__dict__.values()
-                for option in options:
-                    if isinstance(option, Option) and option.name == name:
-                        config = option.__get__(thing, type(thing))
-                        found = True
-        if not found:
+        option = self.find_option(key)
+        if option:
+            config = option[0].__get__(option[1], type(option[1]))
+        else:
             config = ibid.config
             for part in key.split('.'):
                 if not isinstance(config, dict) or part not in config:
