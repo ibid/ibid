@@ -218,15 +218,16 @@ class Config(Processor):
         Find the Option object for a config key in a plugin or source.
 
         Returns None if the key does not correspond to an Option object.
-        Otherwise, returns (option, object) where option is an Option instance,
-        and object is either a Processor or Source object through which the
-        option is accessed.
+        Otherwise, returns (option, object, key_tail) where option is an
+        Option instance, and object is either a Processor or Source object
+        through which the option is accessed, and key_tail is the part of
+        the key which names a sub-option of this option (or a blank string).
         """
-        m = re.match('^(plugins|sources).([^.]+).([^.]+)$', key)
+        m = re.match(r'^(plugins|sources)\.([^.]+)\.([^.]+)(?:.(.+))?$', key)
         if m is None:
             return None
 
-        kind, plugin, name = m.groups()
+        kind, plugin, name, key_tail = m.groups()
         if kind == 'sources':
             if plugin in ibid.sources:
                 things = [ibid.sources[plugin]]
@@ -239,7 +240,7 @@ class Config(Processor):
                         type(thing).__dict__.values()
             for option in options:
                 if isinstance(option, Option) and option.name == name:
-                    return option, thing
+                    return option, thing, key_tail or u''
         return None
 
     @match(r'(?:get config|config get) (\S+?)')
@@ -250,8 +251,11 @@ class Config(Processor):
         option = self.find_option(key)
         if option:
             config = option[0].__get__(option[1], type(option[1]))
+            key = option[2]
         else:
             config = ibid.config
+
+        if key:
             for part in key.split('.'):
                 if not isinstance(config, dict) or part not in config:
                     event.addresponse(u'No such option')
