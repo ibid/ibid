@@ -1,13 +1,15 @@
 # Copyright (c) 2008-2010, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from os.path import join
-from twisted.internet import reactor
 import logging
+from os.path import join
+import re
+
+from twisted.internet import reactor
 
 import ibid
 from ibid.utils import human_join
-from ibid.config import FileConfig
+from ibid.config import FileConfig, Option
 from ibid.plugins import Processor, match, authorise, auth_responses
 from ibid.utils import ibid_version
 
@@ -216,12 +218,32 @@ class Config(Processor):
         if 'password' in key.lower() and not auth_responses(event, u'config'):
             return
 
-        config = ibid.config
-        for part in key.split('.'):
-            if not isinstance(config, dict) or part not in config:
-                event.addresponse(u'No such option')
-                return
-            config = config[part]
+        found = False
+        m = re.match('^(plugins|sources).([^.]+).([^.]+)$', key)
+        if m:
+            kind, plugin, name = m.groups()
+            if kind == 'sources':
+                if plugin in ibid.sources:
+                    things = [ibid.sources[plugin]]
+                else:
+                    things = []
+            else:
+                things = [p for p in ibid.processors if p.name == plugin]
+            for thing in things:
+                options = thing.__dict__.values() + \
+                            type(thing).__dict__.values()
+                for option in options:
+                    if isinstance(option, Option) and option.name == name:
+                        config = option.__get__(thing, type(thing))
+                        found = True
+        if not found:
+            config = ibid.config
+            for part in key.split('.'):
+                if not isinstance(config, dict) or part not in config:
+                    event.addresponse(u'No such option')
+                    return
+                config = config[part]
+
         if isinstance(config, list):
             event.addresponse(u', '.join(config))
         elif isinstance(config, dict):
