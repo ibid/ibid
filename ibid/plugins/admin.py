@@ -215,7 +215,7 @@ class Config(Processor):
 
     def find_option(self, key):
         """
-        Find the Option object for a config key.
+        Find the Option object for a config key in a plugin or source.
 
         Returns None if the key does not correspond to an Option object.
         Otherwise, returns (option, object) where option is an Option instance,
