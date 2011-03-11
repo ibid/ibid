@@ -1,15 +1,16 @@
-# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2008-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from httplib import BadStatusLine
-from urllib import quote
-from urllib2 import urlopen, Request
+from random import choice
+import re
+from urllib import urlencode
 
-from BeautifulSoup import BeautifulSoup
-
-from ibid.plugins import Processor, match
+from ibid.compat import ElementTree
 from ibid.config import Option
+from ibid.plugins import Processor, match
 from ibid.utils import decode_htmlentities, json_webservice
+from ibid.utils.html import get_html_parse_tree
 
 features = {'google': {
     'description': u'Retrieves results from Google and Google Calculator.',
@@ -92,35 +93,48 @@ class GoogleScrapeSearch(Processor):
     features = ('google',)
 
     user_agent = Option('user_agent', 'HTTP user agent to present to Google (for non-API searches)', default_user_agent)
-    google_scrape_url = "http://www.google.com/search?q=%s"
 
     def _google_scrape_search(self, query, country=None):
-        url = self.google_scrape_url
+        params = {'q': query.encode('utf-8')}
         if country:
-            url += "&cr=country%s" % country.upper()
-        f = urlopen(Request(url % quote(query.encode('utf-8')),
-                            headers={'user-agent': self.user_agent}))
-        soup = BeautifulSoup(f.read())
-        f.close()
-        return soup
+            params['cr'] = u'country' + country.upper()
+
+        return get_html_parse_tree(
+                'http://www.google.com/search?' + urlencode(params),
+                headers={'user-agent': self.user_agent},
+                treetype='etree')
 
     @match(r'^gcalc\s+(.+)$')
     def calc(self, event, expression):
-        soup = self._google_scrape_search(expression)
+        tree = self._google_scrape_search(expression)
 
-        container = soup.find('h2', 'r')
-        if not container:
-            event.addresponse(u'No result')
+        nodes = [node for node in tree.findall('.//h2/b')]
+        if len(nodes) == 1:
+            # ElementTree doesn't support inline tags:
+            # May return ASCII unless an encoding is specified.
+            # "utf8" will result in an xml header
+            node = ElementTree.tostring(nodes[0], encoding='utf-8')
+            node = node.decode('utf-8')
+            node = re.sub(r'<sup>(.*?)</sup>',
+                          lambda x: u'^' + x.group(1), node)
+            node = re.sub(r'<.*?>', '', node)
+            node = re.sub(r'(\d)\s+(\d)', lambda x: x.group(1) + x.group(2),
+                          node)
+            node = decode_htmlentities(node)
+            event.addresponse(node)
         else:
-            event.addresponse(container.b.string)
+            event.addresponse(
+                u"%s, Google wasn't interested in calculating that",
+                choice(('Sorry', 'Whoops')))
 
     @match(r'^gdefine\s+(.+)$')
     def define(self, event, term):
-        soup = self._google_scrape_search("define:%s" % term)
+        tree = self._google_scrape_search("define:%s" % term)
 
         definitions = []
-        for li in soup.findAll('li'):
-            definitions.append(decode_htmlentities(li.contents[0].strip()))
+        for li in tree.findall('.//li'):
+            if li.text:
+                definitions.append(li.text)
 
         if definitions:
             event.addresponse(u' :: '.join(definitions))

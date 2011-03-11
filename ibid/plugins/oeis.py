@@ -24,11 +24,12 @@ class OEIS(Processor):
     @match(r'^oeis\s+([AMN]\d+|-?\d(?:\d|-|,|\s)*)$')
     def oeis (self, event, query):
         query = re.sub(r'(,|\s)+', ',', query)
-        f = urlopen('http://www.research.att.com/~njas/sequences/?n=1&fmt=3&q='
+        f = urlopen('http://oeis.org/search?n=1&fmt=text&q='
                     + query)
 
-        f.next() # the first line is uninteresting
-        results_m = re.search(r'(\d+) results found', f.next())
+        for i in range(3):
+            f.next() # the first lines are uninteresting
+        results_m = re.search(r'Showing .* of (\d+)', f.next())
         if results_m:
             f.next()
             sequence = Sequence(f)
@@ -44,8 +45,7 @@ class OEIS(Processor):
                     {'was': plural(results-1, 'was', 'were'),
                      'count': results-1,
                      'results': plural(results-1, 'result', 'results'),
-                     'url':
-                      'http://www.research.att.com/~njas/sequences/?fmt=1&q=',
+                     'url': 'http://oeis.org/search?q=',
                      'query': query})
         else:
             event.addresponse(u"I couldn't find that sequence.")
@@ -73,6 +73,6 @@ class Sequence(object):
         self.name = ''.join(cmds['N'])
 
     def url (self):
-        return 'http://www.research.att.com/~njas/sequences/' + self.catalog_num
+        return 'http://oeis.org/' + self.catalog_num
 
 # vi: set et sta sw=4 ts=4:

@@ -101,7 +101,7 @@ class Coffee(Processor):
                 u'washes some mugs',
             )), action=True)
 
-    @match('^coffee\s+(?:please|pls)$')
+    @match(r'^coffee\s+(?:please|pls)$')
     def coffee_accept(self, event):
         if (event.source, event.channel) not in self.pots:
             event.addresponse(u"There isn't a pot on")

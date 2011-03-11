@@ -1,4 +1,5 @@
-# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera
+# -*- coding: utf-8 -*-
+# Copyright (c) 2008-2010, Michael Gorven, Stefano Rivera, Adrianna Pińska
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 """Logs messages sent and received."""
@@ -55,6 +56,13 @@ class Log(Processor):
     dir_mode = Option('dir_mode',
             u'Directory Permissions mode, in octal', '755')
 
+    blacklist = ListOption('blacklist',
+            u'List of source:channel globs for channels which should not be logged (the whitelist overrides the blacklist)',
+            [])
+    whitelist = ListOption('whitelist',
+            u'List of source:channel globs for channels which should be logged (the whitelist overrides the blacklist)',
+            [])
+
     fd_cache = IntOption('fd_cache', 'Number of log files to keep open.', 5)
 
     lock = Lock()
@@ -65,17 +73,36 @@ class Log(Processor):
     def setup(self):
         sources = list(set(ibid.config.sources.keys())
                        | set(ibid.sources.keys()))
-        for glob in self.public_logs:
+        for globlistname in ["public_logs", "blacklist", "whitelist"]:
+            for glob in getattr(self, globlistname):
+                if u':' not in glob:
+                    log.warning(u"%s configuration values must follow the "
+                                u"format source:channel. \"%s\" doesn't contain a "
+                                u"colon.", globlistname, glob)
+                    continue
+                source_glob = glob.split(u':', 1)[0]
+                if not fnmatch.filter(sources, source_glob):
+                    log.warning(u'%s includes "%s", but there is no '
+                                u'configured source matching "%s"',
+                                globlistname, glob, source_glob)
+
+    def get_channel(self, event):
+        if event.channel is not None:
+            return ibid.sources[event.source].logging_name(event.channel)
+        return ibid.sources[event.source].logging_name(event.sender['id'])
+
+    def matches(self, event, globlist):
+        channel = self.get_channel(event)
+
+        for glob in globlist:
             if u':' not in glob:
-                log.warning(u"public_logs configuration values must follow the "
-                            u"format source:channel. \"%s\" doesn't contain a "
-                            u"colon.", glob)
                 continue
-            source_glob = glob.split(u':', 1)[0]
-            if not fnmatch.filter(sources, source_glob):
-                log.warning(u'public_logs includes "%s", but there is no '
-                            u'configured source matching "%s"',
-                            glob, source_glob)
+            source_glob, channel_glob = glob.split(u':', 1)
+            if (fnmatch.fnmatch(event.source, source_glob)
+                    and fnmatch.fnmatch(channel, channel_glob)):
+                return True
+
+        return False
 
     def get_logfile(self, event):
         self.lock.acquire()
@@ -84,7 +111,8 @@ class Log(Processor):
             if not self.date_utc:
                 when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())
 
-            channel = ibid.sources[event.source].logging_name(event.channel)
+            channel = self.get_channel(event)
+
             filename = self.log % {
                     'source': event.source.replace('/', '-'),
                     'channel': channel.replace('/', '-'),
@@ -107,27 +135,28 @@ class Log(Processor):
                 log = open(filename, 'a')
                 self.logs[filename] = log
 
-                for glob in self.public_logs:
-                    if u':' not in glob:
-                        continue
-                    source_glob, channel_glob = glob.split(u':', 1)
-                    if (fnmatch.fnmatch(event.source, source_glob)
-                            and fnmatch.fnmatch(event.channel, channel_glob)):
-                        chmod(filename, int(self.public_mode, 8))
-                        break
+                if self.matches(event, self.public_logs):
+                    chmod(filename, int(self.public_mode, 8))
                 else:
                     chmod(filename, int(self.private_mode, 8))
-
-                if len(self.recent_logs) > self.fd_cache:
-                    self.recent_logs.pop()
             else:
-                self.recent_logs.remove(log)
-            self.recent_logs.insert(0, log)
+                # recent_logs is an LRU cache, we'll be moving log to the
+                # front of the queue, if it's in the queue.
+                # It might not be, GCs are fickle LP: 655645
+                try:
+                    self.recent_logs.remove(log)
+                except ValueError:
+                    pass
+
+            self.recent_logs = [log] + self.recent_logs[:self.fd_cache - 1]
             return log
         finally:
             self.lock.release()
 
     def log_event(self, event):
+        if self.matches(event, self.blacklist) and not self.matches(event, self.whitelist):
+            return
+
         when = event.time
         if not self.date_utc:
             when = when.replace(tzinfo=tzutc()).astimezone(tzlocal())

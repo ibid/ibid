@@ -3,6 +3,8 @@
 
 from datetime import datetime
 import logging
+from random import choice
+import re
 
 import ibid
 from ibid.plugins import Processor, handler, match, authorise
@@ -13,7 +15,7 @@ from ibid.db import IbidUnicodeText, Boolean, Integer, DateTime, \
 from ibid.db.models import Identity, Account
 from ibid.auth import permission
 from ibid.plugins.identity import get_identities
-from ibid.utils import ago, format_date
+from ibid.utils import ago, format_date, plural
 
 features = {'memo': {
     'description': u'Keeps messages for people.',
@@ -71,14 +73,16 @@ class Tell(Processor):
     permissions = (u'recvmemo',)
 
     @match(r'^\s*(?:please\s+)?(tell|pm|privmsg|msg|ask)'
-           r'\s+(\S+)\s+(?:on\s+(\S+)\s+)?(.+?)\s*$', version='deaddressed')
+           r'\s+(\S+)\s+(.+?)\s*$', version='deaddressed')
     @authorise(fallthrough=False)
-    def tell(self, event, how, who, source, memo):
-        source_specified = bool(source)
-        if not source:
-            source = event.source
+    def tell(self, event, how, who, memo):
+        m = re.match(r'^on\s+(\S+?)\s+(.+)$', memo, re.I | re.U)
+        source_specified = bool(m) and m.group(1).lower() in ibid.sources
+        if source_specified:
+            source = m.group(1).lower()
+            memo = m.group(2)
         else:
-            source = source.lower()
+            source = event.source
 
         if source.lower() == event.source and \
                 any(True for name in ibid.config.plugins['core']['names']
@@ -87,7 +91,7 @@ class Tell(Processor):
             return
 
         to = event.session.query(Identity) \
-                .filter_by(identity=who, source=source).first()
+                  .filter_by(identity=who, source=source).first()
 
         if not to and not source_specified:
             account = event.session.query(Account) \
@@ -139,7 +143,13 @@ class Tell(Processor):
         nomemos_cache.clear()
         notified_overlimit_cache.discard(to.id)
 
-        event.addresponse(True)
+        event.addresponse(u"%(acknowledgement)s, I'll %(action)s "
+                          u"%(recipient)s on %(source)s", {
+            'acknowledgement': choice(('Okay', 'Righto', 'Sure', 'Got it')),
+            'action': how.lower(),
+            'recipient': to.identity,
+            'source': to.source,
+        })
 
     @match(r'^(?:delete|forget)\s+(?:my\s+)?'
             r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
@@ -249,10 +259,11 @@ class Deliver(Processor):
                 message = u'By the way, you have a pile of memos waiting for ' \
                           u'you, too many to read out in public. PM me'
                 if public:
-                    event.addresponse(u'%s: ' + message, event.sender['nick'])
+                    event.addresponse(message)
                 else:
                     event.addresponse(message,
-                                      target=event.sender['connection'])
+                                      target=event.sender['connection'],
+                                      address=False)
                 notified_overlimit_cache.add(event.identity)
             return
 
@@ -261,23 +272,18 @@ class Deliver(Processor):
             if 'memo' in event and event.memo == memo.id:
                 continue
 
+            message = u'By the way, %(sender)s on %(source)s told me ' \
+                      u'"%(message)s" %(ago)s ago' % {
+                'sender': memo.sender.identity,
+                'source': memo.sender.source,
+                'message': memo.memo,
+                'ago': ago(event.time - memo.time),
+            }
             if memo.private:
-                message = u'By the way, %(sender)s on %(source)s told me ' \
-                          u'"%(message)s" %(ago)s ago' % {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                }
-                event.addresponse(message, target=event.sender['connection'])
+                event.addresponse(message, target=event.sender['connection'],
+                                  address=False)
             else:
-                event.addresponse(u'By the way, %(sender)s on %(source)s '
-                                  u'told me "%(message)s" %(ago)s ago', {
-                    'sender': memo.sender.identity,
-                    'source': memo.sender.source,
-                    'message': memo.memo,
-                    'ago': ago(event.time - memo.time),
-                })
+                event.addresponse(message)
 
             memo.delivered = True
             event.session.save_or_update(memo)
@@ -312,11 +318,16 @@ class Notify(Processor):
             event.addresponse(
                 u'You have %s messages, too many for me to tell you in public,'
                 u' so ask me in private.',
-                len(memos), target=event.sender['connection'])
+                len(memos), target=event.sender['connection'], address=False)
         elif len(memos) > 0:
-            event.addresponse(u'You have %s messages. '
-                    u"Would you like to read them now?",
-                len(memos),
+            event.addresponse(
+                plural(
+                    len(memos),
+                    u'You have %(memo_count)d message. '
+                    u'Would you like to read it now?',
+                    u'You have %(memo_count)d messages. '
+                    u'Would you like to read them now?'),
+                { 'memo_count' : len(memos) },
                 target=event.sender['connection'])
         else:
             nomemos_cache.add(event.identity)

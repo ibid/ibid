@@ -416,7 +416,7 @@ class Poll(Processor):
         else:
             event.processed = True
 
-    @match('^end\s+poll$')
+    @match(r'^end\s+poll$')
     @authorise()
     def end_poll(self, event):
         if not event.public:

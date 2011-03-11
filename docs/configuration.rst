@@ -99,7 +99,7 @@ Permissions that are granted ``…when authed`` require users to
 authenticate themselves to the bot before the permission can be invoked.
 Some sources have special ways of authenticating users (e.g. the
 ``nickserv`` authentication method on IRC) or guarantee that their users
-are always authenticated via the ``imlicit`` authentication method (e.g.
+are always authenticated via the ``implicit`` authentication method (e.g.
 jabber).
 
 .. describe:: methods:

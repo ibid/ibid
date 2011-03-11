@@ -101,7 +101,7 @@ class MemoryInfo(Processor):
 
     features = ('memory',)
 
-    @match('^memory\s+usage$')
+    @match(r'^memory\s+usage$')
     def memory_usage(self, event):
         event.addresponse(u"Today, I weigh in at %(VmSize)i kiB Virtual, %(VmRSS)s kiB RSS", get_memusage())
 

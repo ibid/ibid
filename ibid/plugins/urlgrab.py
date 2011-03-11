@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Jonathan Groll
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Jonathan Groll
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
@@ -84,11 +84,7 @@ class Grab(Processor):
     def _post_url(self, event, url=None):
         "Posts a URL to delicious.com"
 
-        date = datetime.utcnow()
-        try:
-            title = self._get_title(url)
-        except HTTPError:
-            return
+        title = self._get_title(url)
 
         con_re = re.compile(r'!n=|!')
         connection_body = con_re.split(event.sender['connection'])
@@ -115,7 +111,7 @@ class Grab(Processor):
             'description' : title.encode('utf-8'),
             'tags' : tags.encode('utf-8'),
             'replace' : 'yes',
-            'dt' : date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'dt' : event.time.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'extended' : event.message['raw'].encode('utf-8'),
             }
 
@@ -159,8 +155,6 @@ class Grab(Processor):
             etree = get_html_parse_tree(url, None, headers, 'etree')
             title = etree.findtext('head/title')
             return title or url
-        except HTTPError, e:
-            raise
         except Exception, e:
             log.debug(u"Error determining title for %s: %s", url, unicode(e))
             return url

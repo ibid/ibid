@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 #
 # The indefinite_article function follows an algorithm by Damian Conway
@@ -24,6 +24,7 @@ from urlparse import urlparse, urlunparse
 import zlib
 from subprocess import Popen, PIPE
 
+import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
 from pkg_resources import resource_exists, resource_filename
 
@@ -188,6 +189,14 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
+def parse_timestamp(timestamp):
+    "Parse a machine timestamp, convert to UTC, strip timezone"
+    dt = dateutil.parser.parse(timestamp)
+    if dt.tzinfo:
+        dt = dt.astimezone(tzutc())
+        dt = dt.replace(tzinfo=None)
+    return dt
+
 class JSONException(Exception):
     pass
 
@@ -276,8 +285,8 @@ def human_join(items, separator=u',', conjunction=u'and'):
             .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
 
 def plural(count, singular, plural):
-    "Return sigular or plural depending on count"
-    if count == 1:
+    "Return singular or plural depending on count"
+    if abs(count) == 1:
         return singular
     return plural
 
@@ -365,7 +374,7 @@ def get_country_codes():
     started = False
     for line in f:
         line = line.strip()
-        if started:
+        if started and ';' in line:
             country, code = line.split(u';')
             if u',' in country:
                 country = u' '.join(reversed(country.split(u',', 1)))

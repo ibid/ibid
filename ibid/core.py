@@ -1,4 +1,5 @@
-# Copyright (c) 2008-2010, Michael Gorven, Jonathan Hitchcock, Stefano Rivera
+# Copyright (c) 2008-2011, Michael Gorven, Jonathan Hitchcock, Stefano Rivera,
+# Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from cgi import parse_qs
@@ -22,45 +23,48 @@ from ibid.utils import JSONException
 
 import auth
 
+def process(event, log):
+    for processor in ibid.processors:
+        try:
+            processor.process(event)
+        except Exception, e:
+            log.exception(
+                    u'Exception occured in %s processor of %s plugin.\n'
+                    u'Event: %s',
+                    processor.__class__.__name__,
+                    processor.name,
+                    event)
+            event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
+            event.exc_info = sys.exc_info()
+            event.processed = True
+            if 'session' in event:
+                event.session.rollback()
+                event.session.close()
+                del event['session']
+
+        if 'session' in event and (event.session.dirty or event.session.deleted):
+            try:
+                event.session.commit()
+            except IntegrityError:
+                log.exception(u"Exception occured committing session from the %s processor of %s plugin",
+                        processor.__class__.__name__, processor.name)
+                event.complain = u'exception'
+                event.exc_info = sys.exc_info()
+                event.session.rollback()
+                event.session.close()
+                del event['session']
+
+    if 'session' in event:
+        event.session.close()
+        del event['session']
+
 class Dispatcher(object):
 
     def __init__(self):
         self.log = logging.getLogger('core.dispatcher')
 
     def _process(self, event):
-        for processor in ibid.processors:
-            try:
-                processor.process(event)
-            except Exception, e:
-                self.log.exception(
-                        u'Exception occured in %s processor of %s plugin.\n'
-                        u'Event: %s',
-                        processor.__class__.__name__,
-                        processor.name,
-                        event)
-                event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
-                event.exc_info = sys.exc_info()
-                event.processed = True
-                if 'session' in event:
-                    event.session.rollback()
-                    event.session.close()
-                    del event['session']
-
-            if 'session' in event and (event.session.dirty or event.session.deleted):
-                try:
-                    event.session.commit()
-                except IntegrityError:
-                    self.log.exception(u"Exception occured committing session from the %s processor of %s plugin",
-                            processor.__class__.__name__, processor.name)
-                    event.complain = u'exception'
-                    event.exc_info = sys.exc_info()
-                    event.session.rollback()
-                    event.session.close()
-                    del event['session']
-
-        if 'session' in event:
-            event.session.close()
-            del event['session']
+        process(event, self.log)
 
         log_level = logging.DEBUG
         if event.type == u'clock' and not event.processed:
@@ -296,7 +300,11 @@ def regexp(pattern, item):
     return re.search(pattern, item, re.I) and True or False
 
 def sqlite_creator(database, synchronous=True):
-    from pysqlite2 import dbapi2 as sqlite
+    try:
+        from pysqlite2 import dbapi2 as sqlite
+    except ImportError:
+        from sqlite3 import dbapi2 as sqlite
+
     def connect():
         connection = sqlite.connect(database)
         connection.create_function('regexp', 2, regexp)

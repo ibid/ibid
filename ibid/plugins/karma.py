@@ -1,14 +1,16 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Dominic Cleal
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
 import re
 import logging
 
+from ibid.compat import any
 from ibid.config import BoolOption, IntOption, ListOption
 from ibid.db import IbidUnicode, DateTime, Integer, Table, Column, Base, \
                     VersionedSchema
 from ibid.plugins import Processor, match, handler, authorise
+from ibid.utils import plural
 
 features = {'karma': {
     'description': u'Keeps track of karma for people and things.',
@@ -50,7 +52,7 @@ class Karma(Base):
         self.time = datetime.utcnow()
 
 class Set(Processor):
-    usage = u'<subject> (++|--|==|ftw|ftl) [[reason]]'
+    usage = u'<subject>(++|--|==| ftw| ftl) [[reason]]'
     features = ('karma',)
 
     # Clashes with morse & math
@@ -60,9 +62,9 @@ class Set(Processor):
 
     increase = ListOption('increase',
                           'Suffixes which indicate increased karma',
-                          ('++', 'ftw'))
+                          ('++', ' ftw'))
     decrease = ListOption('decrease', 'Suffixes which indicate decreased karma',
-                          ('--', 'ftl'))
+                          ('--', ' ftl'))
     neutral = ListOption('neutral', 'Suffixes which indicate neutral karma',
                          ('==',))
     reply = BoolOption('reply', 'Acknowledge karma changes', False)
@@ -72,15 +74,34 @@ class Set(Processor):
                            " which a karma won't be forgotten", 0)
 
     def setup(self):
+        # When not addressed, match karma changes in any text
+        if self.addressed:
+            matchpat = r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$'
+        else:
+            matchpat = r'(\S*\w\S*)(%s)(?:$|[\s,;\.\?!])'
+
+        self.increase_reg = self.regex_tokens(self.increase)
+        self.decrease_reg = self.regex_tokens(self.decrease)
+        self.neutral_reg = self.regex_tokens(self.neutral)
+
         self.set.im_func.pattern = re.compile(
-                r'^(.+?)\s*(%s)\s*(?:[[{(]+\s*(.+?)\s*[\]})]+)?$' % '|'.join(
-                    re.escape(token) for token
-                    in self.increase + self.decrease + self.neutral
-                ), re.I)
+                matchpat % '|'.join(
+                    self.increase_reg + self.decrease_reg + self.neutral_reg
+                ), re.I | re.UNICODE | re.DOTALL)
+
+    def regex_tokens(self, tokens):
+        """ Turn configured tokens into regex versions """
+        return [re.escape(t).replace(r'\ ', r'\s+') for t in tokens]
+
+    def match_operators(self, roperators, adjust):
+        return any(re.match(r, adjust) for r in roperators)
 
     @handler
     @authorise(fallthrough=False)
-    def set(self, event, subject, adjust, reason):
+    def set(self, event, subject, adjust, reason=None):
+        if reason is None:
+            reason = event['message']['clean']
+
         if self.public and not event.public:
             event.addresponse(u'Karma must be done in public')
             return
@@ -92,14 +113,14 @@ class Set(Processor):
         if not karma:
             karma = Karma(subject)
 
-        if adjust.lower() in self.increase:
+        if self.match_operators(self.increase_reg, adjust.lower()):
             if subject.lower() == event.sender['nick'].lower():
                 event.addresponse(u"You can't karma yourself!")
                 return
             karma.changes += 1
             karma.value += 1
             change = u'Increased'
-        elif adjust.lower() in self.decrease:
+        elif self.match_operators(self.decrease_reg, adjust.lower()):
             karma.changes += 1
             karma.value -= 1
             change = u'Decreased'
@@ -119,7 +140,11 @@ class Set(Processor):
                 change, subject, event.account, event.identity, event.sender['connection'], reason)
 
         if self.reply:
-            event.addresponse(True)
+            event.addresponse(u'%(subject)s now has %(value)s %(points)s of karma', {
+                'subject': subject,
+                'value': karma.value,
+                'points': plural(karma.value, "point", "points"),
+            })
         else:
             event.processed = True
 

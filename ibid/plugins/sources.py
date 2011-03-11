@@ -20,15 +20,15 @@ features['actions'] = {
 }
 
 class Actions(Processor):
-    usage = u"""(join|part|leave) [<channel> [on <source>]]
+    usage = u"""(join|part|leave) [<channel> [on <source>] [using key <key>]]
     change nick to <nick> [on <source>]"""
     features = ('actions',)
 
     permission = 'sources'
 
-    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?$')
+    @match(r'^(join|part|leave)(?:\s+(\S*))?(?:\s+on\s+(\S+))?(?:(?:\s+(?:using|with))?\s+(?:key\s+)?(\S+))?$')
     @authorise()
-    def channel(self, event, action, channel, source):
+    def channel(self, event, action, channel, source, key):
         action = action.lower()
 
         if not source:
@@ -45,11 +45,18 @@ class Actions(Processor):
         source = ibid.sources[source]
 
         if not hasattr(source, 'join'):
-            event.addresponse(u'%s cannot join/part channels', source.name)
+            event.addresponse(u'I cannot join/part channels on %s', source.name)
             return
 
         if action == 'join':
-            source.join(channel)
+            if key:
+                if 'channel key' in source.supports:
+                    source.join(channel, key)
+                else:
+                    event.addresponse(u'I cannot use keys on %s', source.name)
+                    return
+            else:
+                source.join(channel)
             event.addresponse(u'Joining %s', channel)
         else:
             source.leave(channel)
@@ -69,7 +76,7 @@ class Actions(Processor):
         source = ibid.sources[source]
 
         if not hasattr(source, 'change_nick'):
-            event.addresponse(u'%s cannot change nicks', source)
+            event.addresponse(u'I cannot change nicks on %s', source)
         else:
             source.change_nick(nick)
             event.addresponse(u'Changing nick to %s', nick)
@@ -99,8 +106,9 @@ class NickServ(Processor):
                     source_cfg.get(u'nickserv_mask', '*')
         ))
 
-    @match(r'^(?:This nickname is registered\. Please choose a different nickname'
+    @match(r'^(?:This nickname is registered\.\s+Please choose a different nickname'
             r'|This nickname is registered and protected\.\s+If it is your'
+            r'|This nickname is owned by someone else\.\s+Please choose another'
             r'|If this is your nickname, type \/msg NS)', simple=False)
     def auth(self, event):
         if self.is_nickserv(event):

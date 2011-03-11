@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2011, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import warnings as _warnings
 
@@ -21,5 +21,12 @@ from ibid.db.versioned_schema import VersionedSchema, SchemaVersionException, \
 
 # We use SQLAlchemy 0.4 compatible .save_or_update() functions
 _warnings.filterwarnings('ignore', 'Use session.add\(\)', SADeprecationWarning)
+
+def get_regexp_op(session):
+    "Return a regexp operator"
+    if session.bind.engine.name in ('postgres', 'postgresql'):
+        return lambda x, y: x.op('~')(y)
+    else:
+        return lambda x, y: x.op('REGEXP')(y)
 
 # vi: set et sta sw=4 ts=4:

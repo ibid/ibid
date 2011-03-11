@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime
@@ -14,7 +14,8 @@ from ibid.config import Option, IntOption, ListOption
 from ibid.db import IbidUnicode, IbidUnicodeText, Boolean, Integer, DateTime, \
                     Table, Column, ForeignKey, PassiveDefault, \
                     relation, synonym, func, or_, \
-                    Base, VersionedSchema
+                    Base, VersionedSchema, \
+                    get_regexp_op
 from ibid.plugins.identity import get_identities
 from ibid.utils import format_date
 
@@ -77,11 +78,8 @@ class FactoidName(Base):
         def upgrade_6_to_7(self):
             self.add_column(Column('wild', Boolean, PassiveDefault('0'),
                                    nullable=False, index=True, default=False))
-            # http://www.sqlalchemy.org/trac/ticket/1400:
-            # We can't use .like() in MySQL
             for row in self.upgrade_session.query(FactoidName) \
-                    .filter('lower(name) LIKE lower(:pattern) ESCAPE :escape') \
-                    .params(pattern='%\\_\\%%', escape='\\') \
+                    .filter(FactoidName.name.like('%#_#%%', escape='#')) \
                     .all():
                 row.wild = True
                 self.upgrade_session.save_or_update(row)
@@ -92,8 +90,15 @@ class FactoidName(Base):
                                      key='_name', nullable=False, unique=True,
                                      index=True), force_rebuild=True)
             self.add_index(self.table.c._name)
+        def upgrade_8_to_9(self):
+            for row in self.upgrade_session.query(FactoidName) \
+                    .filter_by(name=u'') \
+                    .all():
+                self.upgrade_session.delete(row)
+                if len(row.factoid.names) == 0:
+                    self.upgrade_session.delete(row.factoid)
 
-    __table__.versioned_schema = FactoidNameSchema(__table__, 8)
+    __table__.versioned_schema = FactoidNameSchema(__table__, 9)
 
     def __init__(self, name, identity_id, factoid_id=None, factpack=None):
         self.name = name
@@ -202,18 +207,23 @@ class Factpack(Base):
 
 action_re = re.compile(r'^\s*<action>\s*')
 reply_re = re.compile(r'^\s*<reply>\s*')
-escape_like_re = re.compile(r'([%_\\])')
+escape_like_re = re.compile(r'([%_#])')
 
 def get_factoid(session, name, number, pattern, is_regex, all=False,
                 literal=False):
     """session: SQLAlchemy session
     name: Factoid name (can contain arguments unless literal query)
-    number: Return factoid[number] (or factoid[number:] for literal queries)
-    pattern: Return factoids matching this pattern (cannot be used in conjuction with number)
+    number: If not None, restrict to factoid[number] (or factoid[number:] for literal queries)
+    pattern: If not None, restrict to factoids matching this pattern (cannot be used in conjuction with number)
     is_regex: Pattern is a real regex
     all: Return a random factoid from the set if False
     literal: Match factoid name literally (implies all)
+    if all or literal, a list is returned; otherwise a single factoid is returned
+    if nothing is found, either an empty list or None is returned
     """
+    assert not (number and pattern), u'number and pattern cannot be used together'
+    if literal:
+        all = True # as mentioned in the docstring
     # First pass for exact matches, if necessary again for wildcard matches
     if literal:
         passes = (False,)
@@ -238,24 +248,25 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
 
         if pattern:
             if is_regex:
-                query = query.filter(FactoidValue.value.op('REGEXP')(pattern))
+                op = get_regexp_op(session)
+                query = query.filter(op(FactoidValue.value, pattern))
             else:
-                pattern = '%%%s%%' % escape_like_re.sub(r'\\\1', pattern)
-                # http://www.sqlalchemy.org/trac/ticket/1400:
-                # We can't use .like() in MySQL
-                query = query.filter(
-                        'lower(value) LIKE lower(:pattern) ESCAPE :escape'
-                    ).params(pattern=pattern, escape='\\')
+                pattern = '%%%s%%' % escape_like_re.sub(r'#\1', pattern)
+                query = query.filter(func.lower(FactoidValue.value)
+                                     .like(pattern, escape='#'))
 
-        if number:
+        if number is not None:
+            number = max(0, int(number) - 1)
             try:
+                # The .all() is to ensure the result is a list.
+                # It gets len()ed later
                 if literal:
-                    return query.order_by(FactoidValue.id)[int(number) - 1:]
+                    return query.order_by(FactoidValue.id).all()[number:]
                 else:
-                    factoid = query.order_by(FactoidValue.id)[int(number) - 1]
+                    factoid = query.order_by(FactoidValue.id).all()[number]
             except IndexError:
                 continue
-        if all or literal:
+        if all:
             if factoid is not None:
                 return [factoid]
             else:
@@ -264,8 +275,9 @@ def get_factoid(session, name, number, pattern, is_regex, all=False,
             factoid = factoid or query.order_by(func.random()).first()
         if factoid:
             return factoid
-        if all:
-            return []
+    if all:
+        return []
+    return None
 
 class Utils(Processor):
     usage = u'literal <name> [( #<from number> | /<pattern>/[r] )]'
@@ -280,6 +292,15 @@ class Utils(Processor):
             event.addresponse(u', '.join(u'%i: %s'
                 % (index + number, value.value)
                   for index, (factoid, name, value) in enumerate(factoids)))
+        else:
+            factoids = get_factoid(event.session, name, None, pattern, is_regex,
+                literal=True)
+            if factoids:
+                event.addresponse(u"I only know %(number)d things about %(name)s", {
+                    u'number': len(factoids),
+                    u'name': name,
+                })
+
 
 class Forget(Processor):
     usage = u"""forget <name> [( #<number> | /<pattern>/[r] )]
@@ -293,17 +314,17 @@ class Forget(Processor):
     @match(r'^forget\s+(.+?)(?:\s+#(\d+)|\s+(?:/(.+?)/(r?)))?$')
     @authorise(fallthrough=False)
     def forget(self, event, name, number, pattern, is_regex):
-        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True, literal=True)
         if factoids:
             factoidadmin = auth_responses(event, u'factoidadmin')
             identities = get_identities(event)
             factoid = event.session.query(Factoid).get(factoids[0][0].id)
 
-            if (number or pattern):
-                if len(factoids) > 1:
-                    event.addresponse(u'Pattern matches multiple factoids, please be more specific')
-                    return
+            if len(factoids) > 1 and pattern is not None:
+                event.addresponse(u'Pattern matches multiple factoids, please be more specific')
+                return
 
+            if number or pattern:
                 if factoids[0][2].identity_id not in identities and not factoidadmin:
                     return
 
@@ -346,13 +367,24 @@ class Forget(Processor):
 
             event.addresponse(True)
         else:
-            event.addresponse(u"I didn't know about %s anyway", name)
+            factoids = get_factoid(event.session, name, None, pattern, is_regex, all=True, literal=True)
+            if factoids:
+                event.addresponse(u"I only know %(number)d things about %(name)s", {
+                    u'number': len(factoids),
+                    u'name': name,
+                })
+            else:
+                event.addresponse(u"I didn't know about %s anyway", name)
 
     @match(r'^(.+)\s+is\s+the\s+same\s+as\s+(.+)$')
     @authorise(fallthrough=False)
     def alias(self, event, target, source):
 
         target = strip_name(target)
+
+        if target == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
 
         if target.lower() == source.lower():
             event.addresponse(u"That makes no sense, they *are* the same")
@@ -402,35 +434,41 @@ class Search(Processor):
             pattern = m.group(1)
             is_regex = bool(m.group(2))
 
+        # Hack: We replace $arg with _%, but this won't match a partial
+        # "$arg" string
+        if is_regex:
+            filter_op = get_regexp_op(event.session)
+            name_pattern = pattern.replace(r'\$arg', '_%')
+        else:
+            filter_op = lambda x, y: x.like(y, escape='#')
+            pattern = '%%%s%%' % escape_like_re.sub(r'#\1', pattern)
+            name_pattern = pattern.replace('$arg', '#_#%')
+
         query = event.session.query(Factoid)\
-                .join(Factoid.names).add_entity(FactoidName)\
-                .join(Factoid.values)
+                             .join(Factoid.names).add_entity(FactoidName)\
+                             .join(Factoid.values)
 
         if search_type.startswith('fact'):
-            filter_on = (FactoidName.name,)
+            query = query.filter(filter_op(FactoidName.name, name_pattern))
         elif search_type.startswith('value'):
-            filter_on = (FactoidValue.value,)
+            query = query.filter(filter_op(FactoidValue.value, pattern))
         else:
-            filter_on = (FactoidName.name, FactoidValue.value)
+            query = query.filter(or_(filter_op(FactoidName.name, name_pattern),
+                                     filter_op(FactoidValue.value, pattern)))
 
-        if is_regex:
-            filter_op = lambda x, y: x.op('REGEXP')(y)
-        else:
-            pattern = "%%%s%%" % escape_like_re.sub(r'\\\1', pattern)
-            filter_op = lambda x, y: x.like(y)
+        # Pre-evalute the iterable or the if statement will be True in SQLAlchemy 0.4. LP: #383286
+        matches = [match for match in query.all()]
 
-        if len(filter_on) == 1:
-            query = query.filter(filter_op(filter_on[0], pattern))
-        else:
-            query = query.filter(or_(filter_op(filter_on[0], pattern), filter_op(filter_on[1], pattern)))
-
-        # Pre-evalute the iterable or the if statement will be True in SQLAlchemy 0.4 [Bug #383286]
-        matches = [match for match in query[start:start+limit]]
-
-        if matches:
+        bounded_matches = matches[start:start+limit]
+        if bounded_matches:
             event.addresponse(u'; '.join(
                 u'%s [%s]' % (fname.name, len(factoid.values))
-                for factoid, fname in matches))
+                for factoid, fname in bounded_matches))
+        elif len(matches):
+            event.addresponse(u"I could only find %(number)d things that matched '%(pattern)s'", {
+                u'number': len(matches),
+                u'pattern': origpattern,
+            })
         else:
             event.addresponse(u"I couldn't find anything that matched '%s'" % origpattern)
 
@@ -541,6 +579,10 @@ class Set(Processor):
 
         name = strip_name(name)
 
+        if name == u'':
+            event.addresponse(u"Sorry, I'm not interested in empty factoids")
+            return
+
         if name.lower() in self.interrogatives:
             event.addresponse(choice((
                 u"I'm afraid I have no idea",
@@ -606,7 +648,7 @@ class Modify(Processor):
     @authorise(fallthrough=False)
     def append(self, event, name, number, pattern, is_regex, suffix):
         name = strip_name(name)
-        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True)
+        factoids = get_factoid(event.session, name, number, pattern, is_regex, all=True, literal=True)
         if len(factoids) == 0:
             if pattern:
                 event.addresponse(u"I don't know about any %(name)s matching %(pattern)s", {
@@ -614,8 +656,15 @@ class Modify(Processor):
                     'pattern': pattern,
                 })
             else:
-                event.addresponse(u"I don't know about %s", name)
-        elif len(factoids) > 1:
+                factoids = get_factoid(event.session, name, None, pattern, is_regex, all=True)
+                if factoids:
+                    event.addresponse(u"I only know %(number)d things about %(name)s", {
+                        u'number': len(factoids),
+                        u'name': name,
+                    })
+                else:
+                    event.addresponse(u"I don't know about %s", name)
+        elif len(factoids) > 1 and number is None:
             event.addresponse(u"Pattern matches multiple factoids, please be more specific")
         else:
             factoidadmin = auth_responses(event, u'factoidadmin')
