@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Antoine Beaupré
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Antoine Beaupré,
+# Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from datetime import datetime, timedelta
@@ -116,15 +117,10 @@ class Coffee(Processor):
             event.addresponse(True)
 
 features['remind'] = {
-    'description': u'Programs reminders in the future for you or other people.',
+    'description': u'Sets a timed reminder',
     'categories': ('fun', 'monitor', 'remember', 'message',),
 }
 class Remind(Processor):
-    """
-    This is a timed reminder plugin. It allows you to make the bot ping
-    you (or somebody else), about something specific (if you want), in
-    the future.
-    """
     usage = u'remind <person> in <time> about <something>'
     features = ('remind',)
 
@@ -177,14 +173,15 @@ class Remind(Processor):
         if not who or who == "me":
             who = event.sender['nick']
         elif not event.public:
-            event.addresponse(u"It's just you and me in here")
+            event.addresponse(u"It's just you and me in here. Tell me in "
+                    u"the channel where you want me to send the reminder.")
             return
 
         # this is total_seconds() in 2.7, it can be replaced when we require that version or above
         total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
 
         if total_seconds < -24*60*60:
-            event.addresponse(u"I can't travel in time back to %(ago)s ago (yet) so I'll tell you tomorrow instead", {
+            event.addresponse(u"I can't travel in time back to %(ago)s ago (yet)"
                     'ago': ago(-delta),
                 })
             return
