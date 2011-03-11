@@ -181,9 +181,8 @@ class Remind(Processor):
         total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
 
         if total_seconds < -24*60*60:
-            event.addresponse(u"I can't travel in time back to %(ago)s ago (yet)"
-                    'ago': ago(-delta),
-                })
+            event.addresponse(u"I can't travel in time back to %(ago)s ago "
+                              u"(yet)", {'ago': ago(-delta)})
             return
         elif total_seconds < 0:
             delta += timedelta(days=1)
