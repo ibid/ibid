@@ -1,10 +1,14 @@
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# -*- coding: utf-8 -*-
+# Copyright (c) 2009-2011, Michael Gorven, Stefano Rivera, Antoine Beaupré,
+# Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+from datetime import datetime, timedelta
 from unicodedata import normalize
 from random import choice, random, randrange
 import re
 
+from dateutil import parser
 from nickometer import nickometer
 from sqlalchemy.sql import not_, or_
 
@@ -15,7 +19,8 @@ from ibid.db.models import Identity
 from ibid.plugins import Processor, match
 from ibid.config import IntOption, ListOption
 from ibid.utils import human_join, indefinite_article, identity_name, \
-                        plural
+                        plural, ago
+
 
 features = {}
 
@@ -110,6 +115,100 @@ class Coffee(Processor):
         else:
             self.pots[(event.source, event.channel)].append(event.sender['nick'])
             event.addresponse(True)
+
+features['remind'] = {
+    'description': u'Sets a timed reminder',
+    'categories': ('fun', 'monitor', 'remember', 'message',),
+}
+class Remind(Processor):
+    usage = u'remind <person> in <time> about <something>'
+    features = ('remind',)
+
+    def announce(self, event, who, what, from_who, from_when):
+        """This handler gets called after the timeout and will notify
+        the user."""
+
+        # we keep this logic here to simplify the code on the other side
+        if who == from_who:
+            from_who = "You"
+        if event.public:
+            who += ": "
+        else:
+            who = ""
+        if what:
+            what = "remind you " + what
+        else:
+            what = "ping you"
+        event.addresponse(u'%(who)s%(from_who)s asked me to %(what)s, %(ago)s ago.', {
+                'who': who,
+                'from_who': from_who,
+                'what': what,
+                'ago': ago(datetime.now()-from_when)
+                })
+
+    @match(r'(?:please )?(?:remind|ping|alarm) (?:{chunk} )?(at|on|in) (.*?)(?:(about|of|to) (.*))?')
+    def remind(self, event, who, at, when, how, what):
+        """This is the main handler that gets called on the above
+        @match.
+
+        This parses the date and sets up the "announce" function to be
+        fired when the time is up."""
+
+        try:
+            time = parser.parse(when)
+        except:
+            event.addresponse(u"Sorry, I couldn't understand the time you gave me")
+            return
+
+        now = datetime.now()
+        if at == "in":
+            midnight = now.replace(now.year, now.month, now.day, 0, 0, 0, 0)
+            delta = time - midnight
+        elif at in ("at", "on"):
+            delta = time - now
+
+        if what:
+            what = how + " " + what.strip()
+
+        if not who or who == "me":
+            who = event.sender['nick']
+        elif not event.public:
+            event.addresponse(u"It's just you and me in here. Tell me in "
+                    u"the channel where you want me to send the reminder.")
+            return
+
+        # this is total_seconds() in 2.7, it can be replaced when we require that version or above
+        total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
+
+        if total_seconds < -24*60*60:
+            event.addresponse(u"I can't travel in time back to %(ago)s ago "
+                              u"(yet)", {'ago': ago(-delta)})
+            return
+        elif total_seconds < 0:
+            delta += timedelta(days=1)
+            total_seconds = (delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6
+
+        ibid.dispatcher.call_later(total_seconds, self.announce, event, who, what, event.sender['nick'], now)
+
+        # this logic needs to be after the callback setting because we
+        # want to ping the real nick, not "you"
+        if who == event.sender['nick']:
+            who = "you"
+        # we say "ping" here to let the user learn about "ping" instead
+        # of "remind"
+        if what:
+            action = 'remind'
+        else:
+            action = 'ping'
+        if delta:
+            time = " in " + ago(delta)
+        else:
+            time = ""
+        event.addresponse(u"Okay, I will %(action)s %(who)s%(time)s", {
+                'action': action,
+                'who': who,
+                'time': time,
+            })
 
 features['insult'] = {
     'description': u'Slings verbal abuse at someone',
