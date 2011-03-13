@@ -11,6 +11,7 @@ Contents
    tutorial
    contributing
    api/index
+   changes
 
 
 Indices and tables

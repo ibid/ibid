@@ -16,3 +16,4 @@ include README
 include INSTALL
 include COPYING
 include AUTHORS
+include CHANGES
