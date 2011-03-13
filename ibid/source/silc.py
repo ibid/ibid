@@ -173,7 +173,8 @@ class SilcBot(SilcClient):
         del self.users[self._to_hex(user.fingerprint)]
 
     def notify_invite(self, channel, channel_name, inviter):
-        event = self._create_event(u'invite', inviter, channel)
+        event = self._create_event(u'invite', inviter, None)
+        event.target_channel = channel
         event.public = False
         event.addressed = True
         self.factory.log.debug(u'Invited into %s by %s',
