@@ -125,6 +125,9 @@ Plugins
 * Any changes to database schema should have upgrade-rules included for
   painless upgrade by users.
 
+* Write tests for your code at ``ibid/test/plugins/test_pluginname.py``.
+  The :mod:`ibid.test` module provides an API for testing plugins.
+
 Bot Responses
 ^^^^^^^^^^^^^
 
