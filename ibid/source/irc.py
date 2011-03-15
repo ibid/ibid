@@ -173,7 +173,8 @@ class Ircbot(irc.IRCClient):
         user = unicode(user, 'utf-8', 'replace')
         channel = unicode(channel, 'utf-8', 'replace')
 
-        event = self._create_event(u'invite', user, channel)
+        event = self._create_event(u'invite', user, user)
+        event.target_channel = channel
         event.public = False
         event.addressed = True
         self.factory.log.debug(u'Invited into %s by %s',
@@ -218,7 +219,7 @@ class Ircbot(irc.IRCClient):
 
     def joined(self, channel):
         event = Event(self.factory.name, u'source')
-        event.channel = channel
+        event.channel = unicode(channel, 'utf-8', 'replace')
         event.status = u'joined'
         ibid.dispatcher.dispatch(event)
 

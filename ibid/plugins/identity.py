@@ -451,7 +451,7 @@ class Identify(Processor):
     priority = -1600
     addressed = False
     processed = True
-    event_types = (u'message', u'state', u'action', u'notice')
+    event_types = (u'message', u'state', u'action', u'notice', u'invite')
 
     @handler
     def handle(self, event):

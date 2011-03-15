@@ -170,9 +170,8 @@ joining/parting channels) is handled by the ``irc`` plugin.
    **Reqired**
    String: The hostname of the IRC server to connect to.
 
-   Ibid `does not currently support
-   <https://bugs.launchpad.net/bugs/363466>`_ falling back to alternate
-   servers, so you may want to use a round-robin hostname.
+   Ibid :bug:`does not currently support <363466>` falling back to
+   alternate servers, so you may want to use a round-robin hostname.
 
 .. describe:: port:
 

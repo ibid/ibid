@@ -35,7 +35,7 @@ if argv[1:] == ['install', '--no-dependencies']:
 
 setup(
     name='Ibid',
-    version='0.1.0',
+    version='0.2.0dev',
     description='Multi-protocol general purpose chat bot',
     url='http://ibid.omnia.za.net/',
     keywords='chat bot irc jabber twisted messaging',
@@ -49,10 +49,6 @@ setup(
         'memory': ['objgraph'],
         'asciiart': ['python-aalib'],
     },
-    dependency_links=[
-        'http://ibid.omnia.za.net/eggs/',
-        'http://wokkel.ik.nu/downloads',
-    ],
     packages=['ibid', 'tracibid', 'twisted', 'contrib', 'factpacks'],
     entry_points={
         'trac.plugins': ['tracibid = tracibid.notifier'],
