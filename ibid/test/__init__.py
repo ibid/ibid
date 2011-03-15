@@ -1,6 +1,6 @@
-# Copyright (c) 2009-2011, Jeremy Thurgood, Max Rabkin
+# Copyright (c) 2009-2011, Jeremy Thurgood, Max Rabkin, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
-import atexit
+
 import logging
 import os
 from traceback import format_exception
@@ -19,6 +19,7 @@ from ibid.db import upgrade_schemas
 from ibid.db.models import Identity
 from ibid.config import FileConfig
 from ibid.utils import locate_resource
+
 
 # Trial collects log output, so we feed ours logs into it.
 class TwistedLogHandler(logging.Handler):
@@ -42,13 +43,14 @@ class FakeConfig(dict):
     def __setattr__(self, name, value):
         self[name] = value
 
-
 def set_config(config):
     ibid.config = FakeConfig(config)
+
 
 class TestAuth(object):
     def authorise(self, event, permission):
         return True
+
 
 class TestSource(object):
     type = 'test'
@@ -66,6 +68,7 @@ class TestSource(object):
 
     def url(self):
         return None
+
 
 class PluginTestCase(unittest.TestCase):
     load = []
@@ -211,5 +214,13 @@ class PluginTestCase(unittest.TestCase):
         del ibid.sources[self.source]
         ibid.databases.ibid().bind.engine.dispose()
         os.unlink(self.dbfile)
+
+
+def run():
+    "Run the Ibid test suite. Bit of a hack"
+    from twisted.scripts.trial import run
+    import sys
+    sys.argv.append('ibid')
+    run()
 
 # vi: set et sta sw=4 ts=4:
