@@ -10,8 +10,10 @@ recursive-include man *
 include factpacks/*.json
 include factpacks/README
 include ibid/*.ini
+include ibid/test/test.ini
 include twisted/plugins/ibid_plugin.py
 include README
 include INSTALL
 include COPYING
 include AUTHORS
+include CHANGES

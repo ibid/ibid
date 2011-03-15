@@ -70,7 +70,7 @@ class Ignore(Processor):
 
     priority = -1500
     addressed = False
-    event_types = (u'message', u'action', u'notice')
+    event_types = (u'message', u'action', u'notice', u'invite')
 
     nicks = ListOption('ignore', 'List of nicks to ignore', [])
 
@@ -97,7 +97,7 @@ class Address(Processor):
     priority = 1600
     processed = True
     addressed = False
-    event_types = ('message', 'action', 'notice', 'state')
+    event_types = (u'message', u'action', u'notice', u'state', u'invite')
 
     acknowledgements = ListOption('acknowledgements', 'Responses for positive acknowledgements',
             (u'Okay', u'Sure', u'Done', u'Righto', u'Alrighty', u'Yessir'))
@@ -130,7 +130,7 @@ class Complain(Processor):
 
     priority = 950
     processed = True
-    event_types = ('message', 'action')
+    event_types = (u'message', u'action', u'invite')
 
     complaints = DictOption('complaints', 'Complaint responses', {
         'nonsense': (

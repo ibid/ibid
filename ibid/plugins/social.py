@@ -7,7 +7,6 @@ from datetime import datetime
 import re
 import logging
 
-import dateutil.parser
 import feedparser
 
 from ibid.compat import ElementTree
@@ -105,7 +104,7 @@ class Twitter(Processor):
         return {
             'text': decode_htmlentities(latest['text']),
             'ago': ago(datetime.utcnow()
-                       - parse_timestmap(latest['created_at'])),
+                       - parse_timestamp(latest['created_at'])),
             'url': url,
         }
 

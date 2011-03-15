@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera
+# Copyright (c) 2009-2010, Michael Gorven, Stefano Rivera, Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from locale import getpreferredencoding
@@ -8,7 +8,6 @@ from optparse import OptionParser
 from os import getenv
 from os.path import exists
 import sys
-import socket
 
 try:
     import readline
@@ -17,15 +16,13 @@ try:
 except ImportError:
     pass
 
-from sqlalchemy.exceptions import IntegrityError
-
 sys.path.insert(0, '.')
 
 import ibid
+import ibid.core
 from ibid.config import FileConfig
 from ibid.db.models import Identity
 from ibid.event import Event
-from ibid.utils import JSONException
 
 parser = OptionParser(usage="""%prog [options...] [plugins...]
 plugins is the list of plugins to load.
@@ -124,31 +121,7 @@ while True:
     except (KeyboardInterrupt, EOFError):
         break
 
-    for processor in ibid.processors:
-        try:
-            processor.process(event)
-        except Exception, e:
-            log.exception(u"Exception occured in %s processor of %s plugin",
-                    processor.__class__.__name__, processor.name)
-            event.complain = isinstance(e, (IOError, socket.error, JSONException)) and u'network' or u'exception'
-            event.exc_info = sys.exc_info()
-            event.processed = True
-            if 'session' in event:
-                event.session.rollback()
-                event.session.close()
-                del event['session']
-
-        if 'session' in event:
-            try:
-                event.session.commit()
-            except IntegrityError:
-                log.exception(u"Exception occured committing session from the %s processor of %s plugin",
-                        processor.__class__.__name__, processor.name)
-                event.complain = u'exception'
-                event.exc_info = sys.exc_info()
-                event.session.rollback()
-                event.session.close()
-                del event['session']
+    ibid.core.process(event, log)
 
     if options.verbose:
         print "Event: %s" % repr(event)
