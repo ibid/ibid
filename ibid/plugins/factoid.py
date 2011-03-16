@@ -739,23 +739,27 @@ class Modify(Processor):
             op, search, replace, flags = parts
             flags = flags.lower()
             if op == "s":
-                if "r" in flags:
-                    if "i" in flags:
-                        search += "(?i)"
-                    try:
-                        factoid[2].value = re.sub(search, replace, oldvalue, int("g" not in flags))
-                    except:
-                        event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                if "r" not in flags:
+                    plain_search = search
+                    search = re.escape(search)
+                    replace = replace.replace('\\', '\\\\')
+                if "i" in flags:
+                    search += "(?i)"
+                try:
+                    if "r" not in flags and not re.search(search, oldvalue):
+                        event.addresponse(u"I couldn't find '%(terms)s' in "
+                                          u"'%(oldvalue)s'. If that was a "
+                                          u"proper regular expression, append "
+                                          u"the 'r' flag", {
+                                                'terms': plain_search,
+                                                'oldvalue': oldvalue,
+                                            })
                         return
-                else:
-                    newvalue = oldvalue.replace(search, replace, "g" in flags and -1 or 1)
-                    if newvalue == oldvalue:
-                        event.addresponse(u"I couldn't find '%(terms)s' in '%(oldvalue)s'. If that was a proper regular expression, append the 'r' flag", {
-                            'terms': search,
-                            'oldvalue': oldvalue,
-                        })
-                        return
-                    factoid[2].value = newvalue
+
+                    factoid[2].value = re.sub(search, replace, oldvalue, int("g" not in flags))
+                except:
+                    event.addresponse(u"That operation makes no sense. Try something like s/foo/bar/")
+                    return
 
             elif op == "y":
                 if len(search) != len(replace):
