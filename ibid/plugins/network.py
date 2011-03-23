@@ -528,10 +528,10 @@ class Ports(Processor):
                             break
                         self.protocols[proto.lower()].append(port)
 
-    @match(r'^(?:(.+)\s+)?ports?(?:\s+numbers?)?(?(1)|\s+for\s+(.+))$')
-    def portfor(self, event, proto1, proto2):
+    @match(r'(?:{proto:any} )?ports?(?: numbers?)?(?(1)| for {proto:any})')
+    def portfor(self, event, proto):
         self._load_services()
-        protocol = (proto1 or proto2).lower()
+        protocol = proto.lower()
         if protocol in self.protocols:
             event.addresponse(human_join(self.protocols[protocol]))
         else:

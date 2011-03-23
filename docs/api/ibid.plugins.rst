@@ -147,7 +147,7 @@ Decorators
    Selector     expands to
    ============ ==========================================
    ``{alpha}``  ``[a-zA-Z]+``
-   ``{any}``    ``.*``
+   ``{any}``    ``.+``
    ``{chunk}``  ``\S+``
    ``{digits}`` ``\d+``
    ``{number}`` ``\d*\.?\d+``
@@ -168,6 +168,21 @@ Decorators
    The above match is equivalent to this non-simple version::
 
       @match(r'^(?:foo|bar)\s+(\S+)$', simple=False)
+
+   Optionally you can specify keyword arguments, which will get passed on to
+   the function. The syntax is ``{keyword:selector}``, where the keywords will
+   get passed onto the decorated method::
+
+      @match(r'I am {nick:chunk} on {network:chunk}')
+      def register(self, event, network, nick):
+         pass
+
+   The above match is equivalent to this non-simple version::
+
+      @match(r'^I\s+am\s+(?P<nick>\S+)\s+on\s+(?P<network>\S+)$', simple=False)
+
+   Note that you cannot mix positional and keyword arguments. All your
+   selectors must either be named, or all be unnamed.
 
    *version* can be set to one of:
 

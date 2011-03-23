@@ -151,18 +151,18 @@ class Tell(Processor):
             'source': to.source,
         })
 
-    @match(r'^(?:delete|forget)\s+(?:my\s+)?'
-            r'(?:(first|last|\d+(?:st|nd|rd|th)?)\s+)?' # 1st way to specify number
-            r'(?:memo|message|msg)\s+'
-            r'(?(1)|#?(\d+)\s+)?' # 2nd way
-            r'(?:for|to)\s+(.+?)(?:\s+on\s+(\S+))?$')
+    @match(r'(?:delete|forget) (?:my )?'
+            r'(?:(?P<num>first|last|\d+(?:st|nd|rd|th)?) )?' # 1st way to specify number
+            r'(?:memo|message|msg) '
+            r'(?(1)|#?{num:digits} )?' # 2nd way
+            r'(?:for|to) (?P<who>.+?)(?: on {source:chunk})?')
     @authorise(fallthrough=False)
-    def forget(self, event, num1, num2, who, source):
+    def forget(self, event, num, who, source):
         if not source:
             source = event.source
         else:
             source = source.lower()
-        number = num1 or num2 or 'last'
+        number = num or 'last'
         number = number.lower()
         if number == 0:
             # Don't wrap around to last message, that'd be unexpected
