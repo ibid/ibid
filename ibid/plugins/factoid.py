@@ -710,7 +710,7 @@ class Modify(Processor):
                 return
 
             # Not very pythonistic, but escaping is a nightmare.
-            seperator = sep
+            separator = sep
             parts = [[]]
             pos = 0
             while pos < len(operation):
