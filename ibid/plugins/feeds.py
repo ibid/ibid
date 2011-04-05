@@ -225,7 +225,7 @@ broken_feeds = {}
 broken_lock = Lock()
 
 class Retrieve(Processor):
-    usage = u"""latest [ <count> ] [ full ] articles from <name> [ starting at <number> ]
+    usage = u"""latest [ <count> ] ( articles | headlines ) from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
     features = ('feeds',)
 
