@@ -225,7 +225,7 @@ broken_feeds = {}
 broken_lock = Lock()
 
 class Retrieve(Processor):
-    usage = u"""latest [ <count> ] articles from <name> [ starting at <number> ]
+    usage = u"""latest [ <count> ] [ full ] articles from <name> [ starting at <number> ]
     article ( <number> | /<pattern>/ ) from <name>"""
     features = ('feeds',)
 
@@ -236,10 +236,16 @@ class Retrieve(Processor):
         'The slowdown ratio to back off from broken feeds', 2.0)
 
 
-    @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?articles\s+from\s+(.+?)'
+    @match(r'^(?:latest|last)\s+(?:(\d+)\s+)?(article|headline)(s)?\s+from\s+(.+?)'
            r'(?:\s+start(?:ing)?\s+(?:at\s+|from\s+)?(\d+))?$')
-    def list(self, event, number, name, start):
-        number = number and int(number) or 10
+    def list(self, event, number, full, plurality, name, start):
+        full = full == 'article'
+        if number:
+            number = int(number)
+        elif not plurality:
+            number = 1
+        else:
+            number = 10
         start = start and int(start) or 0
 
         feed = event.session.query(Feed).filter_by(name=name).first()
@@ -254,10 +260,27 @@ class Retrieve(Processor):
             return
 
         articles = feed.entries[start:number+start]
-        articles = [u'%s: "%s"' % (feed.entries.index(entry) + 1,
-                                   html2text_file(entry.title, None).strip())
-                    for entry in articles]
-        event.addresponse(u', '.join(articles))
+        entries = []
+        for article in articles:
+            if full:
+                if 'summary' in article:
+                    summary = html2text_file(article.summary, None)
+                else:
+                    if article.content[0].type in \
+                            ('application/xhtml+xml', 'text/html'):
+                        summary = html2text_file(article.content[0].value, None)
+                    else:
+                        summary = article.content[0].value
+
+                entries.append(u'%(number)s: "%(title)s"%(link)s : %(summary)s' % {
+                    'number': articles.index(article) + 1,
+                    'title': html2text_file(article.title, None).strip(),
+                    'link': get_link(article),
+                    'summary': summary,
+                })
+            else:
+                entries.append(u'%s: "%s"' % (feed.entries.index(article) + 1, html2text_file(article.title, None).strip()))
+        event.addresponse(u', '.join(entries))
 
     @match(r'^article\s+(?:(\d+)|/(.+?)/)\s+from\s+(.+?)$')
     def article(self, event, number, pattern, name):
@@ -269,7 +292,7 @@ class Retrieve(Processor):
 
         feed.update()
         if not feed.entries:
-            event.addresponse(u"I can't access that feed")
+            event.addresponse(u"I can't find any articles in that feed")
             return
         article = None
 
