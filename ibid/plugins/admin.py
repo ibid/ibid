@@ -215,15 +215,19 @@ class Config(Processor):
 
     def find_option(self, key):
         """
-        Find the Option object for a config key in a plugin or source.
+        Find the Option object(s) for a config key in a plugin or source.
 
         Returns None if the key does not correspond to an Option object.
+
+        Returns a dictionary mapping option names to (option, object) pairs as
+        below, if key is of the form plugins.pluginname or sources.sourcename.
+
         Otherwise, returns (option, object, key_tail) where option is an
         Option instance, and object is either a Processor or Source object
         through which the option is accessed, and key_tail is the part of
         the key which names a sub-option of this option (or a blank string).
         """
-        m = re.match(r'^(plugins|sources)\.([^.]+)\.([^.]+)(?:.(.+))?$', key)
+        m = re.match(r'^(plugins|sources)\.([^.]+)(?:\.([^.]+)(?:.(.+))?)?$', key)
         if m is None:
             return None
 
@@ -235,13 +239,22 @@ class Config(Processor):
                 return None
         else:
             things = [p for p in ibid.processors if p.name == plugin]
+
+        if name is None:
+            mapping = {}
+        else:
+            mapping = None
+
         for thing in things:
             options = thing.__dict__.values() + \
                         type(thing).__dict__.values()
             for option in options:
-                if isinstance(option, Option) and option.name == name:
-                    return option, thing, key_tail or u''
-        return None
+                if isinstance(option, Option):
+                    if name is None:
+                        mapping[option.name] = (option, thing)
+                    elif option.name == name:
+                        return option, thing, key_tail or u''
+        return mapping
 
     @match(r'(?:get config|config get) (\S+?)')
     def get(self, event, key):
@@ -249,7 +262,10 @@ class Config(Processor):
             return
 
         option = self.find_option(key)
-        if option:
+        if isinstance(option, dict):
+            config = option
+            key = ''
+        elif option is not None:
             config = option[0].__get__(option[1], type(option[1]))
             key = option[2]
         else:
