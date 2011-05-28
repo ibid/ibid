@@ -1,10 +1,20 @@
 # Copyright (c) 2009-2010, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sqlalchemy.types import TypeDecorator, Integer, DateTime, Boolean, \
+from sqlalchemy import __version__ as _sqlalchemy_version
+from sqlalchemy.types import Integer, DateTime, Boolean, \
                              Unicode as _Unicode, UnicodeText as _UnicodeText
 
-class _CIDecorator(TypeDecorator):
+if _sqlalchemy_version < '0.6':
+    from sqlalchemy.types import TypeDecorator
+    custom_type_class = TypeDecorator
+    pg_engine = 'postgres'
+else:
+    from sqlalchemy.types import UserDefinedType
+    custom_type_class = UserDefinedType
+    pg_engine = 'postgresql'
+
+class _CIDecorator(custom_type_class):
     "Abstract class for collation aware columns"
 
     def __init__(self, length=None, case_insensitive=False):
@@ -12,15 +22,9 @@ class _CIDecorator(TypeDecorator):
         super(_CIDecorator, self).__init__(length=length)
 
     def load_dialect_impl(self, dialect):
-        if hasattr(dialect, 'name'):
-            self.dialect = dialect.name
-        # SQLAlchemy 0.4:
-        else:
-            self.dialect = {
-                'SQLiteDialect': 'sqlite',
-                'PGDialect': 'postgres',
-                'MySQLDialect': 'mysql',
-            }[dialect.__class__.__name__]
+        # SA 0.5 only:
+        # Figure out what we are connected to
+        self.dialect = dialect.name
 
         return dialect.type_descriptor(self.impl)
 
@@ -38,7 +42,7 @@ class _CIDecorator(TypeDecorator):
                     collation = 'NOCASE'
                 else:
                     collation = 'BINARY'
-            elif self.dialect == 'postgres' and self.case_insensitive:
+            elif self.dialect == pg_engine and self.case_insensitive:
                 return 'CITEXT'
 
             if collation is not None:

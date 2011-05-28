@@ -147,7 +147,7 @@ class Manage(Processor):
             return
 
         feed = Feed(unicode(name), unicode(url), event.identity)
-        event.session.save(feed)
+        event.session.add(feed)
         event.session.commit()
         event.addresponse(True)
         log.info(u"Added feed '%s' by %s/%s (%s): %s (Found %s entries)",

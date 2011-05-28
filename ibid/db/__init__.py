@@ -2,7 +2,7 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 import warnings as _warnings
 
-from ibid.db.types import TypeDecorator, Integer, DateTime, Boolean, \
+from ibid.db.types import Integer, DateTime, Boolean, \
                           IbidUnicode, IbidUnicodeText
 
 from sqlalchemy import Table, Column, ForeignKey, Index, UniqueConstraint, \
@@ -18,9 +18,6 @@ Base = _declarative_base(metadata=metadata)
 
 from ibid.db.versioned_schema import VersionedSchema, SchemaVersionException, \
                                      schema_version_check, upgrade_schemas
-
-# We use SQLAlchemy 0.4 compatible .save_or_update() functions
-_warnings.filterwarnings('ignore', 'Use session.add\(\)', SADeprecationWarning)
 
 def get_regexp_op(session):
     "Return a regexp operator"

@@ -85,7 +85,7 @@ if factpack:
     exit(5)
 
 factpack = Factpack(name)
-session.save(factpack)
+session.add(factpack)
 session.flush()
 
 existing = []
@@ -102,7 +102,7 @@ for names, values in facts:
         fvalue = FactoidValue(unicode(value), None, factpack=factpack.id)
         factoid.values.append(fvalue)
     if len(factoid.names) > 0:
-        session.save(factoid)
+        session.add(factoid)
 
 if existing and not options.skip:
     print >> stderr, u'The following factoids already exist in the database. ' \

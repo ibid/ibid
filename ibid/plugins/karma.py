@@ -133,7 +133,7 @@ class Set(Processor):
 
             event.session.delete(karma)
         else:
-            event.session.save_or_update(karma)
+            event.session.add(karma)
         event.session.commit()
 
         log.info(u"%s karma for '%s' by %s/%s (%s) because: %s",
@@ -168,11 +168,18 @@ class Get(Processor):
 
     @match(r'^(reverse\s+)?karmaladder$')
     def ladder(self, event, reverse):
-        karmas = event.session.query(Karma) \
-                .order_by(reverse and Karma.value.asc() or Karma.value.desc()) \
-                .limit(30).all()
+        karmas = event.session.query(Karma)
+        if reverse:
+            karmas = karmas.order_by(Karma.value.asc())
+        else:
+            karmas = karmas.order_by(Karma.value.desc())
+        karmas = karmas.limit(30).all()
+
         if karmas:
-            event.addresponse(', '.join(['%s: %s (%s)' % (karmas.index(karma), karma.subject, karma.value) for karma in karmas]))
+            event.addresponse(u', '.join(
+                u'%s: %s (%s)'
+                % (karmas.index(karma), karma.subject, karma.value)
+                for karma in karmas))
         else:
             event.addresponse(u"I don't really care about anything")
 
