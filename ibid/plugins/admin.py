@@ -21,17 +21,12 @@ features['plugins'] = {
     'description': u'Lists, loads and unloads plugins.',
     'categories': ('admin',),
 }
-class ListPLugins(Processor):
+class ListPlugins(Processor):
     usage = u'list plugins'
     features = ('plugins',)
 
     @match(r'lsmod|list plugins')
     def handler(self, event):
-        plugins = []
-        for processor in ibid.processors:
-            if processor.name not in plugins:
-                plugins.append(processor.name)
-
         event.addresponse(u'Plugins: %s', human_join(sorted(list_plugins())) or u'none')
 
 def list_plugins():
@@ -295,7 +290,7 @@ class Config(Processor):
         if isinstance(config, list):
             event.addresponse(u', '.join(config))
         elif isinstance(config, dict):
-            event.addresponse(u'Keys: ' + human_join(sources(config.keys())))
+            event.addresponse(u'Keys: ' + human_join(config.keys()))
         else:
             event.addresponse(unicode(config))
 
