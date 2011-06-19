@@ -227,7 +227,7 @@ class Config(Processor):
         through which the option is accessed, and key_tail is the part of
         the key which names a sub-option of this option (or a blank string).
         """
-        m = re.match(r'^(plugins|sources)\.([^.]+)(?:\.([^.]+)(?:.(.+))?)?$', key)
+        m = re.match(r'^(plugins|sources)\.([^.]+)(?:\.([^.]+)(?:\.(.+))?)?$', key)
         if m is None:
             return None
 
