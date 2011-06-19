@@ -141,7 +141,7 @@ Bot Responses
 Bazaar for Ibid Developers
 --------------------------
 
-You'll want a non-ancient version (>=1.6) of Bazaar (check your
+You'll want a non-ancient version (>=1.16) of Bazaar (check your
 distribution's backport repository), and a Launchpad account.
 
 If you've never used Bazaar before, read `Bazaar in five minutes
@@ -156,7 +156,7 @@ Make a Bazaar shared repository to contain all your Ibid branches::
 
    ~ $ mkdir ~/code/ibid
    ~ $ cd ~/code/ibid
-   ~/code/ibid $ bzr init-repo --1.6 .
+   ~/code/ibid $ bzr init-repo --2a .
 
 Check out Ibid trunk::
 
