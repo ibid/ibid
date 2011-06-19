@@ -32,7 +32,13 @@ class ListPLugins(Processor):
             if processor.name not in plugins:
                 plugins.append(processor.name)
 
-        event.addresponse(u'Plugins: %s', human_join(sorted(plugins)) or u'none')
+        event.addresponse(u'Plugins: %s', human_join(sorted(list_plugins())) or u'none')
+
+def list_plugins():
+    plugins = set()
+    for processor in ibid.processors:
+        plugins.add(processor.name)
+    return sorted(plugins)
 
 features['core'] = {
     'description': u'Reloads core modules.',
@@ -268,6 +274,14 @@ class Config(Processor):
         elif option is not None:
             config = option[0].__get__(option[1], type(option[1]))
             key = option[2]
+        elif key == 'plugins':
+            # Construct a dictionary since this isn't a list-valued option,
+            # but a list of option keys.
+            config = dict((plugin, None) for plugin in list_plugins())
+            key = ''
+        elif key == 'sources':
+            config = ibid.sources
+            key = ''
         else:
             config = ibid.config
 
@@ -281,7 +295,7 @@ class Config(Processor):
         if isinstance(config, list):
             event.addresponse(u', '.join(config))
         elif isinstance(config, dict):
-            event.addresponse(u'Keys: ' + human_join(config.keys()))
+            event.addresponse(u'Keys: ' + human_join(sources(config.keys())))
         else:
             event.addresponse(unicode(config))
 
