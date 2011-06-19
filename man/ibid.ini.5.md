@@ -55,15 +55,15 @@ Each plugin is configured within a section named after the plugin.
 :	The directory that temporary files (such as downloaded data), useful to be
 	the bot but expendable, is stored in.
 
-**core**.**autoload**
+**autoload**
 :	If **True**, all plugins not explicitly ignored will be loaded.
 	(Note that some plugins mark themselves as non-auto-loadable).
 	Defaults to **True**.
 
-**core**.**load**
+**load**
 :	The list of plugins (or **plugin**.**Processor**s) to load.
 
-**core**.**noload**
+**noload**
 :	The list of plugins (or **plugin**.**Processor**s) to ignore and not load.
 
 **core**.**names**
