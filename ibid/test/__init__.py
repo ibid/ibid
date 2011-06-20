@@ -1,11 +1,13 @@
 # Copyright (c) 2009-2011, Jeremy Thurgood, Max Rabkin, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import atexit
 import logging
 import os
 from traceback import format_exception
 import re
 from shutil import copyfile
+import tempfile
 import sys
 
 from twisted.python import log
@@ -120,7 +122,14 @@ class PluginTestCase(unittest.TestCase):
         # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
-        PluginTestCase.empty_dbfile = self.mktemp()
+
+        # Use tempfile.mkstemp instead of self.mkstemp so that the file survives
+        # between tests, but delete it on exit. Windows is why we can't have
+        # nice things like NamedTemporaryFile.
+        fd, PluginTestCase.empty_dbfile = tempfile.mkstemp()
+        os.close(fd)
+        atexit.register(os.unlink, PluginTestCase.empty_dbfile)
+
         ibid.config['databases']['ibid'] = 'sqlite:///' + self.empty_dbfile
         db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
         for module in getModule('ibid.plugins').iterModules():
