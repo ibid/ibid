@@ -7,8 +7,8 @@ import os
 from traceback import format_exception
 import re
 from shutil import copyfile
-import tempfile
 import sys
+import tempfile
 
 from twisted.python import log
 from twisted.python.modules import getModule
