@@ -1,13 +1,15 @@
 # Copyright (c) 2008-2010, Michael Gorven
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from os.path import join
-from twisted.internet import reactor
 import logging
+from os.path import join
+import re
+
+from twisted.internet import reactor
 
 import ibid
 from ibid.utils import human_join
-from ibid.config import FileConfig
+from ibid.config import FileConfig, Option
 from ibid.plugins import Processor, match, authorise, auth_responses
 from ibid.utils import ibid_version
 
@@ -19,18 +21,19 @@ features['plugins'] = {
     'description': u'Lists, loads and unloads plugins.',
     'categories': ('admin',),
 }
-class ListPLugins(Processor):
+class ListPlugins(Processor):
     usage = u'list plugins'
     features = ('plugins',)
 
     @match(r'lsmod|list plugins')
     def handler(self, event):
-        plugins = []
-        for processor in ibid.processors:
-            if processor.name not in plugins:
-                plugins.append(processor.name)
+        event.addresponse(u'Plugins: %s', human_join(sorted(list_plugins())) or u'none')
 
-        event.addresponse(u'Plugins: %s', human_join(sorted(plugins)) or u'none')
+def list_plugins():
+    plugins = set()
+    for processor in ibid.processors:
+        plugins.add(processor.name)
+    return sorted(plugins)
 
 features['core'] = {
     'description': u'Reloads core modules.',
@@ -211,17 +214,79 @@ class Config(Processor):
 
         event.addresponse(True)
 
+    def find_option(self, key):
+        """
+        Find the Option object(s) for a config key in a plugin or source.
+
+        Returns None if the key does not correspond to an Option object.
+
+        Returns a dictionary mapping option names to (option, object) pairs as
+        below, if key is of the form plugins.pluginname or sources.sourcename.
+
+        Otherwise, returns (option, object, key_tail) where option is an
+        Option instance, and object is either a Processor or Source object
+        through which the option is accessed, and key_tail is the part of
+        the key which names a sub-option of this option (or a blank string).
+        """
+        m = re.match(r'^(plugins|sources)\.([^.]+)(?:\.([^.]+)(?:\.(.+))?)?$', key)
+        if m is None:
+            return None
+
+        kind, plugin, name, key_tail = m.groups()
+        if kind == 'sources':
+            if plugin in ibid.sources:
+                things = [ibid.sources[plugin]]
+            else:
+                return None
+        else:
+            things = [p for p in ibid.processors if p.name == plugin]
+
+        if name is None:
+            mapping = {}
+        else:
+            mapping = None
+
+        for thing in things:
+            options = thing.__dict__.values() + \
+                        type(thing).__dict__.values()
+            for option in options:
+                if isinstance(option, Option):
+                    if name is None:
+                        mapping[option.name] = (option, thing)
+                    elif option.name == name:
+                        return option, thing, key_tail or u''
+        return mapping
+
     @match(r'(?:get config|config get) (\S+?)')
     def get(self, event, key):
         if 'password' in key.lower() and not auth_responses(event, u'config'):
             return
 
-        config = ibid.config
-        for part in key.split('.'):
-            if not isinstance(config, dict) or part not in config:
-                event.addresponse(u'No such option')
-                return
-            config = config[part]
+        option = self.find_option(key)
+        if isinstance(option, dict):
+            config = option
+            key = ''
+        elif option is not None:
+            config = option[0].__get__(option[1], type(option[1]))
+            key = option[2]
+        elif key == 'plugins':
+            # Construct a dictionary since this isn't a list-valued option,
+            # but a list of option keys.
+            config = dict((plugin, None) for plugin in list_plugins())
+            key = ''
+        elif key == 'sources':
+            config = ibid.sources
+            key = ''
+        else:
+            config = ibid.config
+
+        if key:
+            for part in key.split('.'):
+                if not isinstance(config, dict) or part not in config:
+                    event.addresponse(u'No such option')
+                    return
+                config = config[part]
+
         if isinstance(config, list):
             event.addresponse(u', '.join(config))
         elif isinstance(config, dict):
