@@ -11,7 +11,7 @@ from sqlalchemy.orm import eagerload, relation, synonym
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
 
-from sqlalchemy.exceptions import IntegrityError, SADeprecationWarning
+from sqlalchemy.exc import IntegrityError, SADeprecationWarning
 
 metadata = _MetaData()
 Base = _declarative_base(metadata=metadata)

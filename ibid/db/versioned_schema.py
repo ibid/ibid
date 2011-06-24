@@ -6,7 +6,7 @@ import re
 
 from sqlalchemy import Column, Index, CheckConstraint, UniqueConstraint, \
                        MetaData, __version__ as _sqlalchemy_version
-from sqlalchemy.exceptions import InvalidRequestError, OperationalError, \
+from sqlalchemy.exc import InvalidRequestError, OperationalError, \
                                   ProgrammingError, InternalError
 from sqlalchemy.orm.exc import NoResultFound
 

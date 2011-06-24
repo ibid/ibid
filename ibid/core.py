@@ -14,7 +14,7 @@ from twisted.internet import reactor, threads
 from twisted.python.modules import getModule
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.exceptions import IntegrityError
+from sqlalchemy.exc import IntegrityError
 
 import ibid
 from ibid.event import Event
