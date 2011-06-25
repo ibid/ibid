@@ -6,24 +6,20 @@ from sqlalchemy.types import Integer, DateTime, Boolean, \
 
 
 def monkey_patch():
-    import sqlalchemy
-    if sqlalchemy.__version__ < '0.6':
-        import sqlalchemy.dialects.postgres as sa_postgres
-    else:
-        import sqlalchemy.dialects.postgresql as sa_postgres
-    sa_postgres.dialect.ischema_names['citext'] = IbidUnicodeText
+    import sqlalchemy.dialects.postgresql
+    sqlalchemy.dialects.postgresql.dialect.ischema_names['citext'] = IbidUnicodeText
     def postgres_visit_IBID_VARCHAR(self, type_):
         if type_.case_insensitive:
             return 'CITEXT'
         else:
             return self.visit_VARCHAR(type_)
-    sa_postgres.dialect.type_compiler.visit_IBID_VARCHAR = postgres_visit_IBID_VARCHAR
+    sqlalchemy.dialects.postgresql.dialect.type_compiler.visit_IBID_VARCHAR = postgres_visit_IBID_VARCHAR
     def postgres_visit_IBID_TEXT(self, type_):
         if type_.case_insensitive:
             return 'CITEXT'
         else:
             return self.visit_TEXT(type_)
-    sa_postgres.dialect.type_compiler.visit_IBID_TEXT = postgres_visit_IBID_TEXT
+    sqlalchemy.dialects.postgresql.dialect.type_compiler.visit_IBID_TEXT = postgres_visit_IBID_TEXT
 
     import sqlalchemy.dialects.sqlite
     def sqlite_visit_IBID_VARCHAR(self, type_):
