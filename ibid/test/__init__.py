@@ -109,7 +109,7 @@ class PluginTestCase(unittest.TestCase):
         session = ibid.databases.ibid()
 
         self.identity = Identity(self.source, self.username)
-        session.save(self.identity)
+        session.add(self.identity)
         session.commit()
         self.identity = session.query(Identity) \
             .filter_by(identity=self.username).one()
