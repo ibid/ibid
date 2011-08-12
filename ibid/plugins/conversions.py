@@ -9,10 +9,10 @@ import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
-from ibid.compat import any, defaultdict
+from ibid.compat import any, defaultdict, ElementTree
 from ibid.config import Option
-from ibid.utils import file_in_path, get_country_codes, human_join, \
-                       unicode_output, generic_webservice
+from ibid.utils import (cacheable_download, file_in_path, get_country_codes,
+                        human_join, unicode_output, generic_webservice)
 from ibid.utils.html import get_html_parse_tree
 
 features = {}
@@ -312,41 +312,30 @@ class Currency(Processor):
     country_codes = {}
 
     def _load_currencies(self):
-        etree = get_html_parse_tree(
-                'http://www.xe.com/iso4217.php', headers = {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Referer': 'http://www.xe.com/',
-                }, treetype='etree')
-
-        tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
-
+        iso4127_file = cacheable_download(
+                'http://www.currency-iso.org/dl_iso_table_a1.xml',
+                'iso4217.xml')
+        document = ElementTree.parse(iso4127_file)
+        country_codes = get_country_codes()
         self.currencies = {}
-        for tbl_sub in tbl_main.getiterator('table'):
-            if tbl_sub.get('class') == 'tbl_sub':
-                for tr in tbl_sub.getiterator('tr'):
-                    code, place = [x.text for x in tr.getchildren()]
-                    name = u''
-                    if not place:
-                        place = u''
-                    if u',' in place[1:-1]:
-                        place, name = place.split(u',', 1)
-                    place = place.strip()
-                    if code in self.currencies:
-                        currency = self.currencies[code]
-                        # Are we using another country's currency?
-                        if place != u'' and name != u'' and (currency[1] == u'' or currency[1].rsplit(None, 1)[0] in place
-                                or (u'(also called' in currency[1] and currency[1].split(u'(', 1)[0].rsplit(None, 1)[0] in place)):
-                            currency[0].insert(0, place)
-                            currency[1] = name.strip()
-                        else:
-                            currency[0].append(place)
-                    else:
-                        self.currencies[code] = [[place], name.strip()]
+        for currency in document.getiterator('ISO_CURRENCY'):
+            code = currency.findtext('ALPHABETIC_CODE').strip()
+            name = currency.findtext('CURRENCY').strip()
+            place = currency.findtext('ENTITY').strip().title()
+            if code in self.currencies:
+                if country_codes.get(code[:2], '').lower() == place.lower():
+                    self.currencies[code][0].insert(0, place)
+                else:
+                    self.currencies[code][0].append(place)
+            else:
+                self.currencies[code] = [[place], name]
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
-        self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
-        self.currencies['XOF'][1] = u'Francs'
+        self.currencies['XAF'][0].insert(0, u"Communaut\xe9 financi\xe8re d'Afrique")
+        self.currencies['XCD'][0].insert(0, u'Organisation of Eastern Caribbean States')
+        self.currencies['XOF'][0].insert(0, u'Coop\xe9ration financi\xe8re en Afrique centrale')
+        self.currencies['XPF'][0].insert(0, u'Comptoirs Fran\xe7ais du Pacifique')
 
     def _resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
