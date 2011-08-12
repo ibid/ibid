@@ -316,8 +316,8 @@ class Currency(Processor):
                 'http://www.currency-iso.org/dl_iso_table_a1.xml',
                 'iso4217.xml')
         document = ElementTree.parse(iso4127_file)
-        country_codes = get_country_codes()
         self.currencies = {}
+        self.country_codes = get_country_codes()
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
@@ -370,9 +370,6 @@ class Currency(Processor):
     def exchange(self, event, command, amount, frm, to):
         if not self.currencies:
             self._load_currencies()
-
-        if not self.country_codes:
-            self.country_codes = get_country_codes()
 
         rough = command.lower() == 'exchange'
 
