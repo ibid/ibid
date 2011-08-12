@@ -335,6 +335,15 @@ class Currency(Processor):
             if code[:2] not in self.country_currencies:
                 self.country_currencies[code[:2]] = code
 
+        # Non-currencies:
+        for code in ('CHE CHW '         # Swiss WIR currencies
+                     'USN USS '         # US Dollar fund codes
+                     'XAG XAU XPD XPT ' # Metals
+                     'XBA XBB XBC XBD ' # Euro Bond Market
+                     'XDR XTS XXX '     # Other specials
+                    ).split():
+            del self.currencies[code]
+
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
         self.currencies['XAF'][0].insert(0, u"Communaut\xe9 financi\xe8re d'Afrique")
