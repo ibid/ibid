@@ -342,8 +342,11 @@ class Currency(Processor):
         self.currencies['XOF'][0].insert(0, u'Coop\xe9ration financi\xe8re en Afrique centrale')
         self.currencies['XPF'][0].insert(0, u'Comptoirs Fran\xe7ais du Pacifique')
 
-    def _resolve_currency(self, name, rough=True):
+    def resolve_currency(self, name, rough=True):
         "Return the canonical name for a currency"
+
+        if not self.currencies:
+            self._load_currencies()
 
         if name.upper() in self.currencies:
             return name.upper()
@@ -379,13 +382,10 @@ class Currency(Processor):
 
     @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
     def exchange(self, event, command, amount, frm, to):
-        if not self.currencies:
-            self._load_currencies()
-
         rough = command.lower() == 'exchange'
 
-        canonical_frm = self._resolve_currency(frm, rough)
-        canonical_to = self._resolve_currency(to, rough)
+        canonical_frm = self.resolve_currency(frm, rough)
+        canonical_to = self.resolve_currency(to, rough)
         if not canonical_frm or not canonical_to:
             if rough:
                 event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
