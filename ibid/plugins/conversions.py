@@ -316,19 +316,24 @@ class Currency(Processor):
                 'http://www.currency-iso.org/dl_iso_table_a1.xml',
                 'iso4217.xml')
         document = ElementTree.parse(iso4127_file)
+        # Code -> [Countries..., Currency Name]
         self.currencies = {}
+        # Country -> Code
+        self.country_currencies = {}
         self.country_codes = get_country_codes()
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
             if code in self.currencies:
-                if country_codes.get(code[:2], '').lower() == place.lower():
+                if self.country_codes.get(code[:2], '').lower() == place.lower():
                     self.currencies[code][0].insert(0, place)
                 else:
                     self.currencies[code][0].append(place)
             else:
                 self.currencies[code] = [[place], name]
+            if code[:2] not in self.country_currencies:
+                self.country_currencies[code[:2]] = code
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
@@ -343,6 +348,7 @@ class Currency(Processor):
         if name.upper() in self.currencies:
             return name.upper()
 
+        # Strip leading dots (.TLD) and plurals
         strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
         m = strip_currency_re.match(name)
 
@@ -358,11 +364,16 @@ class Currency(Processor):
         # Currency Name
         if name == u'dollar':
             return "USD"
-
-        name_re = re.compile(r'^(.+\s+)?\(?%ss?\)?(\s+.+)?$' % name, re.I | re.UNICODE)
+        if name == u'pound':
+            return "GBP"
         for code, (places, currency) in self.currencies.iteritems():
-            if name_re.match(currency) or [True for place in places if name_re.match(place)]:
+            if name in currency.lower():
                 return code
+
+        # Country Names
+        for code, place in self.country_codes.iteritems():
+            if name in place.lower():
+                return self.country_currencies[code]
 
         return False
 
