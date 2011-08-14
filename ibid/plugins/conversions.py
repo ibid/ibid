@@ -321,12 +321,24 @@ class Currency(Processor):
         # Country -> Code
         self.country_currencies = {}
         self.country_codes = get_country_codes()
+        # Non-currencies:
+        non_currencies = set(('BOV CLF COU MXV '
+                              'UYI XSU XUA '     # Various Fund codes
+                              'CHE CHW '         # Swiss WIR currencies
+                              'USN USS '         # US Dollar fund codes
+                              'XAG XAU XPD XPT ' # Metals
+                              'XBA XBB XBC XBD ' # Euro Bond Market
+                              'XDR XTS XXX '     # Other specials
+                             ).split())
+        fund_re = re.compile(r'^Zz[0-9]{2}')
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
-            if code == '':
-                continue
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
+            if code == '' or code in non_currencies:
+                continue
+            if fund_re.match(place):
+                continue
             if code in self.currencies:
                 if self.country_codes.get(code[:2], '').lower() == place.lower():
                     self.currencies[code][0].insert(0, place)
@@ -337,21 +349,19 @@ class Currency(Processor):
             if code[:2] not in self.country_currencies:
                 if code[:2] in self.country_codes:
                     self.country_currencies[code[:2]] = code
-                else:
+                # EU is in country_codes:
+                if code[:2] not in self.country_codes or code == 'EUR':
                     for ccode, country in self.country_codes.iteritems():
-                        if country.title() == place:
+                        country = country.title()
+                        ascii_country = (unicodedata.normalize('NFD', country)
+                                         .encode('ASCII', 'ignore'))
+                        if place in (country, ascii_country):
+                            if place == 'France':
+                                print ccode, place
                             self.country_currencies[ccode] = code
                             break
-
-        # Non-currencies:
-        for code in ('BOV CLF COU MXV UYI ' # Various Fund codes
-                     'CHE CHW '             # Swiss WIR currencies
-                     'USN USS '             # US Dollar fund codes
-                     'XAG XAU XPD XPT '     # Metals
-                     'XBA XBB XBC XBD '     # Euro Bond Market
-                     'XDR XTS XXX '         # Other specials
-                    ).split():
-            del self.currencies[code]
+                    else:
+                        log.warning(u"ISO4127 parsing: Can't identify %s as a known country", place)
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
