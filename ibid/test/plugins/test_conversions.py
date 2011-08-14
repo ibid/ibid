@@ -36,3 +36,11 @@ class CurrencyLookupTest(ibid.test.TestCase):
         self.assertEqual(self.processor.resolve_currency('united kingdom', True), 'GBP')
         self.assertEqual(self.processor.resolve_currency('south africa', True), 'ZAR')
         self.assertEqual(self.processor.resolve_currency('bosnia', True), 'BAM')
+
+class CurrencyConversionTest(ibid.test.PluginTestCase):
+    load = ['conversions']
+    network = True
+
+    def test_conversion(self):
+        self.assertResponseMatches(u'exchange 1 Pound for ZAR',
+                r'1 GBP \(.+\) = [0-9.]+ ZAR \(.+\) .* Bid: [0-9.]+')
