@@ -323,6 +323,8 @@ class Currency(Processor):
         self.country_codes = get_country_codes()
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
+            if code == '':
+                continue
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
             if code in self.currencies:
