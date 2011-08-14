@@ -74,8 +74,8 @@ class TestSource(object):
 
 class TestCase(unittest.TestCase):
     """TestCase subclass, implementing:
-    * detection for tests using networkresources
-    * basic ibid configuration
+    * detection for tests using network resources
+    * basic Ibid configuration
     """
     network = False
 
@@ -88,10 +88,10 @@ class TestCase(unittest.TestCase):
 
 class PluginTestCase(TestCase):
     """A full-stack plugin test, implementing:
-    * Loading of the spefied plugins before running the tests, and cleanup
+    * Loading of the specified plugins before running the tests, and cleanup
       afterwards
-    * DB Support (clean DB for each TestCase)
-    * Test events passed through the standard ibid event processor
+    * DB support (clean DB for each TestCase)
+    * Test events passed through the standard Ibid event dispatcher
     """
     load = []
     noload = []
