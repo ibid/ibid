@@ -1,8 +1,6 @@
 # Copyright (c) 2010-2011, Max Rabkin, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from unittest import TestCase
-
 import ibid.test
 
 class UnihanTest(ibid.test.PluginTestCase):
@@ -15,14 +13,10 @@ class UnihanTest(ibid.test.PluginTestCase):
         self.assertResponseMatches(u'unihan \u99AC',
                                    u'.*the simplified form is \u9A6C')
 
-class CurrencyLookupTest(TestCase):
-    def setUp(self):
-        ibid.test.set_config({
-            u'plugins': {
-                u'cachedir': u'/tmp/ibidtest',
-            }
-        })
+class CurrencyLookupTest(ibid.test.TestCase):
+    network = True
 
+    def setUp(self):
         from ibid.plugins import conversions
         self.processor = conversions.Currency(u'testplugin')
 
