@@ -330,7 +330,10 @@ class Currency(Processor):
                               'XBA XBB XBC XBD ' # Euro Bond Market
                               'XDR XTS XXX '     # Other specials
                              ).split())
-        fund_re = re.compile(r'^Zz[0-9]{2}')
+        fund_re = re.compile(r'^Zz[0-9]{2}', re.UNICODE)
+        no_country_codes = set(('Saint Martin',))
+        # Countries with (alternative names)
+        swap_names_re = re.compile(r'^(.+?)\s+\((.+)\)$')
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
@@ -346,22 +349,32 @@ class Currency(Processor):
                     self.currencies[code][0].append(place)
             else:
                 self.currencies[code] = [[place], name]
+            if place in no_country_codes:
+                continue
             if code[:2] not in self.country_currencies:
                 if code[:2] in self.country_codes:
                     self.country_currencies[code[:2]] = code
-                # EU is in country_codes:
-                if code[:2] not in self.country_codes or code == 'EUR':
-                    for ccode, country in self.country_codes.iteritems():
-                        country = country.title()
-                        ascii_country = (unicodedata.normalize('NFD', country)
-                                         .encode('ASCII', 'ignore'))
-                        if place in (country, ascii_country):
-                            if place == 'France':
-                                print ccode, place
-                            self.country_currencies[ccode] = code
-                            break
-                    else:
-                        log.warning(u"ISO4127 parsing: Can't identify %s as a known country", place)
+            if code[:2] not in self.country_codes or code == 'EUR':
+                ascii_place = (unicodedata.normalize('NFD', unicode(place))
+                               .encode('ASCII', 'ignore')
+                               .replace('-', ' '))
+
+                swapped_place = None
+                m = swap_names_re.match(ascii_place)
+                if m is not None:
+                    swapped_place = '%s (%s)' % (m.group(2), m.group(1))
+
+                for ccode, country in self.country_codes.iteritems():
+                    country = country.title()
+                    ascii_country = (unicodedata.normalize('NFD', country)
+                                     .encode('ASCII', 'ignore')
+                                     .replace('-', ' '))
+                    if ascii_country in (ascii_place, swapped_place):
+                        self.country_currencies[ccode] = code
+                        break
+                else:
+                    log.info(u"ISO4127 parsing: Can't identify %s as a known "
+                             u"country", place)
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
@@ -370,7 +383,7 @@ class Currency(Processor):
         self.currencies['XOF'][0].insert(0, u'Coop\xe9ration financi\xe8re en Afrique centrale')
         self.currencies['XPF'][0].insert(0, u'Comptoirs Fran\xe7ais du Pacifique')
 
-    def resolve_currency(self, name, rough=True):
+    def resolve_currency(self, name, rough=True, plural_recursion=False):
         "Return the canonical name for a currency"
 
         if not self.currencies:
@@ -379,18 +392,16 @@ class Currency(Processor):
         if name.upper() in self.currencies:
             return name.upper()
 
-        # Strip leading dots (.TLD) and plurals
-        strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
+        # Strip leading dots (.TLD)
+        strip_currency_re = re.compile(r'^[\.\s]*(.+)$', re.UNICODE)
         m = strip_currency_re.match(name)
-
         if m is None:
             return False
-
         name = m.group(1).lower()
 
-        # TLD -> country name
-        if rough and len(name) == 2 and name.upper() in self.country_codes:
-           name = self.country_codes[name.upper()].lower()
+        # TLD:
+        if rough and len(name) == 2 and name.upper() in self.country_currencies:
+            return self.country_currencies[name.upper()]
 
         # Currency Name
         if name == u'dollar':
@@ -398,14 +409,27 @@ class Currency(Processor):
         if name == u'pound':
             return "GBP"
         for code, (places, currency) in self.currencies.iteritems():
-            if name in currency.lower():
+            if name == currency.lower():
+                return code
+            if name.title() in places:
                 return code
 
-        # Country Names
+        # There are also country names in country_codes:
+        for code, place in self.country_codes.iteritems():
+            if name == place.lower() and code in self.country_currencies:
+                return self.country_currencies[code]
+
+        # Second pass, not requiring exact match:
+        for code, (places, currency) in self.currencies.iteritems():
+            if name in currency.lower():
+                return code
         for code, place in self.country_codes.iteritems():
             if name in place.lower() and code in self.country_currencies:
                 return self.country_currencies[code]
 
+        # Maybe it's a plural?
+        if name.endswith('s') and not plural_recursion:
+            return self.resolve_currency(name[:-1], rough, True)
         return False
 
     @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')

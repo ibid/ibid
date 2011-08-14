@@ -44,3 +44,5 @@ class CurrencyConversionTest(ibid.test.PluginTestCase):
     def test_conversion(self):
         self.assertResponseMatches(u'exchange 1 Pound for ZAR',
                 r'1 GBP \(.+\) = [0-9.]+ ZAR \(.+\) .* Bid: [0-9.]+')
+        self.assertResponseMatches(u'exchange 1 France for Egypt',
+                r'1 EUR \(.+\) = [0-9.]+ EGP \(.+\) .* Bid: [0-9.]+')
