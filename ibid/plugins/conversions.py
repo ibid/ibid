@@ -436,15 +436,18 @@ class Currency(Processor):
             self._load_currencies()
 
         search = re.compile(place, re.I)
-        results = []
+        results = defaultdict(list)
         for code, (places, name) in self.currencies.iteritems():
             for place in places:
                 if search.search(place):
-                    results.append(u'%s uses %s (%s)' % (place, name, code))
+                    results[place].append(u'%s (%s)' % (name, code))
                     break
 
         if results:
-            event.addresponse(human_join(results))
+            event.addresponse(human_join(
+                u'%s uses %s' % (place, human_join(currencies))
+                for place, currencies in results.iteritems()
+            ))
         else:
             event.addresponse(u'No currencies found')
 
