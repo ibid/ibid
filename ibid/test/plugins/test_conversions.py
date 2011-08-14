@@ -17,6 +17,7 @@ class CurrencyLookupTest(ibid.test.TestCase):
     network = True
 
     def setUp(self):
+        super(CurrencyLookupTest, self).setUp()
         from ibid.plugins import conversions
         self.processor = conversions.Currency(u'testplugin')
 
