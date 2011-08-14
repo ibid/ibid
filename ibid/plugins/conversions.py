@@ -336,11 +336,12 @@ class Currency(Processor):
                 self.country_currencies[code[:2]] = code
 
         # Non-currencies:
-        for code in ('CHE CHW '         # Swiss WIR currencies
-                     'USN USS '         # US Dollar fund codes
-                     'XAG XAU XPD XPT ' # Metals
-                     'XBA XBB XBC XBD ' # Euro Bond Market
-                     'XDR XTS XXX '     # Other specials
+        for code in ('BOV CLF COU MXV UYI ' # Various Fund codes
+                     'CHE CHW '             # Swiss WIR currencies
+                     'USN USS '             # US Dollar fund codes
+                     'XAG XAU XPD XPT '     # Metals
+                     'XBA XBB XBC XBD '     # Euro Bond Market
+                     'XDR XTS XXX '         # Other specials
                     ).split():
             del self.currencies[code]
 
