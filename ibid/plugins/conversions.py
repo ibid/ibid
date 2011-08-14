@@ -331,13 +331,17 @@ class Currency(Processor):
                               'XDR XTS XXX '     # Other specials
                              ).split())
         fund_re = re.compile(r'^Zz[0-9]{2}', re.UNICODE)
-        no_country_codes = set(('Saint Martin',))
+        no_country_codes = set(('Saint Martin',
+                                'Virgin Islands (Us)',
+                                'Virgin Islands (British)',))
         # Countries with (alternative names)
         swap_names_re = re.compile(r'^(.+?)\s+\((.+)\)$')
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
+            if ',' in place: # Bar, the Foo of
+                place = ' '.join(reversed(place.split(',', 1))).strip()
             if code == '' or code in non_currencies:
                 continue
             if fund_re.match(place):
@@ -354,7 +358,7 @@ class Currency(Processor):
             if code[:2] not in self.country_currencies:
                 if code[:2] in self.country_codes:
                     self.country_currencies[code[:2]] = code
-            if code[:2] not in self.country_codes or code == 'EUR':
+            elif code[:2] in self.country_codes or code == 'EUR':
                 ascii_place = (unicodedata.normalize('NFD', unicode(place))
                                .encode('ASCII', 'ignore')
                                .replace('-', ' '))
@@ -368,9 +372,11 @@ class Currency(Processor):
                     country = country.title()
                     ascii_country = (unicodedata.normalize('NFD', country)
                                      .encode('ASCII', 'ignore')
-                                     .replace('-', ' '))
+                                     .replace('-', ' ')
+                                     .replace('Sint', 'Saint'))
                     if ascii_country in (ascii_place, swapped_place):
-                        self.country_currencies[ccode] = code
+                        if ccode not in self.country_currencies:
+                            self.country_currencies[ccode] = code
                         break
                 else:
                     log.info(u"ISO4127 parsing: Can't identify %s as a known "
@@ -423,6 +429,9 @@ class Currency(Processor):
         for code, (places, currency) in self.currencies.iteritems():
             if name in currency.lower():
                 return code
+            if any(name in place.lower() for place in places):
+                return code
+
         for code, place in self.country_codes.iteritems():
             if name in place.lower() and code in self.country_currencies:
                 return self.country_currencies[code]

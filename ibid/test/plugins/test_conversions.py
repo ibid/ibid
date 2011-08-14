@@ -46,3 +46,5 @@ class CurrencyConversionTest(ibid.test.PluginTestCase):
                 r'1 GBP \(.+\) = [0-9.]+ ZAR \(.+\) .* Bid: [0-9.]+')
         self.assertResponseMatches(u'exchange 1 France for Egypt',
                 r'1 EUR \(.+\) = [0-9.]+ EGP \(.+\) .* Bid: [0-9.]+')
+        self.assertResponseMatches(u'exchange 1 Virgin Islands for .tv',
+                r'1 USD \(.+\) = [0-9.]+ AUD \(.+\) .* Bid: [0-9.]+')
