@@ -387,7 +387,7 @@ class Currency(Processor):
 
         # Country Names
         for code, place in self.country_codes.iteritems():
-            if name in place.lower():
+            if name in place.lower() and code in self.country_currencies:
                 return self.country_currencies[code]
 
         return False
