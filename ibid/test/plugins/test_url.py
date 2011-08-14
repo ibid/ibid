@@ -1,13 +1,13 @@
 # Copyright (c) 2009-2010, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from twisted.trial import unittest
-
+import ibid.test
 from ibid.plugins import urlgrab
 
-class TestURLGrabber(unittest.TestCase):
+class TestURLGrabber(ibid.test.TestCase):
 
     def setUp(self):
+        super(TestURLGrabber, self).setUp()
         self.grab = urlgrab.Grab(u'testplugin')
 
     good_grabs = [

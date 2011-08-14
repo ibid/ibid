@@ -1,22 +1,17 @@
 # Copyright (c) 2009-2010, Jeremy Thurgood and Max Rabkin
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from twisted.trial import unittest
-
+import ibid
 import ibid.test
 from ibid.event import Event
 
-class TestAddressed(unittest.TestCase):
+class TestAddressed(ibid.test.TestCase):
 
     def setUp(self):
-        ibid.test.set_config({
-            u'botname': u'test_ibid',
-            u'plugins': {
-                u'testplugin': {
-                    u'names': [u'test_ibid', u'bot', u'ant']
-                    },
-                },
-            })
+        super(TestAddressed, self).setUp()
+        ibid.config.botname = u'test_ibid'
+        ibid.config.plugins['testplugin'] = ibid.test.FakeConfig(
+                {'names': [u'test_ibid', u'bot', u'ant']})
 
         from ibid.plugins import core
         self.processor = core.Addressed(u'testplugin')
