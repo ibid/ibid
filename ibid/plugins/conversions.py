@@ -335,7 +335,13 @@ class Currency(Processor):
             else:
                 self.currencies[code] = [[place], name]
             if code[:2] not in self.country_currencies:
-                self.country_currencies[code[:2]] = code
+                if code[:2] in self.country_codes:
+                    self.country_currencies[code[:2]] = code
+                else:
+                    for ccode, country in self.country_codes.iteritems():
+                        if country.title() == place:
+                            self.country_currencies[ccode] = code
+                            break
 
         # Non-currencies:
         for code in ('BOV CLF COU MXV UYI ' # Various Fund codes
