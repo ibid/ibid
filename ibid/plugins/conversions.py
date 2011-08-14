@@ -449,7 +449,18 @@ class Currency(Processor):
         canonical_to = self.resolve_currency(to, rough)
         if not canonical_frm or not canonical_to:
             if rough:
-                event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
+                event.addresponse(
+                    u"Sorry, I don't know about a currency for %s",
+                    (not canonical_frm and frm or to))
+            return
+        if canonical_frm == canonical_to:
+            event.addresponse(
+                u"Um, that's the same currency. Tell you what, "
+                u"I can offer you my special rate of 0.5 %(currency)s for "
+                u"each %(code)s you sell me.", {
+                    'currency': self.currencies[canonical_frm][1],
+                    'code': canonical_frm,
+            })
             return
 
         data = generic_webservice(
