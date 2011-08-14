@@ -377,7 +377,7 @@ def get_country_codes():
         if started and ';' in line:
             country, code = line.split(u';')
             if u',' in country:
-                country = u' '.join(reversed(country.split(u',', 1)))
+                country = u' '.join(reversed(country.split(u',', 1))).strip()
             country = country.title()
             countries[code] = country
         elif line == u'':
