@@ -358,6 +358,8 @@ class DatabaseManager(dict):
 
             engine = create_engine(uri, encoding='utf-8',
                 convert_unicode=True, assert_unicode=True, echo=echo,
+                # For PostgreSQL to ensure decoded unicode values are returned:
+                use_native_unicode=False,
                 # For MySQL which closes 8hr old connections:
                 pool_recycle=3600)
 
