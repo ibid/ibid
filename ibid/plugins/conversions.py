@@ -336,11 +336,12 @@ class Currency(Processor):
                                 'Virgin Islands (British)',))
         # Countries with (alternative names)
         swap_names_re = re.compile(r'^(.+?)\s+\((.+)\)$')
-        for currency in document.getiterator('ISO_CURRENCY'):
+        accociated_all_countries = True
+        for currency in document.iter('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
-            if ',' in place: # Bar, the Foo of
+            if ',' in place and ' And ' not in place: # Bar, the Foo of
                 place = ' '.join(reversed(place.split(',', 1))).strip()
             if code == '' or code in non_currencies:
                 continue
@@ -381,6 +382,7 @@ class Currency(Processor):
                 else:
                     log.info(u"ISO4127 parsing: Can't identify %s as a known "
                              u"country", place)
+                    accociated_all_countries = False
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
@@ -388,6 +390,7 @@ class Currency(Processor):
         self.currencies['XCD'][0].insert(0, u'Organisation of Eastern Caribbean States')
         self.currencies['XOF'][0].insert(0, u'Coop\xe9ration financi\xe8re en Afrique centrale')
         self.currencies['XPF'][0].insert(0, u'Comptoirs Fran\xe7ais du Pacifique')
+        return accociated_all_countries
 
     def resolve_currency(self, name, rough=True, plural_recursion=False):
         "Return the canonical name for a currency"

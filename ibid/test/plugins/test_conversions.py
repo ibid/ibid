@@ -1,6 +1,8 @@
 # Copyright (c) 2010-2011, Max Rabkin, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import logging
+
 import ibid.test
 
 class UnihanTest(ibid.test.PluginTestCase):
@@ -20,6 +22,9 @@ class CurrencyLookupTest(ibid.test.TestCase):
         super(CurrencyLookupTest, self).setUp()
         from ibid.plugins import conversions
         self.processor = conversions.Currency(u'testplugin')
+
+    def test_country_association(self):
+        self.assertTrue(self.processor._load_currencies())
 
     def test_common_currencies(self):
         self.assertEqual(self.processor.resolve_currency('pound', True), 'GBP')
