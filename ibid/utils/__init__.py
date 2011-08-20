@@ -377,8 +377,6 @@ def get_country_codes():
         if started and ';' in line:
             country, code = line.split(u';')
             country = country.lower()
-            if u',' in country and ' and ' not in country:
-                country = u' '.join(reversed(country.split(u',', 1))).strip()
             # Hack around http://bugs.python.org/issue7008
             country = country.title().replace(u"'S", u"'s")
             countries[code] = country

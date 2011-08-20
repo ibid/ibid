@@ -341,8 +341,6 @@ class Currency(Processor):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
-            if ',' in place and ' And ' not in place: # Bar, the Foo of
-                place = ' '.join(reversed(place.split(',', 1))).strip()
             if code == '' or code in non_currencies:
                 continue
             if fund_re.match(place):
