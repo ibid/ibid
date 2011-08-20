@@ -36,6 +36,10 @@ class CurrencyLookupTest(ibid.test.TestCase):
         self.assertEqual(self.processor.resolve_currency('.za', True), 'ZAR')
         self.assertEqual(self.processor.resolve_currency('.na', True), 'NAD')
         self.assertEqual(self.processor.resolve_currency('.ch', True), 'CHF')
+        # Currency from a former country
+        self.assertEqual(self.processor.resolve_currency('.sx', True), 'ANG')
+        # X- Currency
+        self.assertEqual(self.processor.resolve_currency('.cm', True), 'XAF')
 
     def test_country(self):
         self.assertEqual(self.processor.resolve_currency('united kingdom', True), 'GBP')
