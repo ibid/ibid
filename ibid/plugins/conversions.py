@@ -346,10 +346,7 @@ class Currency(Processor):
             if fund_re.match(place):
                 continue
             if code in self.currencies:
-                if self.country_codes.get(code[:2], '').lower() == place.lower():
-                    self.currencies[code][0].insert(0, place)
-                else:
-                    self.currencies[code][0].append(place)
+                self.currencies[code][0].append(place)
             else:
                 self.currencies[code] = [[place], name]
             if place in no_country_codes:
@@ -384,11 +381,11 @@ class Currency(Processor):
                 accociated_all_countries = False
 
         # Special cases for shared currencies:
-        self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
-        self.currencies['XAF'][0].insert(0, u"Communaut\xe9 financi\xe8re d'Afrique")
-        self.currencies['XCD'][0].insert(0, u'Organisation of Eastern Caribbean States')
-        self.currencies['XOF'][0].insert(0, u'Coop\xe9ration financi\xe8re en Afrique centrale')
-        self.currencies['XPF'][0].insert(0, u'Comptoirs Fran\xe7ais du Pacifique')
+        self.currencies['EUR'][0].append(u'Euro Member Countries')
+        self.currencies['XAF'][0].append(u"Communaut\xe9 financi\xe8re d'Afrique")
+        self.currencies['XCD'][0].append(u'Organisation of Eastern Caribbean States')
+        self.currencies['XOF'][0].append(u'Coop\xe9ration financi\xe8re en Afrique centrale')
+        self.currencies['XPF'][0].append(u'Comptoirs Fran\xe7ais du Pacifique')
         return accociated_all_countries
 
     def resolve_currency(self, name, rough=True, plural_recursion=False):
@@ -478,14 +475,12 @@ class Currency(Processor):
             return
 
         event.addresponse(
-            u'%(fresult)s %(fcode)s (%(fcountry)s: %(fcurrency)s) = '
-            u'%(tresult)0.2f %(tcode)s (%(tcountry)s: %(tcurrency)s) '
+            u'%(fresult)s %(fcode)s (%(fcurrency)s) = '
+            u'%(tresult)0.2f %(tcode)s (%(tcurrency)s) '
             u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
                 'fresult': amount,
                 'tresult': float(amount) * float(last_trade_rate),
-                'fcountry': self.currencies[canonical_frm][0][0],
                 'fcurrency': self.currencies[canonical_frm][1],
-                'tcountry': self.currencies[canonical_to][0][0],
                 'tcurrency': self.currencies[canonical_to][1],
                 'fcode': canonical_frm,
                 'tcode': canonical_to,
