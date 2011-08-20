@@ -349,8 +349,8 @@ class Currency(Processor):
                 self.currencies[code] = [[place], name]
             if place in no_country_codes:
                 continue
-            if code[:2] not in self.country_currencies:
-                if code[:2] in self.country_codes:
+            if (code[:2] in self.country_codes
+                        and code[:2] not in self.country_currencies):
                     self.country_currencies[code[:2]] = code
                     continue
             ascii_place = (unicodedata.normalize('NFD', unicode(place))
