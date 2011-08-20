@@ -316,7 +316,7 @@ class Currency(Processor):
                 'http://www.currency-iso.org/dl_iso_table_a1.xml',
                 'conversions/iso4217.xml')
         document = ElementTree.parse(iso4127_file)
-        # Code -> [Countries..., Currency Name]
+        # Code -> [Countries..., Currency Name, post-decimal digits]
         self.currencies = {}
         # Country -> Code
         self.country_currencies = {}
@@ -338,6 +338,10 @@ class Currency(Processor):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
+            try:
+                minor_units = int(currency.findtext('MINOR_UNIT').strip())
+            except ValueError:
+                minor_units = 0
             if code == '' or code in non_currencies:
                 continue
             # Fund codes
@@ -346,7 +350,7 @@ class Currency(Processor):
             if code in self.currencies:
                 self.currencies[code][0].append(place)
             else:
-                self.currencies[code] = [[place], name]
+                self.currencies[code] = [[place], name, minor_units]
             if place in no_country_codes:
                 continue
             if (code[:2] in self.country_codes
@@ -411,7 +415,7 @@ class Currency(Processor):
             return "USD"
         if name == u'pound':
             return "GBP"
-        for code, (places, currency) in self.currencies.iteritems():
+        for code, (places, currency, units) in self.currencies.iteritems():
             if name == currency.lower():
                 return code
             if name.title() in places:
@@ -423,7 +427,7 @@ class Currency(Processor):
                 return self.country_currencies[code]
 
         # Second pass, not requiring exact match:
-        for code, (places, currency) in self.currencies.iteritems():
+        for code, (places, currency, units) in self.currencies.iteritems():
             if name in currency.lower():
                 return code
             if any(name in place.lower() for place in places):
@@ -472,12 +476,14 @@ class Currency(Processor):
                     u"Whoops, looks like I couldn't make that conversion")
             return
 
+        converted = float(amount) * float(last_trade_rate)
         event.addresponse(
             u'%(fresult)s %(fcode)s (%(fcurrency)s) = '
-            u'%(tresult)0.2f %(tcode)s (%(tcurrency)s) '
+            u'%(tresult)s %(tcode)s (%(tcurrency)s) '
             u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
                 'fresult': amount,
-                'tresult': float(amount) * float(last_trade_rate),
+                'tresult': u'%%0.%if' % self.currencies[canonical_to][2]
+                           % converted,
                 'fcurrency': self.currencies[canonical_frm][1],
                 'tcurrency': self.currencies[canonical_to][1],
                 'fcode': canonical_frm,
