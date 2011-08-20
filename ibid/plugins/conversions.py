@@ -337,7 +337,7 @@ class Currency(Processor):
         # Countries with (alternative names)
         swap_names_re = re.compile(r'^(.+?)\s+\((.+)\)$')
         accociated_all_countries = True
-        for currency in document.iter('ISO_CURRENCY'):
+        for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
             name = currency.findtext('CURRENCY').strip()
             place = currency.findtext('ENTITY').strip().title()
