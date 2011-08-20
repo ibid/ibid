@@ -360,7 +360,8 @@ class Currency(Processor):
                     continue
             ascii_place = (unicodedata.normalize('NFD', unicode(place))
                            .encode('ASCII', 'ignore')
-                           .replace('-', ' '))
+                           .replace('-', ' ')
+                           .replace('Sint', 'Saint'))
 
             swapped_place = None
             m = swap_names_re.match(ascii_place)
