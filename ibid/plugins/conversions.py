@@ -482,8 +482,8 @@ class Currency(Processor):
             u'%(tresult)s %(tcode)s (%(tcurrency)s) '
             u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
                 'fresult': amount,
-                'tresult': u'%%0.%if' % self.currencies[canonical_to][2]
-                           % converted,
+                'tresult': u'%0.*f' % (self.currencies[canonical_to][2],
+                                       converted),
                 'fcurrency': self.currencies[canonical_frm][1],
                 'tcurrency': self.currencies[canonical_to][1],
                 'fcode': canonical_frm,
