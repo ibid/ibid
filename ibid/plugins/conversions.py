@@ -330,12 +330,9 @@ class Currency(Processor):
                               'XBA XBB XBC XBD ' # Euro Bond Market
                               'XDR XTS XXX '     # Other specials
                              ).split())
-        fund_re = re.compile(r'^Zz[0-9]{2}', re.UNICODE)
         no_country_codes = set(('Saint Martin',
                                 'Virgin Islands (Us)',
                                 'Virgin Islands (British)',))
-        # Countries with (alternative names)
-        swap_names_re = re.compile(r'^(.+?)\s+\((.+)\)$')
         accociated_all_countries = True
         for currency in document.getiterator('ISO_CURRENCY'):
             code = currency.findtext('ALPHABETIC_CODE').strip()
@@ -343,7 +340,8 @@ class Currency(Processor):
             place = currency.findtext('ENTITY').strip().title()
             if code == '' or code in non_currencies:
                 continue
-            if fund_re.match(place):
+            # Fund codes
+            if re.match(r'^Zz[0-9]{2}', place, re.UNICODE):
                 continue
             if code in self.currencies:
                 self.currencies[code][0].append(place)
@@ -360,8 +358,9 @@ class Currency(Processor):
                            .replace('-', ' ')
                            .replace('Sint', 'Saint'))
 
+            # Countries with (alternative names)
             swapped_place = None
-            m = swap_names_re.match(ascii_place)
+            m = re.match(r'^(.+?)\s+\((.+)\)$', ascii_place)
             if m is not None:
                 swapped_place = '%s (%s)' % (m.group(2), m.group(1))
 
@@ -398,8 +397,7 @@ class Currency(Processor):
             return name.upper()
 
         # Strip leading dots (.TLD)
-        strip_currency_re = re.compile(r'^[\.\s]*(.+)$', re.UNICODE)
-        m = strip_currency_re.match(name)
+        m = re.match(r'^[\.\s]*(.+)$', name, re.UNICODE)
         if m is None:
             return False
         name = m.group(1).lower()
@@ -494,12 +492,11 @@ class Currency(Processor):
         if not self.currencies:
             self._load_currencies()
 
-        search = re.compile(place, re.I)
         results = defaultdict(list)
-        for code, (places, name) in self.currencies.iteritems():
-            for place in places:
-                if search.search(place):
-                    results[place].append(u'%s (%s)' % (name, code))
+        for code, (c_places, name) in self.currencies.iteritems():
+            for c_place in c_places:
+                if re.search(place, c_place, re.I):
+                    results[c_place].append(u'%s (%s)' % (name, code))
                     break
 
         if results:
