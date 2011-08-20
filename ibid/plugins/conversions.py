@@ -477,8 +477,8 @@ class Currency(Processor):
             return
 
         event.addresponse(
-            u'%(fresult)s %(fcode)s (%(fcountry)s %(fcurrency)s) = '
-            u'%(tresult)0.2f %(tcode)s (%(tcountry)s %(tcurrency)s) '
+            u'%(fresult)s %(fcode)s (%(fcountry)s: %(fcurrency)s) = '
+            u'%(tresult)0.2f %(tcode)s (%(tcountry)s: %(tcurrency)s) '
             u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
                 'fresult': amount,
                 'tresult': float(amount) * float(last_trade_rate),
