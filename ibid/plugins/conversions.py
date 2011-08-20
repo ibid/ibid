@@ -341,7 +341,7 @@ class Currency(Processor):
             try:
                 minor_units = int(currency.findtext('MINOR_UNIT').strip())
             except ValueError:
-                minor_units = 0
+                minor_units = 2
             if code == '' or code in non_currencies:
                 continue
             # Fund codes
