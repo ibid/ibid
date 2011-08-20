@@ -357,30 +357,30 @@ class Currency(Processor):
             if code[:2] not in self.country_currencies:
                 if code[:2] in self.country_codes:
                     self.country_currencies[code[:2]] = code
-            elif code[:2] in self.country_codes or code == 'EUR':
-                ascii_place = (unicodedata.normalize('NFD', unicode(place))
-                               .encode('ASCII', 'ignore')
-                               .replace('-', ' '))
+                    continue
+            ascii_place = (unicodedata.normalize('NFD', unicode(place))
+                           .encode('ASCII', 'ignore')
+                           .replace('-', ' '))
 
-                swapped_place = None
-                m = swap_names_re.match(ascii_place)
-                if m is not None:
-                    swapped_place = '%s (%s)' % (m.group(2), m.group(1))
+            swapped_place = None
+            m = swap_names_re.match(ascii_place)
+            if m is not None:
+                swapped_place = '%s (%s)' % (m.group(2), m.group(1))
 
-                for ccode, country in self.country_codes.iteritems():
-                    country = country.title()
-                    ascii_country = (unicodedata.normalize('NFD', country)
-                                     .encode('ASCII', 'ignore')
-                                     .replace('-', ' ')
-                                     .replace('Sint', 'Saint'))
-                    if ascii_country in (ascii_place, swapped_place):
-                        if ccode not in self.country_currencies:
-                            self.country_currencies[ccode] = code
-                        break
-                else:
-                    log.info(u"ISO4127 parsing: Can't identify %s as a known "
-                             u"country", place)
-                    accociated_all_countries = False
+            for ccode, country in self.country_codes.iteritems():
+                country = country.title()
+                ascii_country = (unicodedata.normalize('NFD', country)
+                                 .encode('ASCII', 'ignore')
+                                 .replace('-', ' ')
+                                 .replace('Sint', 'Saint'))
+                if ascii_country in (ascii_place, swapped_place):
+                    if ccode not in self.country_currencies:
+                        self.country_currencies[ccode] = code
+                    break
+            else:
+                log.info(u"ISO4127 parsing: Can't identify %s as a known "
+                         u"country", place)
+                accociated_all_countries = False
 
         # Special cases for shared currencies:
         self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
