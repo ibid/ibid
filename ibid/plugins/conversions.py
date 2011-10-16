@@ -427,15 +427,16 @@ class Currency(Processor):
                 return self.country_currencies[code]
 
         # Second pass, not requiring exact match:
-        for code, (places, currency, units) in self.currencies.iteritems():
-            if name in currency.lower():
-                return code
-            if any(name in place.lower() for place in places):
-                return code
+        if rough:
+            for code, (places, currency, units) in self.currencies.iteritems():
+                if name in currency.lower():
+                    return code
+                if any(name in place.lower() for place in places):
+                    return code
 
-        for code, place in self.country_codes.iteritems():
-            if name in place.lower() and code in self.country_currencies:
-                return self.country_currencies[code]
+            for code, place in self.country_codes.iteritems():
+                if name in place.lower() and code in self.country_currencies:
+                    return self.country_currencies[code]
 
         # Maybe it's a plural?
         if name.endswith('s') and not plural_recursion:
