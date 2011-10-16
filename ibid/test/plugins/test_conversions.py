@@ -46,6 +46,9 @@ class CurrencyLookupTest(ibid.test.TestCase):
         self.assertEqual(self.processor.resolve_currency('south africa', True), 'ZAR')
         self.assertEqual(self.processor.resolve_currency('bosnia', True), 'BAM')
 
+    def test_fallthrough(self):
+        self.assertFalse(self.processor.resolve_currency('oz', False))
+
 class CurrencyConversionTest(ibid.test.PluginTestCase):
     load = ['conversions']
     network = True
