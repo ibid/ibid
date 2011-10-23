@@ -6,7 +6,7 @@ import logging
 import os
 from traceback import format_exception
 import re
-from shutil import copyfile
+import shutil
 import sys
 import tempfile
 
@@ -72,21 +72,37 @@ class TestSource(object):
         return None
 
 
-class PluginTestCase(unittest.TestCase):
+class TestCase(unittest.TestCase):
+    """TestCase subclass, implementing:
+    * detection for tests using network resources
+    * basic Ibid configuration
+    """
+    network = False
+
+    def setUp(self):
+        super(TestCase, self).setUp()
+        if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
+            raise unittest.SkipTest('test uses network')
+        ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
+
+
+class PluginTestCase(TestCase):
+    """A full-stack plugin test, implementing:
+    * Loading of the specified plugins before running the tests, and cleanup
+      afterwards
+    * DB support (clean DB for each TestCase)
+    * Test events passed through the standard Ibid event dispatcher
+    """
     load = []
     noload = []
     load_base = True
     load_configured = None
     username = u'user'
     public = False
-    network = False
     empty_dbfile = None
 
     def setUp(self):
-        if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
-            raise unittest.SkipTest('test uses network')
-
-        ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
+        super(PluginTestCase, self).setUp()
 
         if self.load_configured is None:
             self.load_configured = not self.load
@@ -145,7 +161,7 @@ class PluginTestCase(unittest.TestCase):
         if self.empty_dbfile is None:
             self._create_empty_database()
         self.dbfile = self.mktemp()
-        copyfile(self.empty_dbfile, self.dbfile)
+        shutil.copyfile(self.empty_dbfile, self.dbfile)
         ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
 
     def make_event(self, message=None, type=u'message'):
@@ -216,6 +232,8 @@ class PluginTestCase(unittest.TestCase):
             self.fail("Event was expected to fail", event)
 
     def tearDown(self):
+        super(PluginTestCase, self).tearDown()
+
         for processor in ibid.processors:
             processor.shutdown()
         del ibid.processors[:]

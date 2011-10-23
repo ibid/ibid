@@ -376,9 +376,9 @@ def get_country_codes():
         line = line.strip()
         if started and ';' in line:
             country, code = line.split(u';')
-            if u',' in country:
-                country = u' '.join(reversed(country.split(u',', 1)))
-            country = country.title()
+            country = country.lower()
+            # Hack around http://bugs.python.org/issue7008
+            country = country.title().replace(u"'S", u"'s")
             countries[code] = country
         elif line == u'':
             started = True
@@ -387,7 +387,7 @@ def get_country_codes():
 
     return countries
 
-def identity_name (event, identity):
+def identity_name(event, identity):
     if event.identity == identity.id:
         return u'you'
     elif event.source == identity.source:
