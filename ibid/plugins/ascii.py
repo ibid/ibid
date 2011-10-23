@@ -3,19 +3,17 @@
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 from cStringIO import StringIO
-import fnmatch
 import Image
-from os import listdir, remove
+from os import remove
 import os.path
 from random import choice
 import subprocess
 from tempfile import mkstemp
 from urllib2 import HTTPError, URLError, urlopen
 from urlparse import urlparse
-from zipfile import ZipFile
 
 from aalib import AsciiScreen
-from pyfiglet import Figlet, FontNotFound
+from pyfiglet import Figlet
 
 from ibid.config import Option, IntOption, ListOption
 from ibid.plugins import Processor, match
@@ -158,8 +156,6 @@ class WriteFiglet(Processor):
     features = ('figlet',)
 
     max_width = IntOption('max_width', 'Maximum width for ascii output', 60)
-    fonts_ = Option('fonts', 'Directory or Zip file containing figlet fonts',
-                       '/usr/share/figlet')
     preferred_fonts = ListOption('preferred_fonts',
                                  'List of default figlet fonts',
                                  ('slant', 'letter'))
@@ -168,29 +164,8 @@ class WriteFiglet(Processor):
         self.fonts = None
 
     def _find_fonts(self):
-        if self.fonts is not None:
-            return
-
-        if os.path.isdir(self.fonts_):
-            self.fontstore = 'dir'
-            fonts = listdir(self.fonts_)
-        else:
-            self.fontstore = 'zip'
-            zip = ZipFile(self.fonts_)
-            fonts = zip.namelist()
-        fonts = fnmatch.filter(fonts, '*.[tf]lf')
-
-        self.fonts = {}
-        for font in fonts:
-            font = os.path.splitext(font)[0]
-            # Not all fonts are compatible with pyfiglet
-            # (e.g. TLFs with colour):
-            try:
-                self._render('test', font)
-            except FontNotFound:
-                continue
-            name = os.path.split(font)[-1]
-            self.fonts[name] = font
+        if self.fonts is None:
+            self.fonts = Figlet().getFonts()
 
     @match(r'^list\s+figlet\s+fonts(?:\s+from\s+(\d+))?$')
     def list_fonts(self, event, index):
@@ -201,7 +176,7 @@ class WriteFiglet(Processor):
         if index >= len(self.fonts):
             event.addresponse(u'I wish I had that many fonts installed')
             return
-        event.addresponse(unicode(', '.join(self.fonts.keys()[int(index):])))
+        event.addresponse(unicode(', '.join(self.fonts[int(index):])))
 
     @match(r'^figlet\s+(.+?)(\s+in\s+(\S+))?$', 'deaddressed')
     def write(self, event, text, font_phrase, font):
@@ -215,17 +190,14 @@ class WriteFiglet(Processor):
                     if font in self.fonts:
                         break
                 else:
-                    font = choice(self.fonts.keys())
+                    font = choice(self.fonts)
             else:
                 event.addresponse(u"I'm afraid I have no fonts available")
                 return
         self._write(event, text, font)
 
     def _render(self, text, font):
-        if self.fontstore == 'dir':
-            figlet = Figlet(font=font, dir=self.fonts_)
-        else:
-            figlet = Figlet(font=font, zipfile=self.fonts_)
+        figlet = Figlet(font=font)
         return figlet.renderText(text)
 
     def _write(self, event, text, font):
