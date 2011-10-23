@@ -125,7 +125,25 @@ class Weather(Processor):
                     'joburg': 'Johannesburg, South Africa',
                }
     places = DictOption('places', 'Alternate names for places', defaults)
-    labels = ('temp', 'humidity', 'dew', 'wind', 'pressure', 'conditions', 'visibility', 'uv', 'clouds', 'ymin', 'ymax', 'ycool', 'sunrise', 'sunset', 'moonrise', 'moonset', 'moonphase', 'metar')
+    labels = {'temperature': 'temp',
+              'humidity': 'humidity',
+              'dew point': 'dew',
+              'wind': 'wind',
+              'pressure': 'pressure',
+              'conditions': 'conditions',
+              'visibility': 'visibility',
+              'uv': 'uv',
+              'clouds': 'clouds',
+              "yesterday's minimum": 'ymin',
+              "yesterday's maximum": 'ymax',
+              "yesterday's cooling degree days": 'ycool',
+              'sunrise': 'sunrise',
+              'sunset': 'sunset',
+              'moon rise': 'moonrise',
+              'moon set': 'moonset',
+              'moon phase': 'moonphase',
+              'raw metar': 'metar',
+             }
 
     class WeatherException(Exception):
         pass
@@ -164,16 +182,16 @@ class Weather(Processor):
 
     def remote_weather(self, place):
         soup = self._get_page(place)
-        tds = [x.table for x in soup.findAll('table') if x.table][0].findAll('td')
+        tds = soup.findAll('td')
 
-        # HACK: Some cities include a windchill row, but others don't
-        if len(tds) == 39:
-            del tds[3]
-            del tds[4]
-
-        values = {'place': tds[0].findAll('b')[1].string, 'time': tds[0].findAll('b')[0].string}
-        for index, td in enumerate(tds[2::2]):
-            values[self.labels[index]] = self._text(td)
+        values = {}
+        for index, td in enumerate(tds):
+            text = self._text(td).lower()
+            if text.startswith('updated:'):
+                values['place'] = td.findAll('b')[1].string
+                values['time'] = td.findAll('b')[0].string
+            if text in self.labels:
+                values[self.labels[text]] = self._text(tds[index+1])
 
         return values
 
