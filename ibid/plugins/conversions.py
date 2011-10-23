@@ -488,6 +488,11 @@ class Currency(Processor):
                 'ask': ask,
             })
 
+    @match(r'^(exchange|convert)\s+(.+)\s+([0-9.]+)\s+(?:for|to|into)\s+(.+)$')
+    def exchange_reversed(self, event, command, amount, frm, to):
+        self.exchange(event, command, frm, amount, to)
+
+
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
         if not self.currencies:
