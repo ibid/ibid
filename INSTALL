@@ -25,7 +25,7 @@ Install required modules:
 # aptitude install python-beautifulsoup \
 	python-dateutil python-dnspython python-feedparser \
 	python-html2text python-html5lib python-imdbpy \
-	python-jinja python-silc python-setuptools \
+	python-jinja2 python-silc python-setuptools \
 	python-simplejson python-soappy python-sqlalchemy \
 	python-twisted python-wokkel
 
