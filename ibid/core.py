@@ -342,46 +342,47 @@ class DatabaseManager(dict):
                 assert_unicode=True, echo=echo
             )
 
-        else:
-            if uri.startswith(u'mysql://'):
-                if u'?' not in uri:
-                    uri += u'?'
-                params = parse_qs(uri.split(u'?', 1)[1])
-                if u'charset' not in params:
-                    uri += u'&charset=utf8'
-                if u'sql_mode' not in params:
-                    uri += u'&sql_mode=ANSI_QUOTES'
-                # As recommended by SQLAlchemy due to a memory leak:
-                # http://www.sqlalchemy.org/trac/wiki/DatabaseNotes
-                if u'use_unicode' not in params:
-                    uri += u'&use_unicode=0'
+        elif uri.startswith(u'mysql://'):
+            if u'?' not in uri:
+                uri += u'?'
+            params = parse_qs(uri.split(u'?', 1)[1])
+            if u'charset' not in params:
+                uri += u'&charset=utf8'
+            if u'sql_mode' not in params:
+                uri += u'&sql_mode=ANSI_QUOTES'
+            # As recommended by SQLAlchemy due to a memory leak:
+            # http://www.sqlalchemy.org/trac/wiki/DatabaseNotes
+            if u'use_unicode' not in params:
+                uri += u'&use_unicode=0'
 
             engine = create_engine(uri, encoding='utf-8',
                 convert_unicode=True, assert_unicode=True, echo=echo,
-                # For PostgreSQL to ensure decoded unicode values are returned:
-                use_native_unicode=False,
-                # For MySQL which closes 8hr old connections:
+                # MySQL closes 8hr old connections:
                 pool_recycle=3600)
 
-            if uri.startswith('mysql://'):
-                class MySQLModeListener(object):
-                    def connect(self, dbapi_con, con_record):
-                        mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
-                        c = dbapi_con.cursor()
-                        c.execute("SET SESSION storage_engine=%s;"
-                                  % mysql_engine)
-                        c.execute("SET SESSION time_zone='+0:00';")
-                        c.close()
-                engine.pool.add_listener(MySQLModeListener())
+            class MySQLModeListener(object):
+                def connect(self, dbapi_con, con_record):
+                    mysql_engine = ibid.config.get('mysql_engine', 'InnoDB')
+                    c = dbapi_con.cursor()
+                    c.execute("SET SESSION storage_engine=%s;"
+                              % mysql_engine)
+                    c.execute("SET SESSION time_zone='+0:00';")
+                    c.close()
+            engine.pool.add_listener(MySQLModeListener())
 
-            elif uri.startswith('postgres://'):
-                class PGSQLModeListener(object):
-                    def connect(self, dbapi_con, con_record):
-                        c = dbapi_con.cursor()
-                        c.execute("SET TIME ZONE UTC")
-                        c.close()
+        elif uri.startswith('postgres://'):
+            engine = create_engine(uri, encoding='utf-8',
+                convert_unicode=True, assert_unicode=True, echo=echo,
+                # Ensure decoded unicode values are returned:
+                use_native_unicode=False)
 
-                engine.pool.add_listener(PGSQLModeListener())
+            class PGSQLModeListener(object):
+                def connect(self, dbapi_con, con_record):
+                    c = dbapi_con.cursor()
+                    c.execute("SET TIME ZONE UTC")
+                    c.close()
+
+            engine.pool.add_listener(PGSQLModeListener())
 
         self[name] = scoped_session(sessionmaker(bind=engine))
 
