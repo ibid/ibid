@@ -193,7 +193,7 @@ class Usaco(Processor):
         for type in ['raw', 'deaddressed', 'clean', 'stripped']:
             event['message'][type] = re.sub(r'(.*)(%s)' % re.escape(term), r'\1[redacted]', event['message'][type])
 
-    @match(r'^(\S+)\s+(?:is|am)\s+(\S+)\s+on\s+usaco(?:\s+password\s+(\S+))?$')
+    @match(r'^(\S+)\s+(?:is|am)\s+(\S+)\s+on\s+usaco(?:\s+password\s+(.+))?$')
     def usaco_account(self, event, user, usaco_user, password):
         if password:
             self._redact(event, password)
