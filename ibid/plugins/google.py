@@ -108,7 +108,7 @@ class GoogleScrapeSearch(Processor):
     def calc(self, event, expression):
         tree = self._google_scrape_search(expression)
 
-        nodes = [node for node in tree.findall('.//h2/b')]
+        nodes = [node for node in tree.findall('.//h2') if node.get('class') == 'r']
         if len(nodes) == 1:
             # ElementTree doesn't support inline tags:
             # May return ASCII unless an encoding is specified.
@@ -121,6 +121,7 @@ class GoogleScrapeSearch(Processor):
             node = re.sub(r'(\d)\s+(\d)', lambda x: x.group(1) + x.group(2),
                           node)
             node = decode_htmlentities(node)
+            node = re.sub(r'\s+', ' ', node)
             event.addresponse(node)
         else:
             event.addresponse(
