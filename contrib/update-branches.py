@@ -23,18 +23,20 @@ def main():
     parser.add_option('-r', '--root', metavar='DIR',
                       default='.',
                       help='Target directory (default: .)')
-    parser.add_option('-s', '--user-subdirectories',
-                      dest='user_subdirs',
-                      default=None, action='store_true',
-                      help='Store branches in subdirectories named after each '
-                      'user (default: auto-detect)')
+    parser.add_option('-s', '--shallow',
+                      default=False, action='store_true',
+                      help='Store branches directly in the root '
+                           '(default: user/branch)')
+    parser.add_option('--anonymous',
+                      default=False, action='store_true',
+                      help='Log in to LP anonymously (may be confused by '
+                           'identical commit counts')
     options, args = parser.parse_args()
 
-    lp = Launchpad.login_with('update-branches', 'production')
-
-    if (options.user_subdirs is None
-            and detect_user_subdirs(options.root, lp.me.name)):
-        options.user_subdirs = True
+    if options.anonymous:
+        lp = Launchpad.login_anonymously('update-branches', 'production')
+    else:
+        lp = Launchpad.login_with('update-branches', 'production')
 
     project = lp.projects[options.project]
 
@@ -43,16 +45,12 @@ def main():
     else:
         branches = [mp.source_branch for mp in project.getMergeProposals()]
     update_branches(options.root, options.project, branches,
-                    options.user_subdirs)
+                    options.shallow)
 
 
-def detect_user_subdirs(root, lp_username):
-    return (os.path.exists(os.path.join(root, lp_username))
-            and not os.path.exists(os.path.join(root, lp_username, '.bzr')))
-
-
-def update_branches(root, project_name, branches, user_subdirs):
+def update_branches(root, project_name, branches, shallow):
     devnull = open('/dev/null', 'w')
+    seen = set()
     for branch in branches:
         unique_name = branch.unique_name
         print 'lp:' + unique_name
@@ -68,16 +66,20 @@ def update_branches(root, project_name, branches, user_subdirs):
                                   % unique_name)
             continue
 
-        if user_subdirs:
+        if shallow:
+            user_dir = root
+        else:
             user_dir = os.path.join(root, user)
             if not os.path.isdir(user_dir):
                 os.mkdir(user_dir)
-        else:
-            user_dir = root
+            seen.add((user, branch_name))
 
         branch_dir = os.path.join(user_dir, branch_name)
         if os.path.isdir(branch_dir):
-            if subprocess.call(('bzr', 'log', '-r', branch.last_scanned_id),
+            id_ = branch.last_scanned_id
+            if id_ == '<email address hidden>':
+                id_ = str(branch.revision_count)
+            if subprocess.call(('bzr', 'log', '-r', id_),
                                stdout=devnull, stderr=devnull,
                                cwd=branch_dir) == 0:
                 print "Up to date"
@@ -88,6 +90,23 @@ def update_branches(root, project_name, branches, user_subdirs):
         else:
             subprocess.call(('bzr', 'branch', 'lp:%s' % unique_name),
                             cwd=user_dir)
+
+    if not shallow:
+        for user in os.listdir(root):
+            if user.startswith('.'):
+                continue
+            if not os.path.isdir(user):
+                continue
+            user_dir = os.path.join(root, user)
+            for branch_name in os.listdir(user_dir):
+                branch_dir = os.path.join(user_dir, branch_name)
+                if not os.path.isdir(branch_dir):
+                    continue
+                if not os.path.isdir(os.path.join(branch_dir, '.bzr')):
+                    continue
+                if (user, branch_name) not in seen:
+                    print ("Inactive local branch: %s/%s"
+                          % (user, branch_name))
 
 
 if __name__ == '__main__':
