@@ -66,9 +66,18 @@ class Distance(Processor):
         if js['totalResultsCount'] == 0:
             return None
         info = js['geonames'][0]
-        return {'name': "%s, %s, %s" % (info['name'], info['adminName1'], info['countryName']),
+        return {'name': self.format_name(info),
                 'lng': radians(info['lng']),
                 'lat': radians(info['lat'])}
+
+    def format_name(self, info):
+        parts = info['name'], info['adminName1'], info['countryName']
+        parts = filter(None, parts)
+        uniq_parts = [parts[0]]
+        for part in parts[1:]:
+            if part != uniq_parts[-1]:
+                uniq_parts.append(part)
+        return ', '.join(uniq_parts)
 
     @match(r'^(?:(?:search\s+for\s+place)|(?:place\s+search\s+for)|(?:places\s+for))\s+(\S.+?)\s*$')
     def placesearch(self, event, place):
