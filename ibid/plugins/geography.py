@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2009-2010, Jonathan Hitchcock, Michael Gorven, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+from __future__ import division
 
-from math import acos, sin, cos, radians
+from math import acos, sin, cos, degrees, radians
 from urllib import quote, urlencode
 from urlparse import urljoin
 import re
@@ -29,15 +31,20 @@ features['distance'] = {
     'description': u'Returns the distance between two places',
     'categories': ('lookup', 'calculate',),
 }
+features['coordinates'] = {
+    'description': u'Gives the coordinates of a place',
+    'categories': ('lookup',),
+}
 class Distance(Processor):
     usage = u"""distance [in <unit>] between <source> and <destination>
-    place search for <placename>"""
+    place search for <place>
+    coordinates for <place>"""
 
     # For Mathematics, see:
     # http://www.mathforum.com/library/drmath/view/51711.html
     # http://mathworld.wolfram.com/GreatCircle.html
 
-    features = ('distance',)
+    features = ('distance', 'coordinates')
 
     default_unit_names = {
             'km': "kilometres",
@@ -109,6 +116,74 @@ class Distance(Processor):
                 for unit in unit_names],
                 conjunction=u'or'),
         })
+
+    def degrees_minutes_seconds(self, degrees, kind):
+        degs = int(degrees)
+        minutes = abs(degrees - degs)*60
+        mins = int(minutes)
+        secs = int((minutes-mins)*60)
+
+        dirn = ''
+        if kind == 'lat':
+            if degs > 0:
+                dirn = ' N'
+            elif degs < 0:
+                dirn = ' S'
+        else:
+            if degs > 0:
+                dirn = ' E'
+            elif degs < 0:
+                dirn = ' W'
+        degs = abs(degs)
+        return u'%i° %iʹ %iʺ%s' % (degs, mins, secs, dirn)
+
+    @match(r"coordinates (?:for|of) (.*)")
+    def coordinates(self, event, place):
+        place_data = self.get_place(place)
+        lat_deg = degrees(place_data['lat'])
+        lng_deg = degrees(place_data['lng'])
+        place_data.update({
+            'lat_deg': lat_deg,
+            'lng_deg': lng_deg,
+            'lat_dms': self.degrees_minutes_seconds(lat_deg, 'lat'),
+            'lng_dms': self.degrees_minutes_seconds(lng_deg, 'lng'),
+            })
+
+        latitudes = [('North Pole', 90),
+                     ('Arctic Circle', 66+33/60+39/3600),
+                     ('Tropic of Cancer', 23+26/30+21/3600),
+                     ('Equator', 0),
+                     ('Tropic of Capricorn', -(23+26/30+21/3600)),
+                     ('Antarctic Circle', -(66+33/60+39/3600)),
+                     ('South Pole', -90),
+                    ]
+        for name, lat in latitudes:
+            if abs(lat-lat_deg) <= 1/60:
+                if name.endswith('Pole'):
+                    place_data['lat_desc'] = 'at the ' + name
+                else:
+                    place_data['lat_desc'] = 'on the ' + name
+                break
+            elif abs(lat-lat_deg) <= 2:
+                place_data['lat_desc'] = 'near the ' + name
+                break
+        else:
+            for (name1, lat1), (name2, lat2) in zip(latitudes, latitudes[1:]):
+                if lat1 > lat_deg > lat2:
+                    place_data['lat_desc'] = 'between the %s and the %s' % \
+                                                (name1, name2)
+                    break
+            else:
+                place_data['lat_desc'] = 'beyond the fields we know'
+
+        place_data['tz'] = int(lng_deg/15)
+
+        event.addresponse("%(name)s is at %(lat_dms)s, %(lng_dms)s "
+                          u"(%(lat_deg)0.3f°, %(lng_deg)0.3f°). "
+                          "That's in nautical time zone GMT%(tz)+i, "
+                          "%(lat_desc)s.",
+                          place_data)
+
 
 features['weather'] = {
     'description': u'Retrieves current weather and forecasts for cities.',
