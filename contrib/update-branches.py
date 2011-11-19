@@ -52,6 +52,7 @@ def detect_user_subdirs(root, lp_username):
 
 
 def update_branches(root, project_name, branches, user_subdirs):
+    devnull = open('/dev/null', 'w')
     for branch in branches:
         unique_name = branch.unique_name
         print 'lp:' + unique_name
@@ -76,9 +77,14 @@ def update_branches(root, project_name, branches, user_subdirs):
 
         branch_dir = os.path.join(user_dir, branch_name)
         if os.path.isdir(branch_dir):
-            subprocess.call(('bzr', 'pull', '--remember',
-                             'lp:%s' % unique_name),
-                            cwd=branch_dir)
+            if subprocess.call(('bzr', 'log', '-r', branch.last_scanned_id),
+                               stdout=devnull, stderr=devnull,
+                               cwd=branch_dir) == 0:
+                print "Up to date"
+            else:
+                subprocess.call(('bzr', 'pull', '--remember',
+                                 'lp:%s' % unique_name),
+                                cwd=branch_dir)
         else:
             subprocess.call(('bzr', 'branch', 'lp:%s' % unique_name),
                             cwd=user_dir)
