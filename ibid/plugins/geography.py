@@ -185,7 +185,7 @@ class Distance(Processor):
             else:
                 place_data['lat_desc'] = 'beyond the fields we know'
 
-        place_data['tz'] = int(lng_deg/15)
+        place_data['tz'] = round(lng_deg/15)
 
         event.addresponse("%(name)s is at %(lat_dms)s, %(lng_dms)s "
                           u"(%(lat_deg)0.3f°, %(lng_deg)0.3f°). "
