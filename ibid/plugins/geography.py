@@ -188,7 +188,7 @@ class Distance(Processor):
         place_data['tz'] = round(lng_deg/15)
 
         event.addresponse("%(name)s is at %(lat_dms)s, %(lng_dms)s "
-                          u"(%(lat_deg)0.3f°, %(lng_deg)0.3f°). "
+                          u"(%(lat_deg)0.4f°, %(lng_deg)0.4f°). "
                           "That's in nautical time zone GMT%(tz)+i, "
                           "%(lat_desc)s.",
                           place_data)
