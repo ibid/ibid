@@ -43,7 +43,11 @@ def main():
     if options.active_branches:
         branches = project.getBranches()
     else:
-        branches = [mp.source_branch for mp in project.getMergeProposals()]
+        branches = []
+        for mp in project.getMergeProposals():
+            branches.append(mp.source_branch)
+            branches.append(mp.target_branch)
+
     update_branches(options.root, options.project, branches,
                     options.shallow)
 
