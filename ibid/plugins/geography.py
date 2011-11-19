@@ -146,7 +146,7 @@ class Distance(Processor):
         degs = abs(degs)
         return u'%i° %iʹ %iʺ%s' % (degs, mins, secs, dirn)
 
-    @match(r"coordinates (?:for|of) (.*)")
+    @match(r"coord(?:inate)?s (?:for|of|to) (.*)")
     def coordinates(self, event, place):
         place_data = self.get_place(place)
         lat_deg = degrees(place_data['lat'])
