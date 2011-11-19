@@ -158,15 +158,21 @@ class Distance(Processor):
             'lng_dms': self.degrees_minutes_seconds(lng_deg, 'lng'),
             })
 
-        latitudes = [('North Pole', 90),
-                     ('Arctic Circle', 66+33/60+39/3600),
-                     ('Tropic of Cancer', 23+26/30+21/3600),
-                     ('Equator', 0),
-                     ('Tropic of Capricorn', -(23+26/30+21/3600)),
-                     ('Antarctic Circle', -(66+33/60+39/3600)),
-                     ('South Pole', -90),
+        latitudes = [('North Pole', 90, 'back of beyond'),
+                     ('Arctic Circle', 66+33/60+39/3600,
+                        'Arctic'),
+                     ('Tropic of Cancer', 23+26/30+21/3600,
+                        'north temperate zone'),
+                     ('Equator', 0,
+                        'northern tropics'),
+                     ('Tropic of Capricorn', -(23+26/30+21/3600),
+                        'southern tropics'),
+                     ('Antarctic Circle', -(66+33/60+39/3600),
+                        'south temperate zone'),
+                     ('South Pole', -90,
+                        'Antarctic'),
                     ]
-        for name, lat in latitudes:
+        for name, lat, zone in latitudes:
             if abs(lat-lat_deg) <= 1/60:
                 if name.endswith('Pole'):
                     place_data['lat_desc'] = 'at the ' + name
@@ -177,10 +183,9 @@ class Distance(Processor):
                 place_data['lat_desc'] = 'near the ' + name
                 break
         else:
-            for (name1, lat1), (name2, lat2) in zip(latitudes, latitudes[1:]):
+            for (name1, lat1, _), (name2, lat2, zone) in zip(latitudes, latitudes[1:]):
                 if lat1 > lat_deg > lat2:
-                    place_data['lat_desc'] = 'between the %s and the %s' % \
-                                                (name1, name2)
+                    place_data['lat_desc'] = 'in the ' + zone
                     break
             else:
                 place_data['lat_desc'] = 'beyond the fields we know'
