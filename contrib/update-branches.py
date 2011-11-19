@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # Copyright (c) 2011, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
+#
+# This script keeps local checkouts of all branches currently involved in
+# merge-requests, or all active branches.
+# It should be run inside the root of a bzr repository, e.g.:
+# $ bzr init-repo ibid; cd ibid; update-branches -a
 
 import optparse
 import os
