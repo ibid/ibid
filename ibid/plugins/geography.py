@@ -149,6 +149,10 @@ class Distance(Processor):
     @match(r"coord(?:inate)?s (?:for|of|to) (.*)")
     def coordinates(self, event, place):
         place_data = self.get_place(place)
+        if not place_data:
+            event.addresponse("I've never heard of %s", place)
+            return
+
         lat_deg = degrees(place_data['lat'])
         lng_deg = degrees(place_data['lng'])
         place_data.update({
