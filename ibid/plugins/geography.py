@@ -253,7 +253,10 @@ class Weather(Processor):
         if place.lower() in self.places:
             place = self.places[place.lower()]
 
-        soup = get_html_parse_tree('http://m.wund.com/cgi-bin/findweather/getForecast?brand=mobile_metric&query=' + quote(place))
+        soup = get_html_parse_tree(
+                    'http://m.wund.com/cgi-bin/findweather/getForecast?'
+                    + urlencode({'brand': 'mobile_metric',
+                                 'query': place.encode('utf-8')}))
 
         if soup.body.center and soup.body.center.b.string == 'Search not found:':
             raise Weather.WeatherException(u'City not found')
