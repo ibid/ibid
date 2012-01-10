@@ -1,64 +1,68 @@
-% IBID-DB(1) Ibid Multi-protocol Bot | Ibid 0.1
-% Stefano Rivera
-% March 2010
+=========
+ ibid-db
+=========
 
-# NAME
+SYNOPSIS
+========
 
-ibid-db - Database management utility for Ibid
+``ibid-db`` *command* [*options*...]
 
-# SYNOPSIS
+DESCRIPTION
+===========
 
-**ibid-db** *command* [*options*...]
+This utility is for offline management of your Ibid bot's database.
+Used for import, export, and upgrades.
 
-# DESCRIPTION
+The export format is DBMS-agnostic and can be used to migrate between
+different databases.
 
-This utility is for offline management of your Ibid bot's database.  Used for
-import, export, and upgrades.
+COMMANDS
+========
 
-The export format is DBMS-agnostic and can be used to migrate between different
-databases.
+-e FILE, --export=FILE
+   Export DB contents to *FILE*.
+   Export format is JSON.
+   *FILE* can be ``-`` for *stdout* or can end in ``.gz`` for automatic
+   gzip compression.
 
-# COMMANDS
+-i FILE, --import=FILE
+   Import DB contents from *FILE* as exported by this utility.
+   *FILE* can be ``-`` for *stdin* or can end in ``.gz`` for automatic
+   gzip compression.
 
-**-e** *FILE*, **-\-export**=*FILE*
-:	Export DB contents to *FILE*.
-	Export format is JSON.
-	*FILE* can be **-** for *stdout* or can end in **.gz** for automatic gzip
-	compression.
+   **Note:** The DB must be empty first.
 
-**-i** *FILE*, **-\-import**=*FILE*
-:	Import DB contents from *FILE* as exported by this utility.
-	*FILE* can be **-** for *stdin* or can end in **.gz** for automatic gzip
-	compression.
+-u, --upgrade
+   Upgrade DB schema to the latest version.
+   You need to run this after upgrading your bot.
 
-:	**Note:** The DB must be empty first.
+   **Note:** You should backup first.
 
-**-u**, **-\-upgrade**
-:	Upgrade DB schema to the latest version.
-	You need to run this after upgrading your bot.
+OPTIONS
+=======
 
-:	**Note:** You should backup first.
+--version
+   Show the program's version and exit.
 
-# OPTIONS
+-h, --help
+   Show a help message and exit.
 
-**-\-version**
-:	Show the program's version and exit.
+-v, --verbose
+   Turn on debugging output to stderr.
 
-**-h**, **-\-help**
-:	Show a help message and exit.
+FILES
+=====
 
-**-v**, **-\-verbose**
-:	Turn on debugging output to stderr.
+ibid.ini
+   Locates the database to act upon by looking for the
+   [**databases**].\ **ibid** value in the bot configuration file in the
+   current directory.
 
-# FILES
-
-*ibid.ini*
-:	Locates the database to act upon by looking for the
-	[**databases**].**ibid** value in the bot configuration file in the current
-	directory.
-
-# SEE ALSO
-`ibid` (1),
-`ibid.ini` (5),
-`ibid-setup` (1),
+SEE ALSO
+========
+``ibid``\ (1),
+``ibid.ini``\ (5),
+``ibid-setup``\ (1),
 http://ibid.omnia.za.net/
+
+.. vi: set et sta sw=3 ts=3:
