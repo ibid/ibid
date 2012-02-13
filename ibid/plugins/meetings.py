@@ -263,7 +263,7 @@ class MeetingLogger(Processor):
                 if isinstance(message, dict):
                     message = message['raw']
                 log_event['message'] = message
-            elif 'type' in event and event['type'] == u'state' and 'state' in event:
+            elif event['type'] == u'state':
                 log_event['type'] = u'notice'
                 log_event['message'] = event['state']
 
