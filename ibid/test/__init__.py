@@ -8,6 +8,8 @@ import re
 from shutil import copyfile
 import sys
 
+import sqlalchemy
+
 from twisted.python import log
 from twisted.python.modules import getModule
 from twisted.trial import unittest
@@ -81,6 +83,9 @@ class PluginTestCase(unittest.TestCase):
     empty_dbfile = None
 
     def setUp(self):
+        if sqlalchemy.__version__ > '0.6.0':
+            raise unittest.SkipTest(
+                    "PluginTestCase doesn't work with SQLAlchemy 0.6")
         if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
             raise unittest.SkipTest('test uses network')
 
