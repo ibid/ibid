@@ -75,9 +75,7 @@ class Aptitude(Processor):
             event.addresponse(u"Sorry, I couldn't find anything of that name. "
                               u"Is it a binary package?")
             return
-        event.addresponse(u'%(package)s %(version)s: %(description)s: '
-                          u'%(long_description)s',
-                          result)
+        event.addresponse(u'%(package)s %(version)s: %(description)s', result)
 
 features['apt-file'] = {
     'description': u'Searches for packages containing the specified file',
