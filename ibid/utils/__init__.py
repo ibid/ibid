@@ -361,7 +361,7 @@ def get_country_codes():
             'http://www.iso.org/iso/list-en1-semic-3.txt',
             'lookup/iso-3166-1_list_en.txt')
 
-    f = codecs.open(filename, 'r', 'ISO-8859-1')
+    f = codecs.open(filename, 'r', 'UTF-8')
     countries = {
         u'AC': u'Ascension Island',
         u'UK': u'United Kingdom',

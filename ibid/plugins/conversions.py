@@ -357,24 +357,16 @@ class Currency(Processor):
                         and code[:2] not in self.country_currencies):
                     self.country_currencies[code[:2]] = code
                     continue
-            ascii_place = (unicodedata.normalize('NFD', unicode(place))
-                           .encode('ASCII', 'ignore')
-                           .replace('-', ' ')
-                           .replace('Sint', 'Saint'))
 
             # Countries with (alternative names)
             swapped_place = None
-            m = re.match(r'^(.+?)\s+\((.+)\)$', ascii_place)
+            m = re.match(r'^(.+?)\s+\((.+)\)$', place)
             if m is not None:
                 swapped_place = '%s (%s)' % (m.group(2), m.group(1))
 
             for ccode, country in self.country_codes.iteritems():
                 country = country.title()
-                ascii_country = (unicodedata.normalize('NFD', country)
-                                 .encode('ASCII', 'ignore')
-                                 .replace('-', ' ')
-                                 .replace('Sint', 'Saint'))
-                if ascii_country in (ascii_place, swapped_place):
+                if country in (place, swapped_place):
                     if ccode not in self.country_currencies:
                         self.country_currencies[ccode] = code
                     break
