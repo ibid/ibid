@@ -239,7 +239,7 @@ class Usaco(Processor):
             usaco_account[0].value = usaco_user
         else:
             account.attributes.append(Attribute('usaco_account', usaco_user))
-        event.session.save_or_update(account)
+        event.session.add(account)
         event.session.commit()
 
         event.addresponse(u'Done')

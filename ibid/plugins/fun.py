@@ -393,7 +393,7 @@ class Item(Base):
             raise EmptyBucketException
 
         item.carried = False
-        session.save_or_update(item)
+        session.add(item)
 
         return item
 
@@ -503,7 +503,7 @@ class ExchangeMessage(Processor):
         if items:
             item = choice(items)
             item.carried = False
-            event.session.save_or_update(item)
+            event.session.add(item)
 
             if kind == 'owned' and yours and yours != 'your':
                 item.determiner = yours
@@ -623,6 +623,6 @@ def exchange(event, determiner, object, bucket_size):
     else:
         item = Item(object, None, event.identity)
 
-    event.session.save_or_update(item)
+    event.session.add(item)
 
 # vi: set et sta sw=4 ts=4:

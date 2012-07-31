@@ -18,7 +18,7 @@ install_requires=[
     'PyStemmer',
     'python-dateutil',
     'SOAPpy',
-    'SQLAlchemy>=0.5,<0.6a', # Works with >=0.4.6 except on OS X
+    'SQLAlchemy>=0.6',
     'Twisted',
     'wokkel>=0.6.3',
 ]

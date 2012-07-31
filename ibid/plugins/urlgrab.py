@@ -76,7 +76,7 @@ class Grab(Processor):
                 url = 'http://%s' % url
 
         u = URL(url, event.channel, event.identity)
-        event.session.save_or_update(u)
+        event.session.add(u)
 
         if self.service and self.username:
             self._post_url(event, url)

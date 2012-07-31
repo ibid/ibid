@@ -1,65 +1,77 @@
-# Copyright (c) 2009-2010, Stefano Rivera
+# Copyright (c) 2009-2011, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
-from sqlalchemy.types import TypeDecorator, Integer, DateTime, Boolean, \
+from sqlalchemy.types import Integer, DateTime, Boolean, \
                              Unicode as _Unicode, UnicodeText as _UnicodeText
 
-class _CIDecorator(TypeDecorator):
-    "Abstract class for collation aware columns"
 
-    def __init__(self, length=None, case_insensitive=False):
-        self.case_insensitive = case_insensitive
-        super(_CIDecorator, self).__init__(length=length)
-
-    def load_dialect_impl(self, dialect):
-        if hasattr(dialect, 'name'):
-            self.dialect = dialect.name
-        # SQLAlchemy 0.4:
+def monkey_patch():
+    import sqlalchemy.dialects.postgresql
+    sqlalchemy.dialects.postgresql.dialect.ischema_names['citext'] = IbidUnicodeText
+    def postgres_visit_IBID_VARCHAR(self, type_):
+        if type_.case_insensitive:
+            return 'CITEXT'
         else:
-            self.dialect = {
-                'SQLiteDialect': 'sqlite',
-                'PGDialect': 'postgres',
-                'MySQLDialect': 'mysql',
-            }[dialect.__class__.__name__]
+            return self.visit_VARCHAR(type_)
+    sqlalchemy.dialects.postgresql.dialect.type_compiler.visit_IBID_VARCHAR = postgres_visit_IBID_VARCHAR
+    def postgres_visit_IBID_TEXT(self, type_):
+        if type_.case_insensitive:
+            return 'CITEXT'
+        else:
+            return self.visit_TEXT(type_)
+    sqlalchemy.dialects.postgresql.dialect.type_compiler.visit_IBID_TEXT = postgres_visit_IBID_TEXT
 
-        return dialect.type_descriptor(self.impl)
+    import sqlalchemy.dialects.sqlite
+    def sqlite_visit_IBID_VARCHAR(self, type_):
+        if type_.case_insensitive:
+            collation = 'NOCASE'
+        else:
+            collation = 'BINARY'
+        return self.visit_VARCHAR(type_) + ' COLLATE ' + collation
+    sqlalchemy.dialects.sqlite.dialect.type_compiler.visit_IBID_VARCHAR = sqlite_visit_IBID_VARCHAR
+    def sqlite_visit_IBID_TEXT(self, type_):
+        if type_.case_insensitive:
+            collation = 'NOCASE'
+        else:
+            collation = 'BINARY'
+        return self.visit_TEXT(type_) + ' COLLATE ' + collation
+    sqlalchemy.dialects.sqlite.dialect.type_compiler.visit_IBID_TEXT = sqlite_visit_IBID_TEXT
 
-    def get_col_spec(self):
-        colspec = self.impl.get_col_spec()
-        if hasattr(self, 'case_insensitive'):
-            collation = None
-            if self.dialect == 'mysql':
-                if self.case_insensitive:
-                    collation = 'utf8_general_ci'
-                else:
-                    collation = 'utf8_bin'
-            elif self.dialect == 'sqlite':
-                if self.case_insensitive:
-                    collation = 'NOCASE'
-                else:
-                    collation = 'BINARY'
-            elif self.dialect == 'postgres' and self.case_insensitive:
-                return 'CITEXT'
+    import sqlalchemy.dialects.mysql
+    def mysql_visit_IBID_VARCHAR(self, type_):
+        if type_.case_insensitive:
+            collation = 'utf8_general_ci'
+        else:
+            collation = 'utf8_bin'
+        return self.visit_VARCHAR(type_) + ' COLLATE ' + collation
+    sqlalchemy.dialects.mysql.dialect.type_compiler.visit_IBID_VARCHAR = sqlite_visit_IBID_VARCHAR
+    def mysql_visit_IBID_TEXT(self, type_):
+        if type_.case_insensitive:
+            collation = 'utf8_general_ci'
+        else:
+            collation = 'utf8_bin'
+        return self.visit_TEXT(type_) + ' COLLATE ' + collation
+    sqlalchemy.dialects.mysql.dialect.type_compiler.visit_IBID_TEXT = sqlite_visit_IBID_TEXT
 
-            if collation is not None:
-                return colspec + ' COLLATE ' + collation
-        return colspec
-
-class IbidUnicode(_CIDecorator):
+class IbidUnicode(_Unicode):
     "Collaiton aware Unicode"
 
-    impl = _Unicode
+    __visit_name__ = 'IBID_VARCHAR'
 
-    def __init__(self, length, **kwargs):
+    def __init__(self, length, case_insensitive=False, **kwargs):
+        self.case_insensitive = case_insensitive
         super(IbidUnicode, self).__init__(length, **kwargs)
 
-class IbidUnicodeText(_CIDecorator):
+class IbidUnicodeText(_UnicodeText):
     "Collation aware UnicodeText"
 
-    impl = _UnicodeText
+    __visit_name__ = 'IBID_TEXT'
 
-    def __init__(self, index_length=8, **kwargs):
+    def __init__(self, index_length=8, case_insensitive=False, **kwargs):
+        self.case_insensitive = case_insensitive
         self.index_length = index_length
-        super(IbidUnicodeText, self).__init__(length=None, **kwargs)
+        super(IbidUnicodeText, self).__init__(**kwargs)
+
+monkey_patch()
 
 # vi: set et sta sw=4 ts=4:

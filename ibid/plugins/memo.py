@@ -118,7 +118,7 @@ class Tell(Processor):
                 event.addresponse(u'I am not connected to %s', source)
                 return
             to = Identity(source, who)
-            event.session.save(to)
+            event.session.add(to)
             event.session.commit()
 
             log.info(u"Created identity %s for %s on %s", to.id, to.identity,
@@ -133,7 +133,7 @@ class Tell(Processor):
 
         memo = Memo(event.identity, to.id, memo,
                     how.lower() in (u'pm', u'privmsg', u'msg'))
-        event.session.save_or_update(memo)
+        event.session.add(memo)
 
         event.session.commit()
         log.info(u"Stored memo %s for %s (%s) from %s (%s): %s",
@@ -286,7 +286,7 @@ class Deliver(Processor):
                 event.addresponse(message)
 
             memo.delivered = True
-            event.session.save_or_update(memo)
+            event.session.add(memo)
             event.session.commit()
             log.info(u"Delivered memo %s to %s (%s)",
                     memo.id, event.identity, event.sender['connection'])

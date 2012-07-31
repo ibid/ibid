@@ -10,6 +10,8 @@ import shutil
 import sys
 import tempfile
 
+import sqlalchemy
+
 from twisted.python import log
 from twisted.python.modules import getModule
 from twisted.trial import unittest
@@ -103,6 +105,13 @@ class PluginTestCase(TestCase):
 
     def setUp(self):
         super(PluginTestCase, self).setUp()
+        if sqlalchemy.__version__ > '0.6.0':
+            raise unittest.SkipTest(
+                    "PluginTestCase doesn't work with SQLAlchemy 0.6")
+        if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
+            raise unittest.SkipTest('test uses network')
+
+        ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
 
         if self.load_configured is None:
             self.load_configured = not self.load
@@ -127,7 +136,7 @@ class PluginTestCase(TestCase):
         session = ibid.databases.ibid()
 
         self.identity = Identity(self.source, self.username)
-        session.save(self.identity)
+        session.add(self.identity)
         session.commit()
         self.identity = session.query(Identity) \
             .filter_by(identity=self.username).one()

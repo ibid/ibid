@@ -50,7 +50,7 @@ Python Libraries:
 * `Twisted framework <http://twistedmatrix.com/>`_ (core sources)
 * Twisted Words (IRC, XMPP)
 * `Wokkel <http://wokkel.ik.nu/>`_. (XMPP)
-* `SQLAlchemy <http://www.sqlalchemy.org/>`_ 0.5 preferred, 0.4 compatible.
+* `SQLAlchemy <http://www.sqlalchemy.org/>`_ 0.6 or later.
 * `ConfigObj <http://www.voidspace.org.uk/python/configobj.html>`_ >= 4.7.0
 * `python-dateutil <http://labix.org/python-dateutil>`_
 * `SOAPpy <http://pywebsvcs.sourceforge.net/>`_ [#soappy-install]_
