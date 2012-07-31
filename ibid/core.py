@@ -235,23 +235,29 @@ class Reloader(object):
                 self.log.exception(u"Couldn't load %s plugin", name)
             return False
 
-        try:
-            for classname, klass in inspect.getmembers(m, inspect.isclass):
-                if issubclass(klass, ibid.plugins.Processor) and klass != ibid.plugins.Processor:
-                    if (klass.__name__ not in noload and (klass.__name__ in load
-                            or ((load_all or klass.autoload) and not noload_all))):
-                        self.log.debug("Loading Processor: %s.%s", name, klass.__name__)
+        for classname, klass in inspect.getmembers(m, inspect.isclass):
+            if (issubclass(klass, ibid.plugins.Processor)
+                    and klass != ibid.plugins.Processor):
+                if (klass.__name__ not in noload and (klass.__name__ in load
+                        or ((load_all or klass.autoload) and not noload_all))):
+                    self.log.debug("Loading Processor: %s.%s", name,
+                                   klass.__name__)
+                    try:
                         ibid.processors.append(klass(name))
-                    else:
-                        self.log.debug("Skipping Processor: %s.%s", name, klass.__name__)
+                    except Exception, e:
+                        self.log.exception(u"Couldn't instantiate %s "
+                                           u"processor of %s plugin",
+                                           classname, name)
+                        continue
+                else:
+                    self.log.debug("Skipping Processor: %s.%s", name,
+                                   klass.__name__)
 
-            try:
-                schema_version_check(ibid.databases['ibid'])
-            except SchemaVersionException, e:
-                self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"', e.message)
-        except Exception, e:
-            self.log.exception(u"Couldn't instantiate %s processor of %s plugin", classname, name)
-            return False
+        try:
+            schema_version_check(ibid.databases['ibid'])
+        except SchemaVersionException, e:
+            self.log.error(u'Tables out of date: %s. Run "ibid-db --upgrade"',
+                           e.message)
 
         ibid.processors.sort(key=lambda x: x.priority)
 

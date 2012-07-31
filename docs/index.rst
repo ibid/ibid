@@ -10,6 +10,7 @@ Contents
    plugins
    tutorial
    contributing
+   manpages/index
    api/index
    changes
 

@@ -2,11 +2,12 @@
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 import logging
+import os
 
 from twisted.web import server, resource, static, xmlrpc, soap
 from twisted.application import internet
 from twisted.internet import reactor
-from jinja import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 import ibid
 from ibid.source import IbidSourceFactory
@@ -15,7 +16,7 @@ from ibid.config import Option, IntOption
 from ibid.utils import locate_resource
 
 templates = Environment(loader=FileSystemLoader(
-                               locate_resource('ibid', 'templates')))
+        os.path.abspath(locate_resource('ibid', 'templates'))))
 
 class Index(resource.Resource):
 

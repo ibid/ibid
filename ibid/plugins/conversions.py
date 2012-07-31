@@ -9,10 +9,10 @@ import unicodedata
 
 import ibid
 from ibid.plugins import Processor, handler, match
-from ibid.compat import any, defaultdict
+from ibid.compat import any, defaultdict, ElementTree
 from ibid.config import Option
-from ibid.utils import file_in_path, get_country_codes, human_join, \
-                       unicode_output, generic_webservice
+from ibid.utils import (cacheable_download, file_in_path, get_country_codes,
+                        human_join, unicode_output, generic_webservice)
 from ibid.utils.html import get_html_parse_tree
 
 features = {}
@@ -312,86 +312,149 @@ class Currency(Processor):
     country_codes = {}
 
     def _load_currencies(self):
-        etree = get_html_parse_tree(
-                'http://www.xe.com/iso4217.php', headers = {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Referer': 'http://www.xe.com/',
-                }, treetype='etree')
-
-        tbl_main = [x for x in etree.getiterator('table') if x.get('class') == 'tbl_main'][0]
-
+        iso4127_file = cacheable_download(
+                'http://www.currency-iso.org/dl_iso_table_a1.xml',
+                'conversions/iso4217.xml')
+        document = ElementTree.parse(iso4127_file)
+        # Code -> [Countries..., Currency Name, post-decimal digits]
         self.currencies = {}
-        for tbl_sub in tbl_main.getiterator('table'):
-            if tbl_sub.get('class') == 'tbl_sub':
-                for tr in tbl_sub.getiterator('tr'):
-                    code, place = [x.text for x in tr.getchildren()]
-                    name = u''
-                    if not place:
-                        place = u''
-                    if u',' in place[1:-1]:
-                        place, name = place.split(u',', 1)
-                    place = place.strip()
-                    if code in self.currencies:
-                        currency = self.currencies[code]
-                        # Are we using another country's currency?
-                        if place != u'' and name != u'' and (currency[1] == u'' or currency[1].rsplit(None, 1)[0] in place
-                                or (u'(also called' in currency[1] and currency[1].split(u'(', 1)[0].rsplit(None, 1)[0] in place)):
-                            currency[0].insert(0, place)
-                            currency[1] = name.strip()
-                        else:
-                            currency[0].append(place)
-                    else:
-                        self.currencies[code] = [[place], name.strip()]
+        # Country -> Code
+        self.country_currencies = {}
+        self.country_codes = get_country_codes()
+        # Non-currencies:
+        non_currencies = set(('BOV CLF COU MXV '
+                              'UYI XSU XUA '     # Various Fund codes
+                              'CHE CHW '         # Swiss WIR currencies
+                              'USN USS '         # US Dollar fund codes
+                              'XAG XAU XPD XPT ' # Metals
+                              'XBA XBB XBC XBD ' # Euro Bond Market
+                              'XDR XTS XXX '     # Other specials
+                             ).split())
+        no_country_codes = set(('Saint Martin',
+                                'Virgin Islands (Us)',
+                                'Virgin Islands (British)',))
+        accociated_all_countries = True
+        for currency in document.getiterator('ISO_CURRENCY'):
+            code = currency.findtext('ALPHABETIC_CODE').strip()
+            name = currency.findtext('CURRENCY').strip()
+            place = currency.findtext('ENTITY').strip().title()
+            try:
+                minor_units = int(currency.findtext('MINOR_UNIT').strip())
+            except ValueError:
+                minor_units = 2
+            if code == '' or code in non_currencies:
+                continue
+            # Fund codes
+            if re.match(r'^Zz[0-9]{2}', place, re.UNICODE):
+                continue
+            if code in self.currencies:
+                self.currencies[code][0].append(place)
+            else:
+                self.currencies[code] = [[place], name, minor_units]
+            if place in no_country_codes:
+                continue
+            if (code[:2] in self.country_codes
+                        and code[:2] not in self.country_currencies):
+                    self.country_currencies[code[:2]] = code
+                    continue
+
+            # Countries with (alternative names)
+            swapped_place = None
+            m = re.match(r'^(.+?)\s+\((.+)\)$', place)
+            if m is not None:
+                swapped_place = '%s (%s)' % (m.group(2), m.group(1))
+
+            for ccode, country in self.country_codes.iteritems():
+                country = country.title()
+                if country in (place, swapped_place):
+                    if ccode not in self.country_currencies:
+                        self.country_currencies[ccode] = code
+                    break
+            else:
+                log.info(u"ISO4127 parsing: Can't identify %s as a known "
+                         u"country", place)
+                accociated_all_countries = False
 
         # Special cases for shared currencies:
-        self.currencies['EUR'][0].insert(0, u'Euro Member Countries')
-        self.currencies['XOF'][0].insert(0, u'Communaut\xe9 Financi\xe8re Africaine')
-        self.currencies['XOF'][1] = u'Francs'
+        self.currencies['EUR'][0].append(u'Euro Member Countries')
+        self.currencies['XAF'][0].append(u"Communaut\xe9 financi\xe8re d'Afrique")
+        self.currencies['XCD'][0].append(u'Organisation of Eastern Caribbean States')
+        self.currencies['XOF'][0].append(u'Coop\xe9ration financi\xe8re en Afrique centrale')
+        self.currencies['XPF'][0].append(u'Comptoirs Fran\xe7ais du Pacifique')
+        return accociated_all_countries
 
-    def _resolve_currency(self, name, rough=True):
+    def resolve_currency(self, name, rough=True, plural_recursion=False):
         "Return the canonical name for a currency"
+
+        if not self.currencies:
+            self._load_currencies()
 
         if name.upper() in self.currencies:
             return name.upper()
 
-        strip_currency_re = re.compile(r'^[\.\s]*([\w\s]+?)s?$', re.UNICODE)
-        m = strip_currency_re.match(name)
-
+        # Strip leading dots (.TLD)
+        m = re.match(r'^[\.\s]*(.+)$', name, re.UNICODE)
         if m is None:
             return False
-
         name = m.group(1).lower()
 
-        # TLD -> country name
-        if rough and len(name) == 2 and name.upper() in self.country_codes:
-           name = self.country_codes[name.upper()].lower()
+        # TLD:
+        if rough and len(name) == 2 and name.upper() in self.country_currencies:
+            return self.country_currencies[name.upper()]
 
         # Currency Name
         if name == u'dollar':
             return "USD"
-
-        name_re = re.compile(r'^(.+\s+)?\(?%ss?\)?(\s+.+)?$' % name, re.I | re.UNICODE)
-        for code, (places, currency) in self.currencies.iteritems():
-            if name_re.match(currency) or [True for place in places if name_re.match(place)]:
+        if name == u'pound':
+            return "GBP"
+        for code, (places, currency, units) in self.currencies.iteritems():
+            if name == currency.lower():
+                return code
+            if name.title() in places:
                 return code
 
+        # There are also country names in country_codes:
+        for code, place in self.country_codes.iteritems():
+            if name == place.lower() and code in self.country_currencies:
+                return self.country_currencies[code]
+
+        # Second pass, not requiring exact match:
+        if rough:
+            for code, (places, currency, units) in self.currencies.iteritems():
+                if name in currency.lower():
+                    return code
+                if any(name in place.lower() for place in places):
+                    return code
+
+            for code, place in self.country_codes.iteritems():
+                if name in place.lower() and code in self.country_currencies:
+                    return self.country_currencies[code]
+
+        # Maybe it's a plural?
+        if name.endswith('s') and not plural_recursion:
+            return self.resolve_currency(name[:-1], rough, True)
         return False
 
     @match(r'^(exchange|convert)\s+([0-9.]+)\s+(.+)\s+(?:for|to|into)\s+(.+)$')
     def exchange(self, event, command, amount, frm, to):
-        if not self.currencies:
-            self._load_currencies()
-
-        if not self.country_codes:
-            self.country_codes = get_country_codes()
-
         rough = command.lower() == 'exchange'
 
-        canonical_frm = self._resolve_currency(frm, rough)
-        canonical_to = self._resolve_currency(to, rough)
+        canonical_frm = self.resolve_currency(frm, rough)
+        canonical_to = self.resolve_currency(to, rough)
         if not canonical_frm or not canonical_to:
             if rough:
-                event.addresponse(u"Sorry, I don't know about a currency for %s", (not canonical_frm and frm or to))
+                event.addresponse(
+                    u"Sorry, I don't know about a currency for %s",
+                    (not canonical_frm and frm or to))
+            return
+        if canonical_frm == canonical_to:
+            event.addresponse(
+                u"Um, that's the same currency. Tell you what, "
+                u"I can offer you my special rate of 0.5 %(currency)s for "
+                u"each %(code)s you sell me.", {
+                    'currency': self.currencies[canonical_frm][1],
+                    'code': canonical_frm,
+            })
             return
 
         data = generic_webservice(
@@ -406,15 +469,15 @@ class Currency(Processor):
                     u"Whoops, looks like I couldn't make that conversion")
             return
 
+        converted = float(amount) * float(last_trade_rate)
         event.addresponse(
-            u'%(fresult)s %(fcode)s (%(fcountry)s %(fcurrency)s) = '
-            u'%(tresult)0.2f %(tcode)s (%(tcountry)s %(tcurrency)s) '
+            u'%(fresult)s %(fcode)s (%(fcurrency)s) = '
+            u'%(tresult)s %(tcode)s (%(tcurrency)s) '
             u'(Last trade rate: %(rate)s, Bid: %(bid)s, Ask: %(ask)s)', {
                 'fresult': amount,
-                'tresult': float(amount) * float(last_trade_rate),
-                'fcountry': self.currencies[canonical_frm][0][0],
+                'tresult': u'%0.*f' % (self.currencies[canonical_to][2],
+                                       converted),
                 'fcurrency': self.currencies[canonical_frm][1],
-                'tcountry': self.currencies[canonical_to][0][0],
                 'tcurrency': self.currencies[canonical_to][1],
                 'fcode': canonical_frm,
                 'tcode': canonical_to,
@@ -423,21 +486,28 @@ class Currency(Processor):
                 'ask': ask,
             })
 
+    @match(r'^(exchange|convert)\s+(.+)\s+([0-9.]+)\s+(?:for|to|into)\s+(.+)$')
+    def exchange_reversed(self, event, command, amount, frm, to):
+        self.exchange(event, command, frm, amount, to)
+
+
     @match(r'^(?:currency|currencies)\s+for\s+(?:the\s+)?(.+)$')
     def currency(self, event, place):
         if not self.currencies:
             self._load_currencies()
 
-        search = re.compile(place, re.I)
-        results = []
-        for code, (places, name) in self.currencies.iteritems():
-            for place in places:
-                if search.search(place):
-                    results.append(u'%s uses %s (%s)' % (place, name, code))
+        results = defaultdict(list)
+        for code, (c_places, name) in self.currencies.iteritems():
+            for c_place in c_places:
+                if re.search(place, c_place, re.I):
+                    results[c_place].append(u'%s (%s)' % (name, code))
                     break
 
         if results:
-            event.addresponse(human_join(results))
+            event.addresponse(human_join(
+                u'%s uses %s' % (place, human_join(currencies))
+                for place, currencies in results.iteritems()
+            ))
         else:
             event.addresponse(u'No currencies found')
 

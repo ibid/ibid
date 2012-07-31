@@ -679,9 +679,10 @@ class Modify(Processor):
             event.session.add(factoid[2])
             event.session.commit()
 
-            log.info(u"Appended '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
-                    suffix, factoid[2].id, factoid[0].id, oldvalue, event.account,
-                    event.identity, event.sender['connection'])
+            log.info(u"Appended '%s' to value %s (%s) of factoid %s (%s) by %s/%s (%s)",
+                    suffix, factoid[2].id, oldvalue, factoid[0].id,
+                    factoid[0].names[0].name, event.account, event.identity,
+                    event.sender['connection'])
             event.addresponse(True)
 
     @match(r'(?P<name>.+?)'
@@ -780,8 +781,10 @@ class Modify(Processor):
             event.session.add(factoid[2])
             event.session.commit()
 
-            log.info(u"Applying '%s' to value %s of factoid %s (%s) by %s/%s (%s)",
-                    operation, factoid[2].id, factoid[0].id, oldvalue, event.account, event.identity, event.sender['connection'])
+            log.info(u"Applying '%s' to value %s (%s) of factoid %s (%s) by %s/%s (%s)",
+                     operation, factoid[2].id, oldvalue, factoid[0].id,
+                     factoid[0].names[0].name, event.account, event.identity,
+                     event.sender['connection'])
 
             event.addresponse(True)
 

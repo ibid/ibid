@@ -50,8 +50,8 @@ class Twitter(Processor):
     features = ('microblog',)
 
     default = {
-        'twitter':   {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
-        'tweet':     {'endpoint': 'http://twitter.com/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
+        'twitter':   {'endpoint': 'http://api.twitter.com/1/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
+        'tweet':     {'endpoint': 'http://api.twitter.com/1/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
         'identica':  {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
         'identi.ca': {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
         'dent':      {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},

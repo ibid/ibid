@@ -1,12 +1,14 @@
 # Copyright (c) 2009-2011, Jeremy Thurgood, Max Rabkin, Stefano Rivera
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
+import atexit
 import logging
 import os
 from traceback import format_exception
 import re
-from shutil import copyfile
+import shutil
 import sys
+import tempfile
 
 import sqlalchemy
 
@@ -72,17 +74,37 @@ class TestSource(object):
         return None
 
 
-class PluginTestCase(unittest.TestCase):
+class TestCase(unittest.TestCase):
+    """TestCase subclass, implementing:
+    * detection for tests using network resources
+    * basic Ibid configuration
+    """
+    network = False
+
+    def setUp(self):
+        super(TestCase, self).setUp()
+        if self.network and os.getenv('IBID_NETWORKLESS_TEST') is not None:
+            raise unittest.SkipTest('test uses network')
+        ibid.config = FileConfig(locate_resource('ibid.test', 'test.ini'))
+
+
+class PluginTestCase(TestCase):
+    """A full-stack plugin test, implementing:
+    * Loading of the specified plugins before running the tests, and cleanup
+      afterwards
+    * DB support (clean DB for each TestCase)
+    * Test events passed through the standard Ibid event dispatcher
+    """
     load = []
     noload = []
     load_base = True
     load_configured = None
     username = u'user'
     public = False
-    network = False
     empty_dbfile = None
 
     def setUp(self):
+        super(PluginTestCase, self).setUp()
         if sqlalchemy.__version__ > '0.6.0':
             raise unittest.SkipTest(
                     "PluginTestCase doesn't work with SQLAlchemy 0.6")
@@ -125,7 +147,14 @@ class PluginTestCase(unittest.TestCase):
         # Make a temporary test database.
         # This assumes SQLite, both in the fact that the database is a single
         # file and in forming the URL.
-        PluginTestCase.empty_dbfile = self.mktemp()
+
+        # Use tempfile.mkstemp instead of self.mkstemp so that the file survives
+        # between tests, but delete it on exit. Windows is why we can't have
+        # nice things like NamedTemporaryFile.
+        fd, PluginTestCase.empty_dbfile = tempfile.mkstemp()
+        os.close(fd)
+        atexit.register(os.unlink, PluginTestCase.empty_dbfile)
+
         ibid.config['databases']['ibid'] = 'sqlite:///' + self.empty_dbfile
         db = DatabaseManager(check_schema_versions=False, sqlite_synchronous=False)
         for module in getModule('ibid.plugins').iterModules():
@@ -141,7 +170,7 @@ class PluginTestCase(unittest.TestCase):
         if self.empty_dbfile is None:
             self._create_empty_database()
         self.dbfile = self.mktemp()
-        copyfile(self.empty_dbfile, self.dbfile)
+        shutil.copyfile(self.empty_dbfile, self.dbfile)
         ibid.config['databases']['ibid'] = 'sqlite:///' + self.dbfile
 
     def make_event(self, message=None, type=u'message'):
@@ -212,6 +241,8 @@ class PluginTestCase(unittest.TestCase):
             self.fail("Event was expected to fail", event)
 
     def tearDown(self):
+        super(PluginTestCase, self).tearDown()
+
         for processor in ibid.processors:
             processor.shutdown()
         del ibid.processors[:]

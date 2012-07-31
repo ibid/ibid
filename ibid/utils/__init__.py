@@ -361,7 +361,7 @@ def get_country_codes():
             'http://www.iso.org/iso/list-en1-semic-3.txt',
             'lookup/iso-3166-1_list_en.txt')
 
-    f = codecs.open(filename, 'r', 'ISO-8859-1')
+    f = codecs.open(filename, 'r', 'UTF-8')
     countries = {
         u'AC': u'Ascension Island',
         u'UK': u'United Kingdom',
@@ -374,20 +374,21 @@ def get_country_codes():
     started = False
     for line in f:
         line = line.strip()
-        if started and ';' in line:
-            country, code = line.split(u';')
-            if u',' in country:
-                country = u' '.join(reversed(country.split(u',', 1)))
-            country = country.title()
-            countries[code] = country
-        elif line == u'':
+        if not started:
             started = True
+            continue
+        if ';' in line:
+            country, code = line.split(u';')
+            country = country.lower()
+            # Hack around http://bugs.python.org/issue7008
+            country = country.title().replace(u"'S", u"'s")
+            countries[code] = country
 
     f.close()
 
     return countries
 
-def identity_name (event, identity):
+def identity_name(event, identity):
     if event.identity == identity.id:
         return u'you'
     elif event.source == identity.source:

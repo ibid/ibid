@@ -125,9 +125,16 @@ String Functions
 
    Returns the filename to the resource.
 
+.. function:: get_country_codes()
+
+   Retrieve and decode a list of ISO-3166-1 country codes.
+
+   Returns a dict of code -> country_name.
+   The codes are capitalised.
+
 .. function:: identity_name(event, identity)
 
-    Refer to *identity* naturally in response to *event*.
+   Refer to *identity* naturally in response to *event*.
 
 URL Functions
 -------------
