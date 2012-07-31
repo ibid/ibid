@@ -45,7 +45,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Ibid'
-copyright = u'2008-2011, The Ibid Developers'
+AUTHORS = u'The Ibid Developers'
+copyright = u'2008-2012, %s' % AUTHORS
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -180,7 +181,7 @@ htmlhelp_basename = 'Ibiddoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'Ibid.tex', u'Ibid Documentation',
-   u'The Ibid Developers', 'manual'),
+   AUTHORS, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -199,6 +200,32 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+# -- Options for manpages ------------------------------------------------------
+
+man_pages = [
+    ('manpages/ibid.1', 'ibid', u'Run an Ibid bot', AUTHORS, 1),
+    ('manpages/ibid-db.1', 'ibid-db', u'Database management utility for Ibid',
+     AUTHORS, 1),
+    ('manpages/ibid-factpack.1', 'ibid-factpack',
+     u'Factoid-package management utility for Ibid', AUTHORS, 1),
+    ('manpages/ibid.ini.5', 'ibid.ini', u'Configuration file for Ibid',
+     AUTHORS, 5),
+    ('manpages/ibid-knab-import.1', 'ibid-knab-import',
+     u'Knab->Ibid Import utility', AUTHORS, 1),
+    ('manpages/ibid-memgraph.1', 'ibid-memgraph',
+     u'Memory usage graph generation utility for Ibid', AUTHORS, 1),
+    ('manpages/ibid-objgraph.1', 'ibid-objgraph',
+     u'Memory usage graph generation utility for Ibid', AUTHORS, 1),
+    ('manpages/ibid-pb-client.1', 'ibid-pb-client', 'RPC Client for Ibid',
+     AUTHORS, 1),
+    ('manpages/ibid-plugin.1', 'ibid-plugin',
+     u'Plugin testing developer environment for Ibid', AUTHORS, 1),
+    ('manpages/ibid-setup.1', 'ibid-setup',
+     u'Create a basic configuration file and database for an Ibid bot',
+     AUTHORS, 1),
+]
+
 
 # -- Options for extensions ----------------------------------------------------
 
