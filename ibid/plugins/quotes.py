@@ -70,7 +70,7 @@ class Bash(Processor):
 
     public_browse = BoolOption('public_browse', 'Allow random quotes in public', True)
 
-    @match(r'^bash(?:\.org)?(?:\s+(random|\d+))?$')
+    @match(r'^bash(?:\.org)?(?:\s+#?(random|\d+))?$')
     def bash(self, event, id):
         id = id is None and u'random' or id.lower()
 
