@@ -82,6 +82,9 @@ class Twitter(Processor):
             tree = ElementTree.fromstring(statuses)
             latest = tree.find('.//item')
             if latest is None:
+                if tree.find('.//error'):
+                    log.info('Twitter user_latest returned: %s',
+                             tree.findtext('.//error'))
                 raise self.NoTweetsException(user)
             return {
                 'text': latest.findtext('description')
