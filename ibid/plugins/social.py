@@ -74,22 +74,21 @@ class Twitter(Processor):
     def remote_latest(self, service, user):
         if service['api'] == 'twitter':
             # Twitter ommits retweets in the JSON and XML results:
-            statuses = generic_webservice('%sstatuses/user_timeline/%s.atom'
-                    % (service['endpoint'], user.encode('utf-8')),
-                    {'count': 1})
+            statuses = generic_webservice('%sstatuses/user_timeline.rss'
+                                          % service['endpoint'], {
+                                              'screen_name': user,
+                                              'count': 1
+                                          })
             tree = ElementTree.fromstring(statuses)
-            latest = tree.find('{http://www.w3.org/2005/Atom}entry')
+            latest = tree.find('.//item')
             if latest is None:
                 raise self.NoTweetsException(user)
             return {
-                'text': latest.findtext('{http://www.w3.org/2005/Atom}content')
+                'text': latest.findtext('description')
                         .split(': ', 1)[1],
                 'ago': ago(datetime.utcnow() - parse_timestamp(
-                    latest.findtext('{http://www.w3.org/2005/Atom}published'))),
-                'url': [x for x
-                     in latest.getiterator('{http://www.w3.org/2005/Atom}link')
-                     if x.get('type') == 'text/html'
-                  ][0].get('href'),
+                    latest.findtext('pubDate'))),
+                'url': latest.findtext('guid'),
             }
         elif service['api'] == 'laconica':
             statuses = json_webservice('%sstatuses/user_timeline/%s.json'
