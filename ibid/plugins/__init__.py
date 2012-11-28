@@ -138,8 +138,10 @@ class Processor(object):
                 args = ()
             elif hasattr(event, 'message'):
                 found = True
-                match = method.pattern.search(
-                        event.message[method.message_version])
+                message = event.message
+                if isinstance(message, dict):
+                    message = message[method.message_version]
+                match = method.pattern.search(message)
                 if match is not None:
                     args = match.groups()
                     kwargs = match.groupdict()
