@@ -208,7 +208,8 @@ class Ircbot(irc.IRCClient):
             self.notice(raw_target, raw_message)
             self.factory.log.debug(u"Sent notice to %s: %s", target, message)
         else:
-            self.msg(raw_target, raw_message)
+            # we do our own truncation
+            self.msg(raw_target, raw_message, length=512)
             self.factory.log.debug(u"Sent privmsg to %s: %s", target, message)
 
     def join(self, channel, key=None):
