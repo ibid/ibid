@@ -499,7 +499,7 @@ class Currency(Processor):
             self._load_currencies()
 
         results = defaultdict(list)
-        for code, (c_places, name) in self.currencies.iteritems():
+        for code, (c_places, name, digits) in self.currencies.iteritems():
             for c_place in c_places:
                 if re.search(place, c_place, re.I):
                     results[c_place].append(u'%s (%s)' % (name, code))
