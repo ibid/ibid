@@ -334,12 +334,14 @@ class Currency(Processor):
                                 'Virgin Islands (Us)',
                                 'Virgin Islands (British)',))
         accociated_all_countries = True
-        for currency in document.getiterator('ISO_CURRENCY'):
-            code = currency.findtext('ALPHABETIC_CODE').strip()
-            name = currency.findtext('CURRENCY').strip()
-            place = currency.findtext('ENTITY').strip().title()
+        for currency in document.getiterator('CcyNtry'):
+            if not currency.findtext('Ccy'):
+                continue
+            code = currency.findtext('Ccy').strip()
+            name = currency.findtext('CcyNm').strip()
+            place = currency.findtext('CtryNm').strip().title()
             try:
-                minor_units = int(currency.findtext('MINOR_UNIT').strip())
+                minor_units = int(currency.findtext('CcyMnrUnts').strip())
             except ValueError:
                 minor_units = 2
             if code == '' or code in non_currencies:
