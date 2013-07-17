@@ -313,8 +313,7 @@ class Currency(Processor):
 
     def _load_currencies(self):
         iso4127_file = cacheable_download(
-                'http://www.currency-iso.org/dam/isocy/downloads'
-                '/dl_iso_table_a1.xml',
+                'http://www.currency-iso.org/dam/downloads/table_a1.xml',
                 'conversions/iso4217.xml')
         document = ElementTree.parse(iso4127_file)
         # Code -> [Countries..., Currency Name, post-decimal digits]
