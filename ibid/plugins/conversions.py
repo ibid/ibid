@@ -313,8 +313,7 @@ class Currency(Processor):
 
     def _load_currencies(self):
         iso4127_file = cacheable_download(
-                'http://www.currency-iso.org/dam/isocy/downloads'
-                '/dl_iso_table_a1.xml',
+                'http://www.currency-iso.org/dam/downloads/table_a1.xml',
                 'conversions/iso4217.xml')
         document = ElementTree.parse(iso4127_file)
         # Code -> [Countries..., Currency Name, post-decimal digits]
@@ -335,12 +334,14 @@ class Currency(Processor):
                                 'Virgin Islands (Us)',
                                 'Virgin Islands (British)',))
         accociated_all_countries = True
-        for currency in document.getiterator('ISO_CURRENCY'):
-            code = currency.findtext('ALPHABETIC_CODE').strip()
-            name = currency.findtext('CURRENCY').strip()
-            place = currency.findtext('ENTITY').strip().title()
+        for currency in document.getiterator('CcyNtry'):
+            if not currency.findtext('Ccy'):
+                continue
+            code = currency.findtext('Ccy').strip()
+            name = currency.findtext('CcyNm').strip()
+            place = currency.findtext('CtryNm').strip().title()
             try:
-                minor_units = int(currency.findtext('MINOR_UNIT').strip())
+                minor_units = int(currency.findtext('CcyMnrUnts').strip())
             except ValueError:
                 minor_units = 2
             if code == '' or code in non_currencies:
@@ -498,7 +499,7 @@ class Currency(Processor):
             self._load_currencies()
 
         results = defaultdict(list)
-        for code, (c_places, name) in self.currencies.iteritems():
+        for code, (c_places, name, digits) in self.currencies.iteritems():
             for c_place in c_places:
                 if re.search(place, c_place, re.I):
                     results[c_place].append(u'%s (%s)' % (name, code))
