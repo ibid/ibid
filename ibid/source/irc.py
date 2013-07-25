@@ -89,7 +89,7 @@ class Ircbot(irc.IRCClient):
             self.mode(self.nickname, True, self.factory.modes.encode('utf-8'))
         self.ctcpMakeQuery(self.nickname, [('HOSTMASK', None)])
         for channel in self.factory.channels:
-            self.join(channel.encode('utf-8'))
+            self.join(channel)
         self.factory.log.info(u"Signed on")
 
         event = Event(self.factory.name, u'source')
