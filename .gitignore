@@ -1,2 +1,8 @@
 *.pyc
 *.swp
+/.history
+/cache/
+/ibid.db
+/local.ini
+/logs/
+dropin.cache
