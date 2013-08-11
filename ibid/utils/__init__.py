@@ -33,21 +33,23 @@ from ibid.compat import defaultdict, json
 
 log = logging.getLogger('utils')
 
+
 def ago(delta, units=None):
     parts = []
 
     for unit, value in (
-            ('year', delta.days/365), ('month', delta.days/30 % 12),
-            ('day', delta.days % 30), ('hour', delta.seconds/3600),
-            ('minute', delta.seconds/60 % 60), ('second', delta.seconds % 60),
-            ('millisecond', delta.microseconds/1000)):
+            ('year', delta.days / 365), ('month', delta.days / 30 % 12),
+            ('day', delta.days % 30), ('hour', delta.seconds / 3600),
+            ('minute', delta.seconds / 60 % 60), ('second', delta.seconds % 60),
+            ('millisecond', delta.microseconds / 1000)):
         if value > 0 and (unit != 'millisecond' or len(parts) == 0):
             parts.append('%s %s%s' % (value, unit, value != 1 and 's' or ''))
             if units and len(parts) >= units:
                 break
 
-    formatted =  ' and '.join(parts)
-    return formatted.replace(' and ', ', ', len(parts)-2)
+    formatted = ' and '.join(parts)
+    return formatted.replace(' and ', ', ', len(parts) - 2)
+
 
 def decode_htmlentities(text):
     replace = lambda match: unichr(int(match.group(1)))
@@ -58,6 +60,8 @@ def decode_htmlentities(text):
     return text
 
 downloads_in_progress = defaultdict(Lock)
+
+
 def cacheable_download(url, cachefile, headers={}, timeout=60):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
@@ -70,6 +74,7 @@ def cacheable_download(url, cachefile, headers={}, timeout=60):
         downloads_in_progress[cachefile].release()
 
     return f
+
 
 def _cacheable_download(url, cachefile, headers={}, timeout=60):
     # We do allow absolute paths, for people who know what they are doing,
@@ -149,14 +154,17 @@ def _cacheable_download(url, cachefile, headers={}, timeout=60):
 
     return cachefile
 
+
 def file_in_path(program):
     path = os.environ.get("PATH", os.defpath).split(os.pathsep)
     path = [os.path.join(dir, program) for dir in path]
     path = [True for file in path if os.path.isfile(file)]
     return bool(path)
 
+
 def unicode_output(output, errors="strict"):
     return unicode(output, getpreferredencoding(), errors)
+
 
 def ibid_version():
     try:
@@ -170,13 +178,14 @@ def ibid_version():
     except ImportError:
         pass
 
+
 def format_date(timestamp, length='datetime', tolocaltime=True):
     "Format a UTC date for displaying in a response"
 
     defaults = {
-            u'datetime_format': u'%Y-%m-%d %H:%M:%S %Z',
-            u'date_format': u'%Y-%m-%d',
-            u'time_format': u'%H:%M:%S %Z',
+        u'datetime_format': u'%Y-%m-%d %H:%M:%S %Z',
+        u'date_format': u'%Y-%m-%d',
+        u'time_format': u'%H:%M:%S %Z',
     }
 
     length += '_format'
@@ -189,6 +198,7 @@ def format_date(timestamp, length='datetime', tolocaltime=True):
 
     return unicode(timestamp.strftime(format.encode('utf8')), 'utf8')
 
+
 def parse_timestamp(timestamp):
     "Parse a machine timestamp, convert to UTC, strip timezone"
     dt = dateutil.parser.parse(timestamp)
@@ -197,8 +207,10 @@ def parse_timestamp(timestamp):
         dt = dt.replace(tzinfo=None)
     return dt
 
+
 class JSONException(Exception):
     pass
+
 
 def iri_to_uri(url):
     "Expand an IDN hostname and UTF-8 encode the path of a unicode URL"
@@ -224,6 +236,7 @@ def iri_to_uri(url):
 
 _url_regex = None
 
+
 def url_regex():
     global _url_regex
     if _url_regex is not None:
@@ -240,14 +253,16 @@ def url_regex():
         tlds = 'com.org.net.za'.split('.')
 
     _url_regex = (
-        r'(?:\w+://|(?:www|ftp)\.)\S+?' # Match an explicit URL or guess by www.
-        r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?' # Guess at the URL based on TLD
+        r'(?:\w+://|(?:www|ftp)\.)\S+?'  # Match an explicit URL or guess by www.
+        r'|[^@\s:/]+\.(?:%s)(?:/\S*?)?'  # Guess at the URL based on TLD
     ) % '|'.join(tlds)
 
     return _url_regex
 
+
 def is_url(url):
     return re.match('^' + url_regex() + '$', url, re.I) is not None
+
 
 def generic_webservice(url, params={}, headers={}, data=None):
     "Retreive data from a webservice"
@@ -271,6 +286,7 @@ def generic_webservice(url, params={}, headers={}, data=None):
     f.close()
     return data
 
+
 def json_webservice(url, params={}, headers={}, data=None):
     "Request data from a JSON webservice, and deserialise"
 
@@ -280,6 +296,7 @@ def json_webservice(url, params={}, headers={}, data=None):
     except ValueError, e:
         raise JSONException(e)
 
+
 def human_join(items, separator=u',', conjunction=u'and'):
     "Create a list like: a, b, c and d"
     items = list(items)
@@ -287,11 +304,13 @@ def human_join(items, separator=u',', conjunction=u'and'):
     return ((u' %s ' % conjunction)
             .join(filter(None, [separator.join(items[:-1])] + items[-1:])))
 
+
 def plural(count, singular, plural):
     "Return singular or plural depending on count"
     if abs(count) == 1:
         return singular
     return plural
+
 
 def locate_resource(path, filename):
     "Locate a resource either within the botdir or the source tree"
@@ -304,11 +323,13 @@ def locate_resource(path, filename):
         return None
     return resource_filename(path, filename)
 
+
 def get_process_output(command, input=None):
     process = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, error = process.communicate(input)
     code = process.wait()
     return output, error, code
+
 
 def indefinite_article(noun_phrase):
     # algorithm adapted from CPAN package Lingua-EN-Inflect-1.891 by Damian Conway
@@ -333,12 +354,12 @@ def indefinite_article(noun_phrase):
             return u'a'
 
     if re.match(r'(?!FJO|[HLMNS]Y.|RY[EO]|SQU|'
-                  r'(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])'
-                  r'[FHLMNRSX][A-Z]', word):
+                r'(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])'
+                r'[FHLMNRSX][A-Z]', word):
         return u'an'
 
     for regex in (r'^e[uw]', r'^onc?e\b',
-                    r'^uni([^nmd]|mo)','^u[bcfhjkqrst][aeiou]'):
+                  r'^uni([^nmd]|mo)', '^u[bcfhjkqrst][aeiou]'):
         if re.match(regex, wordi):
             return u'a'
 
@@ -359,10 +380,11 @@ def indefinite_article(noun_phrase):
     else:
         return u'a'
 
+
 def get_country_codes():
     filename = cacheable_download(
-            'http://www.iso.org/iso/list-en1-semic-3.txt',
-            'lookup/iso-3166-1_list_en.txt')
+        'http://www.iso.org/iso/list-en1-semic-3.txt',
+        'lookup/iso-3166-1_list_en.txt')
 
     f = codecs.open(filename, 'r', 'UTF-8')
     countries = {
@@ -390,6 +412,7 @@ def get_country_codes():
     f.close()
 
     return countries
+
 
 def identity_name(event, identity):
     if event.identity == identity.id:
