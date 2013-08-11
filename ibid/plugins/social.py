@@ -4,16 +4,13 @@
 from urllib2 import HTTPError
 from time import time
 from datetime import datetime
-import re
 import logging
 
 import feedparser
 
-from ibid.compat import ElementTree
-from ibid.config import DictOption
-from ibid.plugins import Processor, match, handler
-from ibid.utils import ago, decode_htmlentities, generic_webservice, \
-                       json_webservice, parse_timestamp
+from ibid.config import Option
+from ibid.plugins import Processor, match
+from ibid.utils import ago, decode_htmlentities, json_webservice, parse_timestamp
 
 log = logging.getLogger('plugins.social')
 features = {}
@@ -22,6 +19,8 @@ features['lastfm'] = {
     'description': u'Lists the tracks last listened to by the specified user.',
     'categories': ('lookup', 'web',),
 }
+
+
 class LastFm(Processor):
     usage = u'last.fm for <username>'
 
@@ -34,123 +33,103 @@ class LastFm(Processor):
             event.addresponse(u'No such user')
         else:
             event.addresponse(u', '.join(u'%s (%s ago)' % (
-                    e.title,
-                    ago(event.time - parse_timestamp(e.updated))
-                ) for e in songs['entries']))
+                e.title,
+                ago(event.time - parse_timestamp(e.updated))
+            ) for e in songs['entries']))
 
-features['microblog'] = {
-    'description': u'Looks up messages on microblogging services like twitter '
-                   u'and identica.',
+features['twitter'] = {
+    'description': u'Looks up messages on twitter.',
     'categories': ('lookup', 'web',),
 }
+
+
 class Twitter(Processor):
-    usage = u"""latest (tweet|identica) from <name>
-    (tweet|identica) <number>"""
+    usage = u"""latest tweet from <name>
+    tweet <number>"""
 
-    features = ('microblog',)
+    features = ('twitter',)
 
-    default = {
-        'twitter':   {'endpoint': 'http://api.twitter.com/1/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
-        'tweet':     {'endpoint': 'http://api.twitter.com/1/',   'api': 'twitter',  'name': 'tweet', 'user': 'twit'},
-        'identica':  {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
-        'identi.ca': {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
-        'dent':      {'endpoint': 'http://identi.ca/api/', 'api': 'laconica', 'name': 'dent',  'user': 'denter'},
-    }
-    services = DictOption('services', 'Micro blogging services', default)
+    twitter_key = Option('twitter_key', 'Your Twitter app\'s consumer key', None)
+    twitter_secret = Option('twitter_secret', 'Your Twitter app\'s consumer secret', None)
 
-    class NoTweetsException(Exception):
-        pass
+    _access_token = None
 
-    def setup(self):
-        self.update.im_func.pattern = re.compile(r'^(%s)\s+(\d+)$' % '|'.join(self.services.keys()), re.I)
-        self.latest.im_func.pattern = re.compile(r'^(?:latest|last)\s+(%s)\s+(?:update\s+)?(?:(?:by|from|for)\s+)?@?(\S+)$'
-                % '|'.join(self.services.keys()), re.I)
+    def access_token(self):
+        if self._access_token is None:
+            auth = ('%s:%s' % (self.twitter_key, self.twitter_secret)).encode('base64').replace('\n', '')
+            auth_header = {'Authorization': 'Basic %s' % auth}
+            token_response = json_webservice('https://api.twitter.com/oauth2/token',
+                                             headers=auth_header, data={'grant_type':
+                                                                        'client_credentials'})
+            self._access_token = token_response['access_token']
+        return self._access_token
 
-    def remote_update(self, service, id):
-        status = json_webservice('%sstatuses/show/%s.json' % (service['endpoint'], id))
-
-        return {'screen_name': status['user']['screen_name'], 'text': decode_htmlentities(status['text'])}
-
-    def remote_latest(self, service, user):
-        if service['api'] == 'twitter':
-            # Twitter ommits retweets in the JSON and XML results:
-            statuses = generic_webservice('%sstatuses/user_timeline.rss'
-                                          % service['endpoint'], {
-                                              'screen_name': user,
-                                              'count': 1
-                                          })
-            tree = ElementTree.fromstring(statuses)
-            latest = tree.find('.//item')
-            if latest is None:
-                if tree.find('.//error'):
-                    log.info('Twitter user_latest returned: %s',
-                             tree.findtext('.//error'))
-                raise self.NoTweetsException(user)
-            return {
-                'text': latest.findtext('description')
-                        .split(': ', 1)[1],
-                'ago': ago(datetime.utcnow() - parse_timestamp(
-                    latest.findtext('pubDate'))),
-                'url': latest.findtext('guid'),
-            }
-        elif service['api'] == 'laconica':
-            statuses = json_webservice('%sstatuses/user_timeline/%s.json'
-                    % (service['endpoint'], user.encode('utf-8')),
-                    {'count': 1})
-            if not statuses:
-                raise self.NoTweetsException(user)
-            latest = statuses[0]
-            url = '%s/notice/%i' % (service['endpoint'].split('/api/', 1)[0],
-                                    latest['id'])
-
-        return {
-            'text': decode_htmlentities(latest['text']),
-            'ago': ago(datetime.utcnow()
-                       - parse_timestamp(latest['created_at'])),
-            'url': url,
-        }
-
-    @handler
-    def update(self, event, service_name, id):
-        service = self.services[service_name.lower()]
+    @match(r'^tweet\s+(\d+)$')
+    def update(self, event, id):
         try:
-            event.addresponse(u'%(screen_name)s: "%(text)s"', self.remote_update(service, int(id)))
+            access_token = self.access_token()
+            status = json_webservice('https://api.twitter.com/1.1/statuses/show.json',
+                                     headers={'Authorization': 'Bearer %s' % access_token},
+                                     params={'id': id})
+            text = decode_htmlentities(status['text'])
+            for url in status.get('entities', {}).get('urls', []):
+                if url['url'] in text:
+                    text = text.replace(url['url'], url['expanded_url'])
+
+            params = {
+                'screen_name': status['user']['screen_name'],
+                'ago': ago(datetime.utcnow() -
+                           parse_timestamp(status['created_at'])),
+                'text': text
+            }
+            event.addresponse(u'%(screen_name)s: "%(text)s" %(ago)s ago', params)
         except HTTPError, e:
             if e.code in (401, 403):
-                event.addresponse(u'That %s is private', service['name'])
+                event.addresponse(u'That tweet is private')
             elif e.code == 404:
-                event.addresponse(u'No such %s', service['name'])
+                event.addresponse(u'No such tweet')
             else:
-                log.debug(u'%s raised %s', service['name'], unicode(e))
+                log.debug(u'Twitter raised %s', unicode(e))
                 event.addresponse(u'I can only see the Fail Whale')
 
-    @handler
-    def latest(self, event, service_name, user):
-        service = self.services[service_name.lower()]
+    @match(r'^(?:latest|last)\s+tweet\s+(?:(?:by|from|for)\s+)?@?(\S+)$')
+    def latest(self, event, user):
         try:
-            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', self.remote_latest(service, user))
+            access_token = self.access_token()
+            timeline = json_webservice('https://api.twitter.com/1.1/statuses/user_timeline.json',
+                                       headers={'Authorization': 'Bearer %s' % access_token},
+                                       params={'screen_name': user,
+                                               'include_rts': 'false',
+                                               'exclude_replies': 'true'})
+            if not timeline:
+                event.addresponse(u'It appears that %(user)s has never tweeted',
+                                  {'user': user, })
+                return
+            tweet = timeline[0]
+            text = decode_htmlentities(tweet['text'])
+            for url in tweet.get('entities', {}).get('urls', []):
+                if url['url'] in text:
+                    text = text.replace(url['url'], url['expanded_url'])
+
+            params = {
+                'text': text,
+                'ago': ago(datetime.utcnow() -
+                           parse_timestamp(tweet['created_at'])),
+                'url': 'https://twitter.com/%s/status/%s' % (user, tweet['id']),
+            }
+            event.addresponse(u'"%(text)s" %(ago)s ago, %(url)s', params)
         except HTTPError, e:
             if e.code in (401, 403):
                 event.addresponse(u"Sorry, %s's feed is private", user)
             elif e.code == 404:
-                event.addresponse(u'No such %s', service['user'])
+                event.addresponse(u'No such user')
             else:
-                log.debug(u'%s raised %s', service['name'], unicode(e))
+                log.debug(u'Twitter raised %s', unicode(e))
                 event.addresponse(u'I can only see the Fail Whale')
-        except self.NoTweetsException, e:
-            event.addresponse(
-                u'It appears that %(user)s has never %(tweet)sed', {
-                    'user': user,
-                    'tweet': service['name'],
-                })
 
     @match(r'^https?://(?:www\.)?twitter\.com/(?:#!/)?[^/ ]+/statuse?s?/(\d+)$',
            simple=False)
     def twitter(self, event, id):
-        self.update(event, u'twitter', id)
-
-    @match(r'https?://(?:www\.)?identi.ca/notice/{id:digits}')
-    def identica(self, event, id):
-        self.update(event, u'identica', id)
+        self.update(event, id)
 
 # vi: set et sta sw=4 ts=4:
