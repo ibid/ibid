@@ -249,7 +249,7 @@ def url_regex():
 def is_url(url):
     return re.match('^' + url_regex() + '$', url, re.I) is not None
 
-def generic_webservice(url, params={}, headers={}):
+def generic_webservice(url, params={}, headers={}, data=None):
     "Retreive data from a webservice"
 
     for key in params:
@@ -259,7 +259,10 @@ def generic_webservice(url, params={}, headers={}):
     if params:
         url = iri_to_uri(url) + '?' + urlencode(params)
 
-    req = urllib2.Request(url, headers=headers)
+    if data:
+        data = urlencode(data)
+
+    req = urllib2.Request(url, data=data, headers=headers)
     if not req.has_header('user-agent'):
         req.add_header('User-Agent', 'Ibid/' + (ibid_version() or 'dev'))
 
@@ -268,12 +271,12 @@ def generic_webservice(url, params={}, headers={}):
     f.close()
     return data
 
-def json_webservice(url, params={}, headers={}):
+def json_webservice(url, params={}, headers={}, data=None):
     "Request data from a JSON webservice, and deserialise"
 
-    data = generic_webservice(url, params, headers)
+    response = generic_webservice(url, params, headers, data)
     try:
-        return json.loads(data)
+        return json.loads(response)
     except ValueError, e:
         raise JSONException(e)
 
