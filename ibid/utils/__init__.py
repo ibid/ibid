@@ -59,9 +59,8 @@ def decode_htmlentities(text):
     text = re.sub("&(\w+);", replace, text)
     return text
 
+
 downloads_in_progress = defaultdict(Lock)
-
-
 def cacheable_download(url, cachefile, headers={}, timeout=60):
     """Download url to cachefile if it's modified since cachefile.
     Specify cachefile in the form pluginname/cachefile.
@@ -234,9 +233,8 @@ def iri_to_uri(url):
     parts[2] = quote(parts[2].encode('utf-8'), '/%')
     return urlunparse(parts).encode('utf-8')
 
+
 _url_regex = None
-
-
 def url_regex():
     global _url_regex
     if _url_regex is not None:

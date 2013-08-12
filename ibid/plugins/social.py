@@ -53,7 +53,6 @@ class Twitter(Processor):
     twitter_secret = Option('twitter_secret', 'Your Twitter app\'s consumer secret', None)
 
     _access_token = None
-
     def access_token(self):
         if self._access_token is None:
             auth = ('%s:%s' % (self.twitter_key, self.twitter_secret)).encode('base64').replace('\n', '')
