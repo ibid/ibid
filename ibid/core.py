@@ -345,7 +345,7 @@ class DatabaseManager(dict):
                         expanduser(uri.replace('sqlite:///', '', 1))),
                     self.sqlite_synchronous),
                 encoding='utf-8', convert_unicode=True,
-                assert_unicode=True, echo=echo
+                echo=echo
             )
 
         elif uri.startswith(u'mysql://'):
@@ -362,7 +362,7 @@ class DatabaseManager(dict):
                 uri += u'&use_unicode=0'
 
             engine = create_engine(uri, encoding='utf-8',
-                convert_unicode=True, assert_unicode=True, echo=echo,
+                convert_unicode=True, echo=echo,
                 # MySQL closes 8hr old connections:
                 pool_recycle=3600)
 
