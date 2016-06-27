@@ -7,3 +7,7 @@
 /logs/
 dropin.cache
 /pyenv/
+/build/
+/Ibid.egg-info/
+/dist/
+/bothome/
