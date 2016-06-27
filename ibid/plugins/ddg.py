@@ -45,15 +45,22 @@ class DDGAPISearch(Processor):
             return
 
         results = []
-        for item in items['RelatedTopics']:
+        topic = "Results"
+        for item in items[topic]:
+            title = item['Text']
+            results.append(u'"%s" %s' % (decode_htmlentities(title), item['FirstURL']))
+        topic = "RelatedTopics"
+        for i in range(5):
+            if i >= len(items[topic]):
+                break
             try:
-                title = item['Text']
-                results.append(u'"%s" %s' % (decode_htmlentities(title), item["FirstURL"]))
+                title = items[topic][i]['Text']
+                results.append(u'%s' % (decode_htmlentities(title)))
             except KeyError:
                 pass
 
         if results:
             event.addresponse(u' :: '.join(results))
         else:
-            event.addresponse(u"Wow! DuckDuckGo couldn't find anything")
+            event.addresponse(u"Uhh... DuckDuckGo has no Instant Answer on that")
 # vi: set et sta sw=4 ts=4:
