@@ -12,7 +12,7 @@ def monkey_patch():
         if type_.case_insensitive:
             return 'CITEXT'
         else:
-            return self.visit_VARCHAR(type_)
+            return self.visit_VARCHAR(type_, **kw)
     sqlalchemy.dialects.postgresql.dialect.type_compiler.visit_IBID_VARCHAR = postgres_visit_IBID_VARCHAR
     def postgres_visit_IBID_TEXT(self, type_, **kw):
         if type_.case_insensitive:
@@ -27,7 +27,7 @@ def monkey_patch():
             collation = 'NOCASE'
         else:
             collation = 'BINARY'
-        return self.visit_VARCHAR(type_) + ' COLLATE ' + collation
+        return self.visit_VARCHAR(type_, **kw) + ' COLLATE ' + collation
     sqlalchemy.dialects.sqlite.dialect.type_compiler.visit_IBID_VARCHAR = sqlite_visit_IBID_VARCHAR
     def sqlite_visit_IBID_TEXT(self, type_, **kw):
         if type_.case_insensitive:
@@ -43,14 +43,14 @@ def monkey_patch():
             collation = 'utf8_general_ci'
         else:
             collation = 'utf8_bin'
-        return self.visit_VARCHAR(type_) + ' COLLATE ' + collation
+        return self.visit_VARCHAR(type_, **kw) + ' COLLATE ' + collation
     sqlalchemy.dialects.mysql.dialect.type_compiler.visit_IBID_VARCHAR = sqlite_visit_IBID_VARCHAR
     def mysql_visit_IBID_TEXT(self, type_, **kw):
         if type_.case_insensitive:
             collation = 'utf8_general_ci'
         else:
             collation = 'utf8_bin'
-        return self.visit_TEXT(type_) + ' COLLATE ' + collation
+        return self.visit_TEXT(type_, **kw) + ' COLLATE ' + collation
     sqlalchemy.dialects.mysql.dialect.type_compiler.visit_IBID_TEXT = sqlite_visit_IBID_TEXT
 
 class IbidUnicode(_Unicode):
