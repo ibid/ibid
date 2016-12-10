@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2011, Michael Gorven, Stefano Rivera
+# Copyright (c) 2016, Kyle Robbertze
 # Released under terms of the MIT/X/Expat Licence. See COPYING for details.
 
 from httplib import BadStatusLine
@@ -12,55 +12,43 @@ features = {'duckduckgo': {
     'categories': ('lookup', 'web', 'calculate', ),
 }}
 
-default_user_agent = 'Mozilla/5.0'
-default_referer = "http://ibid.omnia.za.net/"
-
 class DDGAPISearch(Processor):
     usage = u"""ddg[.<tld>] [for] <term>"""
 
     features = ('duckduckgo',)
-
-    referer = Option('referer', 'The referer string to use (API searches)', default_referer)
-
     def _ddg_api_search(self, query, resultsize="large", country=None):
         params = {
-            'v': '1.0',
             'q': query,
             't': 'ibid',
-            'rsz': resultsize,
             'format': 'json',
         }
         if country is not None:
             params['gl'] = country
 
-        headers = {'referer': self.referer}
-        return json_webservice('http://api.duckduckgo.com', params, headers)
+        return json_webservice('https://api.duckduckgo.com', params)
 
-    @match(r'^(ddg|duckduckgo(?:\.com?))?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
+    @match(r'^ddg(?:\.com?)?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
     def search(self, event, key, country, query):
         try:
             items = self._ddg_api_search(query, country=country)
         except BadStatusLine:
-            event.addresponse(u"DuckDuckGo appears to be broken (or more likely, my connection to it)")
+            event.addresponse(u'DuckDuckGo appears to be broken (or more likely, my connection to it)')
             return
 
         results = []
-        topic = "Results"
+        topic = 'Results'
         for item in items[topic]:
             title = item['Text']
-            results.append(u'"%s" %s' % (decode_htmlentities(title), item['FirstURL']))
-        topic = "RelatedTopics"
-        for i in range(5):
-            if i >= len(items[topic]):
-                break
-            try:
-                title = items[topic][i]['Text']
-                results.append(u'%s' % (decode_htmlentities(title)))
-            except KeyError:
-                pass
+            url = item['FirstURL']
+            results.append(u'"%s" %s' % (title, url))
+        topic = 'RelatedTopics'
+        for i in range(max(5, len(items[topic]))):
+            title = items[topic][i]['Text']
+            url = items[topic][i]['FirstURL']
+            results.append(u'"%s" %s' % (title, url))
 
         if results:
-            event.addresponse(u' :: '.join(results))
+            event.addresponse(u' :: '.join(results) + "(Results from DuckDuckGo)")
         else:
-            event.addresponse(u"Uhh... DuckDuckGo has no Instant Answer on that")
+            event.addresponse(u'Uhh... DuckDuckGo has no Instant Answer on that')
 # vi: set et sta sw=4 ts=4:
