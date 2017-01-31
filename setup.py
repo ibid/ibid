@@ -14,12 +14,11 @@ install_requires=[
     'html2text',
     'html5lib',
     'jinja2',
-    'pyopenssl',
     'PyStemmer',
     'python-dateutil',
     'SOAPpy',
     'SQLAlchemy>=0.6',
-    'Twisted',
+    'Twisted[tls]',
     'wokkel>=0.6.3',
 ]
 
