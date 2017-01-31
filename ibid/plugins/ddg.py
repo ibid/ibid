@@ -3,9 +3,8 @@
 
 from httplib import BadStatusLine
 
-from ibid.config import Option
 from ibid.plugins import Processor, match
-from ibid.utils import decode_htmlentities, json_webservice
+from ibid.utils import json_webservice
 
 features = {'duckduckgo': {
     'description': u'Retrieves results from DuckDuckGo',
