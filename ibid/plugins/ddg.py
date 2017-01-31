@@ -38,15 +38,14 @@ class DDGAPISearch(Processor):
             return
 
         results = []
-        topic = 'Results'
-        for item in items[topic]:
+        for item in items['Results']:
             title = item['Text']
             url = item['FirstURL']
             results.append(u'"%s" %s' % (title, url))
-        topic = 'RelatedTopics'
-        for i in range(max(5, len(items[topic]))):
-            title = items[topic][i]['Text']
-            url = items[topic][i]['FirstURL']
+
+        for item in items['RelatedTopics'][:5]:
+            title = item['Text']
+            url = item['FirstURL']
             results.append(u'"%s" %s' % (title, url))
 
         if results:
