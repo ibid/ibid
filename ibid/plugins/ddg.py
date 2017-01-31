@@ -44,9 +44,10 @@ class DDGAPISearch(Processor):
             results.append(u'"%s" %s' % (title, url))
 
         for item in items['RelatedTopics'][:5]:
-            title = item['Text']
-            url = item['FirstURL']
-            results.append(u'"%s" %s' % (title, url))
+            if 'Text' in item:
+                title = item['Text']
+                url = item['FirstURL']
+                results.append(u'"%s" %s' % (title, url))
 
         if results:
             event.addresponse(
