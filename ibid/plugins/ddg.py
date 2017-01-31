@@ -11,10 +11,11 @@ features = {'duckduckgo': {
     'categories': ('lookup', 'web', 'calculate', ),
 }}
 
+
 class DDGAPISearch(Processor):
     usage = u"""ddg[.<tld>] [for] <term>"""
-
     features = ('duckduckgo',)
+
     def _ddg_api_search(self, query, resultsize="large", country=None):
         params = {
             'q': query,
@@ -31,7 +32,9 @@ class DDGAPISearch(Processor):
         try:
             items = self._ddg_api_search(query, country=country)
         except BadStatusLine:
-            event.addresponse(u'DuckDuckGo appears to be broken (or more likely, my connection to it)')
+            event.addresponse(
+                u'DuckDuckGo appears to be broken (or more likely, '
+                u'my connection to it)')
             return
 
         results = []
@@ -47,7 +50,11 @@ class DDGAPISearch(Processor):
             results.append(u'"%s" %s' % (title, url))
 
         if results:
-            event.addresponse(u' :: '.join(results) + "(Results from DuckDuckGo)")
+            event.addresponse(
+                u' :: '.join(results)
+                + "(Results from DuckDuckGo)")
         else:
-            event.addresponse(u'Uhh... DuckDuckGo has no Instant Answer on that')
+            event.addresponse(
+                u'Uhh... DuckDuckGo has no Instant Answer on that')
+
 # vi: set et sta sw=4 ts=4:
