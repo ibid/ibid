@@ -50,9 +50,8 @@ class DDGAPISearch(Processor):
                 results.append(u'"%s" %s' % (title, url))
 
         if results:
-            event.addresponse(
-                u' :: '.join(results)
-                + "(Results from DuckDuckGo)")
+            event.addresponse(u' :: '.join(results))
+            event.addresponse(u'(Results from DuckDuckGo)')
         else:
             event.addresponse(
                 u'Uhh... DuckDuckGo has no Instant Answer on that')
