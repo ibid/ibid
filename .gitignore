@@ -1,8 +1,13 @@
-*.pyc
-*.swp
-/.history
+/bothome/
+/build/
 /cache/
+/dist/
+dropin.cache
+/.history
 /ibid.db
+/Ibid.egg-info/
 /local.ini
 /logs/
-dropin.cache
+*.pyc
+/pyenv/
+*.swp
