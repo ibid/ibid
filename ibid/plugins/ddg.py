@@ -28,7 +28,7 @@ class DDGAPISearch(Processor):
         return json_webservice('https://api.duckduckgo.com', params)
 
     @match(r'^ddg(?:\.com?)?(?:\.([a-z]{2}))?\s+(?:for\s+)?(.+?)$')
-    def search(self, event, key, country, query):
+    def search(self, event, country, query):
         try:
             items = self._ddg_api_search(query, country=country)
         except BadStatusLine:
